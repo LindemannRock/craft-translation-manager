@@ -2,7 +2,7 @@
     "name": "lindemannrock/translation-manager",
     "description": "Comprehensive translation management system for Craft CMS with Formie integration",
     "type": "craft-plugin",
-    "version": "1.0.0",
+    "version": "1.3.2",
     "keywords": [
         "craft",
         "cms",
