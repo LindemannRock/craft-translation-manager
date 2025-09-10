@@ -1,0 +1,17 @@
+Translation Key,Translation,Type,Status,Site ID,Site Language
+"Welcome","Welcome",Site,translated,1,en-US
+"Welcome","مرحباً",Site,translated,2,ar
+"Product","Product",Site,translated,1,en-US
+"Product","المنتج",Site,translated,2,ar
+"Search","Search",Site,translated,1,en-US
+"Search","بحث",Site,translated,2,ar
+"Home","Home",Site,translated,1,en-US
+"Home","الرئيسية",Site,translated,2,ar
+"Email","Email",Formie,translated,1,en-US
+"Email","البريد الإلكتروني",Formie,translated,2,ar
+"Phone","Phone",Formie,translated,1,en-US
+"Phone","الهاتف",Formie,translated,2,ar
+"Pending English","",Site,pending,1,en-US
+"Pending Arabic","",Site,pending,2,ar
+"Mixed Case Product","مختلط",Site,translated,2,ar
+"UPPERCASE","كبير",Site,translated,2,ar

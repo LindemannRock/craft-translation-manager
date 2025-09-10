@@ -1,0 +1,213 @@
+<?php
+/**
+ * Translation Manager plugin for Craft CMS 5.x
+ *
+ * Controller for managing translation backups
+ *
+ * @link      https://lindemannrock.com
+ * @copyright Copyright (c) 2025 LindemannRock
+ */
+
+namespace lindemannrock\translationmanager\controllers;
+
+use Craft;
+use craft\web\Controller;
+use craft\web\Response;
+use craft\helpers\FileHelper;
+use lindemannrock\translationmanager\TranslationManager;
+use yii\web\ForbiddenHttpException;
+use yii\web\NotFoundHttpException;
+
+/**
+ * Backup Controller
+ */
+class BackupController extends Controller
+{
+    /**
+     * @inheritdoc
+     */
+    protected array|int|bool $allowAnonymous = false;
+    
+    /**
+     * @inheritdoc
+     */
+    public function beforeAction($action): bool
+    {
+        // Most actions require edit permissions
+        $actionsRequiringEdit = ['create', 'restore', 'delete'];
+        
+        if (in_array($action->id, $actionsRequiringEdit)) {
+            // Allow if user has edit translations OR edit settings permission
+            if (!Craft::$app->getUser()->checkPermission('translationManager:editTranslations') && 
+                !Craft::$app->getUser()->checkPermission('translationManager:editSettings')) {
+                throw new ForbiddenHttpException('User does not have permission to manage backups');
+            }
+        } else {
+            // View/download require at least view permission
+            if (!Craft::$app->getUser()->checkPermission('translationManager:viewTranslations') && 
+                !Craft::$app->getUser()->checkPermission('translationManager:editSettings')) {
+                throw new ForbiddenHttpException('User does not have permission to view backups');
+            }
+        }
+
+        return parent::beforeAction($action);
+    }
+
+    /**
+     * List all backups
+     */
+    public function actionIndex(): Response
+    {
+        $backupService = TranslationManager::getInstance()->backup;
+        $backups = $backupService->getBackups();
+        
+        // Format file sizes for display
+        foreach ($backups as &$backup) {
+            $backup['formattedSize'] = $backupService->formatBytes($backup['size']);
+            $backup['formattedDate'] = Craft::$app->getFormatter()->asDatetime($backup['timestamp'], 'short');
+        }
+        
+        return $this->renderTemplate('translation-manager/backups/index', [
+            'backups' => $backups,
+        ]);
+    }
+    
+    /**
+     * Create a new backup
+     */
+    public function actionCreate(): Response
+    {
+        $this->requirePostRequest();
+        $this->requireAcceptsJson();
+        
+        try {
+            $reason = Craft::$app->getRequest()->getBodyParam('reason', 'manual');
+            
+            $backupPath = TranslationManager::getInstance()->backup->createBackup($reason);
+            
+            if ($backupPath) {
+                return $this->asJson([
+                    'success' => true,
+                    'message' => 'Backup created successfully',
+                    'path' => basename($backupPath)
+                ]);
+            }
+            
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Failed to create backup'
+            ]);
+        } catch (\Exception $e) {
+            Craft::error('Backup creation failed: ' . $e->getMessage(), 'translation-manager');
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Failed to create backup: ' . $e->getMessage()
+            ]);
+        }
+    }
+    
+    /**
+     * Restore from a backup
+     */
+    public function actionRestore(): Response
+    {
+        $this->requirePostRequest();
+        $this->requireAcceptsJson();
+        
+        $backupName = Craft::$app->getRequest()->getRequiredBodyParam('backup');
+        
+        if (!preg_match('/^([\w]+\/)?(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})$/', $backupName)) {
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Invalid backup name format'
+            ]);
+        }
+        
+        $result = TranslationManager::getInstance()->backup->restoreBackup($backupName);
+        
+        return $this->asJson($result);
+    }
+    
+    /**
+     * Delete a backup
+     */
+    public function actionDelete(): Response
+    {
+        $this->requirePostRequest();
+        $this->requireAcceptsJson();
+        
+        $backupName = Craft::$app->getRequest()->getRequiredBodyParam('backup');
+        
+        if (!preg_match('/^([\w]+\/)?(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})$/', $backupName)) {
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Invalid backup name format'
+            ]);
+        }
+        
+        $success = TranslationManager::getInstance()->backup->deleteBackup($backupName);
+        
+        if ($success) {
+            return $this->asJson([
+                'success' => true,
+                'message' => 'Backup deleted successfully'
+            ]);
+        }
+        
+        return $this->asJson([
+            'success' => false,
+            'error' => 'Failed to delete backup'
+        ]);
+    }
+    
+    /**
+     * Download a backup
+     */
+    public function actionDownload(): Response
+    {
+        $backupName = Craft::$app->getRequest()->getRequiredParam('backup');
+        
+        if (!preg_match('/^([\w]+\/)?(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})$/', $backupName)) {
+            throw new NotFoundHttpException('Invalid backup name');
+        }
+        
+        $backupService = TranslationManager::getInstance()->backup;
+        $backupDir = $backupService->getBackupPath() . '/' . $backupName;
+        
+        if (!is_dir($backupDir)) {
+            throw new NotFoundHttpException('Backup not found');
+        }
+        
+        // Create a temporary zip file
+        $zipPath = Craft::$app->getPath()->getTempPath() . '/translation-backup-' . $backupName . '.zip';
+        
+        // Create zip archive
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            throw new \Exception('Cannot create zip file');
+        }
+        
+        // Add all files from backup directory
+        $files = FileHelper::findFiles($backupDir);
+        foreach ($files as $file) {
+            $relativePath = str_replace($backupDir . '/', '', $file);
+            $zip->addFile($file, $relativePath);
+        }
+        
+        $zip->close();
+        
+        // Send the file
+        $response = Craft::$app->getResponse();
+        $response->sendFile($zipPath, 'translation-backup-' . $backupName . '.zip', [
+            'mimeType' => 'application/zip',
+            'inline' => false,
+        ]);
+        
+        // Clean up temp file after sending
+        register_shutdown_function(function() use ($zipPath) {
+            @unlink($zipPath);
+        });
+        
+        return $response;
+    }
+}

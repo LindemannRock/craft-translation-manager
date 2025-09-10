@@ -1,0 +1,235 @@
+{% extends "translation-manager/_layouts/settings" %}
+{% set title = "General Settings"|t('translation-manager') %}
+{% set fullPageForm = true %}
+{% set selectedSubnavItem = 'general' %}
+
+{% set plugin = craft.app.plugins.getPlugin('translation-manager') %}
+{% set crumbs = [
+    {
+        label: plugin.settings.pluginName|t('translation-manager'),
+        url: url('translation-manager'),
+    },
+    {
+        label: 'Settings'|t('translation-manager'),
+        url: url('translation-manager/settings'),
+    },
+    {
+        label: 'General'|t('translation-manager'),
+        url: url('translation-manager/settings'),
+    },
+] %}
+
+{% import "_includes/forms" as forms %}
+
+{% block content %}
+    {% set formiePluginName = craft.translationManager.getFormiePluginName() %}
+    
+    <h2>{{ "Plugin Settings"|t('translation-manager') }}</h2>
+    
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        {{ actionInput('translation-manager/settings/save') }}
+        {{ redirectInput('translation-manager/settings/general') }}
+
+        {{ forms.textField({
+            label: "Plugin Name"|t('translation-manager'),
+            instructions: "The display name for the plugin in the Control Panel menu and breadcrumbs"|t('translation-manager'),
+            id: 'pluginName',
+            name: 'pluginName',
+            value: settings.pluginName,
+            errors: settings.getErrors('pluginName'),
+            required: true,
+            disabled: settings.isOverriddenByConfig('pluginName'),
+            warning: settings.isOverriddenByConfig('pluginName') ? 
+                "This is being overridden by the <code>pluginName</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+        }) }}
+
+        <hr>
+
+        <h2>{{ "Translation Sources"|t('translation-manager') }}</h2>
+
+        {{ forms.lightswitchField({
+            label: "Enable Site Translations"|t('translation-manager'),
+            instructions: "Capture translations from your templates"|t('translation-manager'),
+            id: 'enableSiteTranslations',
+            name: 'enableSiteTranslations',
+            on: settings.enableSiteTranslations,
+            toggle: 'site-translation-settings',
+            disabled: settings.isOverriddenByConfig('enableSiteTranslations'),
+            warning: settings.isOverriddenByConfig('enableSiteTranslations') ? 
+                "This is being overridden by the <code>enableSiteTranslations</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+        }) }}
+
+        <div id="site-translation-settings" class="{{ not settings.enableSiteTranslations ? 'hidden' }}">
+            {{ forms.textField({
+                label: "Site Translation Category"|t('translation-manager'),
+                instructions: "The category to use for site translations (e.g. 'lindemannrock' for |t('lindemannrock')). This must be used in your templates when translating text. Avoid using 'site' as it may conflict with Craft's internal translations."|t('translation-manager'),
+                id: 'translationCategory',
+                name: 'translationCategory',
+                value: settings.translationCategory,
+                errors: settings.getErrors('translationCategory'),
+                required: true,
+                disabled: settings.isOverriddenByConfig('translationCategory'),
+                warning: settings.isOverriddenByConfig('translationCategory') ? 
+                    "This is being overridden by the <code>translationCategory</code> setting in <code>config/translation-manager.php</code>."|raw : 
+                    (settings.translationCategory == 'site' ? "Warning: Using 'site' as the category may cause conflicts with Craft's internal translations. Consider using a unique identifier like your company name."|t('translation-manager') : 
+                    (settings.translationCategory != 'alhatab' ? "Changing this will affect all existing site translations. Make sure to update all |t() calls in your templates."|t('translation-manager') : null)),
+            }) }}
+
+            {{ forms.textareaField({
+                label: "Site Translations Skip Patterns"|t('translation-manager'),
+                instructions: ("Text patterns to skip when capturing |t('" ~ settings.translationCategory ~ "') translations (one per line). Does not affect " ~ formiePluginName ~ " fields.")|t('translation-manager'),
+                id: 'skipPatterns',
+                name: 'skipPatterns',
+                value: settings.skipPatterns|join("\n"),
+                rows: 5,
+                placeholder: "Example:\nID\nTitle\nStatus"|t('translation-manager'),
+                disabled: settings.isOverriddenByConfig('skipPatterns'),
+                warning: settings.isOverriddenByConfig('skipPatterns') ? 
+                    "This is being overridden by the <code>skipPatterns</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+            }) }}
+            
+            {% if settings.skipPatterns|length > 0 %}
+            <div class="field">
+                <p class="instructions">
+                    {{ "Note: Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below."|t('translation-manager') }}
+                </p>
+                <button type="button" class="btn" id="applySkipPatternsBtn">
+                    {{ "Apply Skip Patterns to Existing Translations"|t('translation-manager') }}
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+        {{ forms.lightswitchField({
+            label: ("Enable " ~ formiePluginName ~ " Integration")|t('translation-manager'),
+            instructions: ("Automatically capture translations from " ~ formiePluginName)|t('translation-manager'),
+            id: 'enableFormieIntegration',
+            name: 'enableFormieIntegration',
+            on: settings.enableFormieIntegration,
+            disabled: not craft.app.plugins.isPluginEnabled('formie') or settings.isOverriddenByConfig('enableFormieIntegration'),
+            warning: settings.isOverriddenByConfig('enableFormieIntegration') ? 
+                "This is being overridden by the <code>enableFormieIntegration</code> setting in <code>config/translation-manager.php</code>."|raw : 
+                (not craft.app.plugins.isPluginEnabled('formie') ? (formiePluginName ~ " plugin is not installed")|t('translation-manager') : null),
+        }) }}
+
+        <hr>
+
+        <h2>{{ "Interface Settings"|t('translation-manager') }}</h2>
+
+        {{ forms.textField({
+            label: "Items Per Page"|t('translation-manager'),
+            instructions: "Number of translations to show per page"|t('translation-manager'),
+            id: 'itemsPerPage',
+            name: 'itemsPerPage',
+            value: settings.itemsPerPage,
+            errors: settings.getErrors('itemsPerPage'),
+            type: 'number',
+            min: 10,
+            max: 500,
+            disabled: settings.isOverriddenByConfig('itemsPerPage'),
+            warning: settings.isOverriddenByConfig('itemsPerPage') ? 
+                "This is being overridden by the <code>itemsPerPage</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: "Show Context"|t('translation-manager'),
+            instructions: "Display the translation context in the interface"|t('translation-manager'),
+            id: 'showContext',
+            name: 'showContext',
+            on: settings.showContext,
+            disabled: settings.isOverriddenByConfig('showContext'),
+            warning: settings.isOverriddenByConfig('showContext') ? 
+                "This is being overridden by the <code>showContext</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: "Enable Auto-Save"|t('translation-manager'),
+            instructions: "Automatically save each translation when you click outside the field (blur)"|t('translation-manager'),
+            id: 'autoSaveEnabled',
+            name: 'autoSaveEnabled',
+            on: settings.autoSaveEnabled,
+            disabled: settings.isOverriddenByConfig('autoSaveEnabled'),
+            warning: settings.isOverriddenByConfig('autoSaveEnabled') ? 
+                "This is being overridden by the <code>autoSaveEnabled</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+        }) }}
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">{{ "Save"|t('translation-manager') }}</button>
+        </div>
+
+    </form>
+{% endblock %}
+
+{% js %}
+    // Similar JS from original settings page
+    document.getElementById('translationCategory').addEventListener('input', function(e) {
+        const value = e.target.value.trim();
+        const valueLower = value.toLowerCase();
+        const field = e.target.closest('.field');
+        let warningElement = field.querySelector('.warning');
+        
+        const siteTranslationsField = document.getElementById('enableSiteTranslations').closest('.field');
+        const instructionsElement = siteTranslationsField.querySelector('.instructions p');
+        if (instructionsElement) {
+            instructionsElement.textContent = 'Capture translations using the |t(\'' + value + '\') filter in your templates';
+        }
+        
+        if (valueLower === 'site') {
+            if (!warningElement) {
+                warningElement = document.createElement('p');
+                warningElement.className = 'warning';
+                field.appendChild(warningElement);
+            }
+            warningElement.innerHTML = '<span class="icon" aria-hidden="true"></span>{{ "Warning: Using \'site\' as the category may cause conflicts with Craft\'s internal translations. Consider using a unique identifier like your company name."|t('translation-manager')|e('js') }}';
+            
+            if (!this.dataset.confirmed && valueLower === 'site') {
+                const confirmed = confirm('{{ "Are you sure you want to use \'site\' as the translation category? This may conflict with Craft\'s internal translations. We recommend using a unique identifier like your company name instead."|t('translation-manager')|e('js') }}');
+                if (!confirmed) {
+                    this.value = this.defaultValue || 'alhatab';
+                } else {
+                    this.dataset.confirmed = 'true';
+                }
+            }
+        } else if (warningElement && valueLower !== 'site') {
+            if (this.defaultValue && value !== this.defaultValue) {
+                warningElement.innerHTML = '<span class="icon" aria-hidden="true"></span>{{ "Changing this will affect all existing site translations. Make sure to update all |t() calls in your templates."|t('translation-manager')|e('js') }}';
+            } else {
+                warningElement.remove();
+            }
+        }
+    });
+    
+    const applySkipPatternsBtn = document.getElementById('applySkipPatternsBtn');
+    if (applySkipPatternsBtn) {
+        applySkipPatternsBtn.addEventListener('click', function() {
+            if (confirm('{{ 'Are you sure you want to remove existing translations that match the skip patterns? This action cannot be undone.'|t('translation-manager')|e('js') }}')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '';
+                form.style.display = 'none';
+                
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '{{ craft.app.config.general.csrfTokenName }}';
+                csrfInput.value = '{{ craft.app.request.csrfToken }}';
+                form.appendChild(csrfInput);
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'translation-manager/settings/apply-skip-patterns';
+                form.appendChild(actionInput);
+                
+                const redirectInput = document.createElement('input');
+                redirectInput.type = 'hidden';
+                redirectInput.name = 'redirect';
+                redirectInput.value = '{{ 'translation-manager/settings/general'|hash }}';
+                form.appendChild(redirectInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+{% endjs %}

@@ -1,0 +1,35 @@
+Translation Key,Translation,Type,Context,Status,Site ID,Site Language
+"Normal Text","نص عادي",Site,"site",translated,2,ar
+"<script>alert('XSS')</script>","<script>alert('XSS-AR')</script>",Site,"site",translated,2,ar
+"Script in Translation","<script>alert('trans')</script>",Site,"site",translated,1,en-US
+"Site ID Injection","Test","Test",Site,"site",translated,"<script>alert('siteid')</script>",en-US
+"Language Injection","Test","Test",Site,"site",translated,1,"<script>alert('lang')</script>"
+"Context Injection","Test","Test",Site,"<script>alert('context')</script>",translated,2,ar
+"Status Injection","Test","Test",Site,"site","<script>alert('status')</script>",2,ar
+"SQL in Site ID","Test","Test",Site,"site",translated,"'; DROP TABLE translations; --",en-US
+"Command Injection","Test","Test",Site,"site",translated,1,"; rm -rf /"
+"Path Traversal Key","../../../etc/passwd","Test",Site,"site",translated,2,ar
+"Null Bytes","Test\x00Hidden","Test\x00Hidden",Site,"site",translated,2,ar
+"Formula Injection Site ID","Test","Test",Site,"site",translated,"=1+1",en-US
+"Formula in Translation Key","=cmd|'calc'","Normal Translation",Site,"site",translated,2,ar
+"Large Site ID","Test","Test",Site,"site",translated,99999999999999999999,en-US
+"Negative Site ID","Test","Test",Site,"site",translated,-1,en-US
+"Float Site ID","Test","Test",Site,"site",translated,1.5,en-US
+"Boolean Site ID","Test","Test",Site,"site",translated,true,en-US
+"Array in Language","Test","Test",Site,"site",translated,2,"['en','ar']"
+"Object in Status","Test","Test",Site,"site","{status:'malicious'}",2,ar
+"CSV Injection Key","=cmd|'/c calc'!A1","Test",Site,"site",translated,2,ar
+"CSV Pipe in Translation","Test","|calc","Site","site",translated,2,ar
+"CSV At Formula","@SUM(1+1)","@SUM(2+2)",Site,"site",translated,2,ar
+"CSV Plus Formula","+1+1","+2+2",Site,"site",translated,2,ar
+"CSV Minus Formula","-1+1","-2+2",Site,"site",translated,2,ar
+"LDAP Injection","Test","Test",Site,"site",translated,2,"*(|(objectClass=*))"
+"XML Entity","<!ENTITY xxe SYSTEM 'file:///etc/passwd'>","Test",Site,"site",translated,2,ar
+"XXE in Translation","Test","<!ENTITY xxe SYSTEM 'file:///etc/passwd'>",Site,"site",translated,2,ar
+"CRLF Injection","Test\r\nX-Injected: true","Test",Site,"site",translated,2,ar
+"Header Injection in Lang","Test","Test",Site,"site",translated,2,"ar\r\nX-Injected: header"
+"PHP Code Execution","<?php system('whoami'); ?>","<?php echo 'malicious'; ?>",Site,"site",translated,2,ar
+"JavaScript Protocol","<a href='javascript:alert(1)'>","<a href='javascript:alert(2)'>",Site,"site",translated,2,ar
+"Data URI","data:text/html,<script>alert(1)</script>","Test",Site,"site",translated,2,ar
+"File Protocol","file:///etc/passwd","Test",Site,"site",translated,2,ar
+"FTP Protocol","ftp://malicious.com/file","Test",Site,"site",translated,2,ar

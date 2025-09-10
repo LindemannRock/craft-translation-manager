@@ -1,0 +1,102 @@
+<div class="translation-stats-utility">
+    <div class="flex" style="align-items: center; margin-bottom: 24px;">
+        <h2 style="margin: 0;">{{ "Translation Statistics"|t('translation-manager') }}</h2>
+        
+        <div style="margin-left: auto;">
+            <div class="field">
+                <form method="get" style="margin: 0;">
+                    <div class="select">
+                        <select name="siteId" onchange="this.form.submit()">
+                            {% for site in craft.app.sites.allSites %}
+                                <option value="{{ site.id }}" {{ currentSiteId == site.id ? 'selected' : '' }}>
+                                    {{ site.name }} ({{ site.language|upper }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if stats.siteInfo %}
+        <div class="meta" style="margin-bottom: 24px; padding: 12px; background-color: #f9fafb; border-radius: 6px;">
+            <strong>{{ "Current Site:"|t('translation-manager') }}</strong> {{ stats.siteInfo.name }} ({{ stats.siteInfo.language|upper }})
+        </div>
+    {% endif %}
+    
+    <div class="data">
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ "Category"|t('translation-manager') }}</th>
+                    <th>{{ "Count"|t('translation-manager') }}</th>
+                    <th>{{ "Percentage"|t('translation-manager') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ "Total Translations"|t('translation-manager') }}</td>
+                    <td>{{ stats.total }}</td>
+                    <td>100%</td>
+                </tr>
+                <tr>
+                    <td>{{ "Pending"|t('translation-manager') }}</td>
+                    <td>{{ stats.pending }}</td>
+                    <td>{{ stats.total > 0 ? ((stats.pending / stats.total * 100)|round(1)) : 0 }}%</td>
+                </tr>
+                <tr>
+                    <td>{{ "Translated"|t('translation-manager') }}</td>
+                    <td>{{ stats.translated }}</td>
+                    <td>{{ stats.total > 0 ? ((stats.translated / stats.total * 100)|round(1)) : 0 }}%</td>
+                </tr>
+                <tr>
+                    <td>{{ "Unused"|t('translation-manager') }}</td>
+                    <td>{{ stats.unused }}</td>
+                    <td>{{ stats.total > 0 ? ((stats.unused / stats.total * 100)|round(1)) : 0 }}%</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <hr>
+    
+    <h3>{{ "By Type"|t('translation-manager') }}</h3>
+    <div class="data">
+        <table class="data fullwidth">
+            <tbody>
+                <tr>
+                    <td>{{ (craft.translationManager.getFormiePluginName() ~ " Translations")|t('translation-manager') }}</td>
+                    <td>{{ stats.formie }}</td>
+                    <td>{{ stats.total > 0 ? ((stats.formie / stats.total * 100)|round(1)) : 0 }}%</td>
+                </tr>
+                <tr>
+                    <td>{{ "Site Translations"|t('translation-manager') }}</td>
+                    <td>{{ stats.site }}</td>
+                    <td>{{ stats.total > 0 ? ((stats.site / stats.total * 100)|round(1)) : 0 }}%</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <hr>
+    
+    <div class="buttons">
+        <a href="{{ url('translation-manager', {siteId: currentSiteId}) }}" class="btn">{{ "Manage Translations"|t('translation-manager') }}</a>
+        {% if currentUser.can('translationManager:exportTranslations') %}
+            <a href="{{ actionUrl('translation-manager/export', {siteId: currentSiteId}) }}" class="btn">{{ "Export Current Site"|t('translation-manager') }}</a>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .translation-stats-utility h3 {
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .translation-stats-utility .buttons {
+        margin-top: 1.5rem;
+    }
+</style>
+

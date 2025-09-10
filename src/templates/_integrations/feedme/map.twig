@@ -1,0 +1,169 @@
+{% import '_includes/forms' as forms %}
+
+<h2>{{ 'Map your CSV fields to translation properties'|t('feed-me') }}</h2>
+
+<table class="feedme-mapping data fullwidth">
+    <thead>
+        <tr>
+            <th>{{ 'Translation Field'|t('feed-me') }} <span class="required"></span></th>
+            <th>{{ 'CSV Column'|t('feed-me') }}</th>
+            <th>{{ 'Default Value'|t('feed-me') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <div class="field">
+                    <div class="heading">
+                        <label class="required">{{ 'English Text'|t('translation-manager') }}</label>
+                        <div class="instructions">
+                            <p>{{ 'The original English text to translate'|t('translation-manager') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                {{ forms.select({
+                    name: 'fieldMapping[englishText]',
+                    value: feed.fieldMapping.englishText ?? '',
+                    options: [{
+                        label: 'Don\'t Import'|t('feed-me'),
+                        value: '',
+                    }]|merge(feedData.cols ?? [])
+                }) }}
+            </td>
+            <td>
+                {{ forms.text({
+                    name: 'fieldDefaults[englishText]',
+                    value: feed.fieldDefaults.englishText ?? ''
+                }) }}
+            </td>
+        </tr>
+        
+        <tr>
+            <td>
+                <div class="field">
+                    <div class="heading">
+                        <label>{{ 'Arabic Translation'|t('translation-manager') }}</label>
+                        <div class="instructions">
+                            <p>{{ 'The Arabic translation of the text'|t('translation-manager') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                {{ forms.select({
+                    name: 'fieldMapping[arabicText]',
+                    value: feed.fieldMapping.arabicText ?? '',
+                    options: [{
+                        label: 'Don\'t Import'|t('feed-me'),
+                        value: '',
+                    }]|merge(feedData.cols ?? [])
+                }) }}
+            </td>
+            <td>
+                {{ forms.text({
+                    name: 'fieldDefaults[arabicText]',
+                    value: feed.fieldDefaults.arabicText ?? ''
+                }) }}
+            </td>
+        </tr>
+        
+        <tr>
+            <td>
+                <div class="field">
+                    <div class="heading">
+                        <label>{{ 'Context'|t('translation-manager') }}</label>
+                        <div class="instructions">
+                            <p>{{ 'The context where this translation is used (e.g., site, formie.contactForm)'|t('translation-manager') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                {{ forms.select({
+                    name: 'fieldMapping[context]',
+                    value: feed.fieldMapping.context ?? '',
+                    options: [{
+                        label: 'Don\'t Import'|t('feed-me'),
+                        value: '',
+                    }]|merge(feedData.cols ?? [])
+                }) }}
+            </td>
+            <td>
+                {{ forms.text({
+                    name: 'fieldDefaults[context]',
+                    value: feed.fieldDefaults.context ?? 'site',
+                    placeholder: 'site'
+                }) }}
+            </td>
+        </tr>
+        
+        <tr>
+            <td>
+                <div class="field">
+                    <div class="heading">
+                        <label>{{ 'Status'|t('translation-manager') }}</label>
+                        <div class="instructions">
+                            <p>{{ 'Translation status: pending, translated, unused, or approved'|t('translation-manager') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                {{ forms.select({
+                    name: 'fieldMapping[status]',
+                    value: feed.fieldMapping.status ?? '',
+                    options: [{
+                        label: 'Don\'t Import'|t('feed-me'),
+                        value: '',
+                    }]|merge(feedData.cols ?? [])
+                }) }}
+            </td>
+            <td>
+                {{ forms.select({
+                    name: 'fieldDefaults[status]',
+                    value: feed.fieldDefaults.status ?? 'pending',
+                    options: [
+                        { label: 'Pending', value: 'pending' },
+                        { label: 'Translated', value: 'translated' },
+                        { label: 'Unused', value: 'unused' },
+                        { label: 'Approved', value: 'approved' }
+                    ]
+                }) }}
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>{{ 'Import Options'|t('translation-manager') }}</h2>
+
+{{ forms.lightswitchField({
+    label: 'Update Existing Translations'|t('translation-manager'),
+    instructions: 'If a translation with the same English text and context already exists, update it with the imported data'|t('translation-manager'),
+    name: 'updateExisting',
+    on: feed.updateExisting ?? true
+}) }}
+
+<div class="field">
+    <div class="heading">
+        <label>{{ 'CSV Format Notes'|t('translation-manager') }}</label>
+    </div>
+    <div class="instructions">
+        <p>{{ 'Your CSV file should have the following format:'|t('translation-manager') }}</p>
+        <ul>
+            <li>{{ 'UTF-8 encoding for proper Arabic text support'|t('translation-manager') }}</li>
+            <li>{{ 'Headers in the first row'|t('translation-manager') }}</li>
+            <li>{{ 'Comma (,) or semicolon (;) as delimiter'|t('translation-manager') }}</li>
+            <li>{{ 'Double quotes (") for text containing delimiters'|t('translation-manager') }}</li>
+        </ul>
+        
+        <p><strong>{{ 'Example CSV structure:'|t('translation-manager') }}</strong></p>
+        <pre style="background: #f3f4f6; padding: 10px; border-radius: 4px; font-size: 12px;">English Text,Arabic Translation,Status,Context
+"Welcome to our website","مرحباً بكم في موقعنا","translated","site"
+"Contact Us","اتصل بنا","translated","site"
+"Submit","إرسال","translated","formie.contactForm"</pre>
+    </div>
+</div>

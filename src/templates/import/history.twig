@@ -1,0 +1,117 @@
+{% extends "_layouts/cp" %}
+{% set title = "Import History"|t('translation-manager') %}
+
+{% set crumbs = [
+    {
+        label: 'Translations'|t('translation-manager'),
+        url: url('translation-manager'),
+    },
+    {
+        label: 'Settings'|t('translation-manager'),
+        url: url('translation-manager/settings'),
+    },
+    {
+        label: 'Import/Export'|t('translation-manager'),
+        url: url('translation-manager/settings/import-export'),
+    },
+    {
+        label: 'Import History'|t('translation-manager'),
+        url: url('translation-manager/import/history'),
+    },
+] %}
+
+{% block content %}
+    {% if history|length %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ "Date"|t('translation-manager') }}</th>
+                    <th>{{ "File"|t('translation-manager') }}</th>
+                    <th>{{ "User"|t('translation-manager') }}</th>
+                    <th>{{ "Imported"|t('translation-manager') }}</th>
+                    <th>{{ "Updated"|t('translation-manager') }}</th>
+                    <th>{{ "Skipped"|t('translation-manager') }}</th>
+                    <th>{{ "Status"|t('translation-manager') }}</th>
+                    <th>{{ "Backup"|t('translation-manager') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for import in history %}
+                    <tr>
+                        <td>
+                            <strong>{{ import.formattedDate }}</strong>
+                        </td>
+                        <td>
+                            {{ import.filename }}<br>
+                            <span class="light">{{ import.filesize }}</span>
+                        </td>
+                        <td>{{ import.user }}</td>
+                        <td>
+                            {% if import.imported > 0 %}
+                                <span class="status green">{{ import.imported }}</span>
+                            {% else %}
+                                <span class="light">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if import.updated > 0 %}
+                                <span class="status orange">{{ import.updated }}</span>
+                            {% else %}
+                                <span class="light">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if import.skipped > 0 %}
+                                <span class="light">{{ import.skipped }}</span>
+                            {% else %}
+                                <span class="light">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if import.hasErrors %}
+                                <span class="status error with-icon">
+                                    <span class="icon" aria-hidden="true">{{ svg('@appicons/alert.svg') }}</span>
+                                    {{ "Errors"|t('translation-manager') }}
+                                </span>
+                            {% else %}
+                                <span class="status live">{{ "Success"|t('translation-manager') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if import.backupPath %}
+                                <a href="{{ url('translation-manager/backups') }}" class="go">
+                                    <span class="status">{{ "View"|t('translation-manager') }}</span>
+                                </a>
+                            {% else %}
+                                <span class="light">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if import.hasErrors %}
+                        <tr>
+                            <td colspan="8" style="padding: 0;">
+                                <div style="padding: 12px 24px; background: #FEF2F2; border-top: 1px solid #FCA5A5;">
+                                    <strong style="color: #DC2626;">{{ "Errors:"|t('translation-manager') }}</strong>
+                                    <ul style="margin: 8px 0 0 0; color: #991B1B;">
+                                        {% for error in import.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div style="margin-top: 2rem; padding: 1rem; background: #f3f4f6; border-radius: 4px;">
+            <p class="light" style="margin: 0;">
+                <span class="icon" aria-hidden="true">{{ svg('@appicons/info.svg') }}</span>
+                {{ "Import history is kept for reference and cannot be deleted. Backups created during import follow the configured retention policy."|t('translation-manager') }}
+            </p>
+        </div>
+    {% else %}
+        <p class="light">{{ "No imports found"|t('translation-manager') }}</p>
+    {% endif %}
+{% endblock %}

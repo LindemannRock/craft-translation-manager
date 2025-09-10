@@ -1,0 +1,7 @@
+Translation Key,Translation,Type,Status,Site ID,Site Language
+"Brand New Key 1","New English Translation",Site,translated,1,en-US
+"Brand New Key 1","ترجمة جديدة",Site,translated,2,ar
+"Unique Test Key","Unique English",Site,translated,1,en-US
+"Unique Test Key","ترجمة فريدة",Site,translated,2,ar
+"Fresh Import Test","Fresh Translation",Site,translated,1,en-US
+"Fresh Import Test","ترجمة طازجة",Site,translated,2,ar

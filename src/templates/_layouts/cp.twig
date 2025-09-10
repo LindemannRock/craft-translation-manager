@@ -1,0 +1,16 @@
+{% extends "_layouts/cp" %}
+
+{% set title = title ?? 'Translation Manager'|t('translation-manager') %}
+
+{# Sidebar hidden for now - uncomment if needed for sub-navigation in the future
+{% block sidebar %}
+    <nav>
+        <ul>
+            <li><a href="{{ url('translation-manager') }}" {% if selectedSubnavItem == 'translations' %}class="sel"{% endif %}>{{ 'Translations'|t('translation-manager') }}</a></li>
+            {% if currentUser.can('translationManager:editSettings') %}
+                <li><a href="{{ url('translation-manager/settings') }}" {% if selectedSubnavItem == 'settings' %}class="sel"{% endif %}>{{ 'Settings'|t('translation-manager') }}</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endblock %}
+#}

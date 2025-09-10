@@ -1,0 +1,499 @@
+<?php
+/**
+ * Translation Manager plugin for Craft CMS 5.x
+ *
+ * Settings model for plugin configuration
+ *
+ * @link      https://lindemannrock.com
+ * @copyright Copyright (c) 2025 LindemannRock
+ */
+
+namespace lindemannrock\translationmanager\models;
+
+use Craft;
+use craft\base\Model;
+use craft\behaviors\EnvAttributeParserBehavior;
+use craft\db\Query;
+use craft\helpers\Db;
+
+/**
+ * Translation Manager Settings Model
+ */
+class Settings extends Model
+{
+    /**
+     * @var string The display name for the plugin (shown in CP menu and breadcrumbs)
+     */
+    public string $pluginName = 'Translation Manager';
+    
+    /**
+     * @var string The translation category to use for site translations (e.g. |t('alhatab'))
+     */
+    public string $translationCategory = 'alhatab';
+
+    /**
+     * @var bool Whether to enable Formie form translation integration
+     */
+    public bool $enableFormieIntegration = true;
+
+    /**
+     * @var bool Whether to enable site translation capture
+     */
+    public bool $enableSiteTranslations = true;
+
+    /**
+     * @var bool Whether to automatically export translations when saved
+     */
+    public bool $autoExport = true;
+
+    /**
+     * @var string The path where translation files should be exported
+     */
+    public string $exportPath = '@root/translations';
+    
+    /**
+     * @var string The raw export path before parsing
+     */
+    private ?string $_rawExportPath = null;
+
+    /**
+     * @var int Number of items to show per page in the translation manager
+     */
+    public int $itemsPerPage = 100;
+    
+    /**
+     * @var bool Whether to enable auto-save after typing stops
+     */
+    public bool $autoSaveEnabled = false;
+    
+    /**
+     * @var int Auto-save delay in seconds (how long to wait after typing stops)
+     */
+    public int $autoSaveDelay = 2;
+
+
+    /**
+     * @var bool Whether to show the translation context in the CP interface
+     */
+    public bool $showContext = false;
+
+    /**
+     * @var array List of text patterns to skip when capturing translations
+     */
+    public array $skipPatterns = [];
+
+    /**
+     * @var bool Whether to enable automatic translation suggestions (future feature)
+     */
+    public bool $enableSuggestions = false;
+    
+    /**
+     * @var bool Whether to enable automatic backups
+     */
+    public bool $backupEnabled = true;
+    
+    /**
+     * @var int Number of days to keep backups (0 = keep forever)
+     */
+    public int $backupRetentionDays = 30;
+    
+    /**
+     * @var bool Whether to create a backup before importing
+     */
+    public bool $backupOnImport = true;
+    
+    /**
+     * @var string Backup schedule (manual, daily, weekly)
+     */
+    public string $backupSchedule = 'manual';
+    
+    /**
+     * @var string The path where backups should be stored
+     */
+    public string $backupPath = '@storage/translation-manager/backups';
+
+    public function behaviors(): array
+    {
+        return [
+            'parser' => [
+                'class' => EnvAttributeParserBehavior::class,
+                'attributes' => ['exportPath', 'backupPath'],
+            ],
+        ];
+    }
+
+    public function rules(): array
+    {
+        return [
+            [['pluginName', 'translationCategory', 'exportPath'], 'required'],
+            [['pluginName'], 'string', 'max' => 100],
+            [['translationCategory'], 'string', 'max' => 50],
+            [['translationCategory'], 'match', 'pattern' => '/^[a-zA-Z][a-zA-Z0-9]*$/', 
+             'message' => 'Translation category must start with a letter and contain only letters and numbers.'],
+            [['translationCategory'], 'validateTranslationCategory'],
+            [['exportPath'], 'validateExportPath'],
+            [['backupPath'], 'validateBackupPath'],
+            [['itemsPerPage'], 'integer', 'min' => 10, 'max' => 500],
+            [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
+            [['enableFormieIntegration', 'enableSiteTranslations', 'autoExport', 
+              'showContext', 'enableSuggestions', 'autoSaveEnabled', 'backupEnabled', 'backupOnImport'], 'boolean'],
+            [['skipPatterns'], 'safe'],
+            [['backupRetentionDays'], 'integer', 'min' => 0, 'max' => 365],
+            [['backupSchedule'], 'in', 'range' => ['manual', 'daily', 'weekly']],
+        ];
+    }
+
+    public function attributeLabels(): array
+    {
+        return [
+            'pluginName' => 'Plugin Name',
+            'translationCategory' => 'Translation Category',
+            'enableFormieIntegration' => 'Enable Formie Integration',
+            'enableSiteTranslations' => 'Enable Site Translations',
+            'autoExport' => 'Auto Export',
+            'exportPath' => 'Export Path',
+            'itemsPerPage' => 'Items Per Page',
+            'autoSaveEnabled' => 'Enable Auto-Save',
+            'autoSaveDelay' => 'Auto-Save Delay',
+            'showContext' => 'Show Context',
+            'skipPatterns' => 'Skip Patterns',
+            'enableSuggestions' => 'Enable Translation Suggestions',
+            'backupEnabled' => 'Enable Backups',
+            'backupRetentionDays' => 'Backup Retention Days',
+            'backupOnImport' => 'Backup Before Import',
+            'backupSchedule' => 'Backup Schedule',
+            'backupPath' => 'Backup Path',
+        ];
+    }
+
+    /**
+     * Validates the translation category
+     */
+    public function validateTranslationCategory($attribute, $params, $validator)
+    {
+        if (strtolower($this->$attribute) === 'site') {
+            $this->addError($attribute, 'Using "site" as the translation category is strongly discouraged as it may conflict with Craft\'s internal translations. Please use a unique identifier like your company name (e.g., "lindemannrock").');
+        }
+        
+        // Also warn about some other reserved categories
+        $reserved = ['app', 'yii', 'craft'];
+        if (in_array(strtolower($this->$attribute), $reserved)) {
+            $this->addError($attribute, 'The category "' . $this->$attribute . '" is reserved by the system. Please use a unique identifier.');
+        }
+    }
+
+    /**
+     * Validates the export path to prevent directory traversal attacks
+     */
+    public function validateExportPath($attribute, $params, $validator)
+    {
+        // Skip validation if empty (will be caught by required rule)
+        if (empty($this->$attribute)) {
+            return;
+        }
+        
+        // The path might already be resolved by EnvAttributeParserBehavior
+        // So we need to check both the original form and resolved form
+        $path = $this->$attribute;
+        
+        // Check for directory traversal attempts
+        if (strpos($path, '..') !== false) {
+            $this->addError($attribute, 'Export path cannot contain directory traversal sequences (..)');
+            return;
+        }
+        
+        // Get valid alias paths
+        $validAliases = [
+            '@root' => Craft::getAlias('@root'),
+            '@storage' => Craft::getAlias('@storage'),
+            '@config' => Craft::getAlias('@config'),
+            '@webroot' => Craft::getAlias('@webroot'),
+        ];
+        
+        $isValid = false;
+        
+        // First check if it's an unresolved alias
+        foreach (array_keys($validAliases) as $alias) {
+            if (strpos($path, $alias) === 0) {
+                $isValid = true;
+                break;
+            }
+        }
+        
+        // If not, check if it's a resolved path under one of the valid directories
+        if (!$isValid) {
+            foreach ($validAliases as $alias => $resolvedPath) {
+                if (strpos($path, $resolvedPath) === 0) {
+                    $isValid = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!$isValid) {
+            $this->addError($attribute, 'Export path must start with @root, @storage, @config, or @webroot');
+        }
+    }
+
+    /**
+     * Validates the backup path to prevent directory traversal attacks
+     */
+    public function validateBackupPath($attribute, $params, $validator)
+    {
+        // Skip validation if empty (will be caught by required rule)
+        if (empty($this->$attribute)) {
+            return;
+        }
+        
+        $path = $this->$attribute;
+        
+        // Check for directory traversal attempts
+        if (strpos($path, '..') !== false) {
+            $this->addError($attribute, 'Backup path cannot contain directory traversal sequences (..)'); 
+            return;
+        }
+        
+        // Get valid alias paths
+        $validAliases = [
+            '@root' => Craft::getAlias('@root'),
+            '@storage' => Craft::getAlias('@storage'),
+            '@config' => Craft::getAlias('@config'),
+            '@webroot' => Craft::getAlias('@webroot'),
+        ];
+        
+        $isValid = false;
+        
+        // First check if it's an unresolved alias
+        foreach (array_keys($validAliases) as $alias) {
+            if (strpos($path, $alias) === 0) {
+                $isValid = true;
+                break;
+            }
+        }
+        
+        // If not, check if it's a resolved path under one of the valid directories
+        if (!$isValid) {
+            foreach ($validAliases as $alias => $resolvedPath) {
+                if (strpos($path, $resolvedPath) === 0) {
+                    $isValid = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!$isValid) {
+            $this->addError($attribute, 'Backup path must start with @root, @storage, @config, or @webroot');
+        }
+    }
+    
+    /**
+     * Returns the full export path
+     */
+    public function getExportPath(): string
+    {
+        $path = Craft::getAlias($this->exportPath);
+        
+        // Additional safety check
+        if (strpos($path, '..') !== false) {
+            throw new \Exception('Invalid export path');
+        }
+        
+        return $path;
+    }
+    
+    /**
+     * Returns the full backup path
+     */
+    public function getBackupPath(): string
+    {
+        $path = Craft::getAlias($this->backupPath);
+        
+        // Additional safety check
+        if (strpos($path, '..') !== false) {
+            throw new \Exception('Invalid backup path');
+        }
+        
+        return $path;
+    }
+
+    /**
+     * Load settings from database
+     *
+     * @param Settings|null $settings Optional existing settings instance
+     * @return self
+     */
+    public static function loadFromDatabase(?Settings $settings = null): self
+    {
+        if ($settings === null) {
+            $settings = new self();
+        }
+        
+        // Check if table exists before querying
+        $db = Craft::$app->getDb();
+        $tableSchema = $db->getSchema()->getTableSchema('{{%translationmanager_settings}}');
+        
+        if ($tableSchema === null) {
+            // Table doesn't exist yet, return default settings
+            return $settings;
+        }
+        
+        try {
+            // Load from database
+            $row = (new Query())
+                ->from('{{%translationmanager_settings}}')
+                ->where(['id' => 1])
+                ->one();
+            
+            if ($row) {
+                // Handle JSON/array fields
+                if (isset($row['skipPatterns'])) {
+                    $row['skipPatterns'] = $row['skipPatterns'] ? explode("\n", $row['skipPatterns']) : [];
+                }
+                
+                // Apply database values
+                $safeAttributes = $settings->safeAttributes();
+                foreach ($safeAttributes as $attribute) {
+                    if (!property_exists($settings, $attribute) || !isset($row[$attribute])) {
+                        continue;
+                    }
+                    
+                    // Handle boolean casting
+                    if (in_array($attribute, ['enableFormieIntegration', 'enableSiteTranslations', 'autoExport', 
+                                               'showContext', 'enableSuggestions', 'autoSaveEnabled', 
+                                               'backupEnabled', 'backupOnImport'])) {
+                        $settings->$attribute = (bool)$row[$attribute];
+                    }
+                    // Handle integer casting
+                    elseif (in_array($attribute, ['itemsPerPage', 'autoSaveDelay', 'backupRetentionDays'])) {
+                        $settings->$attribute = (int)$row[$attribute];
+                    }
+                    // Regular assignment for strings and arrays
+                    else {
+                        $settings->$attribute = $row[$attribute];
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // If there's any error, return default settings
+            Craft::error('Failed to load Translation Manager settings from database: ' . $e->getMessage(), 'translation-manager');
+        }
+        
+        return $settings;
+    }
+    
+
+    /**
+     * Check if a setting is being overridden by config file
+     * 
+     * @param string $attribute The setting attribute name
+     * @return bool
+     */
+    public function isOverriddenByConfig(string $attribute): bool
+    {
+        // Get the config file path
+        $configPath = \Craft::$app->getPath()->getConfigPath() . '/translation-manager.php';
+        
+        if (!file_exists($configPath)) {
+            return false;
+        }
+        
+        // Load the raw config file
+        $rawConfig = require $configPath;
+        
+        // Get the current environment
+        $env = \Craft::$app->getConfig()->getGeneral()->env ?? '*';
+        
+        // Environment keys to skip
+        $envKeys = ['*', 'dev', 'staging', 'production', 'test'];
+        
+        // Check environment-specific config first (highest priority)
+        if (isset($rawConfig[$env]) && is_array($rawConfig[$env]) && array_key_exists($attribute, $rawConfig[$env])) {
+            return true;
+        }
+        
+        // Check if the attribute exists in the root config
+        if (array_key_exists($attribute, $rawConfig) && !in_array($attribute, $envKeys)) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Get the config file value for a setting
+     * 
+     * @param string $attribute The setting attribute name
+     * @return mixed|null
+     */
+    public function getConfigFileValue(string $attribute): mixed
+    {
+        $handle = 'translation-manager';
+        $configService = \Craft::$app->getConfig();
+        $config = $configService->getConfigFromFile($handle);
+        
+        if (!$config) {
+            return null;
+        }
+        
+        // Check environment-specific config first
+        $env = \Craft::$app->getConfig()->getGeneral()->env ?? '*';
+        if (isset($config[$env][$attribute])) {
+            return $config[$env][$attribute];
+        }
+        
+        // Then check base config
+        if (isset($config[$attribute])) {
+            return $config[$attribute];
+        }
+        
+        return null;
+    }
+
+    /**
+     * Save settings to database
+     *
+     * @return bool
+     */
+    public function saveToDatabase(): bool
+    {
+        if (!$this->validate()) {
+            return false;
+        }
+
+        $db = Craft::$app->getDb();
+        
+        // Get specific attributes to save
+        $attributes = [
+            'pluginName' => $this->pluginName,
+            'translationCategory' => $this->translationCategory,
+            'enableFormieIntegration' => (int)$this->enableFormieIntegration,
+            'enableSiteTranslations' => (int)$this->enableSiteTranslations,
+            'autoExport' => (int)$this->autoExport,
+            'exportPath' => $this->exportPath,
+            'itemsPerPage' => $this->itemsPerPage,
+            'autoSaveEnabled' => (int)$this->autoSaveEnabled,
+            'autoSaveDelay' => $this->autoSaveDelay,
+            'showContext' => (int)$this->showContext,
+            'enableSuggestions' => (int)$this->enableSuggestions,
+            'skipPatterns' => is_array($this->skipPatterns) ? implode("\n", $this->skipPatterns) : '',
+            'backupEnabled' => (int)$this->backupEnabled,
+            'backupRetentionDays' => $this->backupRetentionDays,
+            'backupOnImport' => (int)$this->backupOnImport,
+            'backupSchedule' => $this->backupSchedule,
+            'backupPath' => $this->backupPath,
+            'dateUpdated' => Db::prepareDateForDb(new \DateTime()),
+        ];
+        
+        // Update existing settings (we know there's always one row from migration)
+        try {
+            $result = $db->createCommand()
+                ->update('{{%translationmanager_settings}}', $attributes, ['id' => 1])
+                ->execute();
+            
+            return $result !== false;
+        } catch (\Exception $e) {
+            Craft::error('Failed to save Translation Manager settings: ' . $e->getMessage(), 'translation-manager');
+            return false;
+        }
+    }
+}

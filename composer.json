@@ -1,0 +1,42 @@
+{
+    "name": "lindemannrock/translation-manager",
+    "description": "Comprehensive translation management system for Craft CMS with Formie integration",
+    "type": "craft-plugin",
+    "version": "1.0.0",
+    "keywords": [
+        "craft",
+        "cms",
+        "craftcms",
+        "craft-plugin",
+        "translation",
+        "formie",
+        "multilingual"
+    ],
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "LindemannRock",
+            "homepage": "https://lindemannrock.com"
+        }
+    ],
+    "require": {
+        "craftcms/cms": "^5.0.0"
+    },
+    "require-dev": {
+        "craftcms/phpstan": "dev-main"
+    },
+    "autoload": {
+        "psr-4": {
+            "lindemannrock\\translationmanager\\": "src/"
+        }
+    },
+    "extra": {
+        "name": "Translation Manager",
+        "handle": "translation-manager",
+        "developer": "LindemannRock",
+        "developerUrl": "https://lindemannrock.com",
+        "documentationUrl": "https://github.com/lindemannrock/translation-manager/blob/master/README.md",
+        "changelogUrl": "https://github.com/lindemannrock/translation-manager/blob/master/CHANGELOG.md",
+        "class": "lindemannrock\\translationmanager\\TranslationManager"
+    }
+}

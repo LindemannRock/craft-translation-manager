@@ -1,0 +1,427 @@
+{% extends "translation-manager/_layouts/settings" %}
+{% set title = "Maintenance"|t('translation-manager') %}
+{% set fullPageForm = false %}
+{% set selectedSubnavItem = 'maintenance' %}
+
+{% set plugin = craft.app.plugins.getPlugin('translation-manager') %}
+{% set crumbs = [
+    {
+        label: plugin.settings.pluginName|t('translation-manager'),
+        url: url('translation-manager'),
+    },
+    {
+        label: 'Settings'|t('translation-manager'),
+        url: url('translation-manager/settings'),
+    },
+    {
+        label: 'Maintenance'|t('translation-manager'),
+        url: url('translation-manager/settings/maintenance'),
+    },
+] %}
+
+{% import "_includes/forms" as forms %}
+
+{% block content %}
+    <h2>{{ "Maintenance Tools"|t('translation-manager') }}</h2>
+    
+    {# NEW: Enhanced unused translations cleanup with dropdown #}
+    {% set unusedCounts = craft.translationManager.getUnusedTranslationCounts() %}
+    {% set totalUnused = unusedCounts.site + unusedCounts.formie %}
+    
+    <div class="field">
+        <div class="heading">
+            <label>{{ "Clean Up Unused Translations"|t('translation-manager') }}</label>
+            <div class="instructions">
+                <p>{{ "Remove translations that are no longer used in templates or forms"|t('translation-manager') }}</p>
+            </div>
+        </div>
+        <div class="input">
+            {% if totalUnused > 0 %}
+                <div style="margin-bottom: 15px;">
+                    <p class="light">
+                        {{ "You have {total} unused translation(s): {site} site translations and {formie} {formieName} translations"|t('translation-manager', {
+                            total: totalUnused,
+                            site: unusedCounts.site,
+                            formie: unusedCounts.formie,
+                            formieName: craft.translationManager.getFormiePluginName()|lower
+                        }) }}
+                    </p>
+                </div>
+                
+                <div style="display: flex; align-items: flex-end; gap: 12px;">
+                    <div class="flex-grow">
+                        {{ forms.selectField({
+                            label: "Type to Clean"|t('translation-manager'),
+                            id: 'unusedType',
+                            name: 'unusedType',
+                            options: [
+                                {value: '', label: 'Select type'|t('translation-manager')},
+                                {value: 'all', label: 'All Unused (' ~ totalUnused ~ ')'|t('translation-manager')},
+                                {value: 'site', label: 'Unused ' ~ (settings.translationCategory|title) ~ ' (' ~ unusedCounts.site ~ ')'},
+                                {value: 'formie', label: ('Unused ' ~ craft.translationManager.getFormiePluginName() ~ ' (' ~ unusedCounts.formie ~ ')')}
+                            ],
+                            value: ''
+                        }) }}
+                    </div>
+                    
+                    <button type="button" class="btn secondary" id="clean-unused-enhanced-btn" disabled>
+                        {{ "Clean Up"|t('translation-manager') }}
+                    </button>
+                </div>
+                <div id="unusedDescription" style="margin-top: 12px; padding: 12px; background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 4px; display: none;">
+                    <p id="unusedDescriptionText" style="margin: 0; color: #92400E;"></p>
+                </div>
+            {% else %}
+                <p class="light">{{ "No unused translations found. Run template scan below to identify unused translations."|t('translation-manager') }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <hr>
+    
+    {# NEW: Template Scanner Section #}
+    <div class="field">
+        <div class="heading">
+            <label>{{ "Template Scanner"|t('translation-manager') }}</label>
+            <div class="instructions">
+                <p>{{ "Scan all templates to identify translations that are no longer used and update their status"|t('translation-manager') }}</p>
+            </div>
+        </div>
+        <div class="input">
+            <div style="margin-bottom: 10px;">
+                <button type="button" class="btn secondary" id="rescan-templates-btn">
+                    <span class="icon" aria-hidden="true" style="margin-right: 5px;">{{ svg('@appicons/refresh.svg') }}</span>
+                    {{ "Rescan Templates"|t('translation-manager') }}
+                </button>
+            </div>
+            <p class="light">{{ "Scans all .twig files to find unused translations and mark them for cleanup"|t('translation-manager') }}</p>
+        </div>
+    </div>
+    
+    <hr>
+    
+    
+    <h2 class="error">{{ "Danger Zone"|t('translation-manager') }}</h2>
+    
+    <div class="field">
+        <p class="warning">
+            <span class="icon" aria-hidden="true"></span>
+            {{ "Warning: These actions are permanent and cannot be undone. Make sure to export your translations before clearing."|t('translation-manager') }}
+        </p>
+        {% if settings.backupEnabled %}
+        <p class="light">
+            <span class="icon" aria-hidden="true"></span>
+            {{ "Auto-backup is enabled. A backup will be created automatically before any delete operation."|t('translation-manager') }}
+        </p>
+        {% endif %}
+    </div>
+    
+    {% set clearOptions = [{ value: '', label: 'Select an option'|t('translation-manager') }] %}
+    {% if settings.enableFormieIntegration %}
+        {% set clearOptions = clearOptions|merge([{ value: 'formie', label: (craft.translationManager.getFormiePluginName() ~ ' Only')|t('translation-manager') }]) %}
+    {% endif %}
+    {% if settings.enableSiteTranslations %}
+        {% set clearOptions = clearOptions|merge([{ value: 'site', label: ((settings.translationCategory|title) ~ ' Only')|t('translation-manager') }]) %}
+    {% endif %}
+    {% if settings.enableFormieIntegration or settings.enableSiteTranslations %}
+        {% set clearOptions = clearOptions|merge([{ value: 'all', label: 'All'|t('translation-manager') }]) %}
+    {% endif %}
+    
+    {% set formiePluginName = craft.translationManager.getFormiePluginName() %}
+    
+    {% if settings.enableFormieIntegration or settings.enableSiteTranslations %}
+    {{ forms.selectField({
+        label: "Clear Translations"|t('translation-manager'),
+        instructions: "Select which translations to permanently delete from the database and remove corresponding translation files."|t('translation-manager'),
+        id: 'clearType',
+        name: 'clearType',
+        options: clearOptions,
+        value: ''
+    }) }}
+    {% else %}
+    <div class="field">
+        <div class="heading">
+            <label>{{ "Clear Translations"|t('translation-manager') }}</label>
+        </div>
+        <p class="light">{{ ("No translation integrations are currently enabled. Enable " ~ formiePluginName ~ " Integration or Site Translations above to start capturing translations.")|t('translation-manager') }}</p>
+    </div>
+    {% endif %}
+    
+    {% if settings.enableFormieIntegration or settings.enableSiteTranslations %}
+    <div id="clearDescription" style="margin-top: 12px; padding: 12px; background: #FEE2E2; border: 1px solid #FECACA; border-radius: 4px; display: none;">
+        <p id="clearDescriptionText" style="margin: 0; color: #991B1B;"></p>
+    </div>
+    
+    <div style="margin-top: 20px;">
+        <button type="button" id="clearButton" class="btn submit formaction error" style="display: none;" data-redirect="{{ 'translation-manager/settings/maintenance'|hash }}">
+            {{ "Clear Selected Translations"|t('translation-manager') }}
+        </button>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% js %}
+    // NEW: Handle enhanced unused cleanup dropdown
+    const unusedTypeSelect = document.getElementById('unusedType');
+    const unusedDescription = document.getElementById('unusedDescription');
+    const unusedDescriptionText = document.getElementById('unusedDescriptionText');
+    const cleanUnusedEnhancedBtn = document.getElementById('clean-unused-enhanced-btn');
+    
+    if (unusedTypeSelect) {
+        const descriptions = {
+            all: '{{ "This will permanently delete ALL unused translations (both site and form translations) that are no longer used anywhere."|t('translation-manager')|e('js') }}',
+            site: '{{ "This will permanently delete unused site translations that are no longer found in any template files."|t('translation-manager')|e('js') }}',
+            formie: '{{ "This will permanently delete unused form translations from deleted forms or fields."|t('translation-manager')|e('js') }}'
+        };
+        
+        unusedTypeSelect.addEventListener('change', function() {
+            const value = this.value;
+            
+            if (value && descriptions[value]) {
+                unusedDescription.style.display = 'block';
+                unusedDescriptionText.textContent = descriptions[value];
+                cleanUnusedEnhancedBtn.classList.remove('disabled');
+                cleanUnusedEnhancedBtn.disabled = false;
+                cleanUnusedEnhancedBtn.setAttribute('data-type', value);
+            } else {
+                unusedDescription.style.display = 'none';
+                cleanUnusedEnhancedBtn.classList.add('disabled');
+                cleanUnusedEnhancedBtn.disabled = true;
+            }
+        });
+        
+        // Handle enhanced clean button click
+        cleanUnusedEnhancedBtn.addEventListener('click', function() {
+            const type = this.getAttribute('data-type');
+            if (!type) return;
+            
+            const confirmMessages = {
+                all: '{{ "Are you sure you want to delete ALL unused translations?"|t('translation-manager')|e('js') }}',
+                site: '{{ "Are you sure you want to delete unused site translations?"|t('translation-manager')|e('js') }}',
+                formie: '{{ "Are you sure you want to delete unused form translations?"|t('translation-manager')|e('js') }}'
+            };
+            
+            if (confirm(confirmMessages[type])) {
+                const btn = this;
+                btn.classList.add('loading');
+                btn.disabled = true;
+                
+                fetch('{{ actionUrl('translation-manager/maintenance/clean-unused-type') }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({type: type})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Craft.cp.displayNotice(data.message);
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        btn.classList.remove('loading');
+                        btn.disabled = false;
+                        Craft.cp.displayError(data.error || 'Failed to clean unused translations');
+                    }
+                })
+                .catch(error => {
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                    Craft.cp.displayError('Failed to clean unused translations: ' + error.message);
+                });
+            }
+        });
+    }
+    
+    // Handle both scan templates buttons  
+    const scanTemplatesBtn = document.getElementById('scan-templates-btn');
+    const rescanTemplatesBtn = document.getElementById('rescan-templates-btn');
+    
+    function handleTemplateScan(btn) {
+        btn.addEventListener('click', function() {
+            const button = this;
+            button.classList.add('loading');
+            button.disabled = true;
+            
+            fetch('{{ actionUrl('translation-manager/maintenance/scan-templates-action') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Craft.cp.displayNotice(data.message);
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    button.classList.remove('loading');
+                    button.disabled = false;
+                    Craft.cp.displayError(data.error || 'Failed to scan templates');
+                }
+            })
+            .catch(error => {
+                button.classList.remove('loading');
+                button.disabled = false;
+                Craft.cp.displayError('Failed to scan templates: ' + error.message);
+            });
+        });
+    }
+    
+    // Apply to both buttons
+    if (scanTemplatesBtn) {
+        handleTemplateScan(scanTemplatesBtn);
+    }
+    if (rescanTemplatesBtn) {
+        handleTemplateScan(rescanTemplatesBtn);
+    }
+
+    // Handle clean unused button (original)
+    const cleanUnusedBtn = document.getElementById('clean-unused-btn');
+    if (cleanUnusedBtn && !cleanUnusedBtn.disabled) {
+        cleanUnusedBtn.addEventListener('click', function() {
+            if (confirm('{{ "Are you sure you want to remove all unused form translations?"|t('translation-manager')|e('js') }}')) {
+                const btn = this;
+                btn.classList.add('loading');
+                btn.disabled = true;
+                
+                fetch('{{ actionUrl('translation-manager/maintenance/clean-unused') }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        Craft.cp.displayNotice(data.message);
+                        // Reload after a short delay to show the message
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        btn.classList.remove('loading');
+                        btn.disabled = false;
+                        Craft.cp.displayError(data.error || 'Failed to clean unused translations');
+                    }
+                })
+                .catch(error => {
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                    Craft.cp.displayError('Failed to clean unused translations: ' + error.message);
+                });
+            }
+        });
+    }
+    
+    // Handle danger zone clear type selection
+    const clearTypeSelect = document.getElementById('clearType');
+    const clearDescription = document.getElementById('clearDescription');
+    const clearDescriptionText = document.getElementById('clearDescriptionText');
+    const clearButton = document.getElementById('clearButton');
+    
+    if (clearTypeSelect) {
+        const hasFormie = {{ settings.enableFormieIntegration ? 'true' : 'false' }};
+        const hasSite = {{ settings.enableSiteTranslations ? 'true' : 'false' }};
+        const formiePluginName = '{{ craft.translationManager.getFormiePluginName()|e('js') }}';
+        
+        let allDescription = '{{ "This will permanently delete ALL translations from the database and remove all translation files. Use this to start completely fresh."|t('translation-manager')|e('js') }}';
+        if (hasFormie && hasSite) {
+            allDescription = '{{ "This will permanently delete ALL translations from the database and remove all translation files, including both "|t('translation-manager')|e('js') }}' + formiePluginName + '{{ " and site translations. Use this to start completely fresh."|t('translation-manager')|e('js') }}';
+        }
+        
+        const descriptions = {
+            formie: '{{ "This will permanently delete all "|t('translation-manager')|e('js') }}' + formiePluginName + '{{ " form translations from the database and remove the corresponding translation files. Your forms will not be affected, only the stored translations will be removed."|t('translation-manager')|e('js') }}',
+            site: '{{ ("This will permanently delete all site translations using |t(\'" ~ settings.translationCategory ~ "\') from the database and remove the corresponding translation files. You will need to re-translate all site content.")|t('translation-manager')|e('js') }}',
+            all: allDescription
+        };
+    
+        const confirmMessages = {
+            formie: '{{ "Are you sure you want to delete all "|t('translation-manager')|e('js') }}' + formiePluginName + '{{ " translations and their files? This action cannot be undone."|t('translation-manager')|e('js') }}',
+            site: '{{ ("Are you sure you want to delete all site translations for the \'" ~ settings.translationCategory ~ "\' category and their files? This action cannot be undone.")|t('translation-manager')|e('js') }}',
+            all: '{{ "Are you absolutely sure you want to delete ALL translations and files? This will remove both "|t('translation-manager')|e('js') }}' + formiePluginName + '{{ " and site translations. This action cannot be undone."|t('translation-manager')|e('js') }}'
+        };
+        
+        const actions = {
+            formie: 'translation-manager/settings/clear-formie',
+            site: 'translation-manager/settings/clear-site',
+            all: 'translation-manager/settings/clear-all'
+        };
+    
+        clearTypeSelect.addEventListener('change', function() {
+            const value = this.value;
+            
+            if (value) {
+                clearDescription.style.display = 'block';
+                clearDescriptionText.textContent = descriptions[value];
+                clearButton.style.display = 'inline-block';
+                clearButton.setAttribute('data-action', actions[value]);
+                clearButton.setAttribute('data-confirm', confirmMessages[value]);
+            } else {
+                clearDescription.style.display = 'none';
+                clearButton.style.display = 'none';
+            }
+        });
+        
+        // Handle clear button click
+        clearButton.addEventListener('click', function() {
+            const action = this.getAttribute('data-action');
+            const confirmMessage = this.getAttribute('data-confirm');
+            
+            if (action) {
+                {% if settings.backupEnabled %}
+                // Add backup notice to confirmation for dangerous actions
+                const backupNotice = '\n\n{{ "Note: A backup will be created automatically before deleting."|t('translation-manager')|e('js') }}';
+                const fullMessage = confirmMessage + backupNotice;
+                {% else %}
+                const fullMessage = confirmMessage;
+                {% endif %}
+                
+                if (!confirm(fullMessage)) {
+                    return;
+                }
+                // Create a form and submit it
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '';
+                form.style.display = 'none';
+                
+                // Add CSRF token
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '{{ craft.app.config.general.csrfTokenName }}';
+                csrfInput.value = '{{ craft.app.request.csrfToken }}';
+                form.appendChild(csrfInput);
+                
+                // Add action input
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = action;
+                form.appendChild(actionInput);
+                
+                // Add redirect input with proper hash
+                const redirectInput = document.createElement('input');
+                redirectInput.type = 'hidden';
+                redirectInput.name = 'redirect';
+                redirectInput.value = '{{ 'translation-manager/settings/maintenance'|hash }}';
+                form.appendChild(redirectInput);
+                
+                // Submit form
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+{% endjs %}

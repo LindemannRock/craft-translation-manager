@@ -1,0 +1,34 @@
+Translation Key,Translation,Type,Status,Site ID,Site Language
+"Normal Entry","Normal Translation",Site,translated,1,en-US
+"Normal Entry","ترجمة عادية",Site,translated,2,ar
+"Product","Product",Site,translated,1,en-US
+"Product","المنتج",Site,translated,2,ar
+"Search","Search",Site,translated,1,en-US
+"Search","بحث",Site,translated,2,ar
+"Invalid Site ID","Test Translation",Site,translated,999,invalid-lang
+"Missing Site ID","Test Translation",Site,translated,,en-US
+"Wrong Language Format","ترجمة خاطئة",Site,translated,2,WRONG-FORMAT
+"Non-existent Language","Translation",Site,translated,1,xx-XX
+"Site Language Only","Translation",Site,translated,,fr-FR
+"Conflicting Info English","Translation",Site,translated,1,ar
+"Conflicting Info Arabic","ترجمة",Site,translated,2,en-US
+"Empty Translation Key","",Site,translated,2,ar
+"Special Characters","Special Translation",Site,translated,1,en-US
+"Special Characters","ترجمة خاصة",Site,translated,2,ar
+"Very Long Key Test","Very long translation",Site,translated,1,en-US
+"Very Long Key Test","ترجمة طويلة جداً",Site,translated,2,ar
+"Unicode Test","🏠 Home 🏡",Site,translated,1,en-US
+"Unicode Test","🏠 منزل 🏡",Site,translated,2,ar
+"Mixed Scripts Test","Hello مرحبا World",Site,translated,1,en-US
+"Mixed Scripts Test","مرحبا Hello عالم",Site,translated,2,ar
+"Numbers Test","Price: $19.99 (Sale!)",Site,translated,1,en-US
+"Numbers Test","السعر: ١٩.٩٩ دولار (تخفيض!)",Site,translated,2,ar
+"Quotes Test","He said ""Hello"" to me",Site,translated,1,en-US
+"Quotes Test","قال ""مرحبا"" لي",Site,translated,2,ar
+"Line Breaks Test","السطر ١
+السطر ٢",Site,translated,2,ar
+"Tabs Test","	نص	مسافات	",Site,translated,2,ar
+"HTML Entities","&amp; &lt; &gt;",Site,translated,2,ar
+"Status Uppercase","ترجمة١",Site,TRANSLATED,2,ar
+"Status Mixed Case","ترجمة٢",Site,Pending,2,ar
+"Status Lowercase","ترجمة٣",Site,unused,2,ar
