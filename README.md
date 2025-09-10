@@ -2,6 +2,24 @@
 
 A comprehensive translation management system for Craft CMS 5 with Formie integration, advanced filtering, and enterprise-grade security.
 
+## Why Translation Manager?
+
+Translation Manager was created to solve critical gaps in Craft CMS multi-language workflows.
+
+**The Primary Problem**: Managing site translations shouldn't require static language files and redeployments for every text change. Traditional approaches meant:
+- Editing PHP language files manually for every translation update
+- Redeploying the entire site for simple text changes
+- No centralized interface to manage all site translations
+- Difficult to track what needs translation vs what's already translated
+
+**The Formie Problem**: Our first major integration tackled [Formie](https://verbb.io/craft-plugins/formie/features) forms, which had even more complex translation challenges:
+- Duplicating entire forms for each language (maintenance nightmare)
+- No way to translate field labels, placeholders, dropdown options, error messages
+- Form translations scattered across multiple files and locations
+- No efficient workflow for translating all field properties
+
+**Our Solution**: Translation Manager provides a unified Control Panel interface to manage both site translations (through custom categories) and all Formie form elements. Changes are instantly available without touching code files or redeploying.
+
 ## Features
 
 - **Multi-Site Translation Support**: 
@@ -48,24 +66,38 @@ A comprehensive translation management system for Craft CMS 5 with Formie integr
 
 ## Requirements
 
-- Craft CMS 5.0.0 or later
-- PHP 8.0.2 or later
-- MySQL 8.0.17+ or PostgreSQL 13+
+- Craft CMS 5.0 or greater
+- PHP 8.2 or greater
 - Formie plugin (optional, for form translations)
 
 ## Installation
 
-1. Add the plugin to your project:
-   ```bash
-   cd /path/to/project
-   composer config repositories.translation-manager path plugins/translation-manager
-   composer require lindemannrock/translation-manager:@dev
-   ```
+### Via Composer (Development)
 
-2. Install the plugin:
-   ```bash
-   php craft plugin/install translation-manager
-   ```
+Until published on Packagist, install directly from the repository:
+
+```bash
+cd /path/to/project
+composer config repositories.translation-manager vcs https://github.com/LindemannRock/translation-manager
+composer require lindemannrock/translation-manager:dev-main
+./craft plugin/install translation-manager
+```
+
+### Via Composer (Production - Coming Soon)
+
+Once published on Packagist:
+
+```bash
+cd /path/to/project
+composer require lindemannrock/translation-manager
+./craft plugin/install translation-manager
+```
+
+### Via Plugin Store (Future)
+
+1. Go to the Plugin Store in your Craft control panel
+2. Search for "Translation Manager"  
+3. Click "Install"
 
 ## Multi-Site Translation Support
 
@@ -555,8 +587,14 @@ See [Full Changelog](CHANGELOG.md) for complete version history
 
 ## Support
 
-For issues and feature requests, please contact the LindemannRock development team.
+- **Documentation**: [https://github.com/LindemannRock/translation-manager](https://github.com/LindemannRock/translation-manager)
+- **Issues**: [https://github.com/LindemannRock/translation-manager/issues](https://github.com/LindemannRock/translation-manager/issues)
+- **Email**: [support@lindemannrock.com](mailto:support@lindemannrock.com)
 
 ## License
 
-Proprietary - LindemannRock for Al Hatab Foods
+This plugin is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+Developed by [LindemannRock](https://lindemannrock.com)
