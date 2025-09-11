@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.5](https://github.com/LindemannRock/translation-manager/compare/v1.3.4...v1.3.5) (2025-09-11)
+
+
+### Bug Fixes
+
+* validation bypass allowing insecure [@webroot](https://github.com/webroot) alias ([9b66943](https://github.com/LindemannRock/translation-manager/commit/9b66943e1e89922b6eb09ea8ea7b387d824be428))
+
 ## [1.3.4](https://github.com/LindemannRock/translation-manager/compare/v1.3.3...v1.3.4) (2025-09-11)
 
 
