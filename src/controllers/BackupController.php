@@ -83,13 +83,23 @@ class BackupController extends Controller
         try {
             $reason = Craft::$app->getRequest()->getBodyParam('reason', 'manual');
             
-            $backupPath = TranslationManager::getInstance()->backup->createBackup($reason);
+            $backupResult = TranslationManager::getInstance()->backup->createBackup($reason);
             
-            if ($backupPath) {
+            if ($backupResult) {
                 return $this->asJson([
                     'success' => true,
                     'message' => 'Backup created successfully',
-                    'path' => basename($backupPath)
+                    'path' => basename($backupResult)
+                ]);
+            }
+            
+            // Check if failure was due to no translations
+            $translations = TranslationManager::getInstance()->translations->getTranslations();
+            if (empty($translations)) {
+                return $this->asJson([
+                    'success' => false,
+                    'error' => 'No translations to backup. Add some translations first.',
+                    'isEmpty' => true
                 ]);
             }
             

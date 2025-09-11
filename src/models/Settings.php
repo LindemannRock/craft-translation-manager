@@ -367,13 +367,26 @@ class Settings extends Model
         // Real path resolution to prevent symlink attacks
         $realPath = realpath($path);
         if ($realPath === false) {
-            // Path doesn't exist yet - validate parent directory
-            $parentDir = dirname($path);
-            $realParent = realpath($parentDir);
-            if ($realParent === false) {
-                throw new \Exception('Invalid backup path or parent directory');
+            // Path doesn't exist yet - validate that it would be within allowed directories
+            // Check if the intended path starts with an allowed base path
+            $validBasePaths = [
+                Craft::getAlias('@root'),
+                Craft::getAlias('@storage'),
+            ];
+            
+            $isValidPath = false;
+            foreach ($validBasePaths as $basePath) {
+                if ($basePath && strpos($path, $basePath) === 0) {
+                    $isValidPath = true;
+                    break;
+                }
             }
-            // Return the intended path if parent is valid
+            
+            if (!$isValidPath) {
+                throw new \Exception('Backup path must be within @root or @storage directories');
+            }
+            
+            // Return the intended path - BackupService will create directories as needed
             return $path;
         }
         
@@ -386,7 +399,8 @@ class Settings extends Model
         $isValid = false;
         foreach ($validPaths as $validPath) {
             $realValidPath = realpath($validPath);
-            if ($realValidPath !== false && strpos($realPath, $realValidPath) === 0) {
+            if ($realValidPath !== false && ($realPath === $realValidPath || strpos($realPath, $realValidPath . '/') === 0)) {
+                // Only allow exact match or proper subdirectory with separator
                 $isValid = true;
                 break;
             }

@@ -30,7 +30,7 @@ class Install extends Migration
                 'siteId' => $this->integer()->notNull()->defaultValue(1),
                 'translationKey' => $this->text()->notNull()->comment('The key used in code (any language)'),
                 'translation' => $this->text()->null()->comment('Site-specific translation'),
-                'status' => $this->enum('status', ['pending', 'translated', 'approved', 'unused'])->notNull()->defaultValue('pending'),
+                'status' => $this->enum('status', ['pending', 'translated', 'unused', 'approved'])->notNull()->defaultValue('pending'),
                 'usageCount' => $this->integer()->notNull()->defaultValue(1),
                 'lastUsed' => $this->dateTime()->null(),
                 'dateCreated' => $this->dateTime()->notNull(),
@@ -78,12 +78,73 @@ class Install extends Migration
             Craft::info('Migration completed: ' . count($oldTranslations) . ' translations migrated', __METHOD__);
         }
 
+        // Create the import history table
+        if (!$this->tableExists('{{%translationmanager_import_history}}')) {
+            $this->createTable('{{%translationmanager_import_history}}', [
+                'id' => $this->primaryKey(),
+                'userId' => $this->integer()->notNull(),
+                'filename' => $this->string()->notNull(),
+                'filesize' => $this->integer()->notNull(),
+                'imported' => $this->integer()->notNull()->defaultValue(0),
+                'updated' => $this->integer()->notNull()->defaultValue(0),
+                'skipped' => $this->integer()->notNull()->defaultValue(0),
+                'errors' => $this->text()->null(),
+                'backupPath' => $this->string()->null(),
+                'details' => $this->text()->null(),
+                'dateCreated' => $this->dateTime()->notNull(),
+                'dateUpdated' => $this->dateTime()->notNull(),
+                'uid' => $this->uid(),
+            ]);
+
+            // Create indexes
+            $this->createIndex(null, '{{%translationmanager_import_history}}', ['userId']);
+            $this->createIndex(null, '{{%translationmanager_import_history}}', ['dateCreated']);
+
+            // Add foreign key
+            $this->addForeignKey(null, '{{%translationmanager_import_history}}', ['userId'], '{{%users}}', ['id'], 'CASCADE');
+        }
+
+        // Create the settings table
+        if (!$this->tableExists('{{%translationmanager_settings}}')) {
+            $this->createTable('{{%translationmanager_settings}}', [
+                'id' => $this->primaryKey(),
+                'pluginName' => $this->string(100)->notNull()->defaultValue('Translation Manager'),
+                'translationCategory' => $this->string()->notNull()->defaultValue('alhatab'),
+                'enableFormieIntegration' => $this->boolean()->notNull()->defaultValue(true),
+                'enableSiteTranslations' => $this->boolean()->notNull()->defaultValue(true),
+                'autoExport' => $this->boolean()->notNull()->defaultValue(true),
+                'exportPath' => $this->string()->notNull()->defaultValue('@root/translations'),
+                'itemsPerPage' => $this->integer()->notNull()->defaultValue(100),
+                'autoSaveEnabled' => $this->boolean()->notNull()->defaultValue(false),
+                'autoSaveDelay' => $this->integer()->notNull()->defaultValue(2),
+                'showContext' => $this->boolean()->notNull()->defaultValue(true),
+                'enableSuggestions' => $this->boolean()->notNull()->defaultValue(false),
+                'backupEnabled' => $this->boolean()->defaultValue(true),
+                'backupRetentionDays' => $this->integer()->defaultValue(30),
+                'backupOnImport' => $this->boolean()->defaultValue(true),
+                'backupSchedule' => $this->string(20)->defaultValue('manual'),
+                'backupPath' => $this->string()->defaultValue('@storage/translation-manager/backups'),
+                'skipPatterns' => $this->text()->null(),
+                'dateCreated' => $this->dateTime()->notNull(),
+                'dateUpdated' => $this->dateTime()->notNull(),
+                'uid' => $this->uid(),
+            ]);
+        }
+
         return true;
     }
 
     public function safeDown(): bool
     {
-        // Drop the translations table
+        // Drop tables in reverse order due to foreign key constraints
+        if ($this->tableExists('{{%translationmanager_import_history}}')) {
+            $this->dropTable('{{%translationmanager_import_history}}');
+        }
+        
+        if ($this->tableExists('{{%translationmanager_settings}}')) {
+            $this->dropTable('{{%translationmanager_settings}}');
+        }
+        
         if ($this->tableExists('{{%translationmanager_translations}}')) {
             $this->dropTable('{{%translationmanager_translations}}');
         }
