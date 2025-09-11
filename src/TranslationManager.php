@@ -58,6 +58,11 @@ class TranslationManager extends Plugin
      */
     private ?Settings $_settings = null;
     public bool $hasCpSection = true;
+    
+    /**
+     * @var bool Track if logging is already configured to prevent duplication
+     */
+    private static bool $_loggingConfigured = false;
 
     public static function config(): array
     {
@@ -74,6 +79,9 @@ class TranslationManager extends Plugin
     public function init(): void
     {
         parent::init();
+        
+        // Ensure logging is configured (may already be done in getSettings())
+        $this->_ensureLoggingConfigured();
 
         // Override plugin name from config if available, otherwise use from database settings
         $configFileSettings = Craft::$app->getConfig()->getConfigFromFile('translation-manager');
@@ -100,9 +108,6 @@ class TranslationManager extends Plugin
             'export' => ExportService::class,
             'backup' => BackupService::class,
         ]);
-
-        // Configure dedicated log file
-        $this->_configureLogging();
 
         // Register CP routes
         Event::on(
@@ -273,6 +278,9 @@ class TranslationManager extends Plugin
     public function getSettings(): ?Model
     {
         if ($this->_settings === null) {
+            // Configure logging early to catch security validation errors
+            $this->_ensureLoggingConfigured();
+            
             // Create base settings
             $settings = $this->createSettingsModel();
             
@@ -452,6 +460,19 @@ class TranslationManager extends Plugin
         ];
     }
 
+    /**
+     * Ensure logging is configured early to catch security validation errors
+     */
+    private function _ensureLoggingConfigured(): void
+    {
+        if (self::$_loggingConfigured) {
+            return;
+        }
+        
+        $this->_configureLogging();
+        self::$_loggingConfigured = true;
+    }
+    
     /**
      * Configure dedicated logging for Translation Manager
      */

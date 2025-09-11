@@ -210,14 +210,40 @@ class Settings extends Model
             return;
         }
         
-        // Only allow specific secure aliases - no resolved path checking
-        $allowedAliases = ['@root', '@storage', '@translations'];
-        
-        $isValid = false;
-        foreach ($allowedAliases as $allowedAlias) {
-            if (strpos($path, $allowedAlias) === 0) {
-                $isValid = true;
-                break;
+        // Check if path is already resolved (doesn't start with @)
+        if (strpos($path, '@') !== 0) {
+            // Explicitly reject web-accessible paths for security
+            $webRoot = Craft::getAlias('@webroot');
+            if ($webRoot && strpos($path, $webRoot) === 0) {
+                $this->addError($attribute, 'Export paths cannot be in web-accessible directories for security');
+                return;
+            }
+            
+            // Path is resolved - validate against resolved allowed paths
+            $allowedResolvedPaths = [
+                Craft::getAlias('@root'),
+                Craft::getAlias('@storage'),
+                Craft::getAlias('@translations'),
+            ];
+            
+            $isValid = false;
+            foreach ($allowedResolvedPaths as $allowedPath) {
+                if ($allowedPath && ($path === $allowedPath || strpos($path, $allowedPath . '/') === 0)) {
+                    // Only allow exact match or subdirectory with proper separator
+                    $isValid = true;
+                    break;
+                }
+            }
+        } else {
+            // Path is unresolved - validate against aliases
+            $allowedAliases = ['@root', '@storage', '@translations'];
+            
+            $isValid = false;
+            foreach ($allowedAliases as $allowedAlias) {
+                if (strpos($path, $allowedAlias) === 0) {
+                    $isValid = true;
+                    break;
+                }
             }
         }
         
@@ -244,14 +270,32 @@ class Settings extends Model
             return;
         }
         
-        // Only allow specific secure aliases for backups (never web-accessible)
-        $allowedAliases = ['@root', '@storage'];
-        
-        $isValid = false;
-        foreach ($allowedAliases as $allowedAlias) {
-            if (strpos($path, $allowedAlias) === 0) {
-                $isValid = true;
-                break;
+        // Check if path is already resolved (doesn't start with @)
+        if (strpos($path, '@') !== 0) {
+            // Path is resolved - validate against resolved allowed paths
+            $allowedResolvedPaths = [
+                Craft::getAlias('@root'),
+                Craft::getAlias('@storage'),
+            ];
+            
+            $isValid = false;
+            foreach ($allowedResolvedPaths as $allowedPath) {
+                if ($allowedPath && ($path === $allowedPath || strpos($path, $allowedPath . '/') === 0)) {
+                    // Only allow exact match or subdirectory with proper separator
+                    $isValid = true;
+                    break;
+                }
+            }
+        } else {
+            // Path is unresolved - validate against aliases
+            $allowedAliases = ['@root', '@storage'];
+            
+            $isValid = false;
+            foreach ($allowedAliases as $allowedAlias) {
+                if (strpos($path, $allowedAlias) === 0) {
+                    $isValid = true;
+                    break;
+                }
             }
         }
         
