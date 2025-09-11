@@ -210,30 +210,14 @@ class Settings extends Model
             return;
         }
         
-        // Get valid alias paths - only secure locations
-        $validAliases = [
-            '@root' => Craft::getAlias('@root'),
-            '@storage' => Craft::getAlias('@storage'),
-            '@translations' => Craft::getAlias('@translations'),
-        ];
+        // Only allow specific secure aliases - no resolved path checking
+        $allowedAliases = ['@root', '@storage', '@translations'];
         
         $isValid = false;
-        
-        // First check if it's an unresolved alias
-        foreach (array_keys($validAliases) as $alias) {
-            if (strpos($path, $alias) === 0) {
+        foreach ($allowedAliases as $allowedAlias) {
+            if (strpos($path, $allowedAlias) === 0) {
                 $isValid = true;
                 break;
-            }
-        }
-        
-        // If not, check if it's a resolved path under one of the valid directories
-        if (!$isValid) {
-            foreach ($validAliases as $alias => $resolvedPath) {
-                if (strpos($path, $resolvedPath) === 0) {
-                    $isValid = true;
-                    break;
-                }
             }
         }
         
@@ -260,29 +244,14 @@ class Settings extends Model
             return;
         }
         
-        // Get valid alias paths - only secure locations (backups should never be web-accessible)
-        $validAliases = [
-            '@root' => Craft::getAlias('@root'),
-            '@storage' => Craft::getAlias('@storage'),
-        ];
+        // Only allow specific secure aliases for backups (never web-accessible)
+        $allowedAliases = ['@root', '@storage'];
         
         $isValid = false;
-        
-        // First check if it's an unresolved alias
-        foreach (array_keys($validAliases) as $alias) {
-            if (strpos($path, $alias) === 0) {
+        foreach ($allowedAliases as $allowedAlias) {
+            if (strpos($path, $allowedAlias) === 0) {
                 $isValid = true;
                 break;
-            }
-        }
-        
-        // If not, check if it's a resolved path under one of the valid directories
-        if (!$isValid) {
-            foreach ($validAliases as $alias => $resolvedPath) {
-                if (strpos($path, $resolvedPath) === 0) {
-                    $isValid = true;
-                    break;
-                }
             }
         }
         
