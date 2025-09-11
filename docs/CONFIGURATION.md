@@ -19,11 +19,11 @@ return [
 
     // Enable/disable integrations
     'enableFormieIntegration' => true,
-    'enableSiteIntegration' => true,
+    'enableSiteTranslations' => true,
 
     // Auto-save behavior
-    'autoSave' => false,
-    'autoSaveDelay' => 500, // milliseconds
+    'autoSaveEnabled' => false,
+    'autoSaveDelay' => 2, // seconds
 
     // Display settings
     'itemsPerPage' => 100,
@@ -37,10 +37,13 @@ return [
     // Backup configuration
     'backupEnabled' => true,
     'backupSchedule' => 'daily', // Options: 'manual', 'daily', 'weekly', 'monthly'
-    'backupRetention' => 30, // days (0 = keep forever, manual backups always kept)
-    'backupBeforeImport' => true,
-    'backupBeforeRestore' => true,
-    'backupPath' => '@storage/backups/translation-manager',
+    'backupRetentionDays' => 30, // days (0 = keep forever, manual backups always kept)
+    'backupOnImport' => true,
+    'backupPath' => '@storage/translation-manager/backups',
+
+    // Security settings
+    'exportPath' => '@translations', // Secure aliases only: @root, @storage, @translations
+    'backupPath' => '@storage/backups', // Secure aliases only: @root, @storage (never web-accessible)
 
     // Import settings
     'importSizeLimit' => 5000, // max translations per import
@@ -146,10 +149,16 @@ Scheduled backups use Craft's queue system and automatically restart if the queu
 
 The following aliases are supported in path settings:
 
-- `@root` - Project root directory
-- `@storage` - Storage directory
-- `@config` - Config directory
+**Export Paths (secure aliases only):**
+- `@root` - Project root directory  
+- `@storage` - Storage directory (non-web-accessible)
 - `@translations` - Translations directory
+
+**Backup Paths (secure aliases only):**
+- `@root` - Project root directory
+- `@storage` - Storage directory (non-web-accessible)
+
+**Security Note:** `@webroot` and `@config` are not allowed for security reasons.
 
 ### Precedence
 

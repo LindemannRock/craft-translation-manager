@@ -27,6 +27,7 @@ The logging is configured automatically when the plugin initializes with the fol
 ## What Gets Logged
 
 ### Errors (Always Logged)
+- **Security validation failures** - Invalid export/backup paths, web-accessible directories
 - Backup creation failures
 - Export/Import failures
 - File write errors
@@ -38,6 +39,7 @@ The logging is configured automatically when the plugin initializes with the fol
 - Empty backup attempts
 - Failed pre-restore backups
 - Configuration issues
+- **Security events** - Malicious content detection, path traversal attempts
 
 ### Info Level (Not Logged by Default)
 - Translation creation/updates

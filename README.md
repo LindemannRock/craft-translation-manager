@@ -22,7 +22,7 @@ Translation Manager was created to solve critical gaps in Craft CMS multi-langua
 
 ## Features
 
-- **Multi-Site Translation Support**: 
+- **Multi-Site Translation Support**:
   - Site-aware translation management for any language combination
   - Site selector in breadcrumbs like native Craft elements
   - Dynamic text direction (RTL/LTR) based on site language
@@ -40,11 +40,11 @@ Translation Manager was created to solve critical gaps in Craft CMS multi-langua
   - Automatically identifies unused translations when forms/fields are deleted
   - Reactivates translations when text is reused in new forms
   - Updates context to reflect current usage location
-- **Advanced Maintenance Tools**: 
+- **Advanced Maintenance Tools**:
   - Template scanner to identify unused translations automatically
   - Granular cleanup options (All/Site/Forms unused translations)
   - One-click cleanup with backup protection
-- **Import/Export Functionality**: 
+- **Import/Export Functionality**:
   - CSV export with current filters and Type column
   - CSV import with preview and malicious content detection
   - PHP translation file generation for production use
@@ -68,7 +68,7 @@ Translation Manager was created to solve critical gaps in Craft CMS multi-langua
 
 - Craft CMS 5.0 or greater
 - PHP 8.2 or greater
-- Formie plugin (optional, for form translations)
+- Formie 3.0 or greater (optional, for form translations)
 
 ## Installation
 
@@ -96,7 +96,7 @@ composer require lindemannrock/translation-manager
 ### Via Plugin Store (Future)
 
 1. Go to the Plugin Store in your Craft control panel
-2. Search for "Translation Manager"  
+2. Search for "Translation Manager"
 3. Click "Install"
 
 ## Multi-Site Translation Support
@@ -568,30 +568,16 @@ For security vulnerabilities, please see our [Security Policy](SECURITY.md).
 - This is normal in production - settings are stored in database, not project config
 - If error persists, run migrations: `craft migrate/all`
 
-For detailed troubleshooting, see [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
+## Documentation
 
-## Changelog
-
-### 1.3.2 - 2025-01-16
-- **Backup System Improvements**:
-  - Organized backups into subfolders by type (scheduled, imports, maintenance, manual)
-  - Automatic recovery for scheduled backups if queue is cleared
-  - Scheduled backups now initialize on every plugin load
-- **Search Functionality**:
-  - Fixed search form not including search parameter in URL
-  - Added debug search tool for troubleshooting
-- **Translation Filtering**:
-  - Automatically excludes text containing Twig syntax ({{, {%, {#})
-- **Bug Fixes**:
-  - Fixed cleanup maintenance action not returning JSON for AJAX requests
-  - Fixed duplicate backup jobs being created
-
-See [Full Changelog](CHANGELOG.md) for complete version history
+- **[Configuration Guide](docs/CONFIGURATION.md)** - Complete settings reference and multi-environment setup
+- **[Backup System](docs/BACKUPS.md)** - Backup types, scheduling, and restoration
+- **[Logging](docs/LOGGING.md)** - Log configuration and security event monitoring
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 
 ## Support
 
-- **Documentation**: [https://github.com/LindemannRock/translation-manager](https://github.com/LindemannRock/translation-manager)
-- **Issues**: [https://github.com/LindemannRock/translation-manager/issues](https://github.com/LindemannRock/translation-manager/issues)
+- **Issues**: [GitHub Issues](https://github.com/LindemannRock/translation-manager/issues)
 - **Email**: [support@lindemannrock.com](mailto:support@lindemannrock.com)
 
 ## License
