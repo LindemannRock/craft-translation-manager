@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.4](https://github.com/LindemannRock/translation-manager/compare/v1.3.3...v1.3.4) (2025-09-11)
+
+
+### Bug Fixes
+
+* critical security vulnerability in settings validation ([389a54f](https://github.com/LindemannRock/translation-manager/commit/389a54f25437d8233377290efa5e638c1787ceba))
+* enhance security measures in README and SECURITY documentation ([ad4b6b8](https://github.com/LindemannRock/translation-manager/commit/ad4b6b83102937a5abaed57f8c7fceb08edc1858))
+
 ## [1.3.3](https://github.com/LindemannRock/translation-manager/compare/v1.3.2...v1.3.3) (2025-09-10)
 
 
