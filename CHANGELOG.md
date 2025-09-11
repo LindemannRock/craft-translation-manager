@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/LindemannRock/translation-manager/compare/v1.3.5...v1.4.0) (2025-09-11)
+
+
+### Features
+
+* critical security validation bugs and logging issues ([7eddc39](https://github.com/LindemannRock/translation-manager/commit/7eddc3924e53be056a07e33c37553f6cbe42264a))
+
 ## [1.3.5](https://github.com/LindemannRock/translation-manager/compare/v1.3.4...v1.3.5) (2025-09-11)
 
 
