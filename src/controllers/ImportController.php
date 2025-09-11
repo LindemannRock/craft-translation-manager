@@ -170,12 +170,11 @@ class ImportController extends Controller
                 $context = 'site';
             }
             
-            // Find existing by hash - match site and context
+            // Find existing by hash - match unique constraint (sourceHash + siteId)
             $sourceHash = md5($keyText);
             $existing = TranslationRecord::findOne([
                 'sourceHash' => $sourceHash,
-                'siteId' => $targetSiteId,
-                'context' => $context
+                'siteId' => $targetSiteId
             ]);
             
             
@@ -501,11 +500,10 @@ class ImportController extends Controller
                 $translationService = TranslationManager::getInstance()->translations;
                 $sourceHash = md5($keyText);
                 
-                // Check if translation exists for this specific site and context
+                // Check if translation exists for this specific site (match unique constraint)
                 $existingTranslation = TranslationRecord::findOne([
                     'sourceHash' => $sourceHash,
-                    'siteId' => $siteId,
-                    'context' => $context
+                    'siteId' => $siteId
                 ]);
                 
                 if ($existingTranslation) {
@@ -554,11 +552,10 @@ class ImportController extends Controller
                 } else {
                     // Find or create translation for this specific site
                     try {
-                        // Look for existing translation for this site
+                        // Look for existing translation for this site (match unique constraint)
                         $translation = TranslationRecord::findOne([
                             'sourceHash' => md5($keyText),
-                            'siteId' => $siteId,
-                            'context' => $context
+                            'siteId' => $siteId
                         ]);
                         
                         $isNew = false;
