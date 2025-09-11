@@ -128,8 +128,8 @@ class Settings extends Model
             [['pluginName', 'translationCategory', 'exportPath'], 'required'],
             [['pluginName'], 'string', 'max' => 100],
             [['translationCategory'], 'string', 'max' => 50],
-            [['translationCategory'], 'match', 'pattern' => '/^[a-zA-Z][a-zA-Z0-9]*$/', 
-             'message' => 'Translation category must start with a letter and contain only letters and numbers.'],
+            [['translationCategory'], 'match', 'pattern' => '/^[a-zA-Z][a-zA-Z0-9_-]*$/', 
+             'message' => 'Translation category must start with a letter and contain only letters, numbers, hyphens, and underscores.'],
             [['translationCategory'], 'validateTranslationCategory'],
             [['exportPath'], 'validateExportPath'],
             [['backupPath'], 'validateBackupPath'],
@@ -171,14 +171,22 @@ class Settings extends Model
      */
     public function validateTranslationCategory($attribute, $params, $validator)
     {
-        if (strtolower($this->$attribute) === 'site') {
+        $category = $this->$attribute;
+        
+        // Must start with a letter and contain only letters, numbers, hyphens, and underscores
+        if (!preg_match('/^[a-zA-Z][a-zA-Z0-9_-]*$/', $category)) {
+            $this->addError($attribute, 'Translation category must start with a letter and contain only letters, numbers, hyphens, and underscores.');
+            return;
+        }
+        
+        if (strtolower($category) === 'site') {
             $this->addError($attribute, 'Using "site" as the translation category is strongly discouraged as it may conflict with Craft\'s internal translations. Please use a unique identifier like your company name (e.g., "lindemannrock").');
         }
         
         // Also warn about some other reserved categories
         $reserved = ['app', 'yii', 'craft'];
-        if (in_array(strtolower($this->$attribute), $reserved)) {
-            $this->addError($attribute, 'The category "' . $this->$attribute . '" is reserved by the system. Please use a unique identifier.');
+        if (in_array(strtolower($category), $reserved)) {
+            $this->addError($attribute, 'The category "' . $category . '" is reserved by the system. Please use a unique identifier.');
         }
     }
 
@@ -202,12 +210,11 @@ class Settings extends Model
             return;
         }
         
-        // Get valid alias paths
+        // Get valid alias paths - only secure locations
         $validAliases = [
             '@root' => Craft::getAlias('@root'),
             '@storage' => Craft::getAlias('@storage'),
-            '@config' => Craft::getAlias('@config'),
-            '@webroot' => Craft::getAlias('@webroot'),
+            '@translations' => Craft::getAlias('@translations'),
         ];
         
         $isValid = false;
@@ -231,7 +238,7 @@ class Settings extends Model
         }
         
         if (!$isValid) {
-            $this->addError($attribute, 'Export path must start with @root, @storage, @config, or @webroot');
+            $this->addError($attribute, 'Export path must start with @root, @storage, or @translations (secure locations only)');
         }
     }
 
@@ -253,12 +260,10 @@ class Settings extends Model
             return;
         }
         
-        // Get valid alias paths
+        // Get valid alias paths - only secure locations (backups should never be web-accessible)
         $validAliases = [
             '@root' => Craft::getAlias('@root'),
             '@storage' => Craft::getAlias('@storage'),
-            '@config' => Craft::getAlias('@config'),
-            '@webroot' => Craft::getAlias('@webroot'),
         ];
         
         $isValid = false;
@@ -282,7 +287,7 @@ class Settings extends Model
         }
         
         if (!$isValid) {
-            $this->addError($attribute, 'Backup path must start with @root, @storage, @config, or @webroot');
+            $this->addError($attribute, 'Backup path must start with @root or @storage (secure locations only, never web-accessible)');
         }
     }
     
@@ -298,7 +303,40 @@ class Settings extends Model
             throw new \Exception('Invalid export path');
         }
         
-        return $path;
+        // Real path resolution to prevent symlink attacks
+        $realPath = realpath($path);
+        if ($realPath === false) {
+            // Path doesn't exist yet - validate parent directory
+            $parentDir = dirname($path);
+            $realParent = realpath($parentDir);
+            if ($realParent === false) {
+                throw new \Exception('Invalid export path or parent directory');
+            }
+            // Return the intended path if parent is valid
+            return $path;
+        }
+        
+        // Verify the real path is still within allowed directories
+        $validPaths = [
+            Craft::getAlias('@root'),
+            Craft::getAlias('@storage'), 
+            Craft::getAlias('@translations'),
+        ];
+        
+        $isValid = false;
+        foreach ($validPaths as $validPath) {
+            $realValidPath = realpath($validPath);
+            if ($realValidPath !== false && strpos($realPath, $realValidPath) === 0) {
+                $isValid = true;
+                break;
+            }
+        }
+        
+        if (!$isValid) {
+            throw new \Exception('Export path resolved outside allowed directories');
+        }
+        
+        return $realPath;
     }
     
     /**
@@ -313,7 +351,39 @@ class Settings extends Model
             throw new \Exception('Invalid backup path');
         }
         
-        return $path;
+        // Real path resolution to prevent symlink attacks
+        $realPath = realpath($path);
+        if ($realPath === false) {
+            // Path doesn't exist yet - validate parent directory
+            $parentDir = dirname($path);
+            $realParent = realpath($parentDir);
+            if ($realParent === false) {
+                throw new \Exception('Invalid backup path or parent directory');
+            }
+            // Return the intended path if parent is valid
+            return $path;
+        }
+        
+        // Verify the real path is still within allowed directories
+        $validPaths = [
+            Craft::getAlias('@root'),
+            Craft::getAlias('@storage'),
+        ];
+        
+        $isValid = false;
+        foreach ($validPaths as $validPath) {
+            $realValidPath = realpath($validPath);
+            if ($realValidPath !== false && strpos($realPath, $realValidPath) === 0) {
+                $isValid = true;
+                break;
+            }
+        }
+        
+        if (!$isValid) {
+            throw new \Exception('Backup path resolved outside allowed directories');
+        }
+        
+        return $realPath;
     }
 
     /**

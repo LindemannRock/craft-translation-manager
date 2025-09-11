@@ -305,6 +305,18 @@ class TranslationManager extends Plugin
                 }
             }
             
+            // CRITICAL: Validate settings even when loaded from config
+            // This prevents config files from bypassing security validation
+            if (!$settings->validate()) {
+                $errors = $settings->getFirstErrors();
+                $errorMessage = 'Invalid Translation Manager configuration: ' . implode(', ', $errors);
+                
+                Craft::error($errorMessage, __METHOD__);
+                
+                // For security, throw exception rather than silently using invalid config
+                throw new \Exception($errorMessage . ' Please check your config/translation-manager.php file.');
+            }
+            
             $this->_settings = $settings;
         }
 
