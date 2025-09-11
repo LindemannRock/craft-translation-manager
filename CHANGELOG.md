@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/LindemannRock/translation-manager/compare/v1.4.1...v1.4.2) (2025-09-11)
+
+
+### Bug Fixes
+
+* Update translation record queries to match unique constraint by sourceHash and siteId ([956647f](https://github.com/LindemannRock/translation-manager/commit/956647ff51a9f7c39673ee28b847c21ef7450174))
+
 ## [1.4.1](https://github.com/LindemannRock/translation-manager/compare/v1.4.0...v1.4.1) (2025-09-11)
 
 
