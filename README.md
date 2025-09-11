@@ -51,7 +51,7 @@ Translation Manager was created to solve critical gaps in Craft CMS multi-langua
   - Protection against CSV injection attacks
   - Import history tracking with backup links
 - **Dedicated Logging**: All operations logged to `storage/logs/translation-manager.log`
-- **Security Hardened**: XSS protection, CSRF validation, path traversal prevention, and more
+- **Security Hardened**: XSS protection, CSRF validation, symlink attack prevention, restricted secure paths, and more
 - **Backup System**:
   - Manual and automatic backups (daily/weekly/monthly)
   - Auto-backup before dangerous operations
@@ -481,17 +481,20 @@ The Translation Manager plugin includes comprehensive security measures:
 
 1. **XSS Protection**: All template output properly escaped
 2. **CSRF Protection**: All forms validate CSRF tokens
-3. **Path Traversal Protection**: Export paths restricted to safe directories
-4. **CSV Injection Protection**: Special characters prefixed in exports
-5. **Input Validation**:
+3. **Symlink Attack Prevention**: Real path resolution (`realpath()`) prevents symlink traversal
+4. **Path Restriction**: Export paths limited to secure aliases (@root, @storage, @translations)
+5. **Backup Security**: Backup paths restricted to non-web-accessible locations (@root, @storage)
+6. **CSV Injection Protection**: Special characters prefixed in exports
+7. **Input Validation**:
    - Length limits (5000 chars) on translations
-   - Numeric ID validation
+   - Translation categories: letters, numbers, hyphens, underscores only
+   - Numeric ranges (items per page: 10-500)
    - Safe attribute assignment
-6. **SQL Injection Protection**: Parameterized queries throughout
-7. **Atomic File Operations**: Temp files with proper locking
-8. **Permission-based Access Control**: Granular permissions for all operations
-9. **Anonymous Access Prevention**: All actions require authentication
-10. **Security Event Logging**: Comprehensive audit trail with user tracking
+8. **SQL Injection Protection**: Parameterized queries throughout
+9. **Atomic File Operations**: Temp files with proper locking
+10. **Permission-based Access Control**: Granular permissions for all operations
+11. **Anonymous Access Prevention**: All actions require authentication
+12. **Security Event Logging**: Comprehensive audit trail with user tracking
 
 ### Security Best Practices
 

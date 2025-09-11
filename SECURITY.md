@@ -49,9 +49,10 @@ The plugin implements granular permissions that must be explicitly granted to us
 
 - **Translation Category**:
   - Must start with a letter
-  - Only alphanumeric characters allowed
+  - Only letters, numbers, hyphens, and underscores allowed
   - Reserved categories blocked (site, app, yii, craft)
-- **Export Path**: Restricted to safe aliases (@root, @storage, @config, @webroot)
+- **Export Path**: Restricted to secure aliases (@root, @storage, @translations)
+- **Backup Path**: Restricted to secure aliases (@root, @storage) - never web-accessible
 - **Numeric Ranges**: Items per page limited to 10-500
 
 ### CSRF Protection
@@ -85,12 +86,14 @@ All user-supplied content is escaped in templates:
 
 ### Path Traversal Protection
 
-Export paths are strictly validated:
+Export and backup paths are strictly validated:
 
 1. Paths containing `..` are rejected
-2. Must start with approved aliases
-3. Double validation in Settings model and ExportService
-4. Real path resolution to prevent symlink attacks
+2. Export paths must start with secure aliases (@root, @storage, @translations)
+3. Backup paths must start with secure aliases (@root, @storage) - never web-accessible
+4. Double validation in Settings model and path resolution methods
+5. Real path resolution (`realpath()`) to prevent symlink attacks
+6. Resolved paths verified to remain within allowed directories
 
 ### CSV Import Security
 
