@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/LindemannRock/translation-manager/compare/v1.4.0...v1.4.1) (2025-09-11)
+
+
+### Bug Fixes
+
+* Translation Manager database schema to match working installation ([7624dbb](https://github.com/LindemannRock/translation-manager/commit/7624dbb24fd8facf942fa94af7e478128a3cf926))
+
 ## [1.4.0](https://github.com/LindemannRock/translation-manager/compare/v1.3.5...v1.4.0) (2025-09-11)
 
 
