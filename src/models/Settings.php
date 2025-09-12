@@ -83,6 +83,11 @@ class Settings extends Model
     public array $skipPatterns = [];
 
     /**
+     * @var array Dynamic integration settings for discovered integrations
+     */
+    public array $integrationSettings = [];
+
+    /**
      * @var bool Whether to enable automatic translation suggestions (future feature)
      */
     public bool $enableSuggestions = false;

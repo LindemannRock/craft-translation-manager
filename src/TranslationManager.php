@@ -31,6 +31,7 @@ use lindemannrock\translationmanager\services\TranslationsService;
 use lindemannrock\translationmanager\services\FormieService;
 use lindemannrock\translationmanager\services\ExportService;
 use lindemannrock\translationmanager\services\BackupService;
+use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\utilities\TranslationStatsUtility;
 use lindemannrock\translationmanager\variables\TranslationManagerVariable;
 
@@ -69,9 +70,10 @@ class TranslationManager extends Plugin
         return [
             'components' => [
                 'translations' => TranslationsService::class,
-                'formie' => FormieService::class,
+                'formie' => FormieService::class, // Legacy - will be deprecated
                 'export' => ExportService::class,
                 'backup' => BackupService::class,
+                'integrations' => IntegrationService::class, // New integration system
             ],
         ];
     }
@@ -104,10 +106,14 @@ class TranslationManager extends Plugin
         // Register services
         $this->setComponents([
             'translations' => TranslationsService::class,
-            'formie' => FormieService::class,
+            'formie' => FormieService::class, // Legacy - will be deprecated
             'export' => ExportService::class,
             'backup' => BackupService::class,
+            'integrations' => IntegrationService::class, // New integration system
         ]);
+
+        // Initialize the new integration system
+        $this->integrations->init();
 
         // Register CP routes
         Event::on(
@@ -216,10 +222,10 @@ class TranslationManager extends Plugin
             $this->registerFileMessageSource(); // Use file-based translations
         }
 
-        // Register Formie hooks if enabled
-        if ($this->getSettings()->enableFormieIntegration && class_exists('verbb\formie\Formie')) {
-            $this->formie->registerFormieHooks();
-        }
+        // DISABLED: Old Formie hooks - testing new integration system
+        // if ($this->getSettings()->enableFormieIntegration && class_exists('verbb\formie\Formie')) {
+        //     $this->formie->registerFormieHooks();
+        // }
 
         // Register console controllers
         if (Craft::$app instanceof ConsoleApplication) {
@@ -481,13 +487,9 @@ class TranslationManager extends Plugin
         // Get base logs path
         $logsPath = Craft::$app->getPath()->getLogPath();
 
-        // Use date-based log file naming
-        $date = date('Y-m-d');
-        $logFile = $logsPath . "/translation-manager-{$date}.log";
-
-        // Create a new log target instance
+        // Create a new log target instance with dynamic date-based naming
         $target = new \yii\log\FileTarget([
-            'logFile' => $logFile,
+            'logFile' => $logsPath . '/translation-manager-' . date('Y-m-d') . '.log',
             'categories' => ['lindemannrock\translationmanager\*', 'translation-manager'],
             'logVars' => [],
             'levels' => ['error', 'warning'], // Only log errors and warnings
