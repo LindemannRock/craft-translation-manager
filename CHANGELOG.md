@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/LindemannRock/translation-manager/compare/v1.4.2...v1.5.0) (2025-09-12)
+
+
+### Features
+
+* implement generic integration architecture and refactor Formie integration ([2f2ab43](https://github.com/LindemannRock/translation-manager/commit/2f2ab4312e57749ec9cb1b07e19eb7fe3631f766))
+
 ## [1.4.2](https://github.com/LindemannRock/translation-manager/compare/v1.4.1...v1.4.2) (2025-09-11)
 
 
