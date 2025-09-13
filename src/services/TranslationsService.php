@@ -588,7 +588,15 @@ class TranslationsService extends Component
                     
                     // Agree field description
                     if (property_exists($field, 'description') && $field->description) {
-                        $activeTexts[$field->description] = true;
+                        if (is_string($field->description)) {
+                            $activeTexts[$field->description] = true;
+                        } elseif (is_array($field->description)) {
+                            foreach ($field->description as $desc) {
+                                if (is_string($desc) && !empty($desc)) {
+                                    $activeTexts[$desc] = true;
+                                }
+                            }
+                        }
                     }
                 }
             }
