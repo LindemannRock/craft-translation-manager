@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/LindemannRock/translation-manager/compare/v1.5.0...v1.6.0) (2025-09-13)
+
+
+### Features
+
+* enhance handling of field descriptions in TranslationsService ([400dd95](https://github.com/LindemannRock/translation-manager/commit/400dd95179c4c8f7321783ba377bf186bc246270))
+
 ## [1.5.0](https://github.com/LindemannRock/translation-manager/compare/v1.4.2...v1.5.0) (2025-09-12)
 
 
