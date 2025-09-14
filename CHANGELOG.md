@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/LindemannRock/translation-manager/compare/v1.6.0...v1.7.0) (2025-09-14)
+
+
+### Features
+
+* add plugin credit component to settings templates ([8d29f7d](https://github.com/LindemannRock/translation-manager/commit/8d29f7db60bf62ce1e20fa8543de0496a0a8ebcc))
+
 ## [1.6.0](https://github.com/LindemannRock/translation-manager/compare/v1.5.0...v1.6.0) (2025-09-13)
 
 
