@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/LindemannRock/translation-manager/compare/v1.10.0...v1.11.0) (2025-09-15)
+
+
+### Features
+
+* **TranslationStatsUtility:** update to retrieve statistics for enabled sites only ([cf123cc](https://github.com/LindemannRock/translation-manager/commit/cf123cca0c5676e6a4b14ea1b655d0a942886bc8))
+
 ## [1.10.0](https://github.com/LindemannRock/translation-manager/compare/v1.9.0...v1.10.0) (2025-09-15)
 
 
