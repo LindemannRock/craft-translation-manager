@@ -12,11 +12,11 @@ Translation Manager was created to solve critical gaps in Craft CMS multi-langua
 - No centralized interface to manage all site translations
 - Difficult to track what needs translation vs what's already translated
 
-**The Formie Problem**: Our first major integration tackled [Formie](https://verbb.io/craft-plugins/formie/features) forms, which had even more complex translation challenges:
+**The Formie Problem**: Our first major integration tackled [Formie](https://verbb.io/craft-plugins/formie/features) forms, which had complex translation management challenges:
 - Duplicating entire forms for each language (maintenance nightmare)
-- No way to translate field labels, placeholders, dropdown options, error messages
-- Form translations scattered across multiple files and locations
-- No efficient workflow for translating all field properties
+- Manual translation files (formie.php) for each language - difficult to track and manage
+- No centralized workflow for managing all field properties and content
+- Keeping translations in sync when forms change
 
 **Our Solution**: Translation Manager provides a unified Control Panel interface to manage both site translations (through custom categories) and all Formie form elements. Changes are instantly available without touching code files or redeploying.
 
@@ -109,13 +109,13 @@ Translation Manager supports multi-site setups with any language combination. Th
 - **Site-Specific Translations**: Each site has its own translation of the same key
 - **Site Switcher**: Native Craft site selector in breadcrumbs
 - **Dynamic Interface**: Text direction (RTL/LTR) adapts to site language
-- **Per-Site Export**: Generates separate translation files for each site language (e.g., `en-US/alhatab.php`, `ar/formie.php`)
+- **Per-Site Export**: Generates separate translation files for each site language (e.g., `en-US/lindemannrock.php`, `ar/formie.php`)
 
 ### Example Multi-Site Workflow
 
 ```twig
 {# Template uses same translation key #}
-{{ 'Welcome'|t('alhatab') }}
+{{ 'Welcome'|t('lindemannrock') }}
 ```
 
 **Database Storage:**
@@ -124,8 +124,8 @@ Translation Manager supports multi-site setups with any language combination. Th
 - French Site: `translationKey="Welcome"` → `translation="Bienvenue"`
 
 **Generated Files:**
-- `translations/en-US/alhatab.php` (English site)
-- `translations/ar/alhatab.php` (Arabic site)
+- `translations/en-US/lindemannrock.php` (English site)
+- `translations/ar/lindemannrock.php` (Arabic site)
 - `translations/en-US/formie.php` (English Formie forms)
 - `translations/ar/formie.php` (Arabic Formie forms)
 
@@ -555,7 +555,7 @@ For security vulnerabilities, please see our [Security Policy](SECURITY.md).
 
 ### Translations Not Being Captured
 - **Formie**: Save the form after adding fields, or run `craft translation-manager/translations/capture-formie`
-- **Site**: Use correct category `{{ 'Text'|t('alhatab') }}` and visit the frontend page
+- **Site**: Use correct category `{{ 'Text'|t('lindemannrock') }}` and visit the frontend page
 - Text with Twig syntax ({{, {%, {#) is automatically excluded
 
 ### Import Blocked by Security
