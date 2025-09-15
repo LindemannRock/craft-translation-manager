@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/LindemannRock/translation-manager/compare/v1.8.0...v1.9.0) (2025-09-15)
+
+
+### Features
+
+* **FormieIntegration:** enhance translation capture for Agree field descriptions ([619e34d](https://github.com/LindemannRock/translation-manager/commit/619e34d8eae616f49e236a17ee7ff3f5fa414ace))
+
 ## [1.8.0](https://github.com/LindemannRock/translation-manager/compare/v1.7.1...v1.8.0) (2025-09-15)
 
 
