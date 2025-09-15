@@ -340,10 +340,21 @@ class FormieIntegration extends BaseIntegration
 
             case 'verbb\formie\fields\Agree':
                 if (property_exists($field, 'description') && $field->description) {
-                    $captured[] = $this->createTranslation(
-                        $field->description,
-                        "formie.{$formHandle}.{$fieldHandle}.description"
-                    );
+                    if (is_string($field->description)) {
+                        $captured[] = $this->createTranslation(
+                            $field->description,
+                            "formie.{$formHandle}.{$fieldHandle}.description"
+                        );
+                    } elseif (is_array($field->description)) {
+                        foreach ($field->description as $index => $desc) {
+                            if (is_string($desc) && !empty($desc)) {
+                                $captured[] = $this->createTranslation(
+                                    $desc,
+                                    "formie.{$formHandle}.{$fieldHandle}.description.{$index}"
+                                );
+                            }
+                        }
+                    }
                 }
                 if (property_exists($field, 'checkedValue') && $field->checkedValue) {
                     $captured[] = $this->createTranslation(
