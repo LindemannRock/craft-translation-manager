@@ -61,9 +61,12 @@ class TranslationStatsUtility extends Utility
         $stats = TranslationManager::getInstance()->translations->getStatistics((int)$siteId);
         $allSiteStats = [];
         
-        // Get stats for all sites
-        foreach (Craft::$app->getSites()->getAllSites() as $site) {
-            $allSiteStats[$site->id] = TranslationManager::getInstance()->translations->getStatistics($site->id);
+        // Get stats for enabled sites only
+        $plugin = TranslationManager::getInstance();
+        $enabledSites = $plugin->getAllowedSites();
+
+        foreach ($enabledSites as $site) {
+            $allSiteStats[$site->id] = $plugin->translations->getStatistics($site->id);
             $allSiteStats[$site->id]['siteInfo'] = [
                 'id' => $site->id,
                 'name' => $site->name,
