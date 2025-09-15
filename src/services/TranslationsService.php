@@ -1075,16 +1075,21 @@ class TranslationsService extends Component
                 break;
 
             case 'verbb\formie\fields\Agree':
-                if (property_exists($field, 'description') && $field->description) {
-                    if (is_string($field->description)) {
-                        $activeTexts[$field->description] = true;
-                    } elseif (is_array($field->description)) {
-                        foreach ($field->description as $desc) {
-                            if (is_string($desc) && !empty($desc)) {
-                                $activeTexts[$desc] = true;
-                            }
-                        }
+                // Use getDescriptionHtml() method to get the actual HTML that Formie uses
+                if (method_exists($field, 'getDescriptionHtml')) {
+                    $descriptionHtml = $field->getDescriptionHtml();
+                    if (!empty($descriptionHtml)) {
+                        $activeTexts[(string)$descriptionHtml] = true;
                     }
+                }
+
+                // Agree field checked/unchecked values
+                if (property_exists($field, 'checkedValue') && $field->checkedValue) {
+                    $activeTexts[$field->checkedValue] = true;
+                }
+
+                if (property_exists($field, 'uncheckedValue') && $field->uncheckedValue) {
+                    $activeTexts[$field->uncheckedValue] = true;
                 }
                 break;
         }

@@ -314,6 +314,9 @@ class FormieIntegration extends BaseIntegration
         $formHandle = $form->handle;
         $fieldHandle = $field->handle;
 
+        // Debug: Log field type being processed
+        error_log("PROCESSING FIELD: {$fieldClass} ({$fieldHandle})");
+
         switch ($fieldClass) {
             // Fields with options
             case 'verbb\formie\fields\Dropdown':
@@ -339,21 +342,14 @@ class FormieIntegration extends BaseIntegration
                 break;
 
             case 'verbb\formie\fields\Agree':
-                if (property_exists($field, 'description') && $field->description) {
-                    if (is_string($field->description)) {
+                // Use getDescriptionHtml() method to get the converted HTML
+                if (method_exists($field, 'getDescriptionHtml')) {
+                    $descriptionHtml = $field->getDescriptionHtml();
+                    if (!empty($descriptionHtml)) {
                         $captured[] = $this->createTranslation(
-                            $field->description,
+                            (string)$descriptionHtml,
                             "formie.{$formHandle}.{$fieldHandle}.description"
                         );
-                    } elseif (is_array($field->description)) {
-                        foreach ($field->description as $index => $desc) {
-                            if (is_string($desc) && !empty($desc)) {
-                                $captured[] = $this->createTranslation(
-                                    $desc,
-                                    "formie.{$formHandle}.{$fieldHandle}.description.{$index}"
-                                );
-                            }
-                        }
                     }
                 }
                 if (property_exists($field, 'checkedValue') && $field->checkedValue) {
