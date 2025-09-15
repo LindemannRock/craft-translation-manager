@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/LindemannRock/translation-manager/compare/v1.7.0...v1.7.1) (2025-09-15)
+
+
+### Bug Fixes
+
+* correct license header formatting in LICENSE file ([0ac32cc](https://github.com/LindemannRock/translation-manager/commit/0ac32cc879db1e2c04437d9fe78d3a983634afcd))
+
 ## [1.7.0](https://github.com/LindemannRock/translation-manager/compare/v1.6.0...v1.7.0) (2025-09-14)
 
 
