@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/LindemannRock/translation-manager/compare/v1.9.0...v1.10.0) (2025-09-15)
+
+
+### Features
+
+* **FormieIntegration, TranslationsService:** update Agree field handling to use getDescriptionHtml() for improved translation capture ([f4f1742](https://github.com/LindemannRock/translation-manager/commit/f4f1742ddee44f75a213920b1ffd2bdcfeb4a315))
+
 ## [1.9.0](https://github.com/LindemannRock/translation-manager/compare/v1.8.0...v1.9.0) (2025-09-15)
 
 
