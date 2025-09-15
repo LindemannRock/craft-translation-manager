@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/LindemannRock/translation-manager/compare/v1.7.1...v1.8.0) (2025-09-15)
+
+
+### Features
+
+* enhance Formie integration to capture additional button labels and messages ([a60dc4d](https://github.com/LindemannRock/translation-manager/commit/a60dc4d5e52cdb4d011ba4c68517893fb067f8d9))
+
 ## [1.7.1](https://github.com/LindemannRock/translation-manager/compare/v1.7.0...v1.7.1) (2025-09-15)
 
 
