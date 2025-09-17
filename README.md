@@ -27,6 +27,8 @@ Translation Manager was created to solve critical gaps in Craft CMS multi-langua
   - Site selector in breadcrumbs like native Craft elements
   - Dynamic text direction (RTL/LTR) based on site language
   - Per-site translation files generation
+  - **Locale Variant Support**: Full support for regional language variants (en-US, en-GB, en-CA, etc.)
+  - Automatic source language detection based on primary site configuration (uses the base language of your primary site)
 - **Unified Translation Management**: Manage all translations in one place with an intuitive interface
 - **Smart Deduplication**: Each unique text is stored only once, regardless of how many forms use it
 - **Comprehensive Formie Support**:
@@ -556,6 +558,12 @@ For security vulnerabilities, please see our [Security Policy](SECURITY.md).
 ### Translations Not Being Captured
 - **Formie**: Save the form after adding fields, or run `craft translation-manager/translations/capture-formie`
 - **Site**: Use correct category `{{ 'Text'|t('lindemannrock') }}` and visit the frontend page
+- **Locale Variants**: If using locale-specific languages (en-US, en-GB, fr-CA, etc.):
+  - Translation files are automatically exported to the correct locale folder (e.g., `/translations/en-US/lindemannrock.php`)
+  - The plugin automatically detects the source language from your primary site (the site with `primary: true`)
+  - Each locale variant can have its own unique translations
+  - **Important**: Changing your primary site's language may affect existing translations
+  - Clear Craft's cache after changing site language settings
 - Text with Twig syntax ({{, {%, {#) is automatically excluded
 
 ### Import Blocked by Security
