@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0](https://github.com/LindemannRock/translation-manager/compare/v1.11.0...v1.12.0) (2025-09-18)
+
+
+### Features
+
+* **backup:** add asset volume selector for backup storage ([1b56355](https://github.com/LindemannRock/translation-manager/commit/1b56355d7ec98f714d6fa42ad968582d8df24051))
+
 ## [1.11.0](https://github.com/LindemannRock/translation-manager/compare/v1.10.0...v1.11.0) (2025-09-15)
 
 
