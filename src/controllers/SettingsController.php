@@ -163,6 +163,7 @@ class SettingsController extends Controller
         $settings->backupOnImport = (bool) $request->getBodyParam('backupOnImport', $settings->backupOnImport);
         $settings->backupSchedule = $request->getBodyParam('backupSchedule', $settings->backupSchedule);
         $settings->backupPath = $request->getBodyParam('backupPath', $settings->backupPath);
+        $settings->backupVolumeUid = $request->getBodyParam('backupVolumeUid') ?: null;
         
         // Handle skip patterns
         $skipPatterns = $request->getBodyParam('skipPatterns', '');

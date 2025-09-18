@@ -15,6 +15,7 @@ use craft\base\Model;
 use craft\behaviors\EnvAttributeParserBehavior;
 use craft\db\Query;
 use craft\helpers\Db;
+use craft\helpers\FileHelper;
 
 /**
  * Translation Manager Settings Model
@@ -117,6 +118,11 @@ class Settings extends Model
      */
     public string $backupPath = '@storage/translation-manager/backups';
 
+    /**
+     * @var string|null Asset volume UID for backup storage (null = use backupPath)
+     */
+    public ?string $backupVolumeUid = null;
+
     public function behaviors(): array
     {
         return [
@@ -133,14 +139,15 @@ class Settings extends Model
             [['pluginName', 'translationCategory', 'exportPath'], 'required'],
             [['pluginName'], 'string', 'max' => 100],
             [['translationCategory'], 'string', 'max' => 50],
-            [['translationCategory'], 'match', 'pattern' => '/^[a-zA-Z][a-zA-Z0-9_-]*$/', 
+            [['translationCategory'], 'match', 'pattern' => '/^[a-zA-Z][a-zA-Z0-9_-]*$/',
              'message' => 'Translation category must start with a letter and contain only letters, numbers, hyphens, and underscores.'],
             [['translationCategory'], 'validateTranslationCategory'],
             [['exportPath'], 'validateExportPath'],
             [['backupPath'], 'validateBackupPath'],
+            [['backupVolumeUid'], 'string'],
             [['itemsPerPage'], 'integer', 'min' => 10, 'max' => 500],
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
-            [['enableFormieIntegration', 'enableSiteTranslations', 'autoExport', 
+            [['enableFormieIntegration', 'enableSiteTranslations', 'autoExport',
               'showContext', 'enableSuggestions', 'autoSaveEnabled', 'backupEnabled', 'backupOnImport'], 'boolean'],
             [['skipPatterns'], 'safe'],
             [['backupRetentionDays'], 'integer', 'min' => 0, 'max' => 365],
@@ -168,6 +175,7 @@ class Settings extends Model
             'backupOnImport' => 'Backup Before Import',
             'backupSchedule' => 'Backup Schedule',
             'backupPath' => 'Backup Path',
+            'backupVolumeUid' => 'Backup Volume',
         ];
     }
 
@@ -362,6 +370,49 @@ class Settings extends Model
      */
     public function getBackupPath(): string
     {
+        // If a volume is selected, use its path
+        if ($this->backupVolumeUid) {
+            $volume = Craft::$app->getVolumes()->getVolumeByUid($this->backupVolumeUid);
+            if ($volume) {
+                try {
+                    // Get the filesystem configuration
+                    $fs = $volume->getFs();
+
+                    // Get the path setting from the filesystem
+                    $volumePath = $fs->path ?? '';
+
+                    // Parse the path using Craft's parseEnv to handle environment variables
+                    $resolvedPath = Craft::parseEnv($volumePath);
+
+                    // If still not resolved, try using getenv directly for common vars
+                    if (strpos($resolvedPath, '$') !== false) {
+                        // Common environment variables in Craft
+                        $resolvedPath = str_replace('${VOLUMES_BASE_PATH}', getenv('VOLUMES_BASE_PATH') ?: './volumes', $resolvedPath);
+                        $resolvedPath = str_replace('${VOLUME_UPLOADS}', getenv('VOLUME_UPLOADS') ?: 'uploads', $resolvedPath);
+                        $resolvedPath = str_replace('$VOLUMES_BASE_PATH', getenv('VOLUMES_BASE_PATH') ?: './volumes', $resolvedPath);
+                        $resolvedPath = str_replace('$VOLUME_UPLOADS', getenv('VOLUME_UPLOADS') ?: 'uploads', $resolvedPath);
+                    }
+
+                    // Handle relative paths
+                    if (!str_starts_with($resolvedPath, '/')) {
+                        $resolvedPath = Craft::getAlias('@root') . '/' . $resolvedPath;
+                    }
+
+                    // Append our subdirectory
+                    $path = rtrim($resolvedPath, '/') . '/translation-manager/backups';
+
+                    // Normalize the path
+                    $path = FileHelper::normalizePath($path);
+
+                    return $path;
+                } catch (\Exception $e) {
+                    // Log the error and fall back
+                    Craft::error('Failed to get volume path: ' . $e->getMessage(), 'translation-manager');
+                }
+            }
+        }
+
+        // Fall back to the regular backup path
         $path = Craft::getAlias($this->backupPath);
         
         // Additional safety check
@@ -460,14 +511,18 @@ class Settings extends Model
                     }
                     
                     // Handle boolean casting
-                    if (in_array($attribute, ['enableFormieIntegration', 'enableSiteTranslations', 'autoExport', 
-                                               'showContext', 'enableSuggestions', 'autoSaveEnabled', 
+                    if (in_array($attribute, ['enableFormieIntegration', 'enableSiteTranslations', 'autoExport',
+                                               'showContext', 'enableSuggestions', 'autoSaveEnabled',
                                                'backupEnabled', 'backupOnImport'])) {
                         $settings->$attribute = (bool)$row[$attribute];
                     }
                     // Handle integer casting
                     elseif (in_array($attribute, ['itemsPerPage', 'autoSaveDelay', 'backupRetentionDays'])) {
                         $settings->$attribute = (int)$row[$attribute];
+                    }
+                    // Handle nullable strings
+                    elseif (in_array($attribute, ['backupVolumeUid'])) {
+                        $settings->$attribute = $row[$attribute] ?: null;
                     }
                     // Regular assignment for strings and arrays
                     else {
@@ -583,6 +638,7 @@ class Settings extends Model
             'backupOnImport' => (int)$this->backupOnImport,
             'backupSchedule' => $this->backupSchedule,
             'backupPath' => $this->backupPath,
+            'backupVolumeUid' => $this->backupVolumeUid,
             'dateUpdated' => Db::prepareDateForDb(new \DateTime()),
         ];
         

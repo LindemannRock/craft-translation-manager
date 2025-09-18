@@ -12,6 +12,8 @@ namespace lindemannrock\translationmanager\migrations;
 
 use Craft;
 use craft\db\Migration;
+use craft\helpers\Db;
+use craft\helpers\StringHelper;
 
 /**
  * Installation Migration
@@ -124,10 +126,18 @@ class Install extends Migration
                 'backupOnImport' => $this->boolean()->defaultValue(true),
                 'backupSchedule' => $this->string(20)->defaultValue('manual'),
                 'backupPath' => $this->string()->defaultValue('@storage/translation-manager/backups'),
+                'backupVolumeUid' => $this->string()->null(),
                 'skipPatterns' => $this->text()->null(),
                 'dateCreated' => $this->dateTime()->notNull(),
                 'dateUpdated' => $this->dateTime()->notNull(),
                 'uid' => $this->uid(),
+            ]);
+
+            // Insert default settings row
+            $this->insert('{{%translationmanager_settings}}', [
+                'dateCreated' => Db::prepareDateForDb(new \DateTime()),
+                'dateUpdated' => Db::prepareDateForDb(new \DateTime()),
+                'uid' => StringHelper::UUID(),
             ]);
         }
 

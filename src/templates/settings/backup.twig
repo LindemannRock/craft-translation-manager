@@ -33,10 +33,11 @@
 {% import "_includes/forms" as forms %}
 
 {% block content %}
-    {{ csrfInput() }}
-    {{ actionInput('translation-manager/settings/save') }}
-    {{ redirectInput('translation-manager/settings/backup') }}
-    
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        {{ actionInput('translation-manager/settings/save') }}
+        {{ redirectInput('translation-manager/settings/backup') }}
+
     <div id="settings">
         <h2>{{ "Backup Settings"|t('translation-manager') }}</h2>
 
@@ -93,25 +94,53 @@
                 min: 0,
                 max: 365,
                 disabled: settings.isOverriddenByConfig('backupRetentionDays'),
-                warning: settings.isOverriddenByConfig('backupRetentionDays') ? 
+                warning: settings.isOverriddenByConfig('backupRetentionDays') ?
                     "This is being overridden by the <code>backupRetentionDays</code> setting in <code>config/translation-manager.php</code>."|raw : null,
             }) }}
 
-            {{ forms.autosuggestField({
-                label: "Backup Path"|t('translation-manager'),
-                instructions: "The path where backups should be stored"|t('translation-manager'),
-                id: 'backupPath',
-                name: 'backupPath',
-                value: settings.backupPath,
-                errors: settings.getErrors('backupPath'),
-                required: true,
-                suggestEnvVars: true,
-                disabled: settings.isOverriddenByConfig('backupPath'),
-                warning: settings.isOverriddenByConfig('backupPath') ? 
-                    "This is being overridden by the <code>backupPath</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+            {# Asset volume selection dropdown for backups #}
+            {% set volumeOptions = [{label: 'Use custom path'|t('translation-manager'), value: ''}] %}
+            {% for volume in craft.app.volumes.getAllVolumes() %}
+                {% set volumeOptions = volumeOptions|merge([{
+                    label: volume.name,
+                    value: volume.uid
+                }]) %}
+            {% endfor %}
+
+            {{ forms.selectField({
+                label: "Backup Storage Volume"|t('translation-manager'),
+                instructions: "Which asset volume should be used for storing backups. Backups will be stored in a 'translation-manager/backups' subdirectory."|t('translation-manager'),
+                id: 'backupVolumeUid',
+                name: 'backupVolumeUid',
+                options: volumeOptions,
+                value: settings.backupVolumeUid ?? '',
+                disabled: settings.isOverriddenByConfig('backupVolumeUid'),
+                warning: settings.isOverriddenByConfig('backupVolumeUid') ?
+                    "This is being overridden by the <code>backupVolumeUid</code> setting in <code>config/translation-manager.php</code>."|raw : null,
             }) }}
+
+            <div id="custom-backup-path" class="{{ settings.backupVolumeUid ? 'hidden' }}">
+                {{ forms.autosuggestField({
+                    label: "Custom Backup Path"|t('translation-manager'),
+                    instructions: "The custom path where backups should be stored (only used when no volume is selected)"|t('translation-manager'),
+                    id: 'backupPath',
+                    name: 'backupPath',
+                    value: settings.backupPath,
+                    errors: settings.getErrors('backupPath'),
+                    required: not settings.backupVolumeUid,
+                    suggestEnvVars: true,
+                    disabled: settings.isOverriddenByConfig('backupPath'),
+                    warning: settings.isOverriddenByConfig('backupPath') ?
+                        "This is being overridden by the <code>backupPath</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                }) }}
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">{{ "Save"|t('translation-manager') }}</button>
         </div>
     </div>
+    </form>
 
 <div id="history" class="hidden">
     <div class="flex" style="align-items: center; margin-bottom: 24px;">
@@ -210,6 +239,27 @@
 {% endblock %}
 
 {% js %}
+    // Handle volume selector change
+    document.addEventListener('DOMContentLoaded', function() {
+        const volumeSelect = document.getElementById('backupVolumeUid');
+        const customPathDiv = document.getElementById('custom-backup-path');
+        const pathField = document.getElementById('backupPath');
+
+        if (volumeSelect) {
+            volumeSelect.addEventListener('change', function() {
+                if (this.value) {
+                    // Volume is selected, hide custom path
+                    customPathDiv.classList.add('hidden');
+                    pathField.removeAttribute('required');
+                } else {
+                    // No volume selected, show custom path
+                    customPathDiv.classList.remove('hidden');
+                    pathField.setAttribute('required', 'required');
+                }
+            });
+        }
+    });
+
     // Handle tab switching to show/hide save button
     document.addEventListener('DOMContentLoaded', function() {
         const saveButton = document.querySelector('#save-btn-container');

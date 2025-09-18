@@ -150,6 +150,7 @@ return [
     'translationCategory' => 'site',
     'autoExport' => true,
     'backupEnabled' => true,
+    // 'backupVolumeUid' => 'abc123-your-volume-uid', // Optional: Set backup volume
     // Multi-environment support
     'production' => [
         'autoExport' => true,
@@ -214,7 +215,12 @@ When "Enable Site Translations" is enabled, the following settings become availa
 - **Backup Before Import**: Automatically backup before CSV imports
 - **Backup Schedule**: Manual, Daily, Weekly, or Monthly automatic backups
 - **Retention Period**: Days to keep automatic backups (manual backups never auto-delete)
-- **Backup Path**: Where backups are stored in organized subfolders
+- **Backup Storage Volume**: Select an asset volume for storing backups
+  - Choose from existing asset volumes to store backups alongside your media files
+  - Backups will be stored in a `translation-manager/backups` subdirectory within the selected volume
+  - Falls back to custom backup path if no volume is selected
+- **Custom Backup Path**: Manual path configuration (only used when no volume is selected)
+  - Default: `@storage/translation-manager/backups`
 
 Backups are automatically organized into:
 - `/scheduled/` - Daily/weekly/monthly automated backups
