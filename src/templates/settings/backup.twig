@@ -415,6 +415,13 @@
         const message = '{{ "Are you sure you want to restore this backup? This will replace all current translations. A backup of the current state will be created before restoring."|t('translation-manager')|e('js') }}';
         
         if (confirm(message)) {
+            // Show immediate feedback
+            {% if settings.backupVolumeUid %}
+            Craft.cp.displayNotice('{{ "Starting restore from volume storage (may take a moment)..."|t('translation-manager') }}');
+            {% else %}
+            Craft.cp.displayNotice('{{ "Starting restore operation..."|t('translation-manager') }}');
+            {% endif %}
+
             fetch('{{ actionUrl('translation-manager/backup/restore') }}', {
                 method: 'POST',
                 headers: {
@@ -454,6 +461,13 @@
         const message = '{{ "Are you sure you want to delete this backup? This action cannot be undone."|t('translation-manager')|e('js') }}';
         
         if (confirm(message)) {
+            // Show immediate feedback
+            {% if settings.backupVolumeUid %}
+            Craft.cp.displayNotice('{{ "Deleting backup from volume storage (may take a moment)..."|t('translation-manager') }}');
+            {% else %}
+            Craft.cp.displayNotice('{{ "Deleting backup..."|t('translation-manager') }}');
+            {% endif %}
+
             fetch(deleteUrl, {
                 method: 'POST',
                 headers: {
