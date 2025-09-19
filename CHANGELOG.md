@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.3](https://github.com/LindemannRock/translation-manager/compare/v1.12.2...v1.12.3) (2025-09-19)
+
+
+### Bug Fixes
+
+* **backup:** use correct Craft CMS v5 FsInterface methods for volumes ([363717a](https://github.com/LindemannRock/translation-manager/commit/363717a714b607e021e16901ded3cdfa06f49e3f))
+
 ## [1.12.2](https://github.com/LindemannRock/translation-manager/compare/v1.12.1...v1.12.2) (2025-09-19)
 
 
