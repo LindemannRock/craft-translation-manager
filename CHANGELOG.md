@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.5](https://github.com/LindemannRock/translation-manager/compare/v1.12.4...v1.12.5) (2025-09-19)
+
+
+### Bug Fixes
+
+* **backup:** handle FsListing objects from getFileList() properly ([a9be508](https://github.com/LindemannRock/translation-manager/commit/a9be508d4dfa2f323e83f276b704fcb57ba5994f))
+
 ## [1.12.4](https://github.com/LindemannRock/translation-manager/compare/v1.12.3...v1.12.4) (2025-09-19)
 
 
