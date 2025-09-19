@@ -364,10 +364,11 @@ class BackupService extends Component
 
                 // List contents of subfolder using Craft FS API
                 $files = $this->_volumeFs->getFileList($folderPath, false);
-                $this->logInfo('Subfolder contents', ['subfolder' => $subfolder, 'fileCount' => count($files)]);
+                $fileArray = iterator_to_array($files); // Convert Generator to array
+                $this->logInfo('Subfolder contents', ['subfolder' => $subfolder, 'fileCount' => count($fileArray)]);
 
                 // getFileList returns directories, so we need to identify which are backup directories
-                foreach ($files as $file) {
+                foreach ($fileArray as $file) {
                     $this->logInfo('Processing file/directory', ['file' => $file]);
 
                     // Check if this is a directory (backup directories have names like "2025-09-19_20-22-50")
