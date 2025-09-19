@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.4](https://github.com/LindemannRock/translation-manager/compare/v1.12.3...v1.12.4) (2025-09-19)
+
+
+### Bug Fixes
+
+* **backup:** convert generator to array for file listing in BackupService ([4a9a87b](https://github.com/LindemannRock/translation-manager/commit/4a9a87bc71c3a4d4bcdd311d1e86213bf336dc9d))
+
 ## [1.12.3](https://github.com/LindemannRock/translation-manager/compare/v1.12.2...v1.12.3) (2025-09-19)
 
 
