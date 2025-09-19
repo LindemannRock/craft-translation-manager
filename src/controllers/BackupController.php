@@ -82,6 +82,9 @@ class BackupController extends Controller
 
             // Format directly with PHP to avoid Craft's locale formatting
             $backup['formattedDate'] = $dateTime->format('n/j/Y, g:i A') . ' (' . $craftTimezone . ')';
+
+            // Format reason for display
+            $backup['formattedReason'] = $this->_formatBackupReason($backup['reason'] ?? 'manual');
         }
         
         // Add debug info for troubleshooting
@@ -206,48 +209,137 @@ class BackupController extends Controller
     public function actionDownload(): Response
     {
         $backupName = Craft::$app->getRequest()->getRequiredParam('backup');
-        
+
         if (!preg_match('/^([\w]+\/)?(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})$/', $backupName)) {
             throw new NotFoundHttpException('Invalid backup name');
         }
-        
+
         $backupService = TranslationManager::getInstance()->backup;
-        $backupDir = $backupService->getBackupPath() . '/' . $backupName;
-        
-        if (!is_dir($backupDir)) {
+        $settings = TranslationManager::getInstance()->getSettings();
+
+        // Check if using volume storage
+        $useVolume = !empty($settings->backupVolumeUid);
+
+        if ($useVolume) {
+            return $this->_downloadVolumeBackup($backupName);
+        } else {
+            return $this->_downloadLocalBackup($backupName);
+        }
+    }
+
+    /**
+     * Download backup from volume storage
+     */
+    private function _downloadVolumeBackup(string $backupName): Response
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $volume = Craft::$app->getVolumes()->getVolumeByUid($settings->backupVolumeUid);
+
+        if (!$volume) {
+            throw new NotFoundHttpException('Volume not found');
+        }
+
+        $fs = $volume->getFs();
+        $backupPath = 'translation-manager/backups/' . $backupName;
+
+        if (!$fs->directoryExists($backupPath)) {
             throw new NotFoundHttpException('Backup not found');
         }
-        
+
         // Create a temporary zip file
-        $zipPath = Craft::$app->getPath()->getTempPath() . '/translation-backup-' . $backupName . '.zip';
-        
+        $zipPath = Craft::$app->getPath()->getTempPath() . '/translation-backup-' . str_replace('/', '-', $backupName) . '.zip';
+
         // Create zip archive
         $zip = new \ZipArchive();
         if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
             throw new \Exception('Cannot create zip file');
         }
-        
+
+        // Add backup files to zip
+        $files = ['metadata.json', 'formie-translations.json', 'site-translations.json'];
+        foreach ($files as $file) {
+            $filePath = $backupPath . '/' . $file;
+            if ($fs->fileExists($filePath)) {
+                $content = $fs->read($filePath);
+                $zip->addFromString($file, $content);
+            }
+        }
+
+        $zip->close();
+
+        // Send the file
+        $response = Craft::$app->getResponse();
+        $response->sendFile($zipPath, 'translation-backup-' . str_replace('/', '-', $backupName) . '.zip', [
+            'mimeType' => 'application/zip',
+            'inline' => false,
+        ]);
+
+        // Clean up temp file after sending
+        register_shutdown_function(function() use ($zipPath) {
+            @unlink($zipPath);
+        });
+
+        return $response;
+    }
+
+    /**
+     * Download backup from local storage
+     */
+    private function _downloadLocalBackup(string $backupName): Response
+    {
+        $backupService = TranslationManager::getInstance()->backup;
+        $backupDir = $backupService->getBackupPath() . '/' . $backupName;
+
+        if (!is_dir($backupDir)) {
+            throw new NotFoundHttpException('Backup not found');
+        }
+
+        // Create a temporary zip file
+        $zipPath = Craft::$app->getPath()->getTempPath() . '/translation-backup-' . str_replace('/', '-', $backupName) . '.zip';
+
+        // Create zip archive
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            throw new \Exception('Cannot create zip file');
+        }
+
         // Add all files from backup directory
         $files = FileHelper::findFiles($backupDir);
         foreach ($files as $file) {
             $relativePath = str_replace($backupDir . '/', '', $file);
             $zip->addFile($file, $relativePath);
         }
-        
+
         $zip->close();
-        
+
         // Send the file
         $response = Craft::$app->getResponse();
-        $response->sendFile($zipPath, 'translation-backup-' . $backupName . '.zip', [
+        $response->sendFile($zipPath, 'translation-backup-' . str_replace('/', '-', $backupName) . '.zip', [
             'mimeType' => 'application/zip',
             'inline' => false,
         ]);
-        
+
         // Clean up temp file after sending
         register_shutdown_function(function() use ($zipPath) {
             @unlink($zipPath);
         });
-        
+
         return $response;
+    }
+
+    /**
+     * Format backup reason for display
+     */
+    private function _formatBackupReason(string $reason): string
+    {
+        return match($reason) {
+            'before_import' => 'Before Import',
+            'before_cleanup' => 'Before Cleanup',
+            'before_clear' => 'Before Clear',
+            'before_restore' => 'Before Restore',
+            'scheduled' => 'Scheduled',
+            'manual' => 'Manual',
+            default => ucfirst(str_replace('_', ' ', $reason))
+        };
     }
 }

@@ -130,8 +130,12 @@ class BackupService extends Component
             $timestamp = DateTimeHelper::currentTimeStamp();
             $date = date('Y-m-d_H-i-s', $timestamp);
 
-            // Get all translations
-            $translations = TranslationManager::getInstance()->translations->getTranslations();
+            // Get ALL translations for backup (including unused, pending, translated, approved)
+            $translations = TranslationManager::getInstance()->translations->getTranslations([
+                'status' => 'all', // Include all statuses
+                'allSites' => true, // Include all sites
+                'type' => 'all' // Include both formie and site translations
+            ]);
 
             if (empty($translations) && $reason !== 'Before Restore') {
                 $this->logWarning('No translations to backup');
@@ -397,7 +401,7 @@ class BackupService extends Component
                                     'reason' => $metadata['reason'] ?? 'unknown',
                                     'user' => $metadata['user'] ?? 'Unknown',
                                     'translationCount' => $metadata['translationCount'] ?? 0,
-                                    'size' => 0, // Size calculation for volumes is complex
+                                    'size' => $this->_calculateVolumeBackupSize($this->_volumeBackupPath . '/' . $backupPath),
                                     'folder' => $subfolder,
                                     'date' => $metadata['date'] ?? '',
                                     'userId' => $metadata['userId'] ?? null,
@@ -1032,6 +1036,44 @@ class BackupService extends Component
         return $deleted;
     }
     
+    /**
+     * Calculate backup size for volume storage
+     */
+    private function _calculateVolumeBackupSize(string $backupPath): int
+    {
+        $size = 0;
+
+        try {
+            // Try to get file sizes for common backup files
+            $files = ['metadata.json', 'formie-translations.json', 'site-translations.json'];
+
+            foreach ($files as $file) {
+                $filePath = $backupPath . '/' . $file;
+                if ($this->_volumeFs->fileExists($filePath)) {
+                    try {
+                        $size += $this->_volumeFs->getFileSize($filePath);
+                    } catch (\Exception $e) {
+                        // If getFileSize fails, estimate based on content
+                        try {
+                            $content = $this->_volumeFs->read($filePath);
+                            $size += strlen($content);
+                        } catch (\Exception $e2) {
+                            // Skip if we can't read the file
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Return 0 if we can't calculate size
+            $this->logWarning('Could not calculate volume backup size', [
+                'backupPath' => $backupPath,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return $size;
+    }
+
     /**
      * Get the size of a directory in bytes
      */
