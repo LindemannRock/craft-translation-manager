@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.6](https://github.com/LindemannRock/translation-manager/compare/v1.12.5...v1.12.6) (2025-09-19)
+
+
+### Bug Fixes
+
+* **backup:** improve backup functionality for volume and local storage ([4472f5d](https://github.com/LindemannRock/translation-manager/commit/4472f5d4b13cc410d4c15b79caefc2389d5b2139))
+
 ## [1.12.5](https://github.com/LindemannRock/translation-manager/compare/v1.12.4...v1.12.5) (2025-09-19)
 
 
