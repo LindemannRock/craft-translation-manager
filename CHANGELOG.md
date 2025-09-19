@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0](https://github.com/LindemannRock/translation-manager/compare/v1.13.0...v1.14.0) (2025-09-19)
+
+
+### Features
+
+* improve backup operation UX with immediate loading feedback ([e77913f](https://github.com/LindemannRock/translation-manager/commit/e77913fefa2138b2010a65c959f3dfbf1bbbe8d8))
+
 ## [1.13.0](https://github.com/LindemannRock/translation-manager/compare/v1.12.6...v1.13.0) (2025-09-19)
 
 
