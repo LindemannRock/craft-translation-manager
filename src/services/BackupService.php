@@ -658,7 +658,7 @@ class BackupService extends Component
             $preRestoreBackup = null;
             if ($settings->backupEnabled) {
                 $this->logInfo('Restore: Creating pre-restore backup');
-                $preRestoreBackup = $this->createBackup('manual');
+                $preRestoreBackup = $this->createBackup('before_restore');
                 if (!$preRestoreBackup) {
                     $this->logWarning('Failed to create pre-restore backup, continuing with restore');
                 } else {
@@ -750,7 +750,7 @@ class BackupService extends Component
             $preRestoreBackup = null;
             if ($settings->backupEnabled) {
                 $this->logInfo('Restore: Creating pre-restore backup');
-                $preRestoreBackup = $this->createBackup('manual');
+                $preRestoreBackup = $this->createBackup('before_restore');
                 if (!$preRestoreBackup) {
                     $this->logWarning('Failed to create pre-restore backup, continuing with restore');
                 } else {

@@ -147,14 +147,24 @@
         <h2 style="margin: 0;">{{ "Backup History"|t('translation-manager') }}</h2>
         <div style="margin-left: auto;">
             <button type="button" class="btn" id="create-backup-btn">
-                <span class="icon" aria-hidden="true">{{ svg('@appicons/database.svg') }}</span>
-                {{ "Create Backup Now"|t('translation-manager') }}
+                <span class="icon backup-icon" aria-hidden="true">{{ svg('@appicons/database.svg') }}</span>
+                <span class="spinner backup-spinner hidden" aria-hidden="true"></span>
+                <span class="backup-text">{{ "Create Backup Now"|t('translation-manager') }}</span>
             </button>
         </div>
     </div>
     
+    <div id="backup-list-loading" class="centeralign">
+        <div class="spinner"></div>
+        <p>{{ "Loading backup history..."|t('translation-manager') }}</p>
+        {% if settings.backupVolumeUid %}
+        <p><em>{{ "Volume storage may take longer to load"|t('translation-manager') }}</em></p>
+        {% endif %}
+    </div>
+
+    <div id="backup-list-content" class="hidden">
     {% set backups = craft.translationManager.backup.getBackups() %}
-    
+
     {% if backups|length %}
         <table class="data fullwidth">
             <thead>
@@ -235,14 +245,24 @@
             <code style="background: #f3f4f6; padding: 8px; border-radius: 4px; font-size: 12px;">{{ backupPath }}</code>
         </div>
     </div>
+    </div> {# Close backup-list-content #}
 </div>
 
 {% include 'translation-manager/_components/plugin-credit.twig' %}
 {% endblock %}
 
 {% js %}
-    // Handle volume selector change
+    // Show backup list once page is loaded
     document.addEventListener('DOMContentLoaded', function() {
+        // Hide loading indicator and show backup list
+        setTimeout(function() {
+            const loadingDiv = document.getElementById('backup-list-loading');
+            const contentDiv = document.getElementById('backup-list-content');
+
+            if (loadingDiv) loadingDiv.style.display = 'none';
+            if (contentDiv) contentDiv.classList.remove('hidden');
+        }, 100); // Small delay to ensure page is fully rendered
+
         const volumeSelect = document.getElementById('backupVolumeUid');
         const customPathDiv = document.getElementById('custom-backup-path');
         const pathField = document.getElementById('backupPath');
@@ -313,9 +333,27 @@
     
     document.getElementById('create-backup-btn')?.addEventListener('click', function() {
         const btn = this;
+        const icon = btn.querySelector('.backup-icon');
+        const spinner = btn.querySelector('.backup-spinner');
+        const text = btn.querySelector('.backup-text');
+
+        // Prevent multiple clicks
+        if (btn.disabled) {
+            return;
+        }
+
+        // Show loading state
         btn.classList.add('loading');
         btn.disabled = true;
-        
+        icon.classList.add('hidden');
+        spinner.classList.remove('hidden');
+        text.textContent = '{{ "Creating Backup..."|t('translation-manager') }}';
+
+        // Show notice about potential delay for volume storage
+        {% if settings.backupVolumeUid %}
+        Craft.cp.displayNotice('{{ "Creating backup in volume storage, this may take a moment..."|t('translation-manager') }}');
+        {% endif %}
+
         fetch('{{ actionUrl('translation-manager/backup/create') }}', {
             method: 'POST',
             headers: {
@@ -324,9 +362,9 @@
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 '{{ craft.app.config.general.csrfTokenName }}': '{{ craft.app.request.csrfToken }}',
-                reason: 'manual' 
+                reason: 'manual'
             })
         })
         .then(response => {
@@ -336,23 +374,32 @@
             return response.json();
         })
         .then(data => {
+            // Reset button state
             btn.classList.remove('loading');
             btn.disabled = false;
-            
+            icon.classList.remove('hidden');
+            spinner.classList.add('hidden');
+            text.textContent = '{{ "Create Backup Now"|t('translation-manager') }}';
+
             if (data.success) {
-                Craft.cp.displayNotice(data.message || 'Backup created successfully');
+                Craft.cp.displayNotice(data.message || '{{ "Backup created successfully"|t('translation-manager') }}');
                 // Store that we want to show the history tab after reload
                 sessionStorage.setItem('showBackupHistoryTab', 'true');
                 // Reload page to show new backup
                 window.location.reload();
             } else {
-                Craft.cp.displayError(data.error || 'Failed to create backup');
+                Craft.cp.displayError(data.error || '{{ "Failed to create backup"|t('translation-manager') }}');
             }
         })
         .catch(error => {
+            // Reset button state
             btn.classList.remove('loading');
             btn.disabled = false;
-            Craft.cp.displayError('Failed to create backup: ' + error.message);
+            icon.classList.remove('hidden');
+            spinner.classList.add('hidden');
+            text.textContent = '{{ "Create Backup Now"|t('translation-manager') }}';
+
+            Craft.cp.displayError('{{ "Failed to create backup"|t('translation-manager') }}: ' + error.message);
         });
     });
     
