@@ -56,12 +56,23 @@ class BackupService extends Component
         if ($settings->backupVolumeUid) {
             $volume = Craft::$app->getVolumes()->getVolumeByUid($settings->backupVolumeUid);
             if ($volume && $volume->getFs()) {
-                $this->_volumeFs = $volume->getFs();
+                $fs = $volume->getFs();
+
+                // Get the underlying Flysystem filesystem for operations
+                if (method_exists($fs, 'getFilesystem')) {
+                    $this->_volumeFs = $fs->getFilesystem();
+                } else {
+                    // Fallback to the Fs object itself for volumes that don't use adapters
+                    $this->_volumeFs = $fs;
+                }
+
                 $this->_useVolume = true;
 
                 $this->logInfo('Using volume for backups', [
                     'volumeName' => $volume->name,
-                    'volumeUid' => $settings->backupVolumeUid
+                    'volumeUid' => $settings->backupVolumeUid,
+                    'fsClass' => get_class($fs),
+                    'filesystemClass' => get_class($this->_volumeFs)
                 ]);
 
                 // Ensure base directory exists in the volume
@@ -185,14 +196,14 @@ class BackupService extends Component
         $fullPath = $this->_volumeBackupPath . '/' . $backupDir;
 
         try {
-            // Ensure directory hierarchy exists
+            // Ensure directory hierarchy exists using Flysystem API
             $parts = explode('/', $fullPath);
             $currentPath = '';
             foreach ($parts as $part) {
                 if ($part) {
                     $currentPath = $currentPath ? $currentPath . '/' . $part : $part;
-                    if (!$this->_volumeFs->directoryExists($currentPath)) {
-                        $this->_volumeFs->createDirectory($currentPath);
+                    if (!$this->_volumeFs->has($currentPath)) {
+                        $this->_volumeFs->createDir($currentPath);
                     }
                 }
             }
@@ -334,9 +345,16 @@ class BackupService extends Component
             'fsClass' => $this->_volumeFs ? get_class($this->_volumeFs) : 'null'
         ]);
 
+        // Add debug info to response for remote debugging
+        if (Craft::$app->getRequest()->getIsAjax()) {
+            Craft::$app->getResponse()->getHeaders()->set('X-Debug-Volume-Path', $this->_volumeBackupPath);
+            Craft::$app->getResponse()->getHeaders()->set('X-Debug-Use-Volume', $this->_useVolume ? 'true' : 'false');
+            Craft::$app->getResponse()->getHeaders()->set('X-Debug-FS-Class', $this->_volumeFs ? get_class($this->_volumeFs) : 'null');
+        }
+
         try {
             // First check if the base backup directory exists
-            if (!$this->_volumeFs->directoryExists($this->_volumeBackupPath)) {
+            if (!$this->_volumeFs->has($this->_volumeBackupPath)) {
                 $this->logInfo('Volume backup base directory does not exist', ['path' => $this->_volumeBackupPath]);
                 return $backups;
             }
@@ -349,12 +367,12 @@ class BackupService extends Component
 
                 $this->logInfo('Checking subfolder', ['subfolder' => $subfolder, 'path' => $folderPath]);
 
-                if (!$this->_volumeFs->directoryExists($folderPath)) {
+                if (!$this->_volumeFs->has($folderPath)) {
                     $this->logInfo('Subfolder does not exist', ['subfolder' => $subfolder]);
                     continue;
                 }
 
-                // List contents of subfolder
+                // List contents of subfolder using Flysystem API
                 $contents = $this->_volumeFs->listContents($folderPath, false);
                 $this->logInfo('Subfolder contents', ['subfolder' => $subfolder, 'contentCount' => count($contents)]);
 
@@ -387,7 +405,7 @@ class BackupService extends Component
                         ]);
 
                         try {
-                            if ($this->_volumeFs->fileExists($metadataPath)) {
+                            if ($this->_volumeFs->has($metadataPath)) {
                                 $metadataContent = $this->_volumeFs->read($metadataPath);
                                 $metadata = Json::decode($metadataContent);
 
@@ -641,7 +659,7 @@ class BackupService extends Component
 
         try {
             // Check if backup exists
-            if (!$this->_volumeFs->directoryExists($backupPath)) {
+            if (!$this->_volumeFs->has($backupPath)) {
                 return [
                     'success' => false,
                     'message' => 'Backup not found in volume'
@@ -673,7 +691,7 @@ class BackupService extends Component
 
             // Restore Formie translations
             $formiePath = $backupPath . '/formie-translations.json';
-            if ($this->_volumeFs->fileExists($formiePath)) {
+            if ($this->_volumeFs->has($formiePath)) {
                 $content = $this->_volumeFs->read($formiePath);
                 $result = $this->restoreFromContent($content);
                 $imported += $result['imported'];
@@ -682,7 +700,7 @@ class BackupService extends Component
 
             // Restore site translations
             $sitePath = $backupPath . '/site-translations.json';
-            if ($this->_volumeFs->fileExists($sitePath)) {
+            if ($this->_volumeFs->has($sitePath)) {
                 $content = $this->_volumeFs->read($sitePath);
                 $result = $this->restoreFromContent($content);
                 $imported += $result['imported'];
@@ -934,12 +952,12 @@ class BackupService extends Component
         ]);
 
         try {
-            if (!$this->_volumeFs->directoryExists($backupPath)) {
+            if (!$this->_volumeFs->has($backupPath)) {
                 $this->logError('Volume backup directory not found', ['backup' => $backupName, 'path' => $backupPath]);
                 return false;
             }
 
-            $this->_volumeFs->deleteDirectory($backupPath);
+            $this->_volumeFs->deleteDir($backupPath);
             $this->logInfo('Deleted volume backup successfully', ['backup' => $backupName]);
             return true;
         } catch (\Exception $e) {

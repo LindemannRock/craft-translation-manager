@@ -84,8 +84,21 @@ class BackupController extends Controller
             $backup['formattedDate'] = $dateTime->format('n/j/Y, g:i A') . ' (' . $craftTimezone . ')';
         }
         
+        // Add debug info for troubleshooting
+        $debugInfo = null;
+        if (Craft::$app->getConfig()->getGeneral()->devMode) {
+            $settings = TranslationManager::getInstance()->getSettings();
+            $debugInfo = [
+                'backupVolumeUid' => $settings->backupVolumeUid,
+                'backupPath' => $settings->getBackupPath(),
+                'totalBackups' => count($backups),
+                'craftTimezone' => $craftTimezone
+            ];
+        }
+
         return $this->renderTemplate('translation-manager/backups/index', [
             'backups' => $backups,
+            'debugInfo' => $debugInfo,
         ]);
     }
     
