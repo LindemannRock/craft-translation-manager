@@ -378,33 +378,11 @@ class Settings extends Model
                     // Get the filesystem configuration
                     $fs = $volume->getFs();
 
-                    // Get the path setting from the filesystem
-                    $volumePath = $fs->path ?? '';
+                    // For volumes, we should return a display-friendly path
+                    // The actual storage will be handled by VolumeBackupService
+                    $volumeName = $volume->name;
+                    return "Volume: {$volumeName} / translation-manager/backups";
 
-                    // Parse the path using Craft's parseEnv to handle environment variables
-                    $resolvedPath = Craft::parseEnv($volumePath);
-
-                    // If still not resolved, try using getenv directly for common vars
-                    if (strpos($resolvedPath, '$') !== false) {
-                        // Common environment variables in Craft
-                        $resolvedPath = str_replace('${VOLUMES_BASE_PATH}', getenv('VOLUMES_BASE_PATH') ?: './volumes', $resolvedPath);
-                        $resolvedPath = str_replace('${VOLUME_UPLOADS}', getenv('VOLUME_UPLOADS') ?: 'uploads', $resolvedPath);
-                        $resolvedPath = str_replace('$VOLUMES_BASE_PATH', getenv('VOLUMES_BASE_PATH') ?: './volumes', $resolvedPath);
-                        $resolvedPath = str_replace('$VOLUME_UPLOADS', getenv('VOLUME_UPLOADS') ?: 'uploads', $resolvedPath);
-                    }
-
-                    // Handle relative paths
-                    if (!str_starts_with($resolvedPath, '/')) {
-                        $resolvedPath = Craft::getAlias('@root') . '/' . $resolvedPath;
-                    }
-
-                    // Append our subdirectory
-                    $path = rtrim($resolvedPath, '/') . '/translation-manager/backups';
-
-                    // Normalize the path
-                    $path = FileHelper::normalizePath($path);
-
-                    return $path;
                 } catch (\Exception $e) {
                     // Log the error and fall back
                     Craft::error('Failed to get volume path: ' . $e->getMessage(), 'translation-manager');
@@ -412,61 +390,31 @@ class Settings extends Model
             }
         }
 
-        // Fall back to the regular backup path
-        $path = Craft::getAlias($this->backupPath);
-        
-        // Additional safety check
+        // No volume selected - use regular backup path and properly resolve it
+        $rawPath = $this->backupPath;
+        $path = Craft::getAlias($rawPath);
+
+        // If path is null or empty, use default
+        if (empty($path)) {
+            $defaultPath = '@storage/translation-manager/backups';
+            $path = Craft::getAlias($defaultPath);
+        }
+
+        // Additional safety checks
         if (strpos($path, '..') !== false) {
             throw new \Exception('Invalid backup path');
         }
-        
-        // Real path resolution to prevent symlink attacks
-        $realPath = realpath($path);
-        if ($realPath === false) {
-            // Path doesn't exist yet - validate that it would be within allowed directories
-            // Check if the intended path starts with an allowed base path
-            $validBasePaths = [
-                Craft::getAlias('@root'),
-                Craft::getAlias('@storage'),
-            ];
-            
-            $isValidPath = false;
-            foreach ($validBasePaths as $basePath) {
-                if ($basePath && strpos($path, $basePath) === 0) {
-                    $isValidPath = true;
-                    break;
-                }
-            }
-            
-            if (!$isValidPath) {
-                throw new \Exception('Backup path must be within @root or @storage directories');
-            }
-            
-            // Return the intended path - BackupService will create directories as needed
-            return $path;
+
+        // Prevent backups from being saved in the root directory
+        $rootPath = Craft::getAlias('@root');
+        if ($path === $rootPath || $path === '/' || $path === '') {
+            // Force a safe default path
+            $path = Craft::getAlias('@storage/translation-manager/backups');
+            Craft::warning('Backup path was pointing to root directory. Using safe default: ' . $path, 'translation-manager');
         }
-        
-        // Verify the real path is still within allowed directories
-        $validPaths = [
-            Craft::getAlias('@root'),
-            Craft::getAlias('@storage'),
-        ];
-        
-        $isValid = false;
-        foreach ($validPaths as $validPath) {
-            $realValidPath = realpath($validPath);
-            if ($realValidPath !== false && ($realPath === $realValidPath || strpos($realPath, $realValidPath . '/') === 0)) {
-                // Only allow exact match or proper subdirectory with separator
-                $isValid = true;
-                break;
-            }
-        }
-        
-        if (!$isValid) {
-            throw new \Exception('Backup path resolved outside allowed directories');
-        }
-        
-        return $realPath;
+
+        // Return the resolved path
+        return $path;
     }
 
     /**

@@ -61,10 +61,27 @@ class BackupController extends Controller
         $backupService = TranslationManager::getInstance()->backup;
         $backups = $backupService->getBackups();
         
-        // Format file sizes for display
+        // Format file sizes and dates for display
+        $craftTimezone = Craft::$app->getTimeZone();
+
+        // Debug: log the timezone info
+        Craft::info("Craft timezone: " . $craftTimezone, 'translation-manager');
+
         foreach ($backups as &$backup) {
             $backup['formattedSize'] = $backupService->formatBytes($backup['size']);
-            $backup['formattedDate'] = Craft::$app->getFormatter()->asDatetime($backup['timestamp'], 'short');
+
+            // Convert timestamp to Craft's timezone and format directly
+            $dateTime = new \DateTime('@' . $backup['timestamp']); // Create from timestamp (UTC)
+            $originalTime = $dateTime->format('Y-m-d H:i:s T');
+
+            $dateTime->setTimezone(new \DateTimeZone($craftTimezone)); // Convert to Craft timezone
+            $convertedTime = $dateTime->format('Y-m-d H:i:s T');
+
+            // Debug logging
+            Craft::info("Timestamp: {$backup['timestamp']}, Original: {$originalTime}, Converted: {$convertedTime}", 'translation-manager');
+
+            // Format directly with PHP to avoid Craft's locale formatting
+            $backup['formattedDate'] = $dateTime->format('n/j/Y, g:i A') . ' (' . $craftTimezone . ')';
         }
         
         return $this->renderTemplate('translation-manager/backups/index', [
