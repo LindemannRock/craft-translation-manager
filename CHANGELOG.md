@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/LindemannRock/translation-manager/compare/v1.12.6...v1.13.0) (2025-09-19)
+
+
+### Features
+
+* **backup:** add loading states and UI improvements for volume operations ([cc800be](https://github.com/LindemannRock/translation-manager/commit/cc800be7def2e3736c8b06ef88e8357a296614d9))
+
 ## [1.12.6](https://github.com/LindemannRock/translation-manager/compare/v1.12.5...v1.12.6) (2025-09-19)
 
 
