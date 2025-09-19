@@ -371,10 +371,13 @@ class BackupService extends Component
                 foreach ($fileArray as $file) {
                     $this->logInfo('Processing file/directory', ['file' => $file]);
 
+                    // FsListing objects have properties - try common ones
+                    $fileName = isset($file->basename) ? $file->basename : (isset($file->filename) ? $file->filename : $file->path);
+
                     // Check if this is a directory (backup directories have names like "2025-09-19_20-22-50")
-                    $fullFilePath = $folderPath . '/' . $file;
+                    $fullFilePath = $folderPath . '/' . $fileName;
                     if ($this->_volumeFs->directoryExists($fullFilePath)) {
-                        $backupPath = $subfolder . '/' . $file;
+                        $backupPath = $subfolder . '/' . $fileName;
                         $metadataPath = $this->_volumeBackupPath . '/' . $backupPath . '/metadata.json';
 
                         $this->logInfo('Found backup directory', [
