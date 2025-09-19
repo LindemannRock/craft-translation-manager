@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.2](https://github.com/LindemannRock/translation-manager/compare/v1.12.1...v1.12.2) (2025-09-19)
+
+
+### Bug Fixes
+
+* **backup:** use Flysystem API for Servd volume operations ([72868b8](https://github.com/LindemannRock/translation-manager/commit/72868b81513c4829f5897a65ee2a9c37b4d7e504))
+
 ## [1.12.1](https://github.com/LindemannRock/translation-manager/compare/v1.12.0...v1.12.1) (2025-09-19)
 
 
