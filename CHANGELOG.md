@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.1](https://github.com/LindemannRock/translation-manager/compare/v1.14.0...v1.14.1) (2025-09-20)
+
+
+### Bug Fixes
+
+* standardize logging format and improve initialization performance ([a365ffe](https://github.com/LindemannRock/translation-manager/commit/a365ffe67f5caca6392435282a5615ee4e553778))
+
 ## [1.14.0](https://github.com/LindemannRock/translation-manager/compare/v1.13.0...v1.14.0) (2025-09-19)
 
 
