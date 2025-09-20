@@ -1,0 +1,299 @@
+{% extends "translation-manager/_layouts/cp" %}
+{% set title = "Logs"|t('translation-manager') %}
+{% set fullPageForm = false %}
+{% set selectedSubnavItem = 'logs' %}
+
+{% set plugin = craft.app.plugins.getPlugin('translation-manager') %}
+{% set crumbs = [
+    {
+        label: plugin.settings.pluginName|t('translation-manager'),
+        url: url('translation-manager'),
+    },
+    {
+        label: 'Logs'|t('translation-manager'),
+        url: url('translation-manager/logs'),
+    },
+] %}
+
+{% import "_includes/forms" as forms %}
+
+{% block content %}
+    <div class="flex" style="align-items: center; margin-bottom: 24px;">
+        <h1 style="margin: 0;">{{ (pluginName ~ " Logs")|t('translation-manager') }}</h1>
+
+        {% if filters.date and logFiles|length > 0 %}
+        <div style="margin-left: auto;">
+            <a href="{{ actionUrl('translation-manager/logs/download', { date: filters.date }) }}" class="btn" download>
+                <span class="icon" aria-hidden="true">{{ svg('@appicons/download.svg') }}</span>
+                {{ "Download Log"|t('translation-manager') }}
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {# Filters #}
+    <div class="pane" style="margin-bottom: 24px;">
+        <div class="flex" style="gap: 16px; align-items: end;">
+            <div class="field" style="flex: 1;">
+                {{ forms.selectField({
+                    label: "Date"|t('translation-manager'),
+                    id: 'date-filter',
+                    name: 'date',
+                    value: filters.date,
+                    options: logFiles|map(file => {
+                        label: file.date ~ ' (' ~ file.formattedSize ~ ')',
+                        value: file.date
+                    }),
+                }) }}
+            </div>
+
+            <div class="field" style="flex: 1;">
+                {{ forms.selectField({
+                    label: "Level"|t('translation-manager'),
+                    id: 'level-filter',
+                    name: 'level',
+                    value: filters.level,
+                    options: levels|map((label, value) => { label: label, value: value }),
+                }) }}
+            </div>
+
+            <div class="field" style="flex: 2;">
+                {{ forms.textField({
+                    label: "Search"|t('translation-manager'),
+                    id: 'search-filter',
+                    name: 'search',
+                    value: filters.search,
+                    placeholder: "Search messages and context (press Enter)..."|t('translation-manager'),
+                }) }}
+            </div>
+        </div>
+    </div>
+
+    {% if logFiles|length == 0 %}
+        <div class="pane centeralign">
+            <p class="light">{{ "No log files found. Log files are created when plugin activities occur."|t('translation-manager') }}</p>
+            <p class="light">{{ "Current log level"|t('translation-manager') }}: <strong>{{ craft.translationManager.getSettings().logLevel|upper }}</strong></p>
+            <p class="light">
+                <a href="{{ url('translation-manager/settings/general') }}">{{ "Change log level in settings"|t('translation-manager') }}</a>
+            </p>
+        </div>
+    {% elseif logEntries|length == 0 %}
+        <div class="pane centeralign">
+            <p class="light">{{ "No log entries found for the selected filters."|t('translation-manager') }}</p>
+            {% if filters.level != 'all' or filters.search %}
+                <p class="light">{{ "Try adjusting your filters or selecting a different date."|t('translation-manager') }}</p>
+            {% endif %}
+        </div>
+    {% else %}
+        {# Log entries table #}
+        <div class="tableview">
+            <table class="data fullwidth">
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">{{ "Time"|t('translation-manager') }}</th>
+                        <th style="width: 80px;">{{ "Level"|t('translation-manager') }}</th>
+                        <th style="width: 100px;">{{ "User"|t('translation-manager') }}</th>
+                        <th>{{ "Message"|t('translation-manager') }}</th>
+                        <th style="width: 60px;">#</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in logEntries %}
+                        <tr class="log-entry" data-level="{{ entry.level }}">
+                            <td class="nowrap code">
+                                <time datetime="{{ entry.timestamp }}">{{ entry.timestamp|date('H:i:s') }}</time>
+                            </td>
+                            <td>
+                                {{ entry.level|upper }}
+                            </td>
+                            <td class="nowrap">
+                                {% if entry.user matches '/user:(\\d+)/' %}
+                                    {% set userId = entry.user|replace('user:', '') %}
+                                    {% set user = craft.users.id(userId).one() %}
+                                    {{ user ? user.username : 'User #' ~ userId }}
+                                {% else %}
+                                    {{ entry.user ?: 'System' }}
+                                {% endif %}
+                            </td>
+                            <td style="word-break: break-word;">
+                                <div>{{ entry.message }}</div>
+                                {% if entry.context and entry.context != '[]' %}
+                                    <details style="margin-top: 8px;">
+                                        <summary style="cursor: pointer; color: #606d7b; font-size: 12px;">{{ "Context"|t('translation-manager') }}</summary>
+                                        <div style="margin-top: 4px; padding: 8px; background: #f8f9fa; border-radius: 3px; font-family: Monaco, 'Courier New', monospace; font-size: 11px; white-space: pre-wrap; border-left: 3px solid #dee2e6;">{{ entry.context }}</div>
+                                    </details>
+                                {% endif %}
+                            </td>
+                            <td class="light code">
+                                {{ entry.lineNumber }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Pagination #}
+        {% if pagination.totalPages > 1 %}
+            <nav class="flex" style="justify-content: space-between; align-items: center; margin-top: 24px;">
+                <div>
+                    {% if pagination.currentPage > 1 %}
+                        <a href="{{ url('translation-manager/logs', filters|merge({page: pagination.currentPage - 1})) }}" class="btn">
+                            {{ "Previous"|t('translation-manager') }}
+                        </a>
+                    {% endif %}
+                </div>
+
+                <div class="flex" style="gap: 8px; align-items: center;">
+                    {% set startPage = max(1, pagination.currentPage - 2) %}
+                    {% set endPage = min(pagination.totalPages, pagination.currentPage + 2) %}
+
+                    {% if startPage > 1 %}
+                        <a href="{{ url('translation-manager/logs', filters|merge({page: 1})) }}" class="btn {{ pagination.currentPage == 1 ? 'disabled' : '' }}">1</a>
+                        {% if startPage > 2 %}
+                            <span>…</span>
+                        {% endif %}
+                    {% endif %}
+
+                    {% for page in range(startPage, endPage) %}
+                        <a href="{{ url('translation-manager/logs', filters|merge({page: page})) }}"
+                           class="btn {{ pagination.currentPage == page ? 'active' : '' }}">{{ page }}</a>
+                    {% endfor %}
+
+                    {% if endPage < pagination.totalPages %}
+                        {% if endPage < pagination.totalPages - 1 %}
+                            <span>…</span>
+                        {% endif %}
+                        <a href="{{ url('translation-manager/logs', filters|merge({page: pagination.totalPages})) }}"
+                           class="btn {{ pagination.currentPage == pagination.totalPages ? 'disabled' : '' }}">{{ pagination.totalPages }}</a>
+                    {% endif %}
+                </div>
+
+                <div>
+                    {% if pagination.currentPage < pagination.totalPages %}
+                        <a href="{{ url('translation-manager/logs', filters|merge({page: pagination.currentPage + 1})) }}" class="btn">
+                            {{ "Next"|t('translation-manager') }}
+                        </a>
+                    {% endif %}
+                </div>
+            </nav>
+
+            <div class="centeralign" style="margin-top: 16px; color: #606d7b; font-size: 14px;">
+                {{ "Page {current} of {total}"|t('translation-manager', {
+                    current: pagination.currentPage,
+                    total: pagination.totalPages
+                }) }}
+                ({{ "{count} total entries"|t('translation-manager', { count: pagination.total }) }})
+            </div>
+        {% endif %}
+    {% endif %}
+
+    {# Log level information #}
+    <div class="pane" style="margin-top: 32px;">
+        <h3>{{ "Log Configuration"|t('translation-manager') }}</h3>
+        <dl style="display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; align-items: baseline;">
+            <dt><strong>{{ "Current Level"|t('translation-manager') }}:</strong></dt>
+            <dd>
+                {{ craft.translationManager.getSettings().logLevel|upper }}
+            </dd>
+
+            <dt><strong>{{ "Log Location"|t('translation-manager') }}:</strong></dt>
+            <dd><code>storage/logs/translation-manager-{date}.log</code></dd>
+
+            <dt><strong>{{ "Retention"|t('translation-manager') }}:</strong></dt>
+            <dd>{{ "30 days (automatic cleanup)"|t('translation-manager') }}</dd>
+
+            <dt><strong>{{ "Available Logs"|t('translation-manager') }}:</strong></dt>
+            <dd>{{ logFiles|length }} {{ "files"|t('translation-manager') }}</dd>
+        </dl>
+
+        <p style="margin-top: 16px;">
+            <a href="{{ url('translation-manager/settings/general') }}">{{ "Change log level settings"|t('translation-manager') }}</a>
+        </p>
+    </div>
+
+    {% include 'translation-manager/_components/plugin-credit.twig' %}
+{% endblock %}
+
+{% css %}
+/* Enhance context display */
+details[open] summary {
+    margin-bottom: 4px;
+}
+
+/* Improve log level status colors */
+.status.light {
+    background: #95a5a6;
+    color: #fff;
+}
+
+/* Better pagination styling */
+.btn.active {
+    background: #0d78f2;
+    color: #fff;
+}
+
+.btn.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Table enhancements */
+.log-entry td {
+    vertical-align: top;
+    padding: 12px 8px;
+}
+
+.log-entry[data-level="error"] {
+    background: rgba(231, 76, 60, 0.05);
+    border-left: 3px solid rgba(231, 76, 60, 0.3);
+}
+
+.log-entry[data-level="warning"] {
+    background: rgba(243, 156, 18, 0.05);
+    border-left: 3px solid rgba(243, 156, 18, 0.3);
+}
+
+.log-entry[data-level="info"] {
+    background: rgba(52, 152, 219, 0.05);
+    border-left: 3px solid rgba(52, 152, 219, 0.3);
+}
+
+.log-entry[data-level="trace"] {
+    background: rgba(155, 89, 182, 0.08);
+    border-left: 3px solid rgba(155, 89, 182, 0.4);
+}
+{% endcss %}
+
+{% js %}
+// Instant filtering without form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const dateFilter = document.getElementById('date-filter');
+    const levelFilter = document.getElementById('level-filter');
+    const searchFilter = document.getElementById('search-filter');
+
+    // Function to apply filters by redirecting with new parameters
+    function applyFilters() {
+        const params = new URLSearchParams(window.location.search);
+
+        params.set('date', dateFilter.value);
+        params.set('level', levelFilter.value);
+        params.set('search', searchFilter.value);
+        params.delete('page'); // Reset to page 1 when filtering
+
+        window.location.href = window.location.pathname + '?' + params.toString();
+    }
+
+    // Date and level changes apply immediately
+    dateFilter.addEventListener('change', applyFilters);
+    levelFilter.addEventListener('change', applyFilters);
+
+    // Search applies on Enter key
+    searchFilter.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            applyFilters();
+        }
+    });
+});
+{% endjs %}
