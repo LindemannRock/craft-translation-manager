@@ -17,7 +17,7 @@ use lindemannrock\translationmanager\traits\LoggingTrait;
 
 /**
  * Base Integration Class
- * 
+ *
  * Provides common functionality for all translation integrations
  */
 abstract class BaseIntegration extends Component implements TranslationIntegrationInterface
@@ -44,31 +44,29 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
 
     /**
      * Create or update a translation with proper logging
-     * 
+     *
      * @param string $text The text to translate
      * @param string $context The translation context/key
      * @return mixed The created/updated translation record
      */
     protected function createTranslation(string $text, string $context)
     {
-        $this->logInfo("Capturing translation: {$text}", [
-            'context' => $context,
-            'integration' => $this->getName()
-        ]);
+        $integrationName = $this->getName();
+        $this->logInfo("Capturing {$integrationName} translation: '{$text}' ({$context})");
 
         return $this->getTranslationsService()->createOrUpdateTranslation($text, $context);
     }
 
     /**
      * Mark translations as unused with proper logging
-     * 
+     *
      * @param array $translationIds Array of translation IDs to mark as unused
      * @return int Number of translations marked as unused
      */
     protected function markTranslationsUnused(array $translationIds): int
     {
         $marked = 0;
-        
+
         foreach ($translationIds as $id) {
             $record = \lindemannrock\translationmanager\records\TranslationRecord::findOne($id);
             if ($record && $record->status !== 'unused') {
@@ -90,7 +88,7 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
 
     /**
      * Get translations managed by this integration
-     * 
+     *
      * @param array $criteria Additional search criteria
      * @return array Translation records
      */
@@ -98,7 +96,7 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
     {
         // Add integration-specific filtering
         $criteria['type'] = $this->getTranslationType();
-        
+
         return $this->getTranslationsService()->getTranslations($criteria);
     }
 
@@ -139,7 +137,7 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
     public function getStatistics(): array
     {
         $translations = $this->getIntegrationTranslations();
-        
+
         return [
             'name' => $this->getName(),
             'total' => count($translations),

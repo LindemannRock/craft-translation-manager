@@ -164,6 +164,7 @@ class SettingsController extends Controller
         $settings->backupSchedule = $request->getBodyParam('backupSchedule', $settings->backupSchedule);
         $settings->backupPath = $request->getBodyParam('backupPath', $settings->backupPath);
         $settings->backupVolumeUid = $request->getBodyParam('backupVolumeUid') ?: null;
+        $settings->logLevel = $request->getBodyParam('logLevel', $settings->logLevel);
         
         // Handle skip patterns
         $skipPatterns = $request->getBodyParam('skipPatterns', '');
@@ -209,7 +210,9 @@ class SettingsController extends Controller
     public function actionClearFormie(): Response
     {
         $this->requirePostRequest();
-        
+
+        Craft::info("User requested clear Formie translations", 'translation-manager');
+
         // Create backup if enabled
         $settings = TranslationManager::getInstance()->getSettings();
         if ($settings->backupEnabled) {
@@ -225,7 +228,6 @@ class SettingsController extends Controller
                 // Continue with the operation even if backup fails
             }
         }
-        
         $count = TranslationManager::getInstance()->translations->clearFormieTranslations();
         
         $pluginName = TranslationManager::getFormiePluginName();
@@ -244,7 +246,9 @@ class SettingsController extends Controller
     public function actionClearSite(): Response
     {
         $this->requirePostRequest();
-        
+
+        Craft::info("User requested clear site translations", 'translation-manager');
+
         // Create backup if enabled
         $settings = TranslationManager::getInstance()->getSettings();
         if ($settings->backupEnabled) {
@@ -259,7 +263,6 @@ class SettingsController extends Controller
                 // Continue with the operation even if backup fails
             }
         }
-        
         $count = TranslationManager::getInstance()->translations->clearSiteTranslations();
         
         $message = $count > 0 
@@ -277,7 +280,9 @@ class SettingsController extends Controller
     public function actionClearAll(): Response
     {
         $this->requirePostRequest();
-        
+
+        Craft::info("User requested clear all translations", 'translation-manager');
+
         // Create backup if enabled
         $settings = TranslationManager::getInstance()->getSettings();
         if ($settings->backupEnabled) {
@@ -292,7 +297,6 @@ class SettingsController extends Controller
                 // Continue with the operation even if backup fails
             }
         }
-        
         $count = TranslationManager::getInstance()->translations->clearAllTranslations();
         
         $message = $count > 0 

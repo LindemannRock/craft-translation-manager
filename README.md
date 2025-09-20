@@ -54,12 +54,16 @@ Translation Manager was created to solve critical gaps in Craft CMS multi-langua
   - Import history tracking with backup links
 - **Dedicated Logging**: All operations logged to `storage/logs/translation-manager.log`
 - **Security Hardened**: XSS protection, CSRF validation, symlink attack prevention, restricted secure paths, and more
-- **Backup System**:
+- **Advanced Backup System**:
   - Manual and automatic backups (daily/weekly/monthly)
+  - **Asset Volume Storage**: Store backups in any Craft asset volume (local or cloud)
+  - **Cloud Storage Support**: S3, Servd, Wasabi, and other cloud providers
   - Auto-backup before dangerous operations
   - Organized backup folders by type (scheduled, imports, maintenance, manual)
   - Configurable retention with manual backup exemption
   - Restore functionality with pre-restore backup
+  - Download backups as ZIP files from any storage location
+  - Loading indicators and progress feedback for slow operations
   - Automatic recovery if queue is cleared
 - **RTL Support**: Full support for Arabic text editing with proper RTL display
 - **Keyboard Shortcuts**: Ctrl/Cmd+S to save all changes
@@ -147,14 +151,16 @@ Create a `config/translation-manager.php` file to override default settings:
 ```php
 <?php
 return [
-    'translationCategory' => 'site',
+    'translationCategory' => 'messages',
     'autoExport' => true,
     'backupEnabled' => true,
+    'logLevel' => 'error', // Options: 'trace', 'info', 'warning', 'error'
     // 'backupVolumeUid' => 'abc123-your-volume-uid', // Optional: Set backup volume
     // Multi-environment support
     'production' => [
         'autoExport' => true,
         'backupSchedule' => 'daily',
+        'logLevel' => 'warning', // More logging in production
     ],
 ];
 ```
@@ -216,8 +222,10 @@ When "Enable Site Translations" is enabled, the following settings become availa
 - **Backup Schedule**: Manual, Daily, Weekly, or Monthly automatic backups
 - **Retention Period**: Days to keep automatic backups (manual backups never auto-delete)
 - **Backup Storage Volume**: Select an asset volume for storing backups
-  - Choose from existing asset volumes to store backups alongside your media files
-  - Backups will be stored in a `translation-manager/backups` subdirectory within the selected volume
+  - Choose from existing asset volumes (local or cloud-based like S3, Servd, etc.)
+  - Backups are stored in a `translation-manager/backups` subdirectory within the selected volume
+  - Supports both local volumes and remote cloud storage with automatic fallback
+  - Volume operations include loading indicators for slower cloud storage
   - Falls back to custom backup path if no volume is selected
 - **Custom Backup Path**: Manual path configuration (only used when no volume is selected)
   - Default: `@storage/translation-manager/backups`
@@ -227,6 +235,15 @@ Backups are automatically organized into:
 - `/imports/` - Backups before CSV imports
 - `/maintenance/` - Backups before cleanup/clear operations
 - `/manual/` - User-initiated backups (never auto-deleted)
+- `/other/` - Backups before restore operations and miscellaneous activities
+
+**Backup Interface Features**:
+- **Loading States**: Visual feedback for backup operations, especially with cloud storage
+- **Immediate Feedback**: Progress indicators show immediately when operations start
+- **Volume-Aware Messages**: Different messaging for local vs. cloud storage operations
+- **Download Support**: Download backups as ZIP files from any storage type
+- **Operation Tracking**: Clear messaging for restore and delete operations
+- **Size Display**: File size information for all backup types
 
 ### Maintenance
 - **Unused Form Translations**: Clean up translations from deleted forms

@@ -260,7 +260,7 @@ class ImportController extends Controller
             ]);
         }
         
-        Craft::warning("Import started: {$uploadedFile->name} ({$uploadedFile->size} bytes)", 'translation-manager');
+        Craft::info("Import started: {$uploadedFile->name} ({$uploadedFile->size} bytes)", 'translation-manager');
         
         // Validate file type
         $extension = strtolower($uploadedFile->getExtension());
@@ -323,8 +323,8 @@ class ImportController extends Controller
             $history->save();
             
             // Log the import results
-            Craft::warning(
-                sprintf('Import completed: User %d imported %d translations, updated %d, skipped %d from %s', 
+            Craft::info(
+                sprintf('Import completed: User %d imported %d translations, updated %d, skipped %d from %s',
                     $currentUser->id, $results['imported'], $results['updated'], $results['skipped'], $uploadedFile->name),
                 'translation-manager'
             );
@@ -413,7 +413,7 @@ class ImportController extends Controller
             
             // Debug first few rows to see what fgetcsv returns
             if ($rowNumber <= 3 && isset($row[$keyIndex])) {
-                Craft::warning("CSV DEBUG: Row {$rowNumber} raw: '" . $row[$keyIndex] . "' (len:" . strlen($row[$keyIndex]) . ")", 'translation-manager');
+                Craft::trace("CSV DEBUG: Row {$rowNumber} raw: '" . $row[$keyIndex] . "' (len:" . strlen($row[$keyIndex]) . ")", 'translation-manager');
             }
             
             // Skip empty rows
@@ -584,10 +584,10 @@ class ImportController extends Controller
                         if ($translation->save()) {
                             if ($isNew) {
                                 $imported++;
-                                Craft::warning("Import: Created new translation '{$keyText}' for site {$siteId}", 'translation-manager');
+                                Craft::info("Import: Created new translation '{$keyText}' for site {$siteId}", 'translation-manager');
                             } else {
                                 $updated++;
-                                Craft::warning("Import: Updated translation '{$keyText}' for site {$siteId}", 'translation-manager');
+                                Craft::info("Import: Updated translation '{$keyText}' for site {$siteId}", 'translation-manager');
                             }
                             
                             // Add to details if requested

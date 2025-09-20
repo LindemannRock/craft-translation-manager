@@ -28,9 +28,9 @@ class Settings extends Model
     public string $pluginName = 'Translation Manager';
     
     /**
-     * @var string The translation category to use for site translations (e.g. |t('alhatab'))
+     * @var string The translation category to use for site translations (e.g. |t('messages'))
      */
-    public string $translationCategory = 'alhatab';
+    public string $translationCategory = 'messages';
 
     /**
      * @var bool Whether to enable Formie form translation integration
@@ -77,6 +77,11 @@ class Settings extends Model
      * @var bool Whether to show the translation context in the CP interface
      */
     public bool $showContext = false;
+
+    /**
+     * @var string The logging level for the plugin
+     */
+    public string $logLevel = 'error';
 
     /**
      * @var array List of text patterns to skip when capturing translations
@@ -152,6 +157,7 @@ class Settings extends Model
             [['skipPatterns'], 'safe'],
             [['backupRetentionDays'], 'integer', 'min' => 0, 'max' => 365],
             [['backupSchedule'], 'in', 'range' => ['manual', 'daily', 'weekly']],
+            [['logLevel'], 'in', 'range' => ['trace', 'info', 'warning', 'error']],
         ];
     }
 
@@ -176,6 +182,7 @@ class Settings extends Model
             'backupSchedule' => 'Backup Schedule',
             'backupPath' => 'Backup Path',
             'backupVolumeUid' => 'Backup Volume',
+            'logLevel' => 'Log Level',
         ];
     }
 
@@ -381,7 +388,7 @@ class Settings extends Model
                     // For volumes, we should return a display-friendly path
                     // The actual storage will be handled by VolumeBackupService
                     $volumeName = $volume->name;
-                    return "Volume: {$volumeName} / translation-manager/backups";
+                    return "Volume: {$volumeName}/translation-manager/backups";
 
                 } catch (\Exception $e) {
                     // Log the error and fall back

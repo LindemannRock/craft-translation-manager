@@ -23,23 +23,31 @@ trait LoggingTrait
      */
     protected function logInfo(string $message, array $params = []): void
     {
-        Craft::info($this->formatMessage($message, $params), static::class);
+        Craft::info($this->formatMessage($message, $params), 'translation-manager');
     }
-    
+
     /**
      * Log a warning message
      */
     protected function logWarning(string $message, array $params = []): void
     {
-        Craft::warning($this->formatMessage($message, $params), static::class);
+        Craft::warning($this->formatMessage($message, $params), 'translation-manager');
     }
-    
+
     /**
      * Log an error message
      */
     protected function logError(string $message, array $params = []): void
     {
-        Craft::error($this->formatMessage($message, $params), static::class);
+        Craft::error($this->formatMessage($message, $params), 'translation-manager');
+    }
+
+    /**
+     * Log a trace message (most verbose level for debugging internal operations)
+     */
+    protected function logTrace(string $message, array $params = []): void
+    {
+        Craft::trace($this->formatMessage($message, $params), 'translation-manager');
     }
     
     /**
@@ -50,7 +58,7 @@ trait LoggingTrait
         if (empty($params)) {
             return $message;
         }
-        
+
         // Add parameters as JSON if provided
         return $message . ' | ' . json_encode($params);
     }

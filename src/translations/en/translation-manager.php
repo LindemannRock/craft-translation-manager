@@ -55,4 +55,15 @@ return [
     'Site Translations' => 'Site Translations',
     'Manage Translations' => 'Manage Translations',
     'Export All' => 'Export All',
+
+    // Backup reasons
+    'Manual' => 'Manual',
+    'Before Import' => 'Before Import',
+    'Before Restore' => 'Before Restore',
+    'Scheduled' => 'Scheduled',
+    'Before Clear All' => 'Before Clear All',
+    'Before Clear Formie' => 'Before Clear Formie',
+    'Before Clear Site' => 'Before Clear Site',
+    'Before Cleanup' => 'Before Cleanup',
+    'Before Clear' => 'Before Clear',
 ];

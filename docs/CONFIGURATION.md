@@ -14,8 +14,8 @@ You can override plugin settings by creating a `translation-manager.php` file in
 ```php
 <?php
 return [
-    // Translation category for |t() filter (default: 'alhatab')
-    'translationCategory' => 'site',
+    // Translation category for |t() filter (default: 'messages')
+    'translationCategory' => 'messages',
 
     // Enable/disable integrations
     'enableFormieIntegration' => true,
@@ -25,32 +25,32 @@ return [
     'autoSaveEnabled' => false,
     'autoSaveDelay' => 2, // seconds
 
-    // Display settings
+    // Interface settings
     'itemsPerPage' => 100,
-    'showContext' => true,
+    'showContext' => false,
+    'enableSuggestions' => false,
 
     // File generation
     'autoExport' => true,
     'exportPath' => '@root/translations',
-    'generatedFileHeader' => 'Auto-generated: {date}',
 
     // Backup configuration
     'backupEnabled' => true,
-    'backupSchedule' => 'daily', // Options: 'manual', 'daily', 'weekly', 'monthly'
+    'backupSchedule' => 'manual', // Options: 'manual', 'daily', 'weekly', 'monthly'
     'backupRetentionDays' => 30, // days (0 = keep forever, manual backups always kept)
     'backupOnImport' => true,
     'backupPath' => '@storage/translation-manager/backups',
+    'backupVolumeUid' => null, // Optional: Asset volume UID for storing backups
 
-    // Security settings
-    'exportPath' => '@translations', // Secure aliases only: @root, @storage, @translations
-    'backupPath' => '@storage/backups', // Secure aliases only: @root, @storage (never web-accessible)
+    // Site translation skip patterns
+    'skipPatterns' => [
+        // 'ID',
+        // 'Title',
+        // 'Status',
+    ],
 
-    // Import settings
-    'importSizeLimit' => 5000, // max translations per import
-    'importBatchSize' => 50, // translations per batch
-
-    // Deduplication
-    'enableDeduplication' => true,
+    // Logging settings
+    'logLevel' => 'error', // Options: 'trace', 'info', 'warning', 'error'
 ];
 ```
 
@@ -63,28 +63,33 @@ You can have different settings per environment:
 return [
     // Global settings
     '*' => [
-        'translationCategory' => 'site',
+        'translationCategory' => 'messages',
         'enableFormieIntegration' => true,
+        'logLevel' => 'error',
     ],
-    
+
     // Development environment
     'dev' => [
         'autoExport' => false,
         'backupEnabled' => false,
+        'logLevel' => 'trace', // Detailed logging for debugging
     ],
-    
+
     // Staging environment
     'staging' => [
         'autoExport' => true,
         'backupSchedule' => 'daily',
+        'logLevel' => 'info',
     ],
-    
+
     // Production environment
     'production' => [
         'autoExport' => true,
         'backupEnabled' => true,
-        'backupSchedule' => 'hourly',
-        'backupRetention' => 60,
+        'backupSchedule' => 'daily',
+        'backupRetentionDays' => 60,
+        'backupVolumeUid' => 'your-volume-uid-here', // Use asset volume in production
+        'logLevel' => 'warning',
     ],
 ];
 ```
@@ -95,9 +100,11 @@ All settings support environment variables:
 
 ```php
 return [
-    'translationCategory' => getenv('TRANSLATION_CATEGORY') ?: 'site',
+    'translationCategory' => getenv('TRANSLATION_CATEGORY') ?: 'messages',
     'backupEnabled' => getenv('TRANSLATION_BACKUP_ENABLED') === 'true',
-    'backupPath' => getenv('TRANSLATION_BACKUP_PATH') ?: '@storage/backups',
+    'backupPath' => getenv('TRANSLATION_BACKUP_PATH') ?: '@storage/translation-manager/backups',
+    'backupVolumeUid' => getenv('TRANSLATION_BACKUP_VOLUME_UID') ?: null,
+    'logLevel' => getenv('TRANSLATION_LOG_LEVEL') ?: 'error',
 ];
 ```
 
@@ -105,16 +112,21 @@ return [
 
 #### General Settings
 
-- **translationCategory**: The category used for the `|t()` filter in templates
+- **translationCategory**: The category used for the `|t()` filter in templates (default: 'messages')
 - **enableFormieIntegration**: Enable/disable automatic Formie form field capturing
-- **enableSiteIntegration**: Enable/disable site translation capturing
+- **enableSiteTranslations**: Enable/disable site translation capturing
 
-#### Display Settings
+#### Interface Settings
 
-- **autoSave**: Enable automatic saving when leaving a field (CP only)
-- **autoSaveDelay**: Delay in milliseconds before auto-saving
-- **itemsPerPage**: Number of translations shown per page
-- **showContext**: Show where translations are used
+- **autoSaveEnabled**: Enable automatic saving when leaving a field (CP only)
+- **autoSaveDelay**: Delay in seconds before auto-saving (1-10)
+- **itemsPerPage**: Number of translations shown per page (10-500)
+- **showContext**: Show where translations are used in the interface
+- **enableSuggestions**: Show translation suggestions based on similar existing translations
+
+#### Site Translation Settings
+
+- **skipPatterns**: Array of text patterns to skip when capturing site translations (e.g., ['ID', 'Title', 'Status'])
 
 #### Export Settings
 
@@ -126,10 +138,18 @@ return [
 
 - **backupEnabled**: Enable/disable the backup system
 - **backupSchedule**: How often to create automatic backups ('manual', 'daily', 'weekly', 'monthly')
-- **backupRetention**: How many days to keep backups (0 = keep forever, manual backups always kept)
-- **backupBeforeImport**: Create backup before importing translations
-- **backupBeforeRestore**: Create backup before restoring from another backup
-- **backupPath**: Where to store backup files (supports aliases)
+- **backupRetentionDays**: How many days to keep automatic backups (0 = keep forever, manual backups always kept)
+- **backupOnImport**: Create backup before importing translations
+- **backupPath**: Where to store backup files when not using a volume (supports aliases)
+- **backupVolumeUid**: Asset volume UID for storing backups (optional, overrides backupPath)
+
+#### Logging Settings
+
+- **logLevel**: What types of messages to log ('trace', 'info', 'warning', 'error')
+  - **error**: Critical errors only (default, production recommended)
+  - **warning**: Errors and warnings
+  - **info**: General information and successful operations
+  - **trace**: Detailed debugging information (development only)
 
 **Note**: Backups are organized into subfolders:
 - `/scheduled/` - Automated daily/weekly/monthly backups

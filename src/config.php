@@ -24,50 +24,60 @@
 
 return [
     // The default translation category for site translations
-    'translationCategory' => 'site',
+    'translationCategory' => 'messages',
 
     // Enable/disable Formie integration
     'enableFormieIntegration' => true,
 
     // Enable/disable site translation integration
-    'enableSiteIntegration' => true,
+    'enableSiteTranslations' => true,
 
     // Auto-save settings
-    'autoSave' => false,
-    'autoSaveDelay' => 500,
+    'autoSaveEnabled' => false,
+    'autoSaveDelay' => 2,
 
-    // Pagination
+    // Interface settings
     'itemsPerPage' => 100,
+    'showContext' => false,
+    'enableSuggestions' => false,
 
     // Export settings
     'autoExport' => true,
     'exportPath' => '@root/translations',
-    'generatedFileHeader' => 'Auto-generated: {date}',
 
     // Backup settings
     'backupEnabled' => true,
-    'backupSchedule' => 'daily',
-    'backupRetention' => 30,
-    'backupBeforeImport' => true,
-    'backupBeforeRestore' => true,
-    'backupPath' => '@storage/backups/translation-manager',
+    'backupSchedule' => 'manual', // Options: 'manual', 'daily', 'weekly', 'monthly'
+    'backupRetentionDays' => 30,
+    'backupOnImport' => true,
+    'backupPath' => '@storage/translation-manager/backups',
+    'backupVolumeUid' => null, // Optional: Set a specific asset volume UID for backups
 
-    // Import settings
-    'importSizeLimit' => 5000,
-    'importBatchSize' => 50,
+    // Site translation skip patterns (array of strings to skip)
+    'skipPatterns' => [
+        // 'ID',
+        // 'Title',
+        // 'Status',
+    ],
 
-    // Deduplication settings
-    'enableDeduplication' => true,
+    // Logging settings
+    'logLevel' => 'error', // Options: 'trace', 'info', 'warning', 'error'
 
     // Multi-environment example
     // '*' => [
-    //     'translationCategory' => 'site',
+    //     'translationCategory' => 'messages',
+    //     'logLevel' => 'error',
     // ],
     // 'dev' => [
     //     'autoExport' => false,
+    //     'logLevel' => 'trace', // More detailed logging in development
+    //     'backupSchedule' => 'manual',
     // ],
     // 'production' => [
     //     'autoExport' => true,
     //     'backupEnabled' => true,
+    //     'backupSchedule' => 'daily',
+    //     'logLevel' => 'warning',
+    //     'backupVolumeUid' => 'your-volume-uid-here', // Use asset volume in production
     // ],
 ];

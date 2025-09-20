@@ -22,6 +22,11 @@ use yii\base\Event;
 class FormieIntegration extends BaseIntegration
 {
     /**
+     * @var bool Track if hooks have been logged to prevent spam
+     */
+    private static bool $_hasLoggedHooks = false;
+
+    /**
      * @inheritdoc
      */
     public function getName(): string
@@ -53,6 +58,7 @@ class FormieIntegration extends BaseIntegration
     public function registerHooks(): void
     {
         if (!$this->isAvailable()) {
+            $this->logInfo("FormieIntegration: Not available - Formie plugin not found or not enabled");
             return;
         }
 
@@ -61,6 +67,7 @@ class FormieIntegration extends BaseIntegration
             \verbb\formie\elements\Form::class,
             \verbb\formie\elements\Form::EVENT_AFTER_SAVE,
             function (\craft\events\ModelEvent $event) {
+                $this->logInfo("FormieIntegration: Form saved - " . $event->sender->handle);
                 $this->handleFormSave($event->sender);
             }
         );
@@ -70,6 +77,7 @@ class FormieIntegration extends BaseIntegration
             \verbb\formie\elements\Form::class,
             \verbb\formie\elements\Form::EVENT_AFTER_DELETE,
             function (\craft\events\ModelEvent $event) {
+                $this->logInfo("FormieIntegration: Form deleted - " . $event->sender->handle);
                 $this->handleFormDelete($event->sender);
             }
         );
@@ -314,8 +322,8 @@ class FormieIntegration extends BaseIntegration
         $formHandle = $form->handle;
         $fieldHandle = $field->handle;
 
-        // Debug: Log field type being processed
-        error_log("PROCESSING FIELD: {$fieldClass} ({$fieldHandle})");
+        // Log field processing at trace level for debugging
+        $this->logTrace("Processing Formie field: {$fieldClass} ({$fieldHandle})");
 
         switch ($fieldClass) {
             // Fields with options

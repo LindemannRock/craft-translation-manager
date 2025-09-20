@@ -154,6 +154,27 @@
                 "This is being overridden by the <code>autoSaveEnabled</code> setting in <code>config/translation-manager.php</code>."|raw : null,
         }) }}
 
+        <hr>
+
+        <h2>{{ "Logging Settings"|t('translation-manager') }}</h2>
+
+        {{ forms.selectField({
+            label: "Log Level"|t('translation-manager'),
+            instructions: "Choose what types of messages to log. Higher levels include all lower levels (Error < Warning < Info < Trace)"|t('translation-manager'),
+            id: 'logLevel',
+            name: 'logLevel',
+            options: [
+                { label: 'Error (Critical errors only)', value: 'error' },
+                { label: 'Warning (Errors and warnings)', value: 'warning' },
+                { label: 'Info (General information)', value: 'info' },
+                { label: 'Trace (Detailed debugging)', value: 'trace' },
+            ],
+            value: settings.logLevel,
+            disabled: settings.isOverriddenByConfig('logLevel'),
+            warning: settings.isOverriddenByConfig('logLevel') ?
+                "This is being overridden by the <code>logLevel</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+        }) }}
+
         <div class="buttons">
             <button type="submit" class="btn submit">{{ "Save"|t('translation-manager') }}</button>
         </div>

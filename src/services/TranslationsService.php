@@ -38,7 +38,13 @@ class TranslationsService extends Component
         
         // Log the request if filters are applied
         if (!empty($criteria)) {
-            $this->logInfo('Getting translations with filters', $criteria);
+            $filterDesc = [];
+            if (isset($criteria['siteId'])) $filterDesc[] = "site:{$criteria['siteId']}";
+            if (isset($criteria['status'])) $filterDesc[] = "status:{$criteria['status']}";
+            if (isset($criteria['type'])) $filterDesc[] = "type:{$criteria['type']}";
+            if (isset($criteria['allSites']) && $criteria['allSites']) $filterDesc[] = "allSites";
+            $filters = implode(', ', $filterDesc);
+            $this->logTrace('Getting translations with filters: ' . $filters);
         }
 
         // Apply site filter (NEW: Multi-site support)
@@ -244,7 +250,7 @@ class TranslationsService extends Component
                     'uid' => StringHelper::UUID(),
                 ]);
                 $translation->save();
-                $this->logInfo("Created new multi-site translation for '{$text}' (site: {$site->name})");
+                $this->logInfo("Template scanner: Created new multi-site translation for '{$text}' (site: {$site->name})");
             } else {
                 // Update existing translation
                 $translation->usageCount++;
@@ -326,15 +332,15 @@ class TranslationsService extends Component
             $templatePath = Craft::$app->getPath()->getSiteTemplatesPath();
             
             // Add warning logs for debugging staging vs local differences
-            Craft::warning("Template scanner starting - Category: {$category}", 'translation-manager');
-            Craft::warning("Template scanner path: {$templatePath}", 'translation-manager');
+            Craft::info("Template scanner starting - Category: {$category}", 'translation-manager');
+            Craft::info("Template scanner path: {$templatePath}", 'translation-manager');
             
             $foundKeys = $this->scanTemplateDirectory($templatePath, $category);
             
             $results['scanned_files'] = $this->_scannedFileCount;
             $results['found_keys'] = array_keys($foundKeys);
             
-            Craft::warning("Template scanner results - Files: {$results['scanned_files']}, Keys found: " . count($foundKeys), 'translation-manager');
+            Craft::info("Template scanner results - Files: {$results['scanned_files']}, Keys found: " . count($foundKeys), 'translation-manager');
             
             // Get all site translations (not formie)
             $siteTranslations = (new Query())
@@ -355,7 +361,7 @@ class TranslationsService extends Component
                     // New translation key found in templates - create database entry
                     $this->createOrUpdateTranslation($key, 'site');
                     $results['created']++;
-                    Craft::warning("Template scanner: Created new translation '{$key}' (found in templates)", 'translation-manager');
+                    Craft::info("Template scanner: Created new translation '{$key}' (found in templates)", 'translation-manager');
                 }
             }
             
@@ -372,12 +378,12 @@ class TranslationsService extends Component
                             ['id' => $translation['id']]
                         );
                         $results['marked_unused']++;
-                        Craft::warning("Template scanner: Marked as unused '{$key}' (not found in templates)", 'translation-manager');
+                        Craft::info("Template scanner: Marked as unused '{$key}' (not found in templates)", 'translation-manager');
                         
                         // Debug: Show available keys that might be similar
                         $similarKeys = array_filter(array_keys($foundKeys), fn($fk) => stripos($fk, substr($key, 0, 10)) !== false);
                         if (!empty($similarKeys)) {
-                            Craft::warning("Template scanner: Similar found keys: " . implode(', ', array_map(fn($k) => "'{$k}'", $similarKeys)), 'translation-manager');
+                            Craft::trace("Template scanner: Similar found keys: " . implode(', ', array_map(fn($k) => "'{$k}'", $similarKeys)), 'translation-manager');
                         }
                     }
                 } else {
@@ -552,11 +558,8 @@ class TranslationsService extends Component
                 $isUsed = isset($activeTexts[$translation['translationKey']]);
 
 
-                $this->logInfo('Checking formie translation', [
-                    'context' => $translation['context'],
-                    'translationKey' => $translation['translationKey'],
-                    'isUsed' => $isUsed
-                ]);
+                $usedStatus = $isUsed ? 'used' : 'unused';
+                $this->logTrace("Checking formie translation '{$translation['translationKey']}' ({$translation['context']}) - {$usedStatus}");
             } else {
                 // For site translations, we can't check if they're used
                 // So we always consider them as "in use"
@@ -689,7 +692,7 @@ class TranslationsService extends Component
             $this->deleteFormieTranslationFiles();
         }
         
-        $this->logInfo('Cleared Formie translations', ['count' => $count]);
+        $this->logInfo("Cleared {$count} Formie translations");
         
         return $count;
     }
@@ -708,7 +711,7 @@ class TranslationsService extends Component
             $this->deleteSiteTranslationFiles();
         }
         
-        $this->logInfo('Cleared site translations', ['count' => $count]);
+        $this->logInfo("Cleared {$count} site translations");
         
         return $count;
     }
@@ -726,7 +729,7 @@ class TranslationsService extends Component
             $this->deleteSiteTranslationFiles();
         }
         
-        $this->logWarning('Cleared ALL translations', ['count' => $count]);
+        $this->logInfo("Cleared ALL {$count} translations");
         
         return $count;
     }

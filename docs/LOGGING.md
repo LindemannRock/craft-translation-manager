@@ -16,17 +16,39 @@ storage/logs/translation-manager-2025-07-10.log
 
 ## Log Configuration
 
-The logging is configured automatically when the plugin initializes with the following settings:
+The logging system can be configured through the Control Panel settings or config file:
 
+### Log Levels
+
+Translation Manager supports four log levels (from most to least verbose):
+
+- **Trace**: Detailed debugging information (development only)
+- **Info**: General information and successful operations
+- **Warning**: Important but non-critical issues
+- **Error**: Critical errors and failures (default)
+
+### Configuration Options
+
+**Control Panel**: Settings → Translation Manager → General → Logging Settings
+
+**Config File** (`config/translation-manager.php`):
+```php
+return [
+    'logLevel' => 'error', // Options: 'trace', 'info', 'warning', 'error'
+];
+```
+
+**File Settings**:
 - **Max File Size**: 10MB per file
 - **Max Log Files**: 30 (30 days retention)
-- **Log Levels**: Error, Warning (Info level is excluded for performance)
 - **User Tracking**: Each log entry includes the user ID who performed the action
 - **Daily Rotation**: New log file created each day with date in filename
 
 ## What Gets Logged
 
-### Errors (Always Logged)
+### By Log Level
+
+#### Error Level (Default)
 - **Security validation failures** - Invalid export/backup paths, web-accessible directories
 - Backup creation failures
 - Export/Import failures
@@ -34,18 +56,27 @@ The logging is configured automatically when the plugin initializes with the fol
 - API communication errors
 - Database operation failures
 
-### Warnings (Always Logged)
+#### Warning Level (Includes all Error messages plus)
 - Missing translations
 - Empty backup attempts
 - Failed pre-restore backups
 - Configuration issues
 - **Security events** - Malicious content detection, path traversal attempts
+- Volume backup operations that take longer than expected
 
-### Info Level (Not Logged by Default)
+#### Info Level (Includes all Warning/Error messages plus)
 - Translation creation/updates
-- Routine operations
-- Successful completions
-- Debug information
+- Successful backup operations
+- Export completions
+- Import results
+- Routine maintenance operations
+
+#### Trace Level (Includes all Info/Warning/Error messages plus)
+- Detailed debugging information
+- Method entry/exit points
+- Database query details
+- File system operations
+- Performance metrics
 
 ## Using the Logging Trait
 
@@ -98,21 +129,31 @@ Example:
 2025-07-10 14:30:45 [192.168.1.1] [user:1] Failed to create backup | {"error":"Permission denied"} [lindemannrock\translationmanager\services\BackupService::logError]
 ```
 
-## Enabling Info Level Logging
+## Changing Log Levels
 
-If you need more detailed logging for debugging, you can enable info level logs by modifying the plugin code:
+### Via Control Panel
+1. Go to **Settings → Translation Manager → General**
+2. Scroll to **Logging Settings**
+3. Select desired log level from dropdown
+4. Click **Save**
 
-In `TranslationManager.php`, find the `_configureLogging()` method and change:
+### Via Config File
+Add to `config/translation-manager.php`:
 ```php
-'levels' => ['error', 'warning'], // Only log errors and warnings
+return [
+    'logLevel' => 'info', // Change to desired level
+
+    // Environment-specific examples
+    'dev' => [
+        'logLevel' => 'trace', // Detailed logging in development
+    ],
+    'production' => [
+        'logLevel' => 'warning', // Less verbose in production
+    ],
+];
 ```
 
-To:
-```php
-'levels' => ['error', 'warning', 'info'], // Include info messages
-```
-
-**Note**: This is not recommended for production as it can create large log files.
+**Performance Note**: Higher log levels (Info/Trace) can create large log files and impact performance. Use Error/Warning levels in production.
 
 ## Common Log Messages
 

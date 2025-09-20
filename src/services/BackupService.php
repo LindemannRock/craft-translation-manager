@@ -59,11 +59,8 @@ class BackupService extends Component
                 $this->_volumeFs = $volume->getFs();
                 $this->_useVolume = true;
 
-                $this->logInfo('Using volume for backups', [
-                    'volumeName' => $volume->name,
-                    'volumeUid' => $settings->backupVolumeUid,
-                    'fsClass' => get_class($this->_volumeFs)
-                ]);
+                $fsType = basename(str_replace('\\', '/', get_class($this->_volumeFs)));
+                $this->logInfo("Using volume '{$volume->name}' for backups ({$fsType})");
 
                 // Ensure base directory exists in the volume
                 try {
@@ -77,6 +74,10 @@ class BackupService extends Component
                     ]);
                 }
             }
+        } else {
+            // Using local storage path
+            $localPath = $settings->getBackupPath();
+            $this->logInfo("Using local storage for backups ({$localPath})");
         }
     }
 
@@ -113,7 +114,9 @@ class BackupService extends Component
      */
     public function createBackup(?string $reason = null): ?string
     {
-        $this->logInfo('Creating backup', ['reason' => $reason ?? 'manual', 'useVolume' => $this->_useVolume]);
+        $reasonText = $this->getDisplayReason($reason ?? 'manual');
+        $storageType = $this->_useVolume ? 'volume' : 'local';
+        $this->logInfo("Creating backup: {$reasonText} ({$storageType})");
 
         try {
             // Determine the subfolder based on reason
@@ -138,7 +141,7 @@ class BackupService extends Component
             ]);
 
             if (empty($translations) && $reason !== 'Before Restore') {
-                $this->logWarning('No translations to backup');
+                $this->logInfo('No translations to backup - skipping backup creation');
                 return null;
             }
 
@@ -221,11 +224,12 @@ class BackupService extends Component
                 );
             }
 
-            $this->logInfo('Backup created in volume', [
-                'path' => $fullPath,
-                'formieCount' => count($formieTranslations),
-                'siteCount' => count($siteTranslations)
-            ]);
+            // Also backup the generated PHP files if they exist
+            $this->backupGeneratedFilesToVolume($fullPath);
+
+            $formieCount = count($formieTranslations);
+            $siteCount = count($siteTranslations);
+            $this->logInfo("Backup created in volume: {$fullPath} ({$formieCount} formie, {$siteCount} site translations)");
 
             return $fullPath;
         } catch (\Exception $e) {
@@ -268,11 +272,9 @@ class BackupService extends Component
             // Also backup the generated PHP files if they exist
             $this->backupGeneratedFiles($fullPath);
 
-            $this->logInfo('Backup created locally', [
-                'path' => $fullPath,
-                'formieCount' => count($formieTranslations),
-                'siteCount' => count($siteTranslations)
-            ]);
+            $formieCount = count($formieTranslations);
+            $siteCount = count($siteTranslations);
+            $this->logInfo("Backup created locally: {$fullPath} ({$formieCount} formie, {$siteCount} site translations)");
 
             return $fullPath;
         } catch (\Exception $e) {
@@ -307,11 +309,46 @@ class BackupService extends Component
             if (file_exists($sourcePath)) {
                 $destPath = $phpDir . '/' . str_replace('/', '_', $file);
                 copy($sourcePath, $destPath);
-                $this->logInfo('Backed up PHP file', ['file' => $file]);
+                $this->logInfo("Backed up PHP file: {$file}");
             }
         }
     }
-    
+
+    /**
+     * Backup generated PHP files to volume storage
+     */
+    private function backupGeneratedFilesToVolume(string $backupPath): void
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $exportPath = $settings->getExportPath();
+
+        // Get all site languages for backup
+        $sites = TranslationManager::getInstance()->getAllowedSites();
+        $filesToBackup = [];
+
+        foreach ($sites as $site) {
+            $language = $site->language;
+            $filesToBackup[] = $language . '/formie.php';
+            $filesToBackup[] = $language . '/' . $settings->translationCategory . '.php';
+        }
+
+        // Create php-files directory in volume
+        $phpDir = $backupPath . '/php-files';
+        if (!$this->_volumeFs->directoryExists($phpDir)) {
+            $this->_volumeFs->createDirectory($phpDir);
+        }
+
+        foreach ($filesToBackup as $file) {
+            $sourcePath = $exportPath . '/' . $file;
+            if (file_exists($sourcePath)) {
+                $destPath = $phpDir . '/' . str_replace('/', '_', $file);
+                $content = file_get_contents($sourcePath);
+                $this->_volumeFs->write($destPath, $content);
+                $this->logInfo("Backed up PHP file: {$file}");
+            }
+        }
+    }
+
     /**
      * Get all available backups
      * 
@@ -333,11 +370,8 @@ class BackupService extends Component
     {
         $backups = [];
 
-        $this->logInfo('Starting volume backup listing', [
-            'volumePath' => $this->_volumeBackupPath,
-            'useVolume' => $this->_useVolume,
-            'fsClass' => $this->_volumeFs ? get_class($this->_volumeFs) : 'null'
-        ]);
+        $fsClass = $this->_volumeFs ? get_class($this->_volumeFs) : 'null';
+        $this->logInfo("Starting volume backup listing (path: {$this->_volumeBackupPath}, fs: {$fsClass})");
 
         // Add debug info to response for remote debugging
         if (Craft::$app->getRequest()->getIsAjax()) {
@@ -359,21 +393,21 @@ class BackupService extends Component
             foreach ($subfolders as $subfolder) {
                 $folderPath = $this->_volumeBackupPath . '/' . $subfolder;
 
-                $this->logInfo('Checking subfolder', ['subfolder' => $subfolder, 'path' => $folderPath]);
+                $this->logTrace('Checking subfolder', ['subfolder' => $subfolder, 'path' => $folderPath]);
 
                 if (!$this->_volumeFs->directoryExists($folderPath)) {
-                    $this->logInfo('Subfolder does not exist', ['subfolder' => $subfolder]);
+                    $this->logInfo("Subfolder '{$subfolder}' does not exist");
                     continue;
                 }
 
                 // List contents of subfolder using Craft FS API
                 $files = $this->_volumeFs->getFileList($folderPath, false);
                 $fileArray = iterator_to_array($files); // Convert Generator to array
-                $this->logInfo('Subfolder contents', ['subfolder' => $subfolder, 'fileCount' => count($fileArray)]);
+                $this->logTrace('Subfolder contents', ['subfolder' => $subfolder, 'fileCount' => count($fileArray)]);
 
                 // getFileList returns directories, so we need to identify which are backup directories
                 foreach ($fileArray as $file) {
-                    $this->logInfo('Processing file/directory', ['file' => $file]);
+                    $this->logTrace('Processing file/directory', ['file' => $file]);
 
                     // FsListing objects have properties - try common ones
                     $fileName = isset($file->basename) ? $file->basename : (isset($file->filename) ? $file->filename : $file->path);
@@ -384,7 +418,7 @@ class BackupService extends Component
                         $backupPath = $subfolder . '/' . $fileName;
                         $metadataPath = $this->_volumeBackupPath . '/' . $backupPath . '/metadata.json';
 
-                        $this->logInfo('Found backup directory', [
+                        $this->logTrace('Found backup directory', [
                             'backupPath' => $backupPath,
                             'metadataPath' => $metadataPath
                         ]);
@@ -412,7 +446,7 @@ class BackupService extends Component
                                 ];
 
                                 $backups[] = $backup;
-                                $this->logInfo('Added backup to list', ['backup' => $backup]);
+                                $this->logTrace('Added backup to list', ['backup' => $backup]);
                             } else {
                                 $this->logInfo('Metadata file does not exist', ['metadataPath' => $metadataPath]);
                             }
@@ -433,7 +467,8 @@ class BackupService extends Component
             $backups = $this->_tryDirectVolumeBackupListing();
         }
 
-        $this->logInfo('Volume backup listing complete', ['totalBackups' => count($backups)]);
+        $backupCount = count($backups);
+        $this->logInfo("Volume backup listing complete: found {$backupCount} backups");
 
         // Sort by timestamp (newest first)
         usort($backups, function($a, $b) {
@@ -540,6 +575,7 @@ class BackupService extends Component
     private function _getLocalBackups(): array
     {
         $backupPath = Craft::getAlias(TranslationManager::getInstance()->getSettings()->backupPath);
+        $this->logInfo("Starting local backup listing (path: {$backupPath})");
         $backups = [];
 
         if (!is_dir($backupPath)) {
@@ -614,7 +650,10 @@ class BackupService extends Component
         usort($backups, function($a, $b) {
             return $b['timestamp'] - $a['timestamp'];
         });
-        
+
+        $backupCount = count($backups);
+        $this->logInfo("Local backup listing complete: found {$backupCount} backups");
+
         return $backups;
     }
     
@@ -626,7 +665,8 @@ class BackupService extends Component
      */
     public function restoreBackup(string $backupName): array
     {
-        $this->logInfo('Starting backup restore', ['backup' => $backupName, 'useVolume' => $this->_useVolume]);
+        $storageType = $this->_useVolume ? 'volume' : 'local';
+        $this->logInfo("Starting backup restore: {$backupName} ({$storageType})");
 
         if ($this->_useVolume) {
             return $this->_restoreVolumeBackup($backupName);
@@ -653,7 +693,8 @@ class BackupService extends Component
 
             // Create a backup of current state before restoring if backups are enabled
             $settings = TranslationManager::getInstance()->getSettings();
-            $this->logInfo('Restore: Checking backup settings', ['backupEnabled' => $settings->backupEnabled]);
+            $backupStatus = $settings->backupEnabled ? 'enabled' : 'disabled';
+            $this->logInfo("Restore: Checking backup settings - backups are {$backupStatus}");
 
             $preRestoreBackup = null;
             if ($settings->backupEnabled) {
@@ -662,7 +703,7 @@ class BackupService extends Component
                 if (!$preRestoreBackup) {
                     $this->logWarning('Failed to create pre-restore backup, continuing with restore');
                 } else {
-                    $this->logInfo('Restore: Pre-restore backup created', ['path' => $preRestoreBackup]);
+                    $this->logInfo("Restore: Pre-restore backup created at {$preRestoreBackup}");
                 }
             } else {
                 $this->logInfo('Restore: Skipping pre-restore backup (backups disabled)');
@@ -695,11 +736,8 @@ class BackupService extends Component
             // Regenerate translation files
             TranslationManager::getInstance()->export->exportAll();
 
-            $this->logInfo('Volume backup restored successfully', [
-                'backup' => $backupName,
-                'imported' => $imported,
-                'errors' => count($errors)
-            ]);
+            $errorCount = count($errors);
+            $this->logInfo("Volume backup restored successfully: {$backupName} ({$imported} imported, {$errorCount} errors)");
 
             return [
                 'success' => true,
@@ -745,7 +783,8 @@ class BackupService extends Component
         try {
             // Create a backup of current state before restoring if backups are enabled
             $settings = TranslationManager::getInstance()->getSettings();
-            $this->logInfo('Restore: Checking backup settings', ['backupEnabled' => $settings->backupEnabled]);
+            $backupStatus = $settings->backupEnabled ? 'enabled' : 'disabled';
+            $this->logInfo("Restore: Checking backup settings - backups are {$backupStatus}");
 
             $preRestoreBackup = null;
             if ($settings->backupEnabled) {
@@ -754,7 +793,7 @@ class BackupService extends Component
                 if (!$preRestoreBackup) {
                     $this->logWarning('Failed to create pre-restore backup, continuing with restore');
                 } else {
-                    $this->logInfo('Restore: Pre-restore backup created', ['path' => $preRestoreBackup]);
+                    $this->logInfo("Restore: Pre-restore backup created at {$preRestoreBackup}");
                 }
             } else {
                 $this->logInfo('Restore: Skipping pre-restore backup (backups disabled)');
@@ -785,11 +824,8 @@ class BackupService extends Component
             // Regenerate translation files
             TranslationManager::getInstance()->export->exportAll();
 
-            $this->logInfo('Local backup restored successfully', [
-                'backup' => $backupName,
-                'imported' => $imported,
-                'errors' => count($errors)
-            ]);
+            $errorCount = count($errors);
+            $this->logInfo("Local backup restored successfully: {$backupName} ({$imported} imported, {$errorCount} errors)");
 
             return [
                 'success' => true,
@@ -930,11 +966,7 @@ class BackupService extends Component
     {
         $backupPath = $this->_volumeBackupPath . '/' . $backupName;
 
-        $this->logInfo('Attempting to delete volume backup', [
-            'backup' => $backupName,
-            'path' => $backupPath,
-            'useVolume' => $this->_useVolume
-        ]);
+        $this->logInfo("Attempting to delete volume backup: {$backupName} at {$backupPath}");
 
         try {
             if (!$this->_volumeFs->directoryExists($backupPath)) {
@@ -943,7 +975,7 @@ class BackupService extends Component
             }
 
             $this->_volumeFs->deleteDirectory($backupPath);
-            $this->logInfo('Deleted volume backup successfully', ['backup' => $backupName]);
+            $this->logInfo("Deleted volume backup successfully: {$backupName}");
             return true;
         } catch (\Exception $e) {
             $this->logError('Failed to delete volume backup', [
@@ -967,11 +999,8 @@ class BackupService extends Component
             $backupDir = Craft::getAlias(TranslationManager::getInstance()->getSettings()->backupPath) . '/' . $backupName;
         }
 
-        $this->logInfo('Attempting to delete local backup', [
-            'backup' => $backupName,
-            'path' => $backupDir,
-            'exists' => is_dir($backupDir) ? 'yes' : 'no'
-        ]);
+        $exists = is_dir($backupDir) ? 'exists' : 'missing';
+        $this->logInfo("Attempting to delete local backup: {$backupName} at {$backupDir} ({$exists})");
 
         if (!is_dir($backupDir)) {
             $this->logError('Backup directory not found', ['backup' => $backupName, 'path' => $backupDir]);
@@ -980,7 +1009,7 @@ class BackupService extends Component
 
         try {
             FileHelper::removeDirectory($backupDir);
-            $this->logInfo('Deleted local backup successfully', ['backup' => $backupName]);
+            $this->logInfo("Deleted local backup successfully: {$backupName}");
             return true;
         } catch (\Exception $e) {
             $this->logError('Failed to delete local backup', [
@@ -1101,5 +1130,24 @@ class BackupService extends Component
         }
         
         return round($bytes, $precision) . ' ' . $units[$i];
+    }
+
+    /**
+     * Convert internal reason code to user-friendly display text
+     */
+    private function getDisplayReason(string $reason): string
+    {
+        return match($reason) {
+            'manual' => Craft::t('translation-manager', 'Manual'),
+            'before_import' => Craft::t('translation-manager', 'Before Import'),
+            'before_restore' => Craft::t('translation-manager', 'Before Restore'),
+            'scheduled' => Craft::t('translation-manager', 'Scheduled'),
+            'before_clear_all' => Craft::t('translation-manager', 'Before Clear All'),
+            'before_clear_formie' => Craft::t('translation-manager', 'Before Clear Formie'),
+            'before_clear_site' => Craft::t('translation-manager', 'Before Clear Site'),
+            'before_cleanup' => Craft::t('translation-manager', 'Before Cleanup'),
+            'before_clear' => Craft::t('translation-manager', 'Before Clear'),
+            default => Craft::t('translation-manager', ucfirst(str_replace('_', ' ', $reason)))
+        };
     }
 }

@@ -30,6 +30,27 @@ class IntegrationService extends Component
     private array $_integrations = [];
 
     /**
+     * @var bool Track if service has been initialized to prevent duplicate initialization
+     */
+    private bool $_initialized = false;
+
+    /**
+     * @var bool Track if integrations have been loaded to implement lazy loading
+     */
+    private bool $_integrationsLoaded = false;
+
+    /**
+     * @var bool Track if we've logged the initial setup to reduce log spam
+     */
+    private static bool $_hasLoggedSetup = false;
+
+    /**
+     * @var bool Track if hooks have been registered globally to prevent duplicate event listeners
+     */
+    private static bool $_hooksRegistered = false;
+
+
+    /**
      * @var array Built-in integration class mappings
      */
     private array $_builtInIntegrations = [
@@ -45,22 +66,24 @@ class IntegrationService extends Component
     public function init(): void
     {
         parent::init();
-        
-        $this->logInfo('Initializing Translation Manager integrations');
-        
-        // Auto-discover and register built-in integrations
-        $this->discoverBuiltInIntegrations();
-        
-        // Allow third-party plugins to register integrations via events
-        $this->triggerRegistrationEvent();
-        
-        // Initialize enabled integrations
-        $this->initializeIntegrations();
-        
-        $this->logInfo('Integration system initialized', [
-            'registered' => count($this->_integrations),
-            'enabled' => count($this->getEnabledIntegrations())
-        ]);
+
+        // Lightweight initialization - just register event handlers
+        // Heavy integration loading happens lazily when needed
+        $this->registerEventHandlers();
+
+        $this->_initialized = true;
+    }
+
+    /**
+     * Register essential event handlers (lightweight)
+     */
+    private function registerEventHandlers(): void
+    {
+        // Register FormieIntegration event handlers directly
+        if (class_exists('verbb\formie\elements\Form')) {
+            $formieIntegration = new \lindemannrock\translationmanager\integrations\FormieIntegration();
+            $formieIntegration->registerHooks();
+        }
     }
 
     /**
@@ -82,11 +105,6 @@ class IntegrationService extends Component
         }
 
         $this->_integrations[$name] = $integration;
-        
-        $this->logInfo("Registered integration: {$name}", [
-            'class' => get_class($integration),
-            'available' => $integration->isAvailable()
-        ]);
     }
 
     /**
@@ -94,26 +112,29 @@ class IntegrationService extends Component
      */
     public function get(string $name): ?TranslationIntegrationInterface
     {
+        $this->ensureIntegrationsLoaded();
         return $this->_integrations[$name] ?? null;
     }
 
     /**
      * Get all registered integrations
-     * 
+     *
      * @return TranslationIntegrationInterface[]
      */
     public function getAll(): array
     {
+        $this->ensureIntegrationsLoaded();
         return $this->_integrations;
     }
 
     /**
      * Get only enabled and available integrations
-     * 
+     *
      * @return TranslationIntegrationInterface[]
      */
     public function getEnabledIntegrations(): array
     {
+        $this->ensureIntegrationsLoaded();
         return array_filter($this->_integrations, function($integration) {
             return $integration->isAvailable() && $this->isIntegrationEnabled($integration->getName());
         });
@@ -149,13 +170,14 @@ class IntegrationService extends Component
     public function getIntegrationSettings(): array
     {
         $settings = \lindemannrock\translationmanager\TranslationManager::getInstance()->getSettings();
-        
+
         // Check if we have dynamic integration settings
         if (property_exists($settings, 'integrationSettings') && is_array($settings->integrationSettings)) {
             return $settings->integrationSettings;
         }
 
         // Build default settings for discovered integrations
+        $this->ensureIntegrationsLoaded();
         $defaultSettings = [];
         foreach ($this->_integrations as $name => $integration) {
             $defaultSettings[$name] = [
@@ -229,6 +251,26 @@ class IntegrationService extends Component
     }
 
     /**
+     * Ensure integrations are loaded (lazy loading)
+     */
+    public function ensureIntegrationsLoaded(): void
+    {
+        if ($this->_integrationsLoaded) {
+            $this->logTrace("IntegrationService: Already loaded, skipping");
+            return;
+        }
+
+        $this->logInfo("IntegrationService: Loading integrations for the first time");
+
+        $this->discoverBuiltInIntegrations();
+        $this->triggerRegistrationEvent();
+        $this->initializeIntegrations();
+
+        $this->_integrationsLoaded = true;
+        $this->logInfo("IntegrationService: Integration loading completed");
+    }
+
+    /**
      * Auto-discover built-in integrations
      */
     private function discoverBuiltInIntegrations(): void
@@ -261,18 +303,16 @@ class IntegrationService extends Component
     private function initializeIntegrations(): void
     {
         foreach ($this->_integrations as $name => $integration) {
-            if ($integration->isAvailable() && $this->isIntegrationEnabled($name)) {
+            $available = $integration->isAvailable();
+            $enabled = $this->isIntegrationEnabled($name);
+
+            if ($available && $enabled) {
                 try {
                     $integration->registerHooks();
-                    $this->logInfo("Initialized integration: {$name}");
                 } catch (\Exception $e) {
+                    // Always log errors
                     $this->logError("Failed to initialize integration {$name}: " . $e->getMessage());
                 }
-            } else {
-                $this->logInfo("Skipped integration: {$name}", [
-                    'available' => $integration->isAvailable(),
-                    'enabled' => $this->isIntegrationEnabled($name)
-                ]);
             }
         }
     }

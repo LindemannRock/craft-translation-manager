@@ -101,7 +101,9 @@ class VolumeBackupService extends Component
      */
     public function createBackup(?string $reason = null): ?string
     {
-        $this->logInfo('Creating backup', ['reason' => $reason ?? 'manual', 'useVolume' => $this->_useVolume]);
+        $reasonText = $this->getDisplayReason($reason ?? 'manual');
+        $storageType = $this->_useVolume ? 'volume' : 'local';
+        $this->logInfo("Creating backup: {$reasonText} ({$storageType})");
 
         try {
             // Determine the subfolder based on reason
@@ -551,5 +553,24 @@ class VolumeBackupService extends Component
             $size += is_file($each) ? filesize($each) : $this->_getDirectorySize($each);
         }
         return $size;
+    }
+
+    /**
+     * Convert internal reason code to user-friendly display text
+     */
+    private function getDisplayReason(string $reason): string
+    {
+        return match($reason) {
+            'manual' => Craft::t('translation-manager', 'Manual'),
+            'before_import' => Craft::t('translation-manager', 'Before Import'),
+            'before_restore' => Craft::t('translation-manager', 'Before Restore'),
+            'scheduled' => Craft::t('translation-manager', 'Scheduled'),
+            'before_clear_all' => Craft::t('translation-manager', 'Before Clear All'),
+            'before_clear_formie' => Craft::t('translation-manager', 'Before Clear Formie'),
+            'before_clear_site' => Craft::t('translation-manager', 'Before Clear Site'),
+            'before_cleanup' => Craft::t('translation-manager', 'Before Cleanup'),
+            'before_clear' => Craft::t('translation-manager', 'Before Clear'),
+            default => Craft::t('translation-manager', ucfirst(str_replace('_', ' ', $reason)))
+        };
     }
 }

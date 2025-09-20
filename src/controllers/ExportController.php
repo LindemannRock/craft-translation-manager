@@ -233,13 +233,15 @@ class ExportController extends Controller
         
         try {
             // Add debugging
-            Craft::info('Starting file export', 'translation-manager');
+            Craft::info('User requested file export', 'translation-manager');
             $exportService = TranslationManager::getInstance()->export;
             $translationsService = TranslationManager::getInstance()->translations;
-            
+
             // Check what's available to export first
-            $formieCount = count($translationsService->getTranslations(['type' => 'forms', 'status' => 'translated']));
-            $siteCount = count($translationsService->getTranslations(['type' => 'site', 'status' => 'translated']));
+            $formieCount = count($translationsService->getTranslations(['type' => 'forms', 'status' => 'translated', 'allSites' => true]));
+            $siteCount = count($translationsService->getTranslations(['type' => 'site', 'status' => 'translated', 'allSites' => true]));
+
+            Craft::info("Export preparation: found {$formieCount} Formie translations, {$siteCount} site translations", 'translation-manager');
             
             $formieResult = false;
             $siteResult = false;
@@ -275,7 +277,10 @@ class ExportController extends Controller
             }
             
             $message = !empty($parts) ? implode('. ', $parts) : 'No translation files generated';
-            
+
+            // Log the completion with results
+            Craft::info("Export completed: {$message}", 'translation-manager');
+
             if (Craft::$app->getRequest()->getAcceptsJson()) {
                 return $this->asJson([
                     'success' => true,
@@ -308,15 +313,19 @@ class ExportController extends Controller
     public function actionFormieFiles(): Response
     {
         $this->requirePostRequest();
-        
+
         try {
+            Craft::info('User requested Formie export only', 'translation-manager');
             $translationsService = TranslationManager::getInstance()->translations;
-            $formieCount = count($translationsService->getTranslations(['type' => 'forms', 'status' => 'translated']));
+            $formieCount = count($translationsService->getTranslations(['type' => 'forms', 'status' => 'translated', 'allSites' => true]));
+
+            Craft::info("Formie export preparation: found {$formieCount} Formie translations", 'translation-manager');
             
             if ($formieCount > 0) {
                 TranslationManager::getInstance()->export->exportFormieTranslations();
                 $pluginName = TranslationManager::getFormiePluginName();
                 $message = $pluginName . " translation files generated successfully ({$formieCount} translations)";
+                Craft::info("Formie export completed: {$message}", 'translation-manager');
             } else {
                 $pluginName = TranslationManager::getFormiePluginName();
                 $message = "No translated {$pluginName} translations found. Add Arabic translations to forms first.";
@@ -350,14 +359,18 @@ class ExportController extends Controller
     public function actionSiteFiles(): Response
     {
         $this->requirePostRequest();
-        
+
         try {
+            Craft::info('User requested site/category export only', 'translation-manager');
             $translationsService = TranslationManager::getInstance()->translations;
-            $siteCount = count($translationsService->getTranslations(['type' => 'site', 'status' => 'translated']));
+            $siteCount = count($translationsService->getTranslations(['type' => 'site', 'status' => 'translated', 'allSites' => true]));
+
+            Craft::info("Site export preparation: found {$siteCount} site translations", 'translation-manager');
             
             if ($siteCount > 0) {
                 TranslationManager::getInstance()->export->exportSiteTranslations();
                 $message = "Site translation files generated successfully ({$siteCount} translations)";
+                Craft::info("Site export completed: {$message}", 'translation-manager');
             } else {
                 $settings = TranslationManager::getInstance()->getSettings();
                 $category = $settings->translationCategory;

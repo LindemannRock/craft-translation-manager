@@ -28,6 +28,18 @@ The Translation Manager includes a comprehensive backup system that automaticall
 - Stored in `/maintenance/` subfolder
 - Safety net for destructive operations
 
+### 5. Manual Backups
+- User-initiated backups created through the UI
+- Stored in `/manual/` subfolder
+- Never automatically deleted (must be deleted manually)
+- Recommended before making major changes
+
+### 6. Restore/Other Backups
+- Created before restore operations and miscellaneous activities
+- Stored in `/other/` subfolder
+- Safety backup when restoring previous backups
+- Subject to retention policy
+
 ## Configuration
 
 ### Basic Settings

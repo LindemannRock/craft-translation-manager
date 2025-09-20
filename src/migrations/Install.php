@@ -111,7 +111,7 @@ class Install extends Migration
             $this->createTable('{{%translationmanager_settings}}', [
                 'id' => $this->primaryKey(),
                 'pluginName' => $this->string(100)->notNull()->defaultValue('Translation Manager'),
-                'translationCategory' => $this->string()->notNull()->defaultValue('alhatab'),
+                'translationCategory' => $this->string()->notNull()->defaultValue('messages'),
                 'enableFormieIntegration' => $this->boolean()->notNull()->defaultValue(true),
                 'enableSiteTranslations' => $this->boolean()->notNull()->defaultValue(true),
                 'autoExport' => $this->boolean()->notNull()->defaultValue(true),
@@ -128,6 +128,7 @@ class Install extends Migration
                 'backupPath' => $this->string()->defaultValue('@storage/translation-manager/backups'),
                 'backupVolumeUid' => $this->string()->null(),
                 'skipPatterns' => $this->text()->null(),
+                'logLevel' => $this->string(20)->notNull()->defaultValue('error'),
                 'dateCreated' => $this->dateTime()->notNull(),
                 'dateUpdated' => $this->dateTime()->notNull(),
                 'uid' => $this->uid(),
