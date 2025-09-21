@@ -51,7 +51,7 @@ class LogsController extends Controller
         $date = $request->getParam('date', (new \DateTime())->format('Y-m-d'));
         $search = $request->getParam('search', '');
         $page = (int) $request->getParam('page', 1);
-        $limit = 25; // Entries per page
+        $limit = 50; // Entries per page
 
         // Get available log files
         $logFiles = $this->_getAvailableLogFiles();
@@ -66,6 +66,7 @@ class LogsController extends Controller
         $totalPages = ceil($totalEntries / $limit);
 
         return $this->renderTemplate('translation-manager/logs/index', [
+            'pluginName' => TranslationManager::getInstance()->getSettings()->pluginName ?? 'Translation Manager',
             'logFiles' => $logFiles,
             'logEntries' => $logEntries,
             'filters' => [

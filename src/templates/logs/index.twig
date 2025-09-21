@@ -33,8 +33,8 @@
 
     {# Filters #}
     <div class="pane" style="margin-bottom: 24px;">
-        <div class="flex" style="gap: 16px; align-items: end;">
-            <div class="field" style="flex: 1;">
+        <div class="flex flex-wrap" style="gap: 16px; align-items: end;">
+            <div class="field" style="flex-shrink: 0;">
                 {{ forms.selectField({
                     label: "Date"|t('translation-manager'),
                     id: 'date-filter',
@@ -44,10 +44,13 @@
                         label: file.date ~ ' (' ~ file.formattedSize ~ ')',
                         value: file.date
                     }),
+                    fieldAttributes: {
+                        'onchange': 'document.getElementById("search-filter").value = ""; document.getElementById("level-filter").value = "all"; this.form.submit();'
+                    }
                 }) }}
             </div>
 
-            <div class="field" style="flex: 1;">
+            <div class="field" style="flex-shrink: 0;">
                 {{ forms.selectField({
                     label: "Level"|t('translation-manager'),
                     id: 'level-filter',
@@ -57,7 +60,7 @@
                 }) }}
             </div>
 
-            <div class="field" style="flex: 2;">
+            <div class="field" style="flex: 1; min-width: 250px;">
                 {{ forms.textField({
                     label: "Search"|t('translation-manager'),
                     id: 'search-filter',
