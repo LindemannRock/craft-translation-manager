@@ -389,7 +389,7 @@ class TranslationsService extends Component
                         // Debug: Show available keys that might be similar
                         $similarKeys = array_filter(array_keys($foundKeys), fn($fk) => stripos($fk, substr($key, 0, 10)) !== false);
                         if (!empty($similarKeys)) {
-                            Craft::trace("Template scanner: Similar found keys: " . implode(', ', array_map(fn($k) => "'{$k}'", $similarKeys)), 'translation-manager');
+                            Craft::debug("Template scanner: Similar found keys: " . implode(', ', array_map(fn($k) => "'{$k}'", $similarKeys)), 'translation-manager');
                         }
                     }
                 } else {

@@ -413,7 +413,7 @@ class ImportController extends Controller
             
             // Debug first few rows to see what fgetcsv returns
             if ($rowNumber <= 3 && isset($row[$keyIndex])) {
-                Craft::trace("CSV DEBUG: Row {$rowNumber} raw: '" . $row[$keyIndex] . "' (len:" . strlen($row[$keyIndex]) . ")", 'translation-manager');
+                Craft::debug("CSV DEBUG: Row {$rowNumber} raw: '" . $row[$keyIndex] . "' (len:" . strlen($row[$keyIndex]) . ")", 'translation-manager');
             }
             
             // Skip empty rows

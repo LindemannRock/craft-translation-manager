@@ -154,7 +154,7 @@ return [
     'translationCategory' => 'messages',
     'autoExport' => true,
     'backupEnabled' => true,
-    'logLevel' => 'error', // Options: 'trace', 'info', 'warning', 'error'
+    'logLevel' => 'error', // Options: 'debug', 'info', 'warning', 'error'
     // 'backupVolumeUid' => 'abc123-your-volume-uid', // Optional: Set backup volume
     // Multi-environment support
     'production' => [

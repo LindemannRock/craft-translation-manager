@@ -50,7 +50,7 @@ return [
     ],
 
     // Logging settings
-    'logLevel' => 'error', // Options: 'trace', 'info', 'warning', 'error'
+    'logLevel' => 'error', // Options: 'debug', 'info', 'warning', 'error'
 ];
 ```
 
@@ -72,7 +72,7 @@ return [
     'dev' => [
         'autoExport' => false,
         'backupEnabled' => false,
-        'logLevel' => 'trace', // Detailed logging for debugging
+        'logLevel' => 'debug', // Detailed logging for debugging
     ],
 
     // Staging environment
@@ -145,7 +145,7 @@ return [
 
 #### Logging Settings
 
-- **logLevel**: What types of messages to log ('trace', 'info', 'warning', 'error')
+- **logLevel**: What types of messages to log ('debug', 'info', 'warning', 'error')
   - **error**: Critical errors only (default, production recommended)
   - **warning**: Errors and warnings
   - **info**: General information and successful operations

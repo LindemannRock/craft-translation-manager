@@ -594,6 +594,7 @@ class Settings extends Model
             'backupSchedule' => $this->backupSchedule,
             'backupPath' => $this->backupPath,
             'backupVolumeUid' => $this->backupVolumeUid,
+            'logLevel' => $this->logLevel,
             'dateUpdated' => Db::prepareDateForDb(new \DateTime()),
         ];
         

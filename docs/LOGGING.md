@@ -22,7 +22,7 @@ The logging system can be configured through the Control Panel settings or confi
 
 Translation Manager supports four log levels (from most to least verbose):
 
-- **Trace**: Detailed debugging information (development only)
+- **Debug**: Detailed debugging information (development only)
 - **Info**: General information and successful operations
 - **Warning**: Important but non-critical issues
 - **Error**: Critical errors and failures (default)
@@ -34,7 +34,7 @@ Translation Manager supports four log levels (from most to least verbose):
 **Config File** (`config/translation-manager.php`):
 ```php
 return [
-    'logLevel' => 'error', // Options: 'trace', 'info', 'warning', 'error'
+    'logLevel' => 'error', // Options: 'debug', 'info', 'warning', 'error'
 ];
 ```
 
@@ -71,7 +71,7 @@ return [
 - Import results
 - Routine maintenance operations
 
-#### Trace Level (Includes all Info/Warning/Error messages plus)
+#### Debug Level (Includes all Info/Warning/Error messages plus)
 - Detailed debugging information
 - Method entry/exit points
 - Database query details
@@ -145,7 +145,7 @@ return [
 
     // Environment-specific examples
     'dev' => [
-        'logLevel' => 'trace', // Detailed logging in development
+        'logLevel' => 'debug', // Detailed logging in development
     ],
     'production' => [
         'logLevel' => 'warning', // Less verbose in production
@@ -153,7 +153,7 @@ return [
 ];
 ```
 
-**Performance Note**: Higher log levels (Info/Trace) can create large log files and impact performance. Use Error/Warning levels in production.
+**Performance Note**: Higher log levels (Info/Debug) can create large log files and impact performance. Use Error/Warning levels in production.
 
 ## Common Log Messages
 
