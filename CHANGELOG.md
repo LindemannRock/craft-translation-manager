@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.3](https://github.com/LindemannRock/translation-manager/compare/v1.14.2...v1.14.3) (2025-09-22)
+
+
+### Bug Fixes
+
+* update log level from 'trace' to 'debug' for Craft 5 compatibility ([53091bc](https://github.com/LindemannRock/translation-manager/commit/53091bcd8861cb548bd28a639b381222209246bc))
+
 ## [1.14.2](https://github.com/LindemannRock/translation-manager/compare/v1.14.1...v1.14.2) (2025-09-22)
 
 
