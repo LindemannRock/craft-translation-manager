@@ -13,7 +13,7 @@ namespace lindemannrock\translationmanager\services;
 use Craft;
 use craft\base\Component;
 use lindemannrock\translationmanager\interfaces\TranslationIntegrationInterface;
-use lindemannrock\translationmanager\traits\LoggingTrait;
+use lindemannrock\logginglibrary\traits\LoggingTrait;
 
 /**
  * Integration Registry Service
@@ -256,7 +256,7 @@ class IntegrationService extends Component
     public function ensureIntegrationsLoaded(): void
     {
         if ($this->_integrationsLoaded) {
-            $this->logTrace("IntegrationService: Already loaded, skipping");
+            $this->logDebug("IntegrationService: Already loaded, skipping");
             return;
         }
 

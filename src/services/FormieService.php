@@ -15,7 +15,7 @@ use craft\base\Component;
 use craft\helpers\StringHelper;
 use yii\base\Event;
 use lindemannrock\translationmanager\TranslationManager;
-use lindemannrock\translationmanager\traits\LoggingTrait;
+use lindemannrock\logginglibrary\traits\LoggingTrait;
 
 /**
  * Formie Integration Service

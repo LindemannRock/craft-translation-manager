@@ -322,8 +322,8 @@ class FormieIntegration extends BaseIntegration
         $formHandle = $form->handle;
         $fieldHandle = $field->handle;
 
-        // Log field processing at trace level for debugging
-        $this->logTrace("Processing Formie field: {$fieldClass} ({$fieldHandle})");
+        // Log field processing at debug level for debugging
+        $this->logDebug("Processing Formie field: {$fieldClass} ({$fieldHandle})");
 
         switch ($fieldClass) {
             // Fields with options

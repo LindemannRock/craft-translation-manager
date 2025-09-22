@@ -14,7 +14,7 @@ use Craft;
 use craft\base\Component;
 use craft\helpers\FileHelper;
 use lindemannrock\translationmanager\TranslationManager;
-use lindemannrock\translationmanager\traits\LoggingTrait;
+use lindemannrock\logginglibrary\traits\LoggingTrait;
 
 /**
  * Export Service

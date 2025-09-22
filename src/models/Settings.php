@@ -157,7 +157,7 @@ class Settings extends Model
             [['skipPatterns'], 'safe'],
             [['backupRetentionDays'], 'integer', 'min' => 0, 'max' => 365],
             [['backupSchedule'], 'in', 'range' => ['manual', 'daily', 'weekly']],
-            [['logLevel'], 'in', 'range' => ['trace', 'info', 'warning', 'error']],
+            [['logLevel'], 'in', 'range' => ['debug', 'info', 'warning', 'error']],
         ];
     }
 

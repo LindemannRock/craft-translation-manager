@@ -17,7 +17,7 @@ use craft\helpers\FileHelper;
 use craft\helpers\Json;
 use craft\helpers\StringHelper;
 use lindemannrock\translationmanager\TranslationManager;
-use lindemannrock\translationmanager\traits\LoggingTrait;
+use lindemannrock\logginglibrary\traits\LoggingTrait;
 
 /**
  * Backup Service
@@ -49,6 +49,7 @@ class BackupService extends Component
     public function init(): void
     {
         parent::init();
+        $this->setLoggingHandle('translation-manager');
 
         $settings = TranslationManager::getInstance()->getSettings();
 
@@ -393,7 +394,7 @@ class BackupService extends Component
             foreach ($subfolders as $subfolder) {
                 $folderPath = $this->_volumeBackupPath . '/' . $subfolder;
 
-                $this->logTrace('Checking subfolder', ['subfolder' => $subfolder, 'path' => $folderPath]);
+                $this->logDebug('Checking subfolder', ['subfolder' => $subfolder, 'path' => $folderPath]);
 
                 if (!$this->_volumeFs->directoryExists($folderPath)) {
                     $this->logInfo("Subfolder '{$subfolder}' does not exist");
@@ -403,11 +404,11 @@ class BackupService extends Component
                 // List contents of subfolder using Craft FS API
                 $files = $this->_volumeFs->getFileList($folderPath, false);
                 $fileArray = iterator_to_array($files); // Convert Generator to array
-                $this->logTrace('Subfolder contents', ['subfolder' => $subfolder, 'fileCount' => count($fileArray)]);
+                $this->logDebug('Subfolder contents', ['subfolder' => $subfolder, 'fileCount' => count($fileArray)]);
 
                 // getFileList returns directories, so we need to identify which are backup directories
                 foreach ($fileArray as $file) {
-                    $this->logTrace('Processing file/directory', ['file' => $file]);
+                    $this->logDebug('Processing file/directory', ['file' => $file]);
 
                     // FsListing objects have properties - try common ones
                     $fileName = isset($file->basename) ? $file->basename : (isset($file->filename) ? $file->filename : $file->path);
@@ -418,7 +419,7 @@ class BackupService extends Component
                         $backupPath = $subfolder . '/' . $fileName;
                         $metadataPath = $this->_volumeBackupPath . '/' . $backupPath . '/metadata.json';
 
-                        $this->logTrace('Found backup directory', [
+                        $this->logDebug('Found backup directory', [
                             'backupPath' => $backupPath,
                             'metadataPath' => $metadataPath
                         ]);
@@ -446,7 +447,7 @@ class BackupService extends Component
                                 ];
 
                                 $backups[] = $backup;
-                                $this->logTrace('Added backup to list', ['backup' => $backup]);
+                                $this->logDebug('Added backup to list', ['backup' => $backup]);
                             } else {
                                 $this->logInfo('Metadata file does not exist', ['metadataPath' => $metadataPath]);
                             }

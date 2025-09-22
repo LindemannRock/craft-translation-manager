@@ -13,7 +13,7 @@ namespace lindemannrock\translationmanager\integrations;
 use craft\base\Component;
 use lindemannrock\translationmanager\interfaces\TranslationIntegrationInterface;
 use lindemannrock\translationmanager\TranslationManager;
-use lindemannrock\translationmanager\traits\LoggingTrait;
+use lindemannrock\logginglibrary\traits\LoggingTrait;
 
 /**
  * Base Integration Class

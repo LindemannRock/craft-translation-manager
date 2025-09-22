@@ -17,7 +17,7 @@ use craft\helpers\Db;
 use craft\helpers\StringHelper;
 use lindemannrock\translationmanager\TranslationManager;
 use lindemannrock\translationmanager\records\TranslationRecord;
-use lindemannrock\translationmanager\traits\LoggingTrait;
+use lindemannrock\logginglibrary\traits\LoggingTrait;
 
 /**
  * Translations Service
@@ -25,6 +25,12 @@ use lindemannrock\translationmanager\traits\LoggingTrait;
 class TranslationsService extends Component
 {
     use LoggingTrait;
+
+    public function init(): void
+    {
+        parent::init();
+        $this->setLoggingHandle('translation-manager');
+    }
     /**
      * Get translations with optional filters
      */
@@ -44,7 +50,7 @@ class TranslationsService extends Component
             if (isset($criteria['type'])) $filterDesc[] = "type:{$criteria['type']}";
             if (isset($criteria['allSites']) && $criteria['allSites']) $filterDesc[] = "allSites";
             $filters = implode(', ', $filterDesc);
-            $this->logTrace('Getting translations with filters: ' . $filters);
+            $this->logDebug('Getting translations with filters: ' . $filters);
         }
 
         // Apply site filter (NEW: Multi-site support)
@@ -559,7 +565,7 @@ class TranslationsService extends Component
 
 
                 $usedStatus = $isUsed ? 'used' : 'unused';
-                $this->logTrace("Checking formie translation '{$translation['translationKey']}' ({$translation['context']}) - {$usedStatus}");
+                $this->logDebug("Checking formie translation '{$translation['translationKey']}' ({$translation['context']}) - {$usedStatus}");
             } else {
                 // For site translations, we can't check if they're used
                 // So we always consider them as "in use"

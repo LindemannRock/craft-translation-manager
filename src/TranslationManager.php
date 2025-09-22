@@ -34,6 +34,8 @@ use lindemannrock\translationmanager\services\BackupService;
 use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\utilities\TranslationStatsUtility;
 use lindemannrock\translationmanager\variables\TranslationManagerVariable;
+use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\logginglibrary\LoggingLibrary;
 
 /**
  * Translation Manager plugin
@@ -51,6 +53,7 @@ use lindemannrock\translationmanager\variables\TranslationManagerVariable;
  */
 class TranslationManager extends Plugin
 {
+    use LoggingTrait;
     public string $schemaVersion = '1.0.0';
     public bool $hasCpSettings = true;
 
@@ -60,15 +63,6 @@ class TranslationManager extends Plugin
     private ?Settings $_settings = null;
     public bool $hasCpSection = true;
 
-    /**
-     * @var bool Track if logging is already configured to prevent duplication
-     */
-    private static bool $_loggingConfigured = false;
-
-    /**
-     * @var bool Track if plugin has been initialized to prevent duplication
-     */
-    private static bool $_pluginInitialized = false;
 
     public static function config(): array
     {
@@ -87,8 +81,14 @@ class TranslationManager extends Plugin
     {
         parent::init();
 
-        // Configure logging FIRST before any other initialization
-        $this->_configureLogging();
+        // Configure logging using the new logging library
+        LoggingLibrary::configure([
+            'pluginHandle' => $this->handle,
+            'pluginName' => $this->name,
+            'logLevel' => $this->getSettings()->logLevel ?? 'info',
+            'enableLogViewer' => true,
+            'permissions' => ['translationManager:viewTranslations'],
+        ]);
 
         // Override plugin name from config if available, otherwise use from database settings
         $configFileSettings = Craft::$app->getConfig()->getConfigFromFile('translation-manager');
@@ -157,9 +157,9 @@ class TranslationManager extends Plugin
                 $event->rules['translation-manager/debug/test-search'] = 'translation-manager/debug/test-search';
                 
 
-                // Logs routes
-                $event->rules['translation-manager/logs'] = 'translation-manager/logs/index';
-                $event->rules['translation-manager/logs/download'] = 'translation-manager/logs/download';
+                // Logs routes - use logging-library controller
+                $event->rules['translation-manager/logs'] = 'logging-library/logs/index';
+                $event->rules['translation-manager/logs/download'] = 'logging-library/logs/download';
 
                 // Backup routes (also register as both plural and singular for compatibility)
                 $event->rules['translation-manager/backups'] = 'translation-manager/backup/index';
@@ -264,13 +264,10 @@ class TranslationManager extends Plugin
                 ],
             ];
 
-            // Add logs section for users with view or edit permissions
-            if (Craft::$app->getUser()->checkPermission('translationManager:viewTranslations')) {
-                $item['subnav']['logs'] = [
-                    'label' => 'Logs',
-                    'url' => 'translation-manager/logs',
-                ];
-            }
+            // Add logs section using the logging library
+            $item = LoggingLibrary::addLogsNav($item, $this->handle, [
+                'translationManager:viewTranslations'
+            ]);
 
             if (Craft::$app->getUser()->checkPermission('translationManager:editSettings')) {
                 $item['subnav']['settings'] = [
@@ -485,88 +482,6 @@ class TranslationManager extends Plugin
         ];
     }
 
-    /**
-     * Ensure logging is configured early to catch security validation errors
-     */
-    private function _ensureLoggingConfigured(): void
-    {
-        if (self::$_loggingConfigured) {
-            return;
-        }
-
-        $this->_configureLogging();
-        self::$_loggingConfigured = true;
-    }
-    
-    /**
-     * Configure dedicated logging for Translation Manager
-     */
-    private function _configureLogging(): void
-    {
-        // Skip if already configured
-        if (isset(Craft::$app->getLog()->targets['translation-manager'])) {
-            return;
-        }
-
-        // Get base logs path
-        $logsPath = Craft::$app->getPath()->getLogPath();
-
-        // Get log level from settings (default to 'info' if settings not available yet)
-        $logLevel = 'info';
-        try {
-            if ($this->_settings !== null) {
-                $logLevel = $this->_settings->logLevel;
-            } else {
-                // Try to get from database directly if available
-                $db = Craft::$app->getDb();
-                $tableSchema = $db->getSchema()->getTableSchema('{{%translationmanager_settings}}');
-
-                if ($tableSchema !== null) {
-                    $row = (new \craft\db\Query())
-                        ->from('{{%translationmanager_settings}}')
-                        ->where(['id' => 1])
-                        ->one();
-
-                    if ($row && isset($row['logLevel'])) {
-                        $logLevel = $row['logLevel'];
-                    }
-                }
-            }
-        } catch (\Exception $e) {
-            // Fallback to info level if settings can't be loaded
-        }
-
-        // Map log level to array of levels to include
-        $levels = match ($logLevel) {
-            'trace' => ['error', 'warning', 'info', 'trace'],
-            'info' => ['error', 'warning', 'info'],
-            'warning' => ['error', 'warning'],
-            'error' => ['error'],
-            default => ['error', 'warning', 'info']
-        };
-
-        // Create a new log target instance with dynamic date-based naming
-        $target = new \yii\log\FileTarget([
-            'logFile' => $logsPath . '/translation-manager-' . date('Y-m-d') . '.log',
-            'categories' => ['translation-manager'],
-            'logVars' => [],
-            'levels' => $levels,
-            'maxFileSize' => 10240, // 10MB
-            'maxLogFiles' => 30, // Keep 30 days of logs
-            'prefix' => function ($message) {
-                $user = Craft::$app->has('user', true) ? Craft::$app->getUser() : null;
-                $userId = $user && !$user->getIsGuest() ? $user->getId() : '-';
-                return "[user:{$userId}]";
-            },
-            'rotateByCopy' => false // Don't rotate with .1, .2 suffixes since we use date-based names
-        ]);
-
-        // Add the target to the log dispatcher and ensure it's available immediately
-        Craft::$app->getLog()->targets['translation-manager'] = $target;
-
-        // Initialize the target immediately
-        $target->init();
-    }
 
     /**
      * Schedule backup job if enabled

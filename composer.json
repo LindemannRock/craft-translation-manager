@@ -20,7 +20,8 @@
         }
     ],
     "require": {
-        "craftcms/cms": "^5.0.0"
+        "craftcms/cms": "^5.0.0",
+        "lindemannrock/logging-library": "^1.0"
     },
     "require-dev": {
         "craftcms/phpstan": "dev-main"
@@ -28,6 +29,12 @@
     "autoload": {
         "psr-4": {
             "lindemannrock\\translationmanager\\": "src/"
+        }
+    },
+    "repositories": {
+        "logging-library": {
+            "type": "vcs",
+            "url": "https://github.com/LindemannRock/craft-logging-library"
         }
     },
     "extra": {

@@ -61,7 +61,7 @@ return [
     ],
 
     // Logging settings
-    'logLevel' => 'error', // Options: 'trace', 'info', 'warning', 'error'
+    'logLevel' => 'error', // Options: 'debug', 'info', 'warning', 'error'
 
     // Multi-environment example
     // '*' => [
@@ -70,7 +70,7 @@ return [
     // ],
     // 'dev' => [
     //     'autoExport' => false,
-    //     'logLevel' => 'trace', // More detailed logging in development
+    //     'logLevel' => 'debug', // More detailed logging in development
     //     'backupSchedule' => 'manual',
     // ],
     // 'production' => [
