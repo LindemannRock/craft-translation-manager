@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.4](https://github.com/LindemannRock/translation-manager/compare/v1.14.3...v1.14.4) (2025-09-22)
+
+
+### Bug Fixes
+
+* enhance logging configuration and conditionally add logs section in Translation Manager ([fc3f552](https://github.com/LindemannRock/translation-manager/commit/fc3f5529129955287afd51f540c3a507414e12f9))
+
 ## [1.14.3](https://github.com/LindemannRock/translation-manager/compare/v1.14.2...v1.14.3) (2025-09-22)
 
 
