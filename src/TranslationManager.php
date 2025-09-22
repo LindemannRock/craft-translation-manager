@@ -82,10 +82,13 @@ class TranslationManager extends Plugin
         parent::init();
 
         // Configure logging using the new logging library
+        $settings = $this->getSettings();
+        error_log('TRANSLATION-MANAGER CONFIG: logLevel=' . $settings->logLevel . ' from=' . (file_exists(Craft::$app->getPath()->getConfigPath() . '/translation-manager.php') ? 'config' : 'database'));
+
         LoggingLibrary::configure([
             'pluginHandle' => $this->handle,
             'pluginName' => $this->name,
-            'logLevel' => $this->getSettings()->logLevel ?? 'info',
+            'logLevel' => $settings->logLevel ?? 'info',
             'enableLogViewer' => true,
             'permissions' => ['translationManager:viewTranslations'],
         ]);
@@ -264,10 +267,13 @@ class TranslationManager extends Plugin
                 ],
             ];
 
-            // Add logs section using the logging library
-            $item = LoggingLibrary::addLogsNav($item, $this->handle, [
-                'translationManager:viewTranslations'
-            ]);
+            // Add logs section using the logging library (only if installed)
+            if (Craft::$app->getPlugins()->isPluginInstalled('logging-library') &&
+                Craft::$app->getPlugins()->isPluginEnabled('logging-library')) {
+                $item = LoggingLibrary::addLogsNav($item, $this->handle, [
+                    'translationManager:viewTranslations'
+                ]);
+            }
 
             if (Craft::$app->getUser()->checkPermission('translationManager:editSettings')) {
                 $item['subnav']['settings'] = [
