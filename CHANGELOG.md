@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.5](https://github.com/LindemannRock/translation-manager/compare/v1.14.4...v1.14.5) (2025-09-22)
+
+
+### Bug Fixes
+
+* streamline logging configuration in Translation Manager initialization ([479df2f](https://github.com/LindemannRock/translation-manager/commit/479df2f45d4ffb378fabad508c3b83a3ecf81f6b))
+
 ## [1.14.4](https://github.com/LindemannRock/translation-manager/compare/v1.14.3...v1.14.4) (2025-09-22)
 
 
