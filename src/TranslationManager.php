@@ -82,13 +82,10 @@ class TranslationManager extends Plugin
         parent::init();
 
         // Configure logging using the new logging library
-        $settings = $this->getSettings();
-        error_log('TRANSLATION-MANAGER CONFIG: logLevel=' . $settings->logLevel . ' from=' . (file_exists(Craft::$app->getPath()->getConfigPath() . '/translation-manager.php') ? 'config' : 'database'));
-
         LoggingLibrary::configure([
             'pluginHandle' => $this->handle,
             'pluginName' => $this->name,
-            'logLevel' => $settings->logLevel ?? 'info',
+            'logLevel' => $this->getSettings()->logLevel ?? 'info',
             'enableLogViewer' => true,
             'permissions' => ['translationManager:viewTranslations'],
         ]);
