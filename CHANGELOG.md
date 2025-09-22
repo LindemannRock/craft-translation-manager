@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.14.2](https://github.com/LindemannRock/translation-manager/compare/v1.14.1...v1.14.2) (2025-09-22)
+
+
+### Bug Fixes
+
+* enhance button styling for log level settings link and update subnav item for general settings ([d2e669a](https://github.com/LindemannRock/translation-manager/commit/d2e669a6bf018385cac0d21757b70079038c2f25))
+* increase log entries limit and enhance filter behavior in logs view ([7069a16](https://github.com/LindemannRock/translation-manager/commit/7069a169f236cd64250b94eb429bd01bacfb1b1e))
+* respect pluginName setting in template titles ([d912cce](https://github.com/LindemannRock/translation-manager/commit/d912cce2f24178ad551d824a0b292f4ddc0cbc7a))
+
 ## [1.14.1](https://github.com/LindemannRock/translation-manager/compare/v1.14.0...v1.14.1) (2025-09-20)
 
 
