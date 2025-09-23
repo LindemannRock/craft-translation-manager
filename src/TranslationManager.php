@@ -84,7 +84,6 @@ class TranslationManager extends Plugin
         // Configure logging using the new logging library
         $settings = $this->getSettings();
         $logLevel = $settings->logLevel ?? 'info';
-        error_log("TRANSLATION-MANAGER: Settings logLevel = " . ($settings->logLevel ?? 'NULL') . ", using: $logLevel");
 
         LoggingLibrary::configure([
             'pluginHandle' => $this->handle,
@@ -93,13 +92,6 @@ class TranslationManager extends Plugin
             'enableLogViewer' => true,
             'permissions' => ['translationManager:viewTranslations'],
         ]);
-
-        // DEBUG TEST: Log at all levels to see what appears
-        $testTime = date('H:i:s');
-        Craft::debug("DEBUG TEST at $testTime", 'translation-manager');
-        Craft::info("INFO TEST at $testTime", 'translation-manager');
-        Craft::warning("WARNING TEST at $testTime", 'translation-manager');
-        Craft::error("ERROR TEST at $testTime", 'translation-manager');
 
         // Override plugin name from config if available, otherwise use from database settings
         $configFileSettings = Craft::$app->getConfig()->getConfigFromFile('translation-manager');
