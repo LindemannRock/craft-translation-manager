@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.0](https://github.com/LindemannRock/translation-manager/compare/v1.16.0...v1.17.0) (2025-09-23)
+
+
+### Features
+
+* Improve log level validation to prevent repeated warnings in production ([e6bfa96](https://github.com/LindemannRock/translation-manager/commit/e6bfa96e5207c2cf36aeb5d72aad9c15aecdc751))
+
 ## [1.16.0](https://github.com/LindemannRock/translation-manager/compare/v1.15.4...v1.16.0) (2025-09-23)
 
 
