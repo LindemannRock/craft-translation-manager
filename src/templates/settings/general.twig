@@ -70,10 +70,10 @@
                 errors: settings.getErrors('translationCategory'),
                 required: true,
                 disabled: settings.isOverriddenByConfig('translationCategory'),
+                tip: ("<span id='translation-category-tip'>Use this in your templates: <code>|t('" ~ settings.translationCategory ~ "')</code></span>")|raw,
                 warning: settings.isOverriddenByConfig('translationCategory') ?
                     "This is being overridden by the <code>translationCategory</code> setting in <code>config/translation-manager.php</code>."|raw :
-                    (settings.translationCategory == 'site' ? "Warning: Using 'site' as the category may cause conflicts with Craft's internal translations. Consider using a unique identifier like your company name."|t('translation-manager') :
-                    (settings.translationCategory != 'alhatab' ? "Changing this will affect all existing site translations. Make sure to update all |t() calls in your templates."|t('translation-manager') : null)),
+                    (settings.translationCategory == 'site' ? "Warning: Using 'site' as the category may cause conflicts with Craft's internal translations. Consider using a unique identifier like your company name."|t('translation-manager') : null),
             }) }}
 
 			{{ forms.textareaField({
@@ -192,10 +192,10 @@
         const field = e.target.closest('.field');
         let warningElement = field.querySelector('.warning');
 
-        const siteTranslationsField = document.getElementById('enableSiteTranslations').closest('.field');
-        const instructionsElement = siteTranslationsField.querySelector('.instructions p');
-        if (instructionsElement) {
-            instructionsElement.textContent = 'Capture translations using the |t(\'' + value + '\') filter in your templates';
+        // Update the tip to show current value
+        const tipElement = document.getElementById('translation-category-tip');
+        if (tipElement) {
+            tipElement.innerHTML = 'Use this in your templates: <code>|t(\'' + value + '\')</code>';
         }
 
         if (valueLower === 'site') {
@@ -204,21 +204,21 @@
                 warningElement.className = 'warning';
                 field.appendChild(warningElement);
             }
-            warningElement.innerHTML = '<span class="icon" aria-hidden="true"></span>
-{{ "Warning: Using \'site\' as the category may cause conflicts with Craft\'s internal translations. Consider using a unique identifier like your company name."|t('translation-manager')|e('js') }}';
+            warningElement.innerHTML = '<span class="icon" aria-hidden="true"></span>' +
+                '{{ "Warning: Using \'site\' as the category may cause conflicts with Craft\'s internal translations. Consider using a unique identifier like your company name."|t('translation-manager')|e('js') }}';
 
             if (!this.dataset.confirmed && valueLower === 'site') {
                 const confirmed = confirm('{{ "Are you sure you want to use \'site\' as the translation category? This may conflict with Craft\'s internal translations. We recommend using a unique identifier like your company name instead."|t('translation-manager')|e('js') }}');
                 if (!confirmed) {
-                    this.value = this.defaultValue || 'alhatab';
+                    this.value = this.defaultValue || '{{ settings.translationCategory|e('js') }}';
                 } else {
                     this.dataset.confirmed = 'true';
                 }
             }
         } else if (warningElement && valueLower !== 'site') {
             if (this.defaultValue && value !== this.defaultValue) {
-                warningElement.innerHTML = '<span class="icon" aria-hidden="true"></span>
-{{ "Changing this will affect all existing site translations. Make sure to update all |t() calls in your templates."|t('translation-manager')|e('js') }}';
+                warningElement.innerHTML = '<span class="icon" aria-hidden="true"></span>' +
+                    '{{ "Changing this will affect all existing site translations. Make sure to update all |t() calls in your templates."|t('translation-manager')|e('js') }}';
             } else {
                 warningElement.remove();
             }
