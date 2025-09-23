@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.1](https://github.com/LindemannRock/translation-manager/compare/v1.15.0...v1.15.1) (2025-09-23)
+
+
+### Bug Fixes
+
+* Add debug to check why settings logLevel is not being read ([3ebedd6](https://github.com/LindemannRock/translation-manager/commit/3ebedd6c3a7fa3fbe359e2fadcc20bb8f0e7bcc3))
+
 ## [1.15.0](https://github.com/LindemannRock/translation-manager/compare/v1.14.5...v1.15.0) (2025-09-23)
 
 
