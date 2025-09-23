@@ -217,10 +217,18 @@ class Settings extends Model
         // Debug level is only allowed when devMode is enabled - auto-fallback to info
         if ($logLevel === 'debug' && !Craft::$app->getConfig()->getGeneral()->devMode) {
             $this->$attribute = 'info';
-            Craft::warning('Log level automatically changed from "debug" to "info" because devMode is disabled. This setting has been saved to prevent future warnings.', 'translation-manager');
 
-            // Save the corrected setting to database to prevent repeated warnings
-            $this->saveToDatabase();
+            // Only log warning once per session for config overrides
+            if ($this->isOverriddenByConfig('logLevel')) {
+                if (!Craft::$app->getSession()->get('tm_debug_config_warning')) {
+                    Craft::warning('Log level "debug" from config file changed to "info" because devMode is disabled. Please update your config/translation-manager.php file.', 'translation-manager');
+                    Craft::$app->getSession()->set('tm_debug_config_warning', true);
+                }
+            } else {
+                // Database setting - save the correction
+                Craft::warning('Log level automatically changed from "debug" to "info" because devMode is disabled. This setting has been saved.', 'translation-manager');
+                $this->saveToDatabase();
+            }
         }
     }
 
