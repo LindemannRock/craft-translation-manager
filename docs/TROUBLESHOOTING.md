@@ -69,7 +69,7 @@
    - Run manual capture: `ddev craft translation-manager/translations/capture-formie`
 
 2. **For site translations**:
-   - Ensure you're using the correct category: `{{ 'Text'|t('alhatab') }}`
+   - Ensure you're using the correct category: `{{ 'Text'|t('your-category') }}` (e.g., `{{ 'Text'|t('lindemannrock') }}`)
    - Visit the page on the frontend (translations are captured on page load)
    - Check that site translations are enabled in settings
 

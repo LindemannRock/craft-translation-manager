@@ -18,7 +18,7 @@ return [
     'Interface Settings' => 'Interface Settings',
     'Advanced Settings' => 'Advanced Settings',
     'Translation Category' => 'Translation Category',
-    'The category to use for site translations (e.g. \'alhatab\' for |t(\'alhatab\'))' => 'The category to use for site translations (e.g. \'alhatab\' for |t(\'alhatab\'))',
+    'The category to use for site translations (e.g. \'lindemannrock\' for |t(\'lindemannrock\')). Cannot use reserved categories: site, app, yii, craft.' => 'The category to use for site translations (e.g. \'lindemannrock\' for |t(\'lindemannrock\')). Cannot use reserved categories: site, app, yii, craft.',
     'Enable Formie Integration' => 'Enable Formie Integration',
     'Automatically capture translations from Formie forms' => 'Automatically capture translations from Formie forms',
     'Enable Site Translations' => 'Enable Site Translations',

@@ -443,7 +443,7 @@ class TranslationsService extends Component
                 // Also find |t(_globals.primaryTranslationCategory) usage - multi-line support
                 $dynamicPattern = '/([\'"`])((?:\\\\.|(?!\1).)*)\1\s*\|\s*t\s*\(\s*_globals\.primaryTranslationCategory[\s\S]*?\)/s';
                 
-                // Check for literal category usage: 'Text'|t('alhatab')
+                // Check for literal category usage: 'Text'|t('category')
                 if (preg_match_all($literalPattern, $content, $matches)) {
                     foreach ($matches[2] as $key) { // matches[2] now contains the quoted content
                         // Unescape quotes and other escaped characters
