@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.0](https://github.com/LindemannRock/translation-manager/compare/v1.15.4...v1.16.0) (2025-09-23)
+
+
+### Features
+
+* Add validation for logLevel setting to prevent debug in production ([daba6ed](https://github.com/LindemannRock/translation-manager/commit/daba6ed9a2e519efc960b5806c4b4111be5a987e))
+
 ## [1.15.4](https://github.com/LindemannRock/translation-manager/compare/v1.15.3...v1.15.4) (2025-09-23)
 
 
