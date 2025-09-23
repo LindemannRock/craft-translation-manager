@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.15.0](https://github.com/LindemannRock/translation-manager/compare/v1.14.5...v1.15.0) (2025-09-23)
+
+
+### Features
+
+* enhance translation category settings with tips and warnings ([b23cb14](https://github.com/LindemannRock/translation-manager/commit/b23cb1492347e414814ff96fe8a44716fb5c5822))
+
+
+### Bug Fixes
+
+* improve validation for translation category to include reserved categories ([30c5d21](https://github.com/LindemannRock/translation-manager/commit/30c5d21528e789c431f6e693edb40bd790d46355))
+* update site translation category instructions and warnings for reserved categories ([55504da](https://github.com/LindemannRock/translation-manager/commit/55504dab0c65d3f16ff79af297ee5c2708343bb7))
+* update troubleshooting guide and translation strings for clarity on category usage ([0174708](https://github.com/LindemannRock/translation-manager/commit/0174708d6d21078ca7e0d3809fcb592fa467834a))
+
 ## [1.14.5](https://github.com/LindemannRock/translation-manager/compare/v1.14.4...v1.14.5) (2025-09-22)
 
 
