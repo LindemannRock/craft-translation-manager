@@ -192,21 +192,17 @@ class Settings extends Model
     public function validateTranslationCategory($attribute, $params, $validator)
     {
         $category = $this->$attribute;
-        
+
         // Must start with a letter and contain only letters, numbers, hyphens, and underscores
         if (!preg_match('/^[a-zA-Z][a-zA-Z0-9_-]*$/', $category)) {
             $this->addError($attribute, 'Translation category must start with a letter and contain only letters, numbers, hyphens, and underscores.');
             return;
         }
-        
-        if (strtolower($category) === 'site') {
-            $this->addError($attribute, 'Using "site" as the translation category is strongly discouraged as it may conflict with Craft\'s internal translations. Please use a unique identifier like your company name (e.g., "lindemannrock").');
-        }
-        
-        // Also warn about some other reserved categories
-        $reserved = ['app', 'yii', 'craft'];
+
+        // Check for reserved categories
+        $reserved = ['site', 'app', 'yii', 'craft'];
         if (in_array(strtolower($category), $reserved)) {
-            $this->addError($attribute, 'The category "' . $category . '" is reserved by the system. Please use a unique identifier.');
+            $this->addError($attribute, 'Cannot use reserved category "' . $category . '". The following categories are reserved by Craft: site, app, yii, craft. Please use a unique identifier like your company name.');
         }
     }
 
