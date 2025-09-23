@@ -157,17 +157,24 @@
 
 		<h2>{{ "Logging Settings"|t('translation-manager') }}</h2>
 
+		{% set logLevelOptions = [
+            { label: 'Error (Critical errors only)', value: 'error' },
+            { label: 'Warning (Errors and warnings)', value: 'warning' },
+            { label: 'Info (General information)', value: 'info' },
+        ] %}
+
+		{% if craft.app.config.general.devMode %}
+			{% set logLevelOptions = logLevelOptions|merge([
+                { label: 'Debug (Detailed debugging)', value: 'debug' },
+            ]) %}
+		{% endif %}
+
 		{{ forms.selectField({
             label: "Log Level"|t('translation-manager'),
             instructions: "Choose what types of messages to log. Higher levels include all lower levels (Error < Warning < Info < Debug)"|t('translation-manager'),
             id: 'logLevel',
             name: 'logLevel',
-            options: [
-                { label: 'Error (Critical errors only)', value: 'error' },
-                { label: 'Warning (Errors and warnings)', value: 'warning' },
-                { label: 'Info (General information)', value: 'info' },
-                { label: 'Debug (Detailed debugging)', value: 'debug' },
-            ],
+            options: logLevelOptions,
             value: settings.logLevel,
             disabled: settings.isOverriddenByConfig('logLevel'),
             warning: settings.isOverriddenByConfig('logLevel') ?

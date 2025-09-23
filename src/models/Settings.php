@@ -158,6 +158,7 @@ class Settings extends Model
             [['backupRetentionDays'], 'integer', 'min' => 0, 'max' => 365],
             [['backupSchedule'], 'in', 'range' => ['manual', 'daily', 'weekly']],
             [['logLevel'], 'in', 'range' => ['debug', 'info', 'warning', 'error']],
+            [['logLevel'], 'validateLogLevel'],
         ];
     }
 
@@ -203,6 +204,23 @@ class Settings extends Model
         $reserved = ['site', 'app', 'yii', 'craft'];
         if (in_array(strtolower($category), $reserved)) {
             $this->addError($attribute, 'Cannot use reserved category "' . $category . '". The following categories are reserved by Craft: site, app, yii, craft. Please use a unique identifier like your company name.');
+        }
+    }
+
+    /**
+     * Validates the log level
+     */
+    public function validateLogLevel($attribute, $params, $validator)
+    {
+        $logLevel = $this->$attribute;
+
+        // Debug level is only allowed when devMode is enabled - auto-fallback to info
+        if ($logLevel === 'debug' && !Craft::$app->getConfig()->getGeneral()->devMode) {
+            $this->$attribute = 'info';
+            Craft::warning('Log level automatically changed from "debug" to "info" because devMode is disabled. This setting has been saved to prevent future warnings.', 'translation-manager');
+
+            // Save the corrected setting to database to prevent repeated warnings
+            $this->saveToDatabase();
         }
     }
 
