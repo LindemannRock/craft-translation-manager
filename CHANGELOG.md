@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.2](https://github.com/LindemannRock/translation-manager/compare/v1.15.1...v1.15.2) (2025-09-23)
+
+
+### Bug Fixes
+
+* Remove debug logging code ([20c9265](https://github.com/LindemannRock/translation-manager/commit/20c9265cd3af46021d3c7ebe9d3b09006346bb36))
+
 ## [1.15.1](https://github.com/LindemannRock/translation-manager/compare/v1.15.0...v1.15.1) (2025-09-23)
 
 
