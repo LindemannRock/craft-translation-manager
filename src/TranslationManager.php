@@ -93,12 +93,6 @@ class TranslationManager extends Plugin
             'permissions' => ['translationManager:viewTranslations'],
         ]);
 
-        // TEST: Log at all levels to verify
-        Craft::debug("DEBUG test message", 'translation-manager');
-        Craft::info("INFO test message", 'translation-manager');
-        Craft::warning("WARNING test message", 'translation-manager');
-        Craft::error("ERROR test message", 'translation-manager');
-
         // Override plugin name from config if available, otherwise use from database settings
         $configFileSettings = Craft::$app->getConfig()->getConfigFromFile('translation-manager');
         $configPath = Craft::$app->getPath()->getConfigPath() . '/translation-manager.php';
