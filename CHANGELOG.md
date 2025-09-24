@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.19.3](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.2...v1.19.3) (2025-09-24)
+
+
+### Bug Fixes
+
+* Remove icon from Rescan Templates button in maintenance settings ([76e87c7](https://github.com/LindemannRock/craft-translation-manager/commit/76e87c78c9b44f433eefdc44437c6082da9dfe9f))
+* Update settings navigation to use selectedSettingsItem for consistent highlighting ([a88c88f](https://github.com/LindemannRock/craft-translation-manager/commit/a88c88fdc7dce28c288d55932a2bed8ebd9fb589))
+
 ## [1.19.2](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.1...v1.19.2) (2025-09-24)
 
 
