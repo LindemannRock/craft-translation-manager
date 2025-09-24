@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.0](https://github.com/LindemannRock/translation-manager/compare/v1.18.0...v1.19.0) (2025-09-24)
+
+
+### Features
+
+* Enhance log level instructions to clarify devMode requirement ([5730792](https://github.com/LindemannRock/translation-manager/commit/57307927540850a407a46b8397f1bea974c77373))
+
 ## [1.18.0](https://github.com/LindemannRock/translation-manager/compare/v1.17.0...v1.18.0) (2025-09-24)
 
 
