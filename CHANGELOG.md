@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.2](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.1...v1.19.2) (2025-09-24)
+
+
+### Bug Fixes
+
+* Improve log level warning handling for console requests ([56a13da](https://github.com/LindemannRock/craft-translation-manager/commit/56a13da974e58093da5afeaa91be139a6950f272))
+
 ## [1.19.1](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.0...v1.19.1) (2025-09-24)
 
 
