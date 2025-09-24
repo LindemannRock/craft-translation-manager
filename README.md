@@ -84,7 +84,7 @@ Until published on Packagist, install directly from the repository:
 
 ```bash
 cd /path/to/project
-composer config repositories.translation-manager vcs https://github.com/LindemannRock/translation-manager
+composer config repositories.translation-manager vcs https://github.com/LindemannRock/craft-translation-manager
 composer require lindemannrock/translation-manager:dev-main
 ./craft plugin/install translation-manager
 ```
@@ -608,7 +608,7 @@ For security vulnerabilities, please see our [Security Policy](SECURITY.md).
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/LindemannRock/translation-manager/issues)
+- **Issues**: [GitHub Issues](https://github.com/LindemannRock/craft-translation-manager/issues)
 - **Email**: [support@lindemannrock.com](mailto:support@lindemannrock.com)
 
 ## License

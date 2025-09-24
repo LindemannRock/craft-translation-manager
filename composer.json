@@ -1,5 +1,5 @@
 {
-    "name": "lindemannrock/translation-manager",
+    "name": "lindemannrock/craft-translation-manager",
     "description": "Comprehensive translation management system for Craft CMS with Formie integration",
     "type": "craft-plugin",
     "version": "1.19.0",
@@ -19,9 +19,15 @@
             "homepage": "https://lindemannrock.com"
         }
     ],
+    "support": {
+        "email": "support@lindemannrock.com",
+        "issues": "https://github.com/LindemannRock/craft-translation-manager/issues",
+        "source": "https://github.com/LindemannRock/craft-translation-manager",
+        "docs": "https://github.com/LindemannRock/craft-translation-manager/blob/main/README.md"
+    },
     "require": {
         "craftcms/cms": "^5.0.0",
-        "lindemannrock/logging-library": "^1.0"
+        "lindemannrock/craft-logging-library": "^1.0"
     },
     "require-dev": {
         "craftcms/phpstan": "dev-main"
@@ -34,7 +40,7 @@
     "repositories": {
         "logging-library": {
             "type": "vcs",
-            "url": "https://github.com/LindemannRock/craft-logging-library"
+            "url": "https://github.com/LindemannRock/craft-logging-library.git"
         }
     },
     "extra": {
@@ -42,8 +48,8 @@
         "handle": "translation-manager",
         "developer": "LindemannRock",
         "developerUrl": "https://lindemannrock.com",
-        "documentationUrl": "https://github.com/lindemannrock/translation-manager/blob/master/README.md",
-        "changelogUrl": "https://github.com/lindemannrock/translation-manager/blob/master/CHANGELOG.md",
+        "documentationUrl": "https://github.com/LindemannRock/craft-translation-manager/blob/main/README.md",
+        "changelogUrl": "https://github.com/LindemannRock/craft-translation-manager/blob/main/CHANGELOG.md",
         "class": "lindemannrock\\translationmanager\\TranslationManager"
     }
 }
