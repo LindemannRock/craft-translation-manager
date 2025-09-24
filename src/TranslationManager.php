@@ -311,26 +311,26 @@ class TranslationManager extends Plugin
             // Load database values
             $settings = Settings::loadFromDatabase($settings);
             
-            // Override with config file values
+            // Override ONLY with explicitly set config file values
             $configPath = Craft::$app->getPath()->getConfigPath() . '/translation-manager.php';
             if (file_exists($configPath)) {
                 $rawConfig = require $configPath;
-                
-                // Apply root-level config values
+
+                // Apply root-level config values (only if explicitly set)
                 foreach ($rawConfig as $key => $value) {
                     // Skip environment keys
                     if (!in_array($key, ['*', 'dev', 'staging', 'production', 'test'])) {
-                        if (property_exists($settings, $key)) {
+                        if (property_exists($settings, $key) && array_key_exists($key, $rawConfig)) {
                             $settings->$key = $value;
                         }
                     }
                 }
-                
-                // Apply environment-specific overrides
+
+                // Apply environment-specific overrides (highest priority)
                 $env = Craft::$app->getConfig()->getGeneral()->env ?? '*';
                 if (isset($rawConfig[$env]) && is_array($rawConfig[$env])) {
                     foreach ($rawConfig[$env] as $key => $value) {
-                        if (property_exists($settings, $key)) {
+                        if (property_exists($settings, $key) && array_key_exists($key, $rawConfig[$env])) {
                             $settings->$key = $value;
                         }
                     }
