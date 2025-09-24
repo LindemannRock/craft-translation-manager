@@ -214,13 +214,18 @@ class Settings extends Model
     {
         $logLevel = $this->$attribute;
 
+        // Reset session warning when devMode is true - allows warning to show again if devMode changes
+        if (Craft::$app->getConfig()->getGeneral()->devMode) {
+            Craft::$app->getSession()->remove('tm_debug_config_warning');
+        }
+
         // Debug level is only allowed when devMode is enabled - auto-fallback to info
         if ($logLevel === 'debug' && !Craft::$app->getConfig()->getGeneral()->devMode) {
             $this->$attribute = 'info';
 
             // Only log warning once per session for config overrides
             if ($this->isOverriddenByConfig('logLevel')) {
-                if (!Craft::$app->getSession()->get('tm_debug_config_warning')) {
+                if (Craft::$app->getSession()->get('tm_debug_config_warning') === null) {
                     Craft::warning('Log level "debug" from config file changed to "info" because devMode is disabled. Please update your config/translation-manager.php file.', 'translation-manager');
                     Craft::$app->getSession()->set('tm_debug_config_warning', true);
                 }
@@ -526,31 +531,47 @@ class Settings extends Model
     {
         // Get the config file path
         $configPath = \Craft::$app->getPath()->getConfigPath() . '/translation-manager.php';
-        
+
         if (!file_exists($configPath)) {
             return false;
         }
-        
+
         // Load the raw config file
         $rawConfig = require $configPath;
-        
+
         // Get the current environment
         $env = \Craft::$app->getConfig()->getGeneral()->env ?? '*';
-        
+
         // Environment keys to skip
         $envKeys = ['*', 'dev', 'staging', 'production', 'test'];
-        
+
         // Check environment-specific config first (highest priority)
-        if (isset($rawConfig[$env]) && is_array($rawConfig[$env]) && array_key_exists($attribute, $rawConfig[$env])) {
-            return true;
-        }
-        
+        $hasEnvConfig = isset($rawConfig[$env]) && is_array($rawConfig[$env]) && array_key_exists($attribute, $rawConfig[$env]);
+
         // Check if the attribute exists in the root config
-        if (array_key_exists($attribute, $rawConfig) && !in_array($attribute, $envKeys)) {
-            return true;
+        $hasRootConfig = array_key_exists($attribute, $rawConfig) && !in_array($attribute, $envKeys);
+
+        if (!$hasEnvConfig && !$hasRootConfig) {
+            return false;
         }
-        
-        return false;
+
+        // Special case for logLevel: if config has 'debug' and devMode is true,
+        // then it's NOT an override - it's a valid setting
+        if ($attribute === 'logLevel') {
+            // Get the config value (env-specific takes precedence)
+            $configValue = null;
+            if ($hasEnvConfig) {
+                $configValue = $rawConfig[$env][$attribute];
+            } elseif ($hasRootConfig) {
+                $configValue = $rawConfig[$attribute];
+            }
+
+            if ($configValue === 'debug' && \Craft::$app->getConfig()->getGeneral()->devMode) {
+                return false; // Debug is valid when devMode=true, so not an "override"
+            }
+        }
+
+        return true;
     }
     
     /**

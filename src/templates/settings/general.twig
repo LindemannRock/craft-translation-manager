@@ -171,7 +171,9 @@
 
 		{{ forms.selectField({
             label: "Log Level"|t('translation-manager'),
-            instructions: "Choose what types of messages to log. Higher levels include all lower levels (Error < Warning < Info < Debug)"|t('translation-manager'),
+            instructions: craft.app.config.general.devMode ?
+                "Choose what types of messages to log. Higher levels include all lower levels (Error < Warning < Info < Debug)"|t('translation-manager') :
+                "Choose what types of messages to log. Debug level requires devMode to be enabled."|t('translation-manager'),
             id: 'logLevel',
             name: 'logLevel',
             options: logLevelOptions,
