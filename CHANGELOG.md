@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.4](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.3...v1.19.4) (2025-09-24)
+
+
+### Bug Fixes
+
+* Update log viewer enablement condition for Servd integration ([d10e1f8](https://github.com/LindemannRock/craft-translation-manager/commit/d10e1f8f32bcf3d3a03329c0ce8dccea7f24c043))
+
 ## [1.19.3](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.2...v1.19.3) (2025-09-24)
 
 
