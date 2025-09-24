@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.18.0](https://github.com/LindemannRock/translation-manager/compare/v1.17.0...v1.18.0) (2025-09-24)
+
+
+### Features
+
+* Refine config loading logic to only override settings with explicitly set values ([3e746a7](https://github.com/LindemannRock/translation-manager/commit/3e746a7b97f19ffb1cd22fc5c7d52872b2e961a3))
+* Update backup job description to include plugin name ([ec1eee0](https://github.com/LindemannRock/translation-manager/commit/ec1eee007d8dd57a95fc753ff9f53086326b0a58))
+
 ## [1.17.0](https://github.com/LindemannRock/translation-manager/compare/v1.16.0...v1.17.0) (2025-09-23)
 
 
