@@ -1,32 +1,34 @@
 {% extends "_layouts/cp" %}
 
 {% set title = title ?? 'Settings'|t('translation-manager') %}
+{% set selectedSettingsItem = selectedSettingsItem ?? 'general' %}
+{% set selectedSubnavItem = 'settings' %}
 
 {% block sidebar %}
     <nav id="settings-nav">
         <ul>
             <li>
-                <a href="{{ url('translation-manager/settings/general') }}" {% if selectedSubnavItem is not defined or selectedSubnavItem == 'general' %}class="sel"{% endif %} data-nav-item="general">
+                <a href="{{ url('translation-manager/settings/general') }}" {% if selectedSettingsItem == 'general' %}class="sel"{% endif %} data-nav-item="general">
                     {{ 'General'|t('translation-manager') }}
                 </a>
             </li>
             <li>
-                <a href="{{ url('translation-manager/settings/generation') }}" {% if selectedSubnavItem == 'generation' %}class="sel"{% endif %} data-nav-item="generation">
+                <a href="{{ url('translation-manager/settings/generation') }}" {% if selectedSettingsItem == 'generation' %}class="sel"{% endif %} data-nav-item="generation">
                     {{ 'File Generation'|t('translation-manager') }}
                 </a>
             </li>
             <li>
-                <a href="{{ url('translation-manager/settings/import-export') }}" {% if selectedSubnavItem == 'import-export' %}class="sel"{% endif %} data-nav-item="import-export">
+                <a href="{{ url('translation-manager/settings/import-export') }}" {% if selectedSettingsItem == 'import-export' %}class="sel"{% endif %} data-nav-item="import-export">
                     {{ 'Import/Export'|t('translation-manager') }}
                 </a>
             </li>
             <li>
-                <a href="{{ url('translation-manager/settings/backup') }}" {% if selectedSubnavItem == 'backup' %}class="sel"{% endif %} data-nav-item="backup">
+                <a href="{{ url('translation-manager/settings/backup') }}" {% if selectedSettingsItem == 'backup' %}class="sel"{% endif %} data-nav-item="backup">
                     {{ 'Backup'|t('translation-manager') }}
                 </a>
             </li>
             <li>
-                <a href="{{ url('translation-manager/settings/maintenance') }}" {% if selectedSubnavItem == 'maintenance' %}class="sel"{% endif %} data-nav-item="maintenance">
+                <a href="{{ url('translation-manager/settings/maintenance') }}" {% if selectedSettingsItem == 'maintenance' %}class="sel"{% endif %} data-nav-item="maintenance">
                     {{ 'Maintenance'|t('translation-manager') }}
                 </a>
             </li>

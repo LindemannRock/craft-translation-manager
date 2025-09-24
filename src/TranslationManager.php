@@ -89,7 +89,7 @@ class TranslationManager extends Plugin
             'pluginHandle' => $this->handle,
             'pluginName' => $this->name,
             'logLevel' => $logLevel,
-            'enableLogViewer' => true,
+            'enableLogViewer' => !isset($_ENV['SERVD_PROJECT_NAME']), // Disable on Servd - they provide log viewing
             'permissions' => ['translationManager:viewTranslations'],
         ]);
 
@@ -279,6 +279,7 @@ class TranslationManager extends Plugin
                 $item['subnav']['settings'] = [
                     'label' => 'Settings',
                     'url' => 'translation-manager/settings',
+                    'match' => 'translation-manager/settings*', // Match all settings pages
                 ];
             }
         }
