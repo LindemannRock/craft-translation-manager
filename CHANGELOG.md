@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.1](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.0...v1.19.1) (2025-09-24)
+
+
+### Bug Fixes
+
+* Update repository name and URLs in composer.json and README.md ([9420cee](https://github.com/LindemannRock/craft-translation-manager/commit/9420cee7a73548207c68839765751256f7e6bb06))
+
 ## [1.19.0](https://github.com/LindemannRock/translation-manager/compare/v1.18.0...v1.19.0) (2025-09-24)
 
 
