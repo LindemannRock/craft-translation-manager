@@ -35,7 +35,8 @@ class CreateBackupJob extends BaseJob
      */
     public function getDescription(): ?string
     {
-        return Craft::t('translation-manager', 'Creating translation backup');
+        $pluginName = TranslationManager::getInstance()->getSettings()->pluginName;
+        return Craft::t('translation-manager', '{pluginName}: Scheduled auto backup', ['pluginName' => $pluginName]);
     }
     
     /**
