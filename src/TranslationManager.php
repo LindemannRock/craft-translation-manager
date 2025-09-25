@@ -89,7 +89,6 @@ class TranslationManager extends Plugin
             'pluginHandle' => $this->handle,
             'pluginName' => $this->name,
             'logLevel' => $logLevel,
-            'enableLogViewer' => !isset($_ENV['SERVD_PROJECT_SLUG']), // Disable on Servd - edge servers can't write to /storage/logs
             'permissions' => ['translationManager:viewTranslations'],
         ]);
 
