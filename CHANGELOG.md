@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.6](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.5...v1.19.6) (2025-09-25)
+
+
+### Bug Fixes
+
+* Remove log viewer enablement for Servd edge servers ([0e3ba98](https://github.com/LindemannRock/craft-translation-manager/commit/0e3ba9895a6d38c4e2ac565af2e77740d3867be5))
+
 ## [1.19.5](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.4...v1.19.5) (2025-09-24)
 
 
