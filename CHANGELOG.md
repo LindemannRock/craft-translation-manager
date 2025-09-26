@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.7](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.6...v1.19.7) (2025-09-26)
+
+
+### Bug Fixes
+
+* Check for web request before calling getIsAjax() in volume backup listing ([d824ce8](https://github.com/LindemannRock/craft-translation-manager/commit/d824ce8abc1669ed4b319d1eecb6ec552ccffba1))
+
 ## [1.19.6](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.5...v1.19.6) (2025-09-25)
 
 
