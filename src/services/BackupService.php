@@ -375,7 +375,7 @@ class BackupService extends Component
         $this->logInfo("Starting volume backup listing (path: {$this->_volumeBackupPath}, fs: {$fsClass})");
 
         // Add debug info to response for remote debugging
-        if (Craft::$app->getRequest()->getIsAjax()) {
+        if (Craft::$app->getRequest() instanceof \craft\web\Request && Craft::$app->getRequest()->getIsAjax()) {
             Craft::$app->getResponse()->getHeaders()->set('X-Debug-Volume-Path', $this->_volumeBackupPath);
             Craft::$app->getResponse()->getHeaders()->set('X-Debug-Use-Volume', $this->_useVolume ? 'true' : 'false');
             Craft::$app->getResponse()->getHeaders()->set('X-Debug-FS-Class', $this->_volumeFs ? get_class($this->_volumeFs) : 'null');
