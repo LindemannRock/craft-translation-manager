@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.8](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.7...v1.19.8) (2025-10-06)
+
+
+### Bug Fixes
+
+* TypeError in FormieIntegration when handling TipTap content as array ([263a973](https://github.com/LindemannRock/craft-translation-manager/commit/263a9732edc538a117a0f76b9dc9dd2d7039b3c5))
+
 ## [1.19.7](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.6...v1.19.7) (2025-09-26)
 
 
