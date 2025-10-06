@@ -735,48 +735,58 @@ class FormieIntegration extends BaseIntegration
             return '';
         }
 
-        // If it's already HTML, return as-is
-        if (!is_string($content) || $content[0] !== '[') {
-            return $content;
+        // If content is already an array (JSON-decoded), use it directly
+        if (is_array($content)) {
+            $data = $content;
         }
-
-        try {
-            $data = json_decode($content, true);
-            if (!is_array($data)) {
+        // If it's a string, try to decode it
+        elseif (is_string($content)) {
+            // If it doesn't look like JSON, return as-is
+            if ($content[0] !== '[' && $content[0] !== '{') {
                 return $content;
             }
 
-            $htmlParts = [];
+            try {
+                $data = json_decode($content, true);
+                if (!is_array($data)) {
+                    return $content;
+                }
+            } catch (\Exception) {
+                // If JSON parsing fails, return original
+                return $content;
+            }
+        }
+        // If it's neither string nor array, just convert to string
+        else {
+            return (string)$content;
+        }
 
-            // Convert TipTap blocks to HTML
-            foreach ($data as $block) {
-                if (isset($block['type']) && $block['type'] === 'paragraph') {
-                    $paragraphText = '';
+        $htmlParts = [];
 
-                    if (isset($block['content']) && is_array($block['content'])) {
-                        foreach ($block['content'] as $textNode) {
-                            if (isset($textNode['type']) && $textNode['type'] === 'text' && isset($textNode['text'])) {
-                                $paragraphText .= $textNode['text'];
-                            }
+        // Convert TipTap blocks to HTML
+        foreach ($data as $block) {
+            if (isset($block['type']) && $block['type'] === 'paragraph') {
+                $paragraphText = '';
+
+                if (isset($block['content']) && is_array($block['content'])) {
+                    foreach ($block['content'] as $textNode) {
+                        if (isset($textNode['type']) && $textNode['type'] === 'text' && isset($textNode['text'])) {
+                            $paragraphText .= $textNode['text'];
                         }
                     }
+                }
 
-                    // Add all paragraphs (including empty ones for spacing)
-                    if (!empty(trim($paragraphText))) {
-                        $htmlParts[] = '<p>' . htmlspecialchars($paragraphText) . '</p>';
-                    } else {
-                        // Empty paragraph = intentional line break/spacing
-                        $htmlParts[] = '<p></p>';
-                    }
+                // Add all paragraphs (including empty ones for spacing)
+                if (!empty(trim($paragraphText))) {
+                    $htmlParts[] = '<p>' . htmlspecialchars($paragraphText) . '</p>';
+                } else {
+                    // Empty paragraph = intentional line break/spacing
+                    $htmlParts[] = '<p></p>';
                 }
             }
-
-            return implode('', $htmlParts);
-
-        } catch (\Exception) {
-            // If JSON parsing fails, return original
-            return $content;
         }
+
+        return implode('', $htmlParts);
     }
 
 }
