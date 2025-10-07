@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.0](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.8...v1.20.0) (2025-10-07)
+
+
+### Features
+
+* Add Formie default translation strings capture with automatic usage marking ([4c0b8f7](https://github.com/LindemannRock/craft-translation-manager/commit/4c0b8f7f47567b4c0cb3ebbe6609d2c5c3fbf488))
+
 ## [1.19.8](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.7...v1.19.8) (2025-10-06)
 
 
