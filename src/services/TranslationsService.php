@@ -557,12 +557,16 @@ class TranslationsService extends Component
 
         foreach ($translations as &$translation) {
             $isUsed = false;
-            
+
             // For Formie translations
             if (str_starts_with($translation['context'], 'formie.') || $translation['context'] === 'formie') {
-                // Check if the English text is still used in any form
-                $isUsed = isset($activeTexts[$translation['translationKey']]);
-
+                // Default Formie translations (validation messages) are always considered used
+                if (str_starts_with($translation['context'], 'formie.defaults.')) {
+                    $isUsed = true;
+                } else {
+                    // Check if the English text is still used in any form
+                    $isUsed = isset($activeTexts[$translation['translationKey']]);
+                }
 
                 $usedStatus = $isUsed ? 'used' : 'unused';
                 $this->logDebug("Checking formie translation '{$translation['translationKey']}' ({$translation['context']}) - {$usedStatus}");
@@ -571,12 +575,13 @@ class TranslationsService extends Component
                 // So we always consider them as "in use"
                 $isUsed = true;
             }
-            
+
             $translation['isUsed'] = $isUsed;
             $translation['formCount'] = $isUsed ? 1 : 0;
-            
+
             // Update status in database if it's a Formie translation that's not used
-            if (!$isUsed && str_starts_with($translation['context'], 'formie.')) {
+            // Skip default Formie translations - they're always used
+            if (!$isUsed && str_starts_with($translation['context'], 'formie.') && !str_starts_with($translation['context'], 'formie.defaults.')) {
                 // Update the record's status to 'unused' if it's not already
                 if ($translation['status'] !== 'unused') {
                     $this->logInfo('Marking translation as unused', [

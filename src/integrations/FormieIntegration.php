@@ -95,6 +95,9 @@ class FormieIntegration extends BaseIntegration
         $captured = [];
         $form = $element;
 
+        // Capture Formie default translations (validation messages, etc.)
+        $captured = array_merge($captured, $this->captureDefaultTranslations());
+
         // Capture form title
         if ($form->title) {
             $captured[] = $this->createTranslation(
@@ -167,6 +170,7 @@ class FormieIntegration extends BaseIntegration
         $this->logInfo('Checking Formie translation usage');
 
         // Use the existing working logic with includeUsageCheck
+        // Note: formie.defaults.* translations are automatically marked as used in TranslationsService
         $translations = $this->getTranslationsService()->getTranslations([
             'type' => 'forms',
             'includeUsageCheck' => true
@@ -724,6 +728,75 @@ class FormieIntegration extends BaseIntegration
         }
 
         return array_filter($captured);
+    }
+
+    /**
+     * Capture default Formie translations (validation messages, error strings, etc.)
+     *
+     * @return array Captured translations
+     */
+    private function captureDefaultTranslations(): array
+    {
+        $captured = [];
+
+        try {
+            // Get the Rendering service to access default translation strings
+            $renderingService = \verbb\formie\Formie::getInstance()->getRendering();
+
+            if (!method_exists($renderingService, 'getFrontEndJsTranslations')) {
+                return [];
+            }
+
+            // Get the default translation strings
+            // Returns array like: ['{attribute} cannot be blank.' => 'Translated text']
+            $defaultStrings = $renderingService->getFrontEndJsTranslations();
+
+            // Create translations for each default string
+            foreach ($defaultStrings as $originalText => $translatedText) {
+                if (!empty($originalText)) {
+                    // Generate a clean key from the original English text
+                    $cleanKey = $this->generateCleanKey($originalText);
+
+                    // Always use the original English text as the source
+                    $captured[] = $this->createTranslation(
+                        $originalText,
+                        "formie.defaults.{$cleanKey}"
+                    );
+                }
+            }
+        } catch (\Exception $e) {
+            $this->logInfo("Unable to capture default Formie translations: " . $e->getMessage());
+        }
+
+        return array_filter($captured);
+    }
+
+    /**
+     * Generate a clean key from a translation string
+     *
+     * @param string $string The translation string
+     * @return string A clean key suitable for use in translation keys
+     */
+    private function generateCleanKey(string $string): string
+    {
+        // Remove placeholder patterns like {attribute}, {min}, {max}, etc.
+        $clean = preg_replace('/\{[^}]+\}/', '', $string);
+
+        // Remove special characters and extra spaces
+        $clean = preg_replace('/[^a-zA-Z0-9\s]/', '', $clean);
+        $clean = preg_replace('/\s+/', ' ', $clean);
+        $clean = trim($clean);
+
+        // Convert to kebab case
+        $clean = strtolower($clean);
+        $clean = str_replace(' ', '-', $clean);
+
+        // If the result is empty, use a hash of the original string
+        if (empty($clean)) {
+            $clean = 'msg-' . substr(md5($string), 0, 8);
+        }
+
+        return $clean;
     }
 
     /**
