@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.0](https://github.com/LindemannRock/craft-translation-manager/compare/v1.20.0...v1.21.0) (2025-10-09)
+
+
+### Features
+
+* add viewLogs permission to Translation Manager ([8b835ca](https://github.com/LindemannRock/craft-translation-manager/commit/8b835cad6f21b4469b84cc33fb72411bb6dad401))
+
 ## [1.20.0](https://github.com/LindemannRock/craft-translation-manager/compare/v1.19.8...v1.20.0) (2025-10-07)
 
 
