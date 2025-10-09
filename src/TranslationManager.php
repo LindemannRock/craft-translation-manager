@@ -89,7 +89,7 @@ class TranslationManager extends Plugin
             'pluginHandle' => $this->handle,
             'pluginName' => $this->name,
             'logLevel' => $logLevel,
-            'permissions' => ['translationManager:viewTranslations'],
+            'permissions' => ['translationManager:viewLogs'],
         ]);
 
         // Override plugin name from config if available, otherwise use from database settings
@@ -198,6 +198,9 @@ class TranslationManager extends Plugin
                                 ],
                             ],
                         ],
+                        'translationManager:viewLogs' => [
+                            'label' => 'View logs',
+                        ],
                         'translationManager:editSettings' => [
                             'label' => 'Edit plugin settings',
                         ],
@@ -270,7 +273,7 @@ class TranslationManager extends Plugin
             if (Craft::$app->getPlugins()->isPluginInstalled('logging-library') &&
                 Craft::$app->getPlugins()->isPluginEnabled('logging-library')) {
                 $item = LoggingLibrary::addLogsNav($item, $this->handle, [
-                    'translationManager:viewTranslations'
+                    'translationManager:viewLogs'
                 ]);
             }
 
