@@ -356,6 +356,9 @@ class BackupController extends Controller
             'before_clear_formie' => Craft::t('translation-manager', 'Before Clear Formie'),
             'before_clear_site' => Craft::t('translation-manager', 'Before Clear Site'),
             'before_cleanup' => Craft::t('translation-manager', 'Before Cleanup'),
+            'before_cleanup_all' => Craft::t('translation-manager', 'Before Cleanup All'),
+            'before_cleanup_formie' => Craft::t('translation-manager', 'Before Cleanup Formie'),
+            'before_cleanup_site' => Craft::t('translation-manager', 'Before Cleanup Site'),
             'before_clear' => Craft::t('translation-manager', 'Before Clear'),
             default => Craft::t('translation-manager', ucfirst(str_replace('_', ' ', $reason)))
         };

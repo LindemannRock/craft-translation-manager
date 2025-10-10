@@ -181,30 +181,7 @@
                 {% for backup in backups %}
                     <tr>
                         <td class="thin">{{ backup.timestamp|datetime('short') }}</td>
-                        <td>
-                            {% switch backup.reason %}
-                                {% case 'manual' %}
-                                    {{ "Manual"|t('translation-manager') }}
-                                {% case 'before_import' %}
-                                    {{ "Before Import"|t('translation-manager') }}
-                                {% case 'before_restore' %}
-                                    {{ "Before Restore"|t('translation-manager') }}
-                                {% case 'scheduled' %}
-                                    {{ "Scheduled"|t('translation-manager') }}
-                                {% case 'before_clear_all' %}
-                                    {{ "Before Clear All"|t('translation-manager') }}
-                                {% case 'before_clear_formie' %}
-                                    {{ "Before Clear " ~ craft.translationManager.getFormiePluginName() }}
-                                {% case 'before_clear_site' %}
-                                    {{ "Before Clear Site"|t('translation-manager') }}
-                                {% case 'before_cleanup' %}
-                                    {{ "Before Cleanup"|t('translation-manager') }}
-                                {% case 'before_clear' %}
-                                    {{ "Before Clear"|t('translation-manager') }}
-                                {% default %}
-                                    {{ backup.reason|t('translation-manager') }}
-                            {% endswitch %}
-                        </td>
+                        <td>{{ backup.formattedReason }}</td>
                         <td>{{ backup.user }}</td>
                         <td>{{ backup.translationCount }}</td>
                         <td>{{ craft.translationManager.backup.formatBytes(backup.size) }}</td>
