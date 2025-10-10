@@ -152,13 +152,19 @@ class BackupService extends Component
                 return null;
             }
 
+            // Determine user for backup metadata
+            // Use "system" for automated backups, actual user for manual operations
+            $isAutomated = in_array($reason, ['scheduled']);
+            $username = $isAutomated ? 'system' : (Craft::$app->getUser()->getIdentity()->username ?? 'system');
+            $userId = $isAutomated ? null : Craft::$app->getUser()->getId();
+
             // Create metadata
             $metadata = [
                 'date' => $date,
                 'timestamp' => $timestamp,
                 'reason' => $reason ?? 'manual',
-                'user' => Craft::$app->getUser()->getIdentity()->username ?? 'system',
-                'userId' => Craft::$app->getUser()->getId(),
+                'user' => $username,
+                'userId' => $userId,
                 'translationCount' => count($translations ?? []),
                 'formieEnabled' => TranslationManager::getInstance()->getSettings()->enableFormieIntegration,
                 'siteEnabled' => TranslationManager::getInstance()->getSettings()->enableSiteTranslations,
