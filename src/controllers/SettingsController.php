@@ -13,6 +13,7 @@ namespace lindemannrock\translationmanager\controllers;
 use Craft;
 use craft\web\Controller;
 use lindemannrock\translationmanager\TranslationManager;
+use lindemannrock\logginglibrary\traits\LoggingTrait;
 use yii\web\Response;
 use yii\web\ForbiddenHttpException;
 
@@ -21,6 +22,7 @@ use yii\web\ForbiddenHttpException;
  */
 class SettingsController extends Controller
 {
+    use LoggingTrait;
     /**
      * @inheritdoc
      */
@@ -211,7 +213,7 @@ class SettingsController extends Controller
     {
         $this->requirePostRequest();
 
-        Craft::info("User requested clear Formie translations", 'translation-manager');
+        $this->logInfo("User requested clear Formie translations");
 
         // Create backup if enabled
         $settings = TranslationManager::getInstance()->getSettings();
@@ -221,10 +223,10 @@ class SettingsController extends Controller
                 $pluginName = TranslationManager::getFormiePluginName();
                 $backupPath = $backupService->createBackup('before_clear');
                 if ($backupPath) {
-                    Craft::info("Created backup before clearing Formie translations: $backupPath", 'translation-manager');
+                    $this->logInfo("Created backup before clearing Formie translations", ['backupPath' => $backupPath]);
                 }
             } catch (\Exception $e) {
-                Craft::error("Failed to create backup before clearing Formie translations: " . $e->getMessage(), 'translation-manager');
+                $this->logError("Failed to create backup before clearing Formie translations", ['error' => $e->getMessage()]);
                 // Continue with the operation even if backup fails
             }
         }
@@ -247,7 +249,7 @@ class SettingsController extends Controller
     {
         $this->requirePostRequest();
 
-        Craft::info("User requested clear site translations", 'translation-manager');
+        $this->logInfo("User requested clear site translations");
 
         // Create backup if enabled
         $settings = TranslationManager::getInstance()->getSettings();
@@ -256,10 +258,10 @@ class SettingsController extends Controller
                 $backupService = TranslationManager::getInstance()->backup;
                 $backupPath = $backupService->createBackup('before_clear');
                 if ($backupPath) {
-                    Craft::info("Created backup before clearing site translations: $backupPath", 'translation-manager');
+                    $this->logInfo("Created backup before clearing site translations", ['backupPath' => $backupPath]);
                 }
             } catch (\Exception $e) {
-                Craft::error("Failed to create backup before clearing site translations: " . $e->getMessage(), 'translation-manager');
+                $this->logError("Failed to create backup before clearing site translations", ['error' => $e->getMessage()]);
                 // Continue with the operation even if backup fails
             }
         }
@@ -281,7 +283,7 @@ class SettingsController extends Controller
     {
         $this->requirePostRequest();
 
-        Craft::info("User requested clear all translations", 'translation-manager');
+        $this->logInfo("User requested clear all translations");
 
         // Create backup if enabled
         $settings = TranslationManager::getInstance()->getSettings();
@@ -290,10 +292,10 @@ class SettingsController extends Controller
                 $backupService = TranslationManager::getInstance()->backup;
                 $backupPath = $backupService->createBackup('before_clear');
                 if ($backupPath) {
-                    Craft::info("Created backup before clearing all translations: $backupPath", 'translation-manager');
+                    $this->logInfo("Created backup before clearing all translations", ['backupPath' => $backupPath]);
                 }
             } catch (\Exception $e) {
-                Craft::error("Failed to create backup before clearing all translations: " . $e->getMessage(), 'translation-manager');
+                $this->logError("Failed to create backup before clearing all translations", ['error' => $e->getMessage()]);
                 // Continue with the operation even if backup fails
             }
         }
