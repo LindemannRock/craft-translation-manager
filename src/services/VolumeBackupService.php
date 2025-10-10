@@ -268,11 +268,15 @@ class VolumeBackupService extends Component
                 }
 
                 // List contents of subfolder
-                $contents = $this->_volumeFs->listContents($folderPath, false);
+                $contents = $this->_volumeFs->getFileList($folderPath, false);
 
                 foreach ($contents as $item) {
-                    if ($item['type'] === 'dir') {
-                        $backupPath = $subfolder . '/' . basename($item['path']);
+                    // Check if this is a directory
+                    $fileName = isset($item->basename) ? $item->basename : (isset($item->filename) ? $item->filename : $item->path);
+                    $fullItemPath = $folderPath . '/' . $fileName;
+
+                    if ($this->_volumeFs->directoryExists($fullItemPath)) {
+                        $backupPath = $subfolder . '/' . $fileName;
                         $metadataPath = $this->_volumeBackupPath . '/' . $backupPath . '/metadata.json';
 
                         try {
@@ -572,6 +576,9 @@ class VolumeBackupService extends Component
             'before_clear_formie' => Craft::t('translation-manager', 'Before Clear Formie'),
             'before_clear_site' => Craft::t('translation-manager', 'Before Clear Site'),
             'before_cleanup' => Craft::t('translation-manager', 'Before Cleanup'),
+            'before_cleanup_all' => Craft::t('translation-manager', 'Before Cleanup All'),
+            'before_cleanup_formie' => Craft::t('translation-manager', 'Before Cleanup Formie'),
+            'before_cleanup_site' => Craft::t('translation-manager', 'Before Cleanup Site'),
             'before_clear' => Craft::t('translation-manager', 'Before Clear'),
             default => Craft::t('translation-manager', ucfirst(str_replace('_', ' ', $reason)))
         };
