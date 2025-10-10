@@ -15,6 +15,7 @@ use craft\web\Controller;
 use craft\web\Response;
 use craft\helpers\FileHelper;
 use lindemannrock\translationmanager\TranslationManager;
+use lindemannrock\logginglibrary\traits\LoggingTrait;
 use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
 
@@ -23,6 +24,7 @@ use yii\web\NotFoundHttpException;
  */
 class BackupController extends Controller
 {
+    use LoggingTrait;
     /**
      * @inheritdoc
      */
@@ -65,7 +67,7 @@ class BackupController extends Controller
         $craftTimezone = Craft::$app->getTimeZone();
 
         // Debug: log the timezone info
-        Craft::info("Craft timezone: " . $craftTimezone, 'translation-manager');
+        $this->logDebug("Craft timezone", ['timezone' => $craftTimezone]);
 
         foreach ($backups as &$backup) {
             $backup['formattedSize'] = $backupService->formatBytes($backup['size']);
@@ -78,7 +80,11 @@ class BackupController extends Controller
             $convertedTime = $dateTime->format('Y-m-d H:i:s T');
 
             // Debug logging
-            Craft::info("Timestamp: {$backup['timestamp']}, Original: {$originalTime}, Converted: {$convertedTime}", 'translation-manager');
+            $this->logDebug("Timestamp conversion", [
+                'timestamp' => $backup['timestamp'],
+                'original' => $originalTime,
+                'converted' => $convertedTime
+            ]);
 
             // Format directly with PHP to avoid Craft's locale formatting
             $backup['formattedDate'] = $dateTime->format('n/j/Y, g:i A') . ' (' . $craftTimezone . ')';
@@ -116,7 +122,7 @@ class BackupController extends Controller
         try {
             $reason = Craft::$app->getRequest()->getBodyParam('reason', 'manual');
 
-            Craft::info("User requested manual backup creation", 'translation-manager');
+            $this->logInfo("User requested manual backup creation");
 
             $backupResult = TranslationManager::getInstance()->backup->createBackup($reason);
             
@@ -143,7 +149,7 @@ class BackupController extends Controller
                 'error' => 'Failed to create backup'
             ]);
         } catch (\Exception $e) {
-            Craft::error('Backup creation failed: ' . $e->getMessage(), 'translation-manager');
+            $this->logError('Backup creation failed', ['error' => $e->getMessage()]);
             return $this->asJson([
                 'success' => false,
                 'error' => 'Failed to create backup: ' . $e->getMessage()
@@ -168,7 +174,7 @@ class BackupController extends Controller
             ]);
         }
 
-        Craft::info("User requested backup restore: {$backupName}", 'translation-manager');
+        $this->logInfo("User requested backup restore", ['backup' => $backupName]);
         $result = TranslationManager::getInstance()->backup->restoreBackup($backupName);
         
         return $this->asJson($result);
@@ -185,25 +191,25 @@ class BackupController extends Controller
         $backupName = Craft::$app->getRequest()->getRequiredBodyParam('backup');
 
         if (!preg_match('/^([\w]+\/)?(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})$/', $backupName)) {
-            Craft::info("Invalid backup name format attempted: {$backupName}", 'translation-manager');
+            $this->logWarning("Invalid backup name format attempted", ['backup' => $backupName]);
             return $this->asJson([
                 'success' => false,
                 'error' => 'Invalid backup name format'
             ]);
         }
 
-        Craft::info("User requested backup deletion: {$backupName}", 'translation-manager');
+        $this->logInfo("User requested backup deletion", ['backup' => $backupName]);
         $success = TranslationManager::getInstance()->backup->deleteBackup($backupName);
-        
+
         if ($success) {
-            Craft::info("Backup deletion completed successfully: {$backupName}", 'translation-manager');
+            $this->logInfo("Backup deletion completed successfully", ['backup' => $backupName]);
             return $this->asJson([
                 'success' => true,
                 'message' => 'Backup deleted successfully'
             ]);
         }
 
-        Craft::warning("Backup deletion failed: {$backupName}", 'translation-manager');
+        $this->logWarning("Backup deletion failed", ['backup' => $backupName]);
         return $this->asJson([
             'success' => false,
             'error' => 'Failed to delete backup'
@@ -221,7 +227,7 @@ class BackupController extends Controller
             throw new NotFoundHttpException('Invalid backup name');
         }
 
-        Craft::info("User requested backup download: {$backupName}", 'translation-manager');
+        $this->logInfo("User requested backup download", ['backup' => $backupName]);
 
         $backupService = TranslationManager::getInstance()->backup;
         $settings = TranslationManager::getInstance()->getSettings();
@@ -350,6 +356,9 @@ class BackupController extends Controller
             'before_clear_formie' => Craft::t('translation-manager', 'Before Clear Formie'),
             'before_clear_site' => Craft::t('translation-manager', 'Before Clear Site'),
             'before_cleanup' => Craft::t('translation-manager', 'Before Cleanup'),
+            'before_cleanup_all' => Craft::t('translation-manager', 'Before Cleanup All'),
+            'before_cleanup_formie' => Craft::t('translation-manager', 'Before Cleanup Formie'),
+            'before_cleanup_site' => Craft::t('translation-manager', 'Before Cleanup Site'),
             'before_clear' => Craft::t('translation-manager', 'Before Clear'),
             default => Craft::t('translation-manager', ucfirst(str_replace('_', ' ', $reason)))
         };

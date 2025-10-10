@@ -65,5 +65,8 @@ return [
     'Before Clear Formie' => 'Before Clear Formie',
     'Before Clear Site' => 'Before Clear Site',
     'Before Cleanup' => 'Before Cleanup',
+    'Before Cleanup All' => 'Before Cleanup All',
+    'Before Cleanup Formie' => 'Before Cleanup Formie',
+    'Before Cleanup Site' => 'Before Cleanup Site',
     'Before Clear' => 'Before Clear',
 ];

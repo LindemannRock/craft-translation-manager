@@ -27,18 +27,18 @@ class ExportService extends Component
      */
     public function exportAll(): array
     {
-        Craft::info('Starting exportAll()', __METHOD__);
+        $this->logInfo('Starting exportAll()');
         $results = [];
-        
-        Craft::info('About to export Formie translations', __METHOD__);
+
+        $this->logInfo('About to export Formie translations');
         $results['formie'] = $this->exportFormieTranslations();
-        Craft::info('Formie export result: ' . ($results['formie'] ? 'success' : 'failed'), __METHOD__);
-        
-        Craft::info('About to export site translations', __METHOD__);
+        $this->logInfo('Formie export result', ['success' => $results['formie']]);
+
+        $this->logInfo('About to export site translations');
         $results['site'] = $this->exportSiteTranslations();
-        Craft::info('Site export result: ' . ($results['site'] ? 'success' : 'failed'), __METHOD__);
-        
-        Craft::info('exportAll() completed', __METHOD__);
+        $this->logInfo('Site export result', ['success' => $results['site']]);
+
+        $this->logInfo('exportAll() completed');
         return $results;
     }
 
@@ -50,8 +50,8 @@ class ExportService extends Component
         $settings = TranslationManager::getInstance()->getSettings();
         $translationsService = TranslationManager::getInstance()->translations;
         
-        Craft::info('Starting Formie translation export', __METHOD__);
-        
+        $this->logInfo('Starting Formie translation export');
+
         // NEW: Get Formie translations for ALL sites
         $translations = $translationsService->getTranslations([
             'type' => 'forms',
@@ -59,10 +59,10 @@ class ExportService extends Component
             'allSites' => true  // Get from all sites
         ]);
 
-        Craft::info('Found ' . count($translations) . ' Formie translations to export', __METHOD__);
+        $this->logInfo('Found Formie translations to export', ['count' => count($translations)]);
 
         if (empty($translations)) {
-            Craft::info('No Formie translations to export', __METHOD__);
+            $this->logInfo('No Formie translations to export');
             
             // Delete existing files if they exist to prevent stale translations
             $basePath = $settings->getExportPath();
@@ -73,7 +73,7 @@ class ExportService extends Component
                 $file = $basePath . '/' . $site->language . '/formie.php';
                 if (file_exists($file)) {
                     @unlink($file);
-                    Craft::info("Deleted stale Formie file: {$file}", __METHOD__);
+                    $this->logInfo("Deleted stale Formie file", ['file' => $file]);
                 }
             }
             
@@ -106,7 +106,7 @@ class ExportService extends Component
                 
                 // Write translation file for this site
                 $this->writeTranslationFile($sitePath . '/formie.php', $siteTranslations, $site->name);
-                Craft::info("Exported {count} Formie translations for {site} ({language})", [
+                $this->logInfo("Exported Formie translations", [
                     'count' => count($siteTranslations),
                     'site' => $site->name,
                     'language' => $site->language
@@ -128,8 +128,8 @@ class ExportService extends Component
         $translationsService = TranslationManager::getInstance()->translations;
         $category = $settings->translationCategory;
         
-        Craft::info('Starting site translation export for category: ' . $category, __METHOD__);
-        
+        $this->logInfo('Starting site translation export', ['category' => $category]);
+
         // NEW: Get site translations for ALL sites
         $translations = $translationsService->getTranslations([
             'type' => 'site',
@@ -137,10 +137,10 @@ class ExportService extends Component
             'allSites' => true  // Get from all sites
         ]);
 
-        Craft::info('Found ' . count($translations) . ' site translations to export', __METHOD__);
+        $this->logInfo('Found site translations to export', ['count' => count($translations)]);
 
         if (empty($translations)) {
-            Craft::info('No site translations to export', __METHOD__);
+            $this->logInfo('No site translations to export');
             
             // Delete existing files if they exist to prevent stale translations
             $basePath = $settings->getExportPath();
@@ -152,7 +152,7 @@ class ExportService extends Component
                 $file = $basePath . '/' . $site->language . '/' . $filename;
                 if (file_exists($file)) {
                     @unlink($file);
-                    Craft::info("Deleted stale file: {$file}", __METHOD__);
+                    $this->logInfo("Deleted stale file", ['file' => $file]);
                 }
             }
             
@@ -186,7 +186,7 @@ class ExportService extends Component
                 
                 // Write translation file for this site
                 $this->writeTranslationFile($sitePath . '/' . $filename, $siteTranslations, $site->name);
-                Craft::info("Exported {count} site translations for {site} ({language})", [
+                $this->logInfo("Exported site translations", [
                     'count' => count($siteTranslations),
                     'site' => $site->name,
                     'language' => $site->language
@@ -208,7 +208,7 @@ class ExportService extends Component
         $settings = TranslationManager::getInstance()->getSettings();
         
         $count = count($ids);
-        $this->logInfo("Exporting {$count} selected translations");
+        $this->logInfo("Exporting selected translations", ['count' => $count]);
         
         // Build CSV content with UTF-8 BOM for Excel compatibility
         $csv = "\xEF\xBB\xBF"; // UTF-8 BOM
@@ -249,8 +249,11 @@ class ExportService extends Component
      */
     private function writeTranslationFile(string $path, array $translations, string $language): void
     {
-        Craft::info("Writing {$language} translation file to: {$path}", __METHOD__);
-        Craft::info("Number of translations: " . count($translations), __METHOD__);
+        $this->logInfo("Writing translation file", [
+            'language' => $language,
+            'path' => $path,
+            'count' => count($translations)
+        ]);
         
         $content = "<?php\n/**\n * {$language} translations\n * Auto-generated: " . date('Y-m-d H:i:s') . "\n */\nreturn [\n";
         
@@ -267,17 +270,20 @@ class ExportService extends Component
         $tempFile = $path . '.tmp';
         
         if (file_put_contents($tempFile, $content, LOCK_EX) === false) {
-            Craft::error("Failed to write translation file to: {$tempFile}", __METHOD__);
+            $this->logError("Failed to write translation file", ['tempFile' => $tempFile]);
             throw new \Exception('Failed to write translation file');
         }
-        
+
         if (!rename($tempFile, $path)) {
             @unlink($tempFile);
-            Craft::error("Failed to move translation file from {$tempFile} to {$path}", __METHOD__);
+            $this->logError("Failed to move translation file", [
+                'from' => $tempFile,
+                'to' => $path
+            ]);
             throw new \Exception('Failed to move translation file');
         }
-        
-        Craft::info("Successfully wrote translation file: {$path}", __METHOD__);
+
+        $this->logInfo("Successfully wrote translation file", ['path' => $path]);
     }
 
 

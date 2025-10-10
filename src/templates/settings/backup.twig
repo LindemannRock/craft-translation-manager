@@ -199,10 +199,16 @@
                                     {{ "Before Clear Site"|t('translation-manager') }}
                                 {% case 'before_cleanup' %}
                                     {{ "Before Cleanup"|t('translation-manager') }}
+                                {% case 'before_cleanup_all' %}
+                                    {{ "Before Cleanup All"|t('translation-manager') }}
+                                {% case 'before_cleanup_formie' %}
+                                    {{ "Before Cleanup Formie"|t('translation-manager') }}
+                                {% case 'before_cleanup_site' %}
+                                    {{ "Before Cleanup Site"|t('translation-manager') }}
                                 {% case 'before_clear' %}
                                     {{ "Before Clear"|t('translation-manager') }}
                                 {% default %}
-                                    {{ backup.reason|t('translation-manager') }}
+                                    {{ backup.reason|replace('_', ' ')|title }}
                             {% endswitch %}
                         </td>
                         <td>{{ backup.user }}</td>

@@ -52,7 +52,11 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
     protected function createTranslation(string $text, string $context)
     {
         $integrationName = $this->getName();
-        $this->logInfo("Capturing {$integrationName} translation: '{$text}' ({$context})");
+        $this->logDebug("Capturing translation", [
+            'integration' => $integrationName,
+            'text' => $text,
+            'context' => $context
+        ]);
 
         return $this->getTranslationsService()->createOrUpdateTranslation($text, $context);
     }

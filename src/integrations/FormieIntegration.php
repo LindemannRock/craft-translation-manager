@@ -67,7 +67,7 @@ class FormieIntegration extends BaseIntegration
             \verbb\formie\elements\Form::class,
             \verbb\formie\elements\Form::EVENT_AFTER_SAVE,
             function (\craft\events\ModelEvent $event) {
-                $this->logInfo("FormieIntegration: Form saved - " . $event->sender->handle);
+                $this->logInfo("FormieIntegration: Form saved", ['handle' => $event->sender->handle]);
                 $this->handleFormSave($event->sender);
             }
         );
@@ -77,7 +77,7 @@ class FormieIntegration extends BaseIntegration
             \verbb\formie\elements\Form::class,
             \verbb\formie\elements\Form::EVENT_AFTER_DELETE,
             function (\craft\events\ModelEvent $event) {
-                $this->logInfo("FormieIntegration: Form deleted - " . $event->sender->handle);
+                $this->logInfo("FormieIntegration: Form deleted", ['handle' => $event->sender->handle]);
                 $this->handleFormDelete($event->sender);
             }
         );
@@ -176,7 +176,7 @@ class FormieIntegration extends BaseIntegration
             'includeUsageCheck' => true
         ]);
 
-        $this->logInfo('Checked ' . count($translations) . ' Formie translations for usage');
+        $this->logInfo('Checked Formie translations for usage', ['count' => count($translations)]);
     }
 
     /**
@@ -233,12 +233,15 @@ class FormieIntegration extends BaseIntegration
      */
     private function handleFormSave(\verbb\formie\elements\Form $form): void
     {
-        $this->logInfo("Processing form save for: {$form->handle}");
+        $this->logInfo("Processing form save", ['handle' => $form->handle]);
 
         // Capture translations from the saved form
         $captured = $this->captureTranslations($form);
 
-        $this->logInfo("Captured " . count($captured) . " translations from form {$form->handle}");
+        $this->logInfo("Captured translations from form", [
+            'handle' => $form->handle,
+            'count' => count($captured)
+        ]);
 
         // Check for unused translations
         $this->checkUsage();
@@ -249,7 +252,7 @@ class FormieIntegration extends BaseIntegration
      */
     private function handleFormDelete(\verbb\formie\elements\Form $form): void
     {
-        $this->logInfo("Processing form deletion for: {$form->handle}");
+        $this->logInfo("Processing form deletion", ['handle' => $form->handle]);
 
         // Mark all translations for this form as unused
         $translations = $this->getTranslationsService()->getTranslations([
@@ -260,7 +263,7 @@ class FormieIntegration extends BaseIntegration
         $translationIds = array_column($translations, 'id');
         $marked = $this->markTranslationsUnused($translationIds);
 
-        $this->logInfo("Marked {$marked} translations as unused after form deletion");
+        $this->logInfo("Marked translations as unused after form deletion", ['marked' => $marked]);
     }
 
     /**
@@ -765,7 +768,7 @@ class FormieIntegration extends BaseIntegration
                 }
             }
         } catch (\Exception $e) {
-            $this->logInfo("Unable to capture default Formie translations: " . $e->getMessage());
+            $this->logInfo("Unable to capture default Formie translations", ['error' => $e->getMessage()]);
         }
 
         return array_filter($captured);

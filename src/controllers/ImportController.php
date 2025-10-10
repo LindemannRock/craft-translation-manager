@@ -18,6 +18,7 @@ use craft\helpers\StringHelper;
 use lindemannrock\translationmanager\TranslationManager;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\records\ImportHistoryRecord;
+use lindemannrock\logginglibrary\traits\LoggingTrait;
 use yii\web\ForbiddenHttpException;
 
 /**
@@ -25,6 +26,7 @@ use yii\web\ForbiddenHttpException;
  */
 class ImportController extends Controller
 {
+    use LoggingTrait;
     /**
      * @var array|bool|int
      */
@@ -74,7 +76,7 @@ class ImportController extends Controller
         
         foreach ($translations as $translation) {
             if (!isset($translation['english']) || empty($translation['english'])) {
-                Craft::warning("Skipping translation with empty or missing English text", 'translation-manager');
+                $this->logWarning("Skipping translation with empty or missing English text");
                 continue;
             }
             
@@ -96,7 +98,10 @@ class ImportController extends Controller
                         'siteLanguage' => 'unknown',
                         'error' => "Invalid site ID: {$siteId} does not exist"
                     ];
-                    Craft::warning("Invalid site ID {$siteId} for translation '{$translation['english']}'", 'translation-manager');
+                    $this->logWarning("Invalid site ID for translation", [
+                        'siteId' => $siteId,
+                        'english' => $translation['english']
+                    ]);
                     continue; // Skip further processing
                 }
             } elseif (isset($translation['siteLanguage']) && !empty($translation['siteLanguage'])) {
@@ -139,7 +144,10 @@ class ImportController extends Controller
                     'context' => $originalContext,
                     'threats' => $detectedThreats
                 ];
-                Craft::warning("Malicious content detected in translation '{$originalEnglish}': " . implode(', ', array_keys($detectedThreats)), 'translation-manager');
+                $this->logWarning("Malicious content detected in translation", [
+                    'english' => $originalEnglish,
+                    'threats' => array_keys($detectedThreats)
+                ]);
                 continue; // Skip this row
             }
             
@@ -253,14 +261,17 @@ class ImportController extends Controller
         
         // Validate file upload
         if (!$uploadedFile) {
-            Craft::warning('Import failed: No file uploaded', 'translation-manager');
+            $this->logWarning('Import failed: No file uploaded');
             return $this->asJson([
                 'success' => false,
                 'error' => 'No file uploaded'
             ]);
         }
-        
-        Craft::info("Import started: {$uploadedFile->name} ({$uploadedFile->size} bytes)", 'translation-manager');
+
+        $this->logInfo("Import started", [
+            'filename' => $uploadedFile->name,
+            'size' => $uploadedFile->size
+        ]);
         
         // Validate file type
         $extension = strtolower($uploadedFile->getExtension());
@@ -323,11 +334,13 @@ class ImportController extends Controller
             $history->save();
             
             // Log the import results
-            Craft::info(
-                sprintf('Import completed: User %d imported %d translations, updated %d, skipped %d from %s',
-                    $currentUser->id, $results['imported'], $results['updated'], $results['skipped'], $uploadedFile->name),
-                'translation-manager'
-            );
+            $this->logInfo('Import completed', [
+                'userId' => $currentUser->id,
+                'imported' => $results['imported'],
+                'updated' => $results['updated'],
+                'skipped' => $results['skipped'],
+                'filename' => $uploadedFile->name
+            ]);
             
             $response = [
                 'success' => true,
@@ -344,8 +357,10 @@ class ImportController extends Controller
             return $this->asJson($response);
             
         } catch (\Exception $e) {
-            Craft::warning('CSV import failed: ' . $e->getMessage(), 'translation-manager');
-            Craft::warning('Import failure details: ' . $e->getTraceAsString(), 'translation-manager');
+            $this->logError('CSV import failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             
             return $this->asJson([
                 'success' => false,
@@ -413,7 +428,11 @@ class ImportController extends Controller
             
             // Debug first few rows to see what fgetcsv returns
             if ($rowNumber <= 3 && isset($row[$keyIndex])) {
-                Craft::debug("CSV DEBUG: Row {$rowNumber} raw: '" . $row[$keyIndex] . "' (len:" . strlen($row[$keyIndex]) . ")", 'translation-manager');
+                $this->logDebug("CSV DEBUG: Row data", [
+                    'rowNumber' => $rowNumber,
+                    'raw' => $row[$keyIndex],
+                    'length' => strlen($row[$keyIndex])
+                ]);
             }
             
             // Skip empty rows
@@ -489,7 +508,11 @@ class ImportController extends Controller
                 // Validate length
                 if (strlen($keyText) > 5000 || strlen($translationText) > 5000) {
                     $errors[] = "Row $rowNumber: Text too long (max 5000 characters)";
-                    Craft::warning("Import validation failed on row $rowNumber: Text too long (key: " . strlen($keyText) . " chars, translation: " . strlen($translationText) . " chars)", 'translation-manager');
+                    $this->logWarning("Import validation failed: Text too long", [
+                        'rowNumber' => $rowNumber,
+                        'keyLength' => strlen($keyText),
+                        'translationLength' => strlen($translationText)
+                    ]);
                     continue;
                 }
                 
@@ -584,10 +607,16 @@ class ImportController extends Controller
                         if ($translation->save()) {
                             if ($isNew) {
                                 $imported++;
-                                Craft::info("Import: Created new translation '{$keyText}' for site {$siteId}", 'translation-manager');
+                                $this->logInfo("Import: Created new translation", [
+                                    'key' => $keyText,
+                                    'siteId' => $siteId
+                                ]);
                             } else {
                                 $updated++;
-                                Craft::info("Import: Updated translation '{$keyText}' for site {$siteId}", 'translation-manager');
+                                $this->logInfo("Import: Updated translation", [
+                                    'key' => $keyText,
+                                    'siteId' => $siteId
+                                ]);
                             }
                             
                             // Add to details if requested
@@ -603,7 +632,11 @@ class ImportController extends Controller
                             $validationErrors = $translation->getFirstErrors();
                             $errorMsg = !empty($validationErrors) ? implode(', ', $validationErrors) : 'Failed to save translation';
                             $errors[] = "Row $rowNumber: $errorMsg (Key: " . substr($keyText, 0, 50) . "...)";
-                            Craft::warning("Import: Failed to save '{$keyText}' for site {$siteId}: {$errorMsg}", 'translation-manager');
+                            $this->logWarning("Import: Failed to save translation", [
+                                'key' => $keyText,
+                                'siteId' => $siteId,
+                                'error' => $errorMsg
+                            ]);
                         }
                     } catch (\Exception $e) {
                         $errors[] = "Row $rowNumber: " . $e->getMessage();
@@ -729,7 +762,10 @@ class ImportController extends Controller
                 $threatList[] = $field . ': ' . implode(', ', $fieldThreats);
             }
             
-            Craft::warning("Malicious content blocked in import - '{$english}': " . implode('; ', $threatList), 'translation-manager');
+            $this->logWarning("Malicious content blocked in import", [
+                'english' => $english,
+                'threats' => $threatList
+            ]);
         }
         
         return $this->asJson(['success' => true]);
@@ -808,10 +844,7 @@ class ImportController extends Controller
             ImportHistoryRecord::deleteAll();
             
             // Log the action
-            Craft::info(
-                sprintf('User %d cleared all import logs', $currentUser->id),
-                'translation-manager'
-            );
+            $this->logInfo('User cleared all import logs', ['userId' => $currentUser->id]);
             
             if ($this->request->getAcceptsJson()) {
                 // Set the notice for when the page reloads
@@ -826,7 +859,7 @@ class ImportController extends Controller
             return $this->redirect('translation-manager/settings/import-export#history');
             
         } catch (\Exception $e) {
-            Craft::error('Failed to clear import logs: ' . $e->getMessage(), 'translation-manager');
+            $this->logError('Failed to clear import logs', ['error' => $e->getMessage()]);
             
             if ($this->request->getAcceptsJson()) {
                 return $this->asJson(['success' => false, 'error' => 'Failed to clear import logs.']);

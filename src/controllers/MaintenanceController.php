@@ -13,10 +13,12 @@ namespace lindemannrock\translationmanager\controllers;
 use Craft;
 use craft\web\Controller;
 use lindemannrock\translationmanager\TranslationManager;
+use lindemannrock\logginglibrary\traits\LoggingTrait;
 use yii\web\Response;
 
 class MaintenanceController extends Controller
 {
+    use LoggingTrait;
     /**
      * Clean up unused translations
      */
@@ -35,10 +37,10 @@ class MaintenanceController extends Controller
                     $backupService = TranslationManager::getInstance()->backup;
                     $backupPath = $backupService->createBackup('before_cleanup');
                     if ($backupPath) {
-                        Craft::info("Created backup before cleaning unused translations: $backupPath", 'translation-manager');
+                        $this->logInfo("Created backup before cleaning unused translations", ['backupPath' => $backupPath]);
                     }
                 } catch (\Exception $e) {
-                    Craft::error("Failed to create backup before cleaning unused translations: " . $e->getMessage(), 'translation-manager');
+                    $this->logError("Failed to create backup before cleaning unused translations", ['error' => $e->getMessage()]);
                     // Continue with the operation even if backup fails
                 }
             }
@@ -293,9 +295,12 @@ class MaintenanceController extends Controller
                 try {
                     $backupService = TranslationManager::getInstance()->backup;
                     $backupPath = $backupService->createBackup("before_cleanup_{$type}");
-                    Craft::info("Created backup before cleaning unused {$type} translations: $backupPath", 'translation-manager');
+                    $this->logInfo("Created backup before cleaning unused translations", [
+                        'type' => $type,
+                        'backupPath' => $backupPath
+                    ]);
                 } catch (\Exception $e) {
-                    Craft::error("Failed to create backup: " . $e->getMessage(), 'translation-manager');
+                    $this->logError("Failed to create backup", ['error' => $e->getMessage()]);
                 }
             }
             
