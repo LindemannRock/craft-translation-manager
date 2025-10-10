@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.21.1](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.0...v1.21.1) (2025-10-10)
+
+
+### Bug Fixes
+
+* add missing backup reason translations and fix VolumeBackupService API ([23cd483](https://github.com/LindemannRock/craft-translation-manager/commit/23cd4839328bc66874f4352fc33dcc8e8a47737f))
+* add missing cleanup backup reason translations and simplify template ([0e489b4](https://github.com/LindemannRock/craft-translation-manager/commit/0e489b4386b39721b02e082d5c6c2d63383b9550))
+* add missing cleanup reason cases and set scheduled backups to system user ([b61031b](https://github.com/LindemannRock/craft-translation-manager/commit/b61031b49509050e8efb22d89a1d2e04f5fb3c1c))
+* add missing cleanup reason cases and set scheduled backups to system user ([d5629eb](https://github.com/LindemannRock/craft-translation-manager/commit/d5629eb577578abdedd352d8a04b58fd2bb68b18))
+
 ## [1.21.0](https://github.com/LindemannRock/craft-translation-manager/compare/v1.20.0...v1.21.0) (2025-10-09)
 
 
