@@ -21,7 +21,7 @@ use lindemannrock\logginglibrary\traits\LoggingTrait;
 
 /**
  * Backup Service
- * 
+ *
  * Handles automatic backups of translations to @storage/translation-manager/backups/[date]
  */
 class BackupService extends Component
@@ -109,10 +109,10 @@ class BackupService extends Component
         $settings = TranslationManager::getInstance()->getSettings();
         return $settings->getBackupPath();
     }
-    
+
     /**
      * Create a backup of all translations
-     * 
+     *
      * @param string|null $reason Optional reason for the backup (e.g., "before_import", "manual", "scheduled")
      * @return string|null The backup directory path on success, null on failure
      */
@@ -152,19 +152,13 @@ class BackupService extends Component
                 return null;
             }
 
-            // Determine user for backup metadata
-            // Use "system" for automated backups, actual user for manual operations
-            $isAutomated = in_array($reason, ['scheduled']);
-            $username = $isAutomated ? 'system' : (Craft::$app->getUser()->getIdentity()->username ?? 'system');
-            $userId = $isAutomated ? null : Craft::$app->getUser()->getId();
-
             // Create metadata
             $metadata = [
                 'date' => $date,
                 'timestamp' => $timestamp,
                 'reason' => $reason ?? 'manual',
-                'user' => $username,
-                'userId' => $userId,
+                'user' => Craft::$app->getUser()->getIdentity()->username ?? 'system',
+                'userId' => Craft::$app->getUser()->getId(),
                 'translationCount' => count($translations ?? []),
                 'formieEnabled' => TranslationManager::getInstance()->getSettings()->enableFormieIntegration,
                 'siteEnabled' => TranslationManager::getInstance()->getSettings()->enableSiteTranslations,
@@ -190,14 +184,14 @@ class BackupService extends Component
             } else {
                 return $this->_createLocalBackup($subfolder . '/' . $date, $metadata, $formieTranslations, $siteTranslations);
             }
-            
-            
+
+
         } catch (\Exception $e) {
             $this->logError('Failed to create backup', ['error' => $e->getMessage()]);
             return null;
         }
     }
-    
+
     /**
      * Create backup using volume storage
      */
@@ -311,20 +305,20 @@ class BackupService extends Component
     {
         $settings = TranslationManager::getInstance()->getSettings();
         $exportPath = $settings->getExportPath();
-        
+
         // Get all site languages for backup
         $sites = TranslationManager::getInstance()->getAllowedSites();
         $filesToBackup = [];
-        
+
         foreach ($sites as $site) {
             $language = $site->language;
             $filesToBackup[] = $language . '/formie.php';
             $filesToBackup[] = $language . '/' . $settings->translationCategory . '.php';
         }
-        
+
         $phpDir = $backupDir . '/php-files';
         FileHelper::createDirectory($phpDir);
-        
+
         foreach ($filesToBackup as $file) {
             $sourcePath = $exportPath . '/' . $file;
             if (file_exists($sourcePath)) {
@@ -372,7 +366,7 @@ class BackupService extends Component
 
     /**
      * Get all available backups
-     * 
+     *
      * @return array Array of backup info sorted by date (newest first)
      */
     public function getBackups(): array
@@ -605,22 +599,22 @@ class BackupService extends Component
         if (!is_dir($backupPath)) {
             return $backups;
         }
-        
+
         // Define the subfolders to scan
         $subfolders = ['scheduled', 'imports', 'maintenance', 'manual', 'other'];
-        
+
         // First check for legacy backups in root (backward compatibility)
         $rootDirs = FileHelper::findDirectories($backupPath, [
             'recursive' => false,
         ]);
-        
+
         foreach ($rootDirs as $dir) {
             $dirName = basename($dir);
             // Skip if it's one of our new subfolders
             if (in_array($dirName, $subfolders)) {
                 continue;
             }
-            
+
             $metadataFile = $dir . '/metadata.json';
             if (file_exists($metadataFile)) {
                 try {
@@ -638,18 +632,18 @@ class BackupService extends Component
                 }
             }
         }
-        
+
         // Now scan each subfolder
         foreach ($subfolders as $subfolder) {
             $subfolderPath = $backupPath . '/' . $subfolder;
             if (!is_dir($subfolderPath)) {
                 continue;
             }
-            
+
             $dirs = FileHelper::findDirectories($subfolderPath, [
                 'recursive' => false,
             ]);
-            
+
             foreach ($dirs as $dir) {
                 $metadataFile = $dir . '/metadata.json';
                 if (file_exists($metadataFile)) {
@@ -669,7 +663,7 @@ class BackupService extends Component
                 }
             }
         }
-        
+
         // Sort by timestamp descending (newest first)
         usort($backups, function($a, $b) {
             return $b['timestamp'] - $a['timestamp'];
@@ -680,7 +674,7 @@ class BackupService extends Component
 
         return $backups;
     }
-    
+
     /**
      * Restore from a backup
      *
@@ -875,14 +869,14 @@ class BackupService extends Component
                 'backup' => $backupName,
                 'error' => $e->getMessage()
             ]);
-            
+
             return [
                 'success' => false,
                 'message' => 'Restore failed: ' . $e->getMessage()
             ];
         }
     }
-    
+
     /**
      * Restore translations from a JSON file
      */
@@ -890,30 +884,30 @@ class BackupService extends Component
     {
         $imported = 0;
         $errors = [];
-        
+
         try {
             $content = file_get_contents($filePath);
             $translations = Json::decode($content);
-            
+
             foreach ($translations as $data) {
                 try {
                     $translation = new \lindemannrock\translationmanager\records\TranslationRecord();
                     $translation->source = $data['source'];
                     $translation->sourceHash = $data['sourceHash'];
                     $translation->context = $data['context'];
-                    
+
                     // Handle both old and new field names for backward compatibility
                     $translation->translationKey = $data['translationKey'] ?? $data['englishText'] ?? '';
                     $translation->translation = $data['translation'] ?? $data['arabicText'] ?? '';
                     $translation->siteId = $data['siteId'] ?? 1; // Default to primary site for old backups
-                    
+
                     $translation->status = $data['status'];
                     $translation->usageCount = $data['usageCount'] ?? 1;
                     $translation->lastUsed = DateTimeHelper::toDateTime($data['lastUsed'] ?? time());
                     $translation->dateCreated = DateTimeHelper::toDateTime($data['dateCreated'] ?? time());
                     $translation->dateUpdated = DateTimeHelper::toDateTime($data['dateUpdated'] ?? time());
                     $translation->uid = $data['uid'] ?? \craft\helpers\StringHelper::UUID();
-                    
+
                     if ($translation->save()) {
                         $imported++;
                     } else {
@@ -926,7 +920,7 @@ class BackupService extends Component
         } catch (\Exception $e) {
             $errors[] = 'Failed to read file: ' . $e->getMessage();
         }
-        
+
         return [
             'imported' => $imported,
             'errors' => $errors
@@ -1061,7 +1055,7 @@ class BackupService extends Component
             return false;
         }
     }
-    
+
     /**
      * Clean up old backups based on retention policy
      * Manual backups are never deleted automatically
@@ -1070,32 +1064,32 @@ class BackupService extends Component
     {
         $settings = TranslationManager::getInstance()->getSettings();
         $retentionDays = $settings->backupRetentionDays ?? 30;
-        
+
         if ($retentionDays <= 0) {
             // No cleanup if retention is 0 or negative
             return 0;
         }
-        
+
         $cutoffTime = time() - ($retentionDays * 24 * 60 * 60);
         $backups = $this->getBackups();
         $deleted = 0;
         $skipped = 0;
-        
+
         foreach ($backups as $backup) {
             // Skip manual backups - they must be deleted manually
-            if ($backup['reason'] === 'manual' || $backup['reason'] === 'Manual' || 
+            if ($backup['reason'] === 'manual' || $backup['reason'] === 'Manual' ||
                 (isset($backup['folder']) && $backup['folder'] === 'manual')) {
                 $skipped++;
                 continue;
             }
-            
+
             if ($backup['timestamp'] < $cutoffTime) {
                 if ($this->deleteBackup($backup['name'])) {
                     $deleted++;
                 }
             }
         }
-        
+
         if ($deleted > 0 || $skipped > 0) {
             $this->logInfo('Cleaned up old backups', [
                 'deleted' => $deleted,
@@ -1103,10 +1097,10 @@ class BackupService extends Component
                 'retentionDays' => $retentionDays
             ]);
         }
-        
+
         return $deleted;
     }
-    
+
     /**
      * Calculate backup size for volume storage
      */
@@ -1152,25 +1146,25 @@ class BackupService extends Component
     {
         $size = 0;
         $files = FileHelper::findFiles($dir);
-        
+
         foreach ($files as $file) {
             $size += filesize($file);
         }
-        
+
         return $size;
     }
-    
+
     /**
      * Format bytes into human readable format
      */
     public function formatBytes(int $bytes, int $precision = 2): string
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        
+
         for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
             $bytes /= 1024;
         }
-        
+
         return round($bytes, $precision) . ' ' . $units[$i];
     }
 
