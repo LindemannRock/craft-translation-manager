@@ -119,10 +119,7 @@ class FormieService extends Component
         // translations are actually modified in the CP, not when forms are saved.
         // This prevents unnecessary file regeneration and git changes.
 
-        Craft::info(
-            "Captured translations for form: {$form->handle}",
-            __METHOD__
-        );
+        $this->logInfo("Captured translations for form", ['handle' => $form->handle]);
     }
 
     /**
@@ -358,30 +355,36 @@ class FormieService extends Component
             // Html field
             case 'verbb\formie\fields\Html':
                 if (property_exists($field, 'htmlContent') && $field->htmlContent) {
-                    Craft::info("HTML field found: {$fieldHandle}, content: " . substr($field->htmlContent, 0, 50), __METHOD__);
-                    
+                    $this->logDebug("HTML field found", [
+                        'fieldHandle' => $fieldHandle,
+                        'contentPreview' => substr($field->htmlContent, 0, 50)
+                    ]);
+
                     // Always capture HTML content - the Twig check will be done in createOrUpdateTranslation
                     $translationsService->createOrUpdateTranslation(
                         $field->htmlContent,
                         "formie.{$formHandle}.{$fieldHandle}.content"
                     );
                 } else {
-                    Craft::info("HTML field has no content or property missing", __METHOD__);
+                    $this->logDebug("HTML field has no content or property missing", ['fieldHandle' => $fieldHandle]);
                 }
                 break;
             
             // Paragraph field
             case 'lindemannrock\modules\formieparagraphfield\fields\Paragraph':
                 if (property_exists($field, 'paragraphContent') && $field->paragraphContent) {
-                    Craft::info("Paragraph field found: {$fieldHandle}, content: " . substr($field->paragraphContent, 0, 50), __METHOD__);
-                    
+                    $this->logDebug("Paragraph field found", [
+                        'fieldHandle' => $fieldHandle,
+                        'contentPreview' => substr($field->paragraphContent, 0, 50)
+                    ]);
+
                     // Always capture paragraph content - the Twig check will be done in createOrUpdateTranslation
                     $translationsService->createOrUpdateTranslation(
                         $field->paragraphContent,
                         "formie.{$formHandle}.{$fieldHandle}.content"
                     );
                 } else {
-                    Craft::info("Paragraph field has no content or property missing", __METHOD__);
+                    $this->logDebug("Paragraph field has no content or property missing", ['fieldHandle' => $fieldHandle]);
                 }
                 break;
             

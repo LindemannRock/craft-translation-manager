@@ -338,15 +338,18 @@ class TranslationsService extends Component
             $templatePath = Craft::$app->getPath()->getSiteTemplatesPath();
             
             // Add warning logs for debugging staging vs local differences
-            Craft::info("Template scanner starting - Category: {$category}", 'translation-manager');
-            Craft::info("Template scanner path: {$templatePath}", 'translation-manager');
+            $this->logInfo("Template scanner starting", ['category' => $category]);
+            $this->logInfo("Template scanner path", ['path' => $templatePath]);
             
             $foundKeys = $this->scanTemplateDirectory($templatePath, $category);
             
             $results['scanned_files'] = $this->_scannedFileCount;
             $results['found_keys'] = array_keys($foundKeys);
             
-            Craft::info("Template scanner results - Files: {$results['scanned_files']}, Keys found: " . count($foundKeys), 'translation-manager');
+            $this->logInfo("Template scanner results", [
+                'scanned_files' => $results['scanned_files'],
+                'keys_found' => count($foundKeys)
+            ]);
             
             // Get all site translations (not formie)
             $siteTranslations = (new Query())
@@ -367,7 +370,7 @@ class TranslationsService extends Component
                     // New translation key found in templates - create database entry
                     $this->createOrUpdateTranslation($key, 'site');
                     $results['created']++;
-                    Craft::info("Template scanner: Created new translation '{$key}' (found in templates)", 'translation-manager');
+                    $this->logInfo("Template scanner: Created new translation (found in templates)", ['key' => $key]);
                 }
             }
             
@@ -384,12 +387,12 @@ class TranslationsService extends Component
                             ['id' => $translation['id']]
                         );
                         $results['marked_unused']++;
-                        Craft::info("Template scanner: Marked as unused '{$key}' (not found in templates)", 'translation-manager');
+                        $this->logInfo("Template scanner: Marked as unused (not found in templates)", ['key' => $key]);
                         
                         // Debug: Show available keys that might be similar
                         $similarKeys = array_filter(array_keys($foundKeys), fn($fk) => stripos($fk, substr($key, 0, 10)) !== false);
                         if (!empty($similarKeys)) {
-                            Craft::debug("Template scanner: Similar found keys: " . implode(', ', array_map(fn($k) => "'{$k}'", $similarKeys)), 'translation-manager');
+                            $this->logDebug("Template scanner: Similar found keys", ['similarKeys' => $similarKeys]);
                         }
                     }
                 } else {
@@ -402,7 +405,7 @@ class TranslationsService extends Component
                             ['id' => $translation['id']]
                         );
                         $results['reactivated']++;
-                        Craft::warning("Template scanner: Reactivated '{$key}' (found in templates)", 'translation-manager');
+                        $this->logWarning("Template scanner: Reactivated (found in templates)", ['key' => $key]);
                     }
                 }
             }
@@ -452,7 +455,10 @@ class TranslationsService extends Component
                         
                         // Also store original escaped version for debugging
                         if ($key !== $unescapedKey) {
-                            Craft::warning("Template scanner: Unescaped '{$key}' to '{$unescapedKey}'", 'translation-manager');
+                            $this->logWarning("Template scanner: Unescaped", [
+                                'from' => $key,
+                                'to' => $unescapedKey
+                            ]);
                         }
                     }
                 }
@@ -464,7 +470,9 @@ class TranslationsService extends Component
                         $unescapedKey = stripslashes($key);
                         $foundKeys[$unescapedKey] = true;
                         
-                        Craft::warning("Template scanner: Found dynamic translation '{$unescapedKey}' using _globals.primaryTranslationCategory", 'translation-manager');
+                        $this->logWarning("Template scanner: Found dynamic translation using _globals.primaryTranslationCategory", [
+                            'key' => $unescapedKey
+                        ]);
                     }
                 }
             }
@@ -759,7 +767,7 @@ class TranslationsService extends Component
             $file = $basePath . '/' . $site->language . '/formie.php';
             if (file_exists($file)) {
                 @unlink($file);
-                Craft::info("Deleted stale Formie file: {$file}", __METHOD__);
+                $this->logInfo("Deleted stale Formie file", ['file' => $file]);
             }
         }
     }
