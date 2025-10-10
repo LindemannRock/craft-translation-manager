@@ -115,7 +115,7 @@ class TranslationsService extends Component
             
             if ($searchTerm !== '') {
                 // Log the search for debugging
-                $this->logInfo("Searching for: '{$searchTerm}'");
+                $this->logInfo("Searching for", ['searchTerm' => $searchTerm]);
                 
                 // Add wildcards for partial matching
                 $searchPattern = '%' . strtr($searchTerm, ['%' => '\%', '_' => '\_', '\\' => '\\\\']) . '%';
@@ -129,7 +129,7 @@ class TranslationsService extends Component
                 
                 // Debug: Log the SQL query
                 $sql = $query->createCommand()->getRawSql();
-                $this->logInfo("Search SQL: " . $sql);
+                $this->logDebug("Search SQL", ['sql' => $sql]);
             }
         }
 
@@ -256,7 +256,10 @@ class TranslationsService extends Component
                     'uid' => StringHelper::UUID(),
                 ]);
                 $translation->save();
-                $this->logInfo("Template scanner: Created new multi-site translation for '{$text}' (site: {$site->name})");
+                $this->logInfo("Template scanner: Created new multi-site translation", [
+                    'text' => $text,
+                    'site' => $site->name
+                ]);
             } else {
                 // Update existing translation
                 $translation->usageCount++;
@@ -272,7 +275,10 @@ class TranslationsService extends Component
                     } else {
                         $translation->status = 'pending';
                     }
-                    $this->logInfo("Reactivated translation: '{$text}' for site {$site->name}");
+                    $this->logInfo("Reactivated translation", [
+                        'text' => $text,
+                        'site' => $site->name
+                    ]);
                 }
                 
                 $translation->save();
@@ -494,7 +500,7 @@ class TranslationsService extends Component
      */
     private function checkUsage(array $translations): array
     {
-        $this->logInfo('Starting usage check for ' . count($translations) . ' translations');
+        $this->logInfo('Starting usage check', ['count' => count($translations)]);
         
         // For generic contexts, we need to check if the text is used anywhere
         $activeTexts = [];
@@ -514,7 +520,10 @@ class TranslationsService extends Component
 
                     if ($pageSettings->submitButtonLabel ?? false) {
                         $activeTexts[$pageSettings->submitButtonLabel] = true;
-                        $this->logInfo("Form {$form->handle} submit button: '{$pageSettings->submitButtonLabel}'");
+                        $this->logDebug("Form submit button", [
+                            'form' => $form->handle,
+                            'label' => $pageSettings->submitButtonLabel
+                        ]);
                     }
 
                     if ($pageSettings->backButtonLabel ?? false) {
@@ -536,7 +545,10 @@ class TranslationsService extends Component
                         if ($plainMessage && $plainMessage !== $htmlMessage) {
                             $activeTexts[$plainMessage] = true;
                         }
-                        $this->logInfo("Form {$form->handle} submit message: '{$htmlMessage}'");
+                        $this->logDebug("Form submit message", [
+                            'form' => $form->handle,
+                            'message' => $htmlMessage
+                        ]);
                     }
                 }
                 
@@ -550,7 +562,10 @@ class TranslationsService extends Component
                         if ($plainMessage && $plainMessage !== $htmlMessage) {
                             $activeTexts[$plainMessage] = true;
                         }
-                        $this->logInfo("Form {$form->handle} error message: '{$htmlMessage}'");
+                        $this->logDebug("Form error message", [
+                            'form' => $form->handle,
+                            'message' => $htmlMessage
+                        ]);
                     }
                 }
                 
@@ -560,7 +575,7 @@ class TranslationsService extends Component
                 }
             }
             
-            $this->logInfo('Found ' . count($activeTexts) . ' active texts in forms');
+            $this->logInfo('Found active texts in forms', ['count' => count($activeTexts)]);
         }
 
         foreach ($translations as &$translation) {
@@ -577,7 +592,11 @@ class TranslationsService extends Component
                 }
 
                 $usedStatus = $isUsed ? 'used' : 'unused';
-                $this->logDebug("Checking formie translation '{$translation['translationKey']}' ({$translation['context']}) - {$usedStatus}");
+                $this->logDebug("Checking formie translation", [
+                    'key' => $translation['translationKey'],
+                    'context' => $translation['context'],
+                    'status' => $usedStatus
+                ]);
             } else {
                 // For site translations, we can't check if they're used
                 // So we always consider them as "in use"
@@ -711,7 +730,7 @@ class TranslationsService extends Component
             $this->deleteFormieTranslationFiles();
         }
         
-        $this->logInfo("Cleared {$count} Formie translations");
+        $this->logInfo("Cleared Formie translations", ['count' => $count]);
         
         return $count;
     }
@@ -730,7 +749,7 @@ class TranslationsService extends Component
             $this->deleteSiteTranslationFiles();
         }
         
-        $this->logInfo("Cleared {$count} site translations");
+        $this->logInfo("Cleared site translations", ['count' => $count]);
         
         return $count;
     }
@@ -748,7 +767,7 @@ class TranslationsService extends Component
             $this->deleteSiteTranslationFiles();
         }
         
-        $this->logInfo("Cleared ALL {$count} translations");
+        $this->logInfo("Cleared ALL translations", ['count' => $count]);
         
         return $count;
     }
@@ -787,12 +806,12 @@ class TranslationsService extends Component
         
         if (file_exists($enFile)) {
             @unlink($enFile);
-            $this->logInfo("Deleted site English translation file: {$enFile}");
+            $this->logInfo("Deleted site English translation file", ['file' => $enFile]);
         }
         
         if (file_exists($arFile)) {
             @unlink($arFile);
-            $this->logInfo("Deleted site Arabic translation file: {$arFile}");
+            $this->logInfo("Deleted site Arabic translation file", ['file' => $arFile]);
         }
     }
     
@@ -908,7 +927,7 @@ class TranslationsService extends Component
         
         // If we deleted any translations, regenerate the Formie translation files
         if ($deleted > 0) {
-            $this->logInfo("Cleaned up $deleted unused translations");
+            $this->logInfo("Cleaned up unused translations", ['deleted' => $deleted]);
             
             // Regenerate Formie translation files
             $exportService = TranslationManager::getInstance()->export;

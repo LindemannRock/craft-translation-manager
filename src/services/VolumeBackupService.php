@@ -103,7 +103,10 @@ class VolumeBackupService extends Component
     {
         $reasonText = $this->getDisplayReason($reason ?? 'manual');
         $storageType = $this->_useVolume ? 'volume' : 'local';
-        $this->logInfo("Creating backup: {$reasonText} ({$storageType})");
+        $this->logInfo("Creating backup", [
+            'reason' => $reasonText,
+            'storageType' => $storageType
+        ]);
 
         try {
             // Determine the subfolder based on reason

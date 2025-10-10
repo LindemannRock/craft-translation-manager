@@ -165,7 +165,8 @@ class FormieService extends Component
 
         // Handle field-specific translations
         $fieldClass = get_class($field);
-        $this->logInfo("Processing field type: {$fieldClass}", [
+        $this->logDebug("Processing field type", [
+            'fieldClass' => $fieldClass,
             'handle' => $fieldHandle,
             'hasOptions' => property_exists($field, 'options')
         ]);
@@ -182,26 +183,28 @@ class FormieService extends Component
             case 'verbb\formie\fields\Users':
             case 'verbb\formie\fields\Variants':
                 if (property_exists($field, 'options') && is_array($field->options)) {
-                    $this->logInfo("Found options for {$fieldHandle}", [
+                    $this->logDebug("Found options for field", [
+                        'fieldHandle' => $fieldHandle,
                         'optionCount' => count($field->options)
                     ]);
-                    
+
                     foreach ($field->options as $index => $option) {
-                        $this->logInfo("Processing option {$index}", [
+                        $this->logDebug("Processing option", [
+                            'index' => $index,
                             'option' => $option
                         ]);
-                        
+
                         if (isset($option['label']) && !empty($option['label'])) {
                             $optionValue = $option['value'] ?? StringHelper::toKebabCase($option['label']);
                             $translationsService->createOrUpdateTranslation(
                                 $option['label'],
                                 "formie.{$formHandle}.{$fieldHandle}.option.{$optionValue}"
                             );
-                            $this->logInfo("Captured option: {$option['label']}");
+                            $this->logDebug("Captured option", ['label' => $option['label']]);
                         }
                     }
                 } else {
-                    $this->logInfo("No options property found for {$fieldHandle}");
+                    $this->logDebug("No options property found", ['fieldHandle' => $fieldHandle]);
                 }
                 break;
 
@@ -496,7 +499,7 @@ class FormieService extends Component
             'includeUsageCheck' => true
         ]);
         
-        $this->logInfo('Checked ' . count($translations) . ' form translations for usage');
+        $this->logInfo('Checked form translations for usage', ['count' => count($translations)]);
     }
     
     /**

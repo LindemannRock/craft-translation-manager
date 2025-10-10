@@ -208,7 +208,7 @@ class ExportService extends Component
         $settings = TranslationManager::getInstance()->getSettings();
         
         $count = count($ids);
-        $this->logInfo("Exporting {$count} selected translations");
+        $this->logInfo("Exporting selected translations", ['count' => $count]);
         
         // Build CSV content with UTF-8 BOM for Excel compatibility
         $csv = "\xEF\xBB\xBF"; // UTF-8 BOM
