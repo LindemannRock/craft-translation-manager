@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.2](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.1...v1.21.2) (2025-10-15)
+
+
+### Bug Fixes
+
+* ensure newline at end of file in BackupService.php ([ac64f90](https://github.com/LindemannRock/craft-translation-manager/commit/ac64f90d83ea835b5deeba6d6d8366e940f724ea))
+
 ## [1.21.1](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.0...v1.21.1) (2025-10-10)
 
 
