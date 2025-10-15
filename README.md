@@ -486,15 +486,45 @@ php craft translation-manager/backup/clean
 
 ## Logging
 
-The plugin logs errors and warnings to date-based log files: `storage/logs/translation-manager-YYYY-MM-DD.log`
+Translation Manager uses the [LindemannRock Logging Library](https://github.com/LindemannRock/craft-logging-library) for centralized, structured logging across all LindemannRock plugins.
 
-Log entries include:
-- User ID performing the action
-- Critical errors and warnings only
-- Failed operations and permission denials
-- Export and clear operation errors
+### Log Levels
+- **Error**: Critical errors only
+- **Warning**: Errors and warnings
+- **Info**: General information
+- **Debug**: Detailed debugging (includes performance metrics, requires devMode)
 
-The plugin maintains up to 30 days of log files with automatic rotation.
+### Configuration
+```php
+// config/translation-manager.php
+return [
+    'logLevel' => 'info', // error, warning, info, or debug
+];
+```
+
+**Note:** Debug level requires Craft's `devMode` to be enabled. If set to debug with devMode disabled, it automatically falls back to info level.
+
+### Log Files
+- **Location**: `storage/logs/translation-manager-YYYY-MM-DD.log`
+- **Retention**: 30 days (automatic cleanup via Logging Library)
+- **Format**: Structured JSON logs with context data
+- **Web Interface**: View and filter logs in CP at Translation Manager → Logs
+
+### What's Logged
+- **Error**: File generation failures, database errors, permission denials, backup failures
+- **Warning**: Missing translations, failed operations, slow operations (>1s)
+- **Info**: Translation saves, imports/exports, file generation, backup operations, cleanup actions
+- **Debug**: Performance timing, detailed import/export steps, template scanning, queue operations
+
+### Log Management
+Access logs through the Control Panel:
+1. Navigate to Translation Manager → Logs
+2. Filter by date, level, or search terms
+3. Download log files for external analysis
+4. View file sizes and entry counts
+5. Auto-cleanup after 30 days (configurable via Logging Library)
+
+**Requires:** `lindemannrock/logginglibrary` plugin (installed automatically as dependency)
 
 See [docs/LOGGING.md](docs/LOGGING.md) for detailed logging documentation.
 
