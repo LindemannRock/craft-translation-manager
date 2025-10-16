@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.6](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.5...v1.21.6) (2025-10-16)
+
+
+### Bug Fixes
+
+* update installation instructions for Composer and DDEV ([83ec00e](https://github.com/LindemannRock/craft-translation-manager/commit/83ec00ececd38e90d8905732729cbcb923316f4f))
+
 ## [1.21.5](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.4...v1.21.5) (2025-10-16)
 
 
