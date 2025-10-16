@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.3](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.2...v1.21.3) (2025-10-16)
+
+
+### Bug Fixes
+
+* update author details and enhance logging documentation ([f0f5568](https://github.com/LindemannRock/craft-translation-manager/commit/f0f556854722f028dc05e10c708e2a4e4f7d29b6))
+
 ## [1.21.2](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.1...v1.21.2) (2025-10-15)
 
 
