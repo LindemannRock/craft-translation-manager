@@ -41,12 +41,6 @@
             "lindemannrock\\translationmanager\\": "src/"
         }
     },
-    "repositories": {
-        "logging-library": {
-            "type": "vcs",
-            "url": "https://github.com/LindemannRock/craft-logging-library.git"
-        }
-    },
     "extra": {
         "name": "Translation Manager",
         "handle": "translation-manager",
