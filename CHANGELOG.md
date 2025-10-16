@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.5](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.4...v1.21.5) (2025-10-16)
+
+
+### Bug Fixes
+
+* update license from proprietary to MIT in composer.json ([cb76760](https://github.com/LindemannRock/craft-translation-manager/commit/cb767604e60c9dda7c840cd6eefd332c050c6abb))
+
 ## [1.21.4](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.3...v1.21.4) (2025-10-16)
 
 
