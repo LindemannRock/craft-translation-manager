@@ -78,32 +78,25 @@ Translation Manager was created to solve critical gaps in Craft CMS multi-langua
 
 ## Installation
 
-### Via Composer (Development)
-
-Until published on Packagist, install directly from the repository:
+### Via Composer
 
 ```bash
 cd /path/to/project
-composer config repositories.translation-manager vcs https://github.com/LindemannRock/craft-translation-manager
-composer require lindemannrock/translation-manager:dev-main
+composer require lindemannrock/craft-translation-manager
 ./craft plugin/install translation-manager
 ```
 
-### Via Composer (Production - Coming Soon)
-
-Once published on Packagist:
+### Using DDEV
 
 ```bash
 cd /path/to/project
-composer require lindemannrock/translation-manager
-./craft plugin/install translation-manager
+ddev composer require lindemannrock/craft-translation-manager
+ddev craft plugin/install translation-manager
 ```
 
-### Via Plugin Store (Future)
+### Via Control Panel
 
-1. Go to the Plugin Store in your Craft control panel
-2. Search for "Translation Manager"
-3. Click "Install"
+In the Control Panel, go to Settings → Plugins and click "Install" for Translation Manager.
 
 ## Multi-Site Translation Support
 
