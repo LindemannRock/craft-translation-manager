@@ -15,17 +15,21 @@
     "license": "proprietary",
     "authors": [
         {
-            "name": "LindemannRock",
-            "homepage": "https://lindemannrock.com"
+            "name": "Bilal Hary Lindemann",
+            "email": "bh@lindemannrock.com",
+            "homepage": "https://lindemannrock.com",
+            "role": "Developer"
         }
     ],
     "support": {
         "email": "support@lindemannrock.com",
         "issues": "https://github.com/LindemannRock/craft-translation-manager/issues",
         "source": "https://github.com/LindemannRock/craft-translation-manager",
-        "docs": "https://github.com/LindemannRock/craft-translation-manager/blob/main/README.md"
+        "docs": "https://github.com/LindemannRock/craft-translation-manager/blob/main/README.md",
+        "rss": "https://github.com/LindemannRock/craft-translation-manager/commits/main.atom"
     },
     "require": {
+        "php": "^8.2",
         "craftcms/cms": "^5.0.0",
         "lindemannrock/craft-logging-library": "^1.0"
     },

@@ -149,7 +149,7 @@ return [
   - **error**: Critical errors only (default, production recommended)
   - **warning**: Errors and warnings
   - **info**: General information and successful operations
-  - **trace**: Detailed debugging information (development only)
+  - **debug**: Detailed debugging information (development only, requires devMode)
 
 **Note**: Backups are organized into subfolders:
 - `/scheduled/` - Automated daily/weekly/monthly backups
@@ -170,7 +170,7 @@ Scheduled backups use Craft's queue system and automatically restart if the queu
 The following aliases are supported in path settings:
 
 **Export Paths (secure aliases only):**
-- `@root` - Project root directory  
+- `@root` - Project root directory
 - `@storage` - Storage directory (non-web-accessible)
 - `@translations` - Translations directory
 
