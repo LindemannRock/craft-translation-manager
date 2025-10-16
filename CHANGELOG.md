@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.4](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.3...v1.21.4) (2025-10-16)
+
+
+### Bug Fixes
+
+* remove logging-library repository configuration from composer.json ([0623ff6](https://github.com/LindemannRock/craft-translation-manager/commit/0623ff624d9cbcf8915391ab7d66011142e4dbde))
+
 ## [1.21.3](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.2...v1.21.3) (2025-10-16)
 
 
