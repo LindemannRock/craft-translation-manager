@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.7](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.6...v1.21.7) (2025-10-16)
+
+
+### Bug Fixes
+
+* numeric translation keys being treated as integers ([73ca2e7](https://github.com/LindemannRock/craft-translation-manager/commit/73ca2e7634d1773aad574941afaf8b0077d08fc1))
+
 ## [1.21.6](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.5...v1.21.6) (2025-10-16)
 
 
