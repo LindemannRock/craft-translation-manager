@@ -258,8 +258,9 @@ class ExportService extends Component
         $content = "<?php\n/**\n * {$language} translations\n * Auto-generated: " . date('Y-m-d H:i:s') . "\n */\nreturn [\n";
         
         foreach ($translations as $key => $value) {
-            // Use var_export to properly escape PHP strings without double-escaping
-            $exportedKey = var_export($key, true);
+            // Force keys to always be strings (especially important for numeric strings)
+            // to prevent PHP from treating them as integer keys
+            $exportedKey = var_export((string)$key, true);
             $exportedValue = var_export($value, true);
             $content .= "    {$exportedKey} => {$exportedValue},\n";
         }
