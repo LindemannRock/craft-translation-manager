@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.8](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.7...v1.21.8) (2025-10-17)
+
+
+### Bug Fixes
+
+* use settings for plugin name in logging configuration ([0a02914](https://github.com/LindemannRock/craft-translation-manager/commit/0a029142e924fa9c47b23b8357ef0100dbdb7af0))
+
 ## [1.21.7](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.6...v1.21.7) (2025-10-16)
 
 
