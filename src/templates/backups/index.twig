@@ -151,7 +151,7 @@
                                     <span class="icon" aria-hidden="true">${'{{ svg("@appicons/share.svg")|e("js") }}'}</span>
                                     {{ "Restore"|t('translation-manager') }}
                                 </a></li>
-                                <li><a href="{{ actionUrl('translation-manager/backup/download') }}?backup=${encodeURIComponent(backup.name)}">
+                                <li><a href="{{ actionUrl('translation-manager/backup/download') }}&backup=${encodeURIComponent(backup.name)}">
                                     <span class="icon" aria-hidden="true">${'{{ svg("@appicons/download.svg")|e("js") }}'}</span>
                                     {{ "Download"|t('translation-manager') }}
                                 </a></li>
