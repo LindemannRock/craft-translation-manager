@@ -167,6 +167,7 @@ class TranslationManager extends Plugin
 
                 // Backup routes (also register as both plural and singular for compatibility)
                 $event->rules['translation-manager/backups'] = 'translation-manager/backup/index';
+                $event->rules['translation-manager/backup/get-backups'] = 'translation-manager/backup/get-backups';
                 $event->rules['translation-manager/backup/create'] = 'translation-manager/backup/create';
                 $event->rules['translation-manager/backup/restore'] = 'translation-manager/backup/restore';
                 $event->rules['translation-manager/backup/delete'] = 'translation-manager/backup/delete';

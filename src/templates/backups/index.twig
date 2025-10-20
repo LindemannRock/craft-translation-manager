@@ -32,9 +32,95 @@
     </div>
 
     <div id="backup-list-content" class="hidden">
-    {% set backups = craft.translationManager.backup.getBackups() %}
+        {# Backups will be loaded via AJAX to prevent blocking on slow remote volumes #}
+        <div id="backups-table-container"></div>
 
-    {% if backups|length %}
+        <div id="no-backups-message" class="hidden">
+            <p class="light">{{ "No backups found. Create your first backup using the button above."|t('translation-manager') }}</p>
+        </div>
+
+        <div id="backup-error-message" class="hidden error"></div>
+
+        {% set backupPath = craft.translationManager.backup.getBackupPath() %}
+        <div id="backup-location-info" style="margin-top: 2rem; padding: 1rem; background: #f3f4f6; border-radius: 4px;">
+            <p class="light" style="margin: 0; display: flex; align-items: flex-start; gap: 8px;">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style="flex-shrink: 0; margin-top: 2px;">
+                    <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                    <text x="8" y="12" text-anchor="middle" font-size="11" font-weight="bold" fill="currentColor">i</text>
+                </svg>
+                <span><strong>{{ "Backup Location:"|t('translation-manager') }}</strong> <code>{{ backupPath }}</code></span>
+            </p>
+        </div>
+    </div>
+
+{% include 'translation-manager/_components/plugin-credit.twig' %}
+{% endblock %}
+
+{% js %}
+    // Load backups asynchronously to prevent page blocking on slow remote volumes
+    function loadBackups() {
+        fetch('{{ actionUrl('translation-manager/backup/get-backups') }}', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const loadingDiv = document.getElementById('backup-list-loading');
+            const contentDiv = document.getElementById('backup-list-content');
+            const tableContainer = document.getElementById('backups-table-container');
+            const noBackupsMsg = document.getElementById('no-backups-message');
+            const errorMsg = document.getElementById('backup-error-message');
+
+            // Hide loading, show content
+            if (loadingDiv) loadingDiv.style.display = 'none';
+            if (contentDiv) contentDiv.classList.remove('hidden');
+
+            if (data.success && data.backups && data.backups.length > 0) {
+                // Render backups table
+                tableContainer.innerHTML = renderBackupsTable(data.backups);
+                noBackupsMsg.classList.add('hidden');
+                errorMsg.classList.add('hidden');
+
+                // Initialize menu buttons after rendering
+                setTimeout(() => {
+                    document.querySelectorAll('.menubtn').forEach(btn => {
+                        if (typeof Garnish !== 'undefined' && Garnish.MenuBtn) {
+                            new Garnish.MenuBtn(btn);
+                        }
+                    });
+                }, 100);
+
+            } else if (data.success && (!data.backups || data.backups.length === 0)) {
+                // No backups found
+                tableContainer.innerHTML = '';
+                noBackupsMsg.classList.remove('hidden');
+                errorMsg.classList.add('hidden');
+            } else {
+                // Error occurred
+                tableContainer.innerHTML = '';
+                noBackupsMsg.classList.add('hidden');
+                errorMsg.textContent = data.error || 'Failed to load backups';
+                errorMsg.classList.remove('hidden');
+            }
+        })
+        .catch(error => {
+            const loadingDiv = document.getElementById('backup-list-loading');
+            const contentDiv = document.getElementById('backup-list-content');
+            const errorMsg = document.getElementById('backup-error-message');
+
+            if (loadingDiv) loadingDiv.style.display = 'none';
+            if (contentDiv) contentDiv.classList.remove('hidden');
+
+            errorMsg.textContent = 'Failed to load backups: ' + error.message;
+            errorMsg.classList.remove('hidden');
+        });
+    }
+
+    function renderBackupsTable(backups) {
+        let html = `
         <table class="data fullwidth">
             <thead>
                 <tr>
@@ -47,103 +133,58 @@
                 </tr>
             </thead>
             <tbody>
-                {% for backup in backups %}
-                    <tr>
-                        <td class="thin">{{ backup.timestamp|datetime('short') }}</td>
-                        <td>
-                            {% switch backup.reason %}
-                                {% case 'manual' %}
-                                    {{ "Manual"|t('translation-manager') }}
-                                {% case 'before_import' %}
-                                    {{ "Before Import"|t('translation-manager') }}
-                                {% case 'before_restore' %}
-                                    {{ "Before Restore"|t('translation-manager') }}
-                                {% case 'scheduled' %}
-                                    {{ "Scheduled"|t('translation-manager') }}
-                                {% case 'before_clear_all' %}
-                                    {{ "Before Clear All"|t('translation-manager') }}
-                                {% case 'before_clear_formie' %}
-                                    {{ "Before Clear " ~ craft.translationManager.getFormiePluginName() }}
-                                {% case 'before_clear_site' %}
-                                    {{ "Before Clear Site"|t('translation-manager') }}
-                                {% case 'before_cleanup' %}
-                                    {{ "Before Cleanup"|t('translation-manager') }}
-                                {% case 'before_cleanup_all' %}
-                                    {{ "Before Cleanup All"|t('translation-manager') }}
-                                {% case 'before_cleanup_formie' %}
-                                    {{ "Before Cleanup Formie"|t('translation-manager') }}
-                                {% case 'before_cleanup_site' %}
-                                    {{ "Before Cleanup Site"|t('translation-manager') }}
-                                {% case 'before_clear' %}
-                                    {{ "Before Clear"|t('translation-manager') }}
-                                {% default %}
-                                    {{ backup.reason|replace('_', ' ')|title }}
-                            {% endswitch %}
-                        </td>
-                        <td>{{ backup.user }}</td>
-                        <td>{{ backup.translationCount }}</td>
-                        <td>{{ craft.translationManager.backup.formatBytes(backup.size) }}</td>
-                        <td class="thin">
-                            <button type="button" class="btn menubtn" data-icon="settings" title="{{ 'Actions'|t('translation-manager') }}"></button>
-                            <div class="menu" data-align="right">
-                                <ul>
-                                    <li><a href="#" class="restore-backup" data-backup="{{ backup.name }}">
-                                        <span class="icon" aria-hidden="true">{{ svg('@appicons/share.svg') }}</span>
-                                        {{ "Restore"|t('translation-manager') }}
-                                    </a></li>
-                                    <li><a href="{{ actionUrl('translation-manager/backup/download', { backup: backup.name }) }}">
-                                        <span class="icon" aria-hidden="true">{{ svg('@appicons/download.svg') }}</span>
-                                        {{ "Download"|t('translation-manager') }}
-                                    </a></li>
-                                    <li><hr></li>
-                                    <li><a href="#" class="delete-backup error" data-backup="{{ backup.name }}">
-                                        <span class="icon" aria-hidden="true">{{ svg('@appicons/trash.svg') }}</span>
-                                        {{ "Delete"|t('translation-manager') }}
-                                    </a></li>
-                                </ul>
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
+        `;
+
+        backups.forEach(backup => {
+            html += `
+                <tr>
+                    <td class="thin">${escapeHtml(backup.formattedDate)}</td>
+                    <td>${escapeHtml(backup.formattedReason)}</td>
+                    <td>${escapeHtml(backup.user)}</td>
+                    <td>${backup.translationCount}</td>
+                    <td>${escapeHtml(backup.formattedSize)}</td>
+                    <td class="thin">
+                        <button type="button" class="btn menubtn" data-icon="settings" title="{{ 'Actions'|t('translation-manager') }}"></button>
+                        <div class="menu" data-align="right">
+                            <ul>
+                                <li><a href="#" class="restore-backup" data-backup="${escapeHtml(backup.name)}">
+                                    <span class="icon" aria-hidden="true">${'{{ svg("@appicons/share.svg")|e("js") }}'}</span>
+                                    {{ "Restore"|t('translation-manager') }}
+                                </a></li>
+                                <li><a href="{{ actionUrl('translation-manager/backup/download') }}?backup=${encodeURIComponent(backup.name)}">
+                                    <span class="icon" aria-hidden="true">${'{{ svg("@appicons/download.svg")|e("js") }}'}</span>
+                                    {{ "Download"|t('translation-manager') }}
+                                </a></li>
+                                <li><hr></li>
+                                <li><a href="#" class="delete-backup error" data-backup="${escapeHtml(backup.name)}">
+                                    <span class="icon" aria-hidden="true">${'{{ svg("@appicons/trash.svg")|e("js") }}'}</span>
+                                    {{ "Delete"|t('translation-manager') }}
+                                </a></li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
             </tbody>
         </table>
-    {% else %}
-        <p class="light">{{ "No backups found. Create your first backup using the button above."|t('translation-manager') }}</p>
-    {% endif %}
+        `;
 
-    {% set backupPath = craft.translationManager.backup.getBackupPath() %}
-    <div style="margin-top: 2rem; padding: 1rem; background: #f3f4f6; border-radius: 4px;">
-        <p class="light" style="margin: 0; display: flex; align-items: flex-start; gap: 8px;">
-            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style="flex-shrink: 0; margin-top: 2px;">
-                <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
-                <text x="8" y="12" text-anchor="middle" font-size="11" font-weight="bold" fill="currentColor">i</text>
-            </svg>
-            <span><strong>{{ "Backup Location:"|t('translation-manager') }}</strong> <code>{{ backupPath }}</code></span>
-        </p>
-    </div>
-    </div> {# Close backup-list-content #}
+        return html;
+    }
 
-{% include 'translation-manager/_components/plugin-credit.twig' %}
-{% endblock %}
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 
-{% js %}
-    // Show backup list once page is loaded
+    // Load backups on page load
     document.addEventListener('DOMContentLoaded', function() {
-        // Hide loading indicator and show backup list
-        setTimeout(function() {
-            const loadingDiv = document.getElementById('backup-list-loading');
-            const contentDiv = document.getElementById('backup-list-content');
-
-            if (loadingDiv) loadingDiv.style.display = 'none';
-            if (contentDiv) contentDiv.classList.remove('hidden');
-        }, 100); // Small delay to ensure page is fully rendered
-    });
-
-    // Initialize menu buttons
-    document.querySelectorAll('.menubtn').forEach(btn => {
-        if (typeof Garnish !== 'undefined' && Garnish.MenuBtn) {
-            new Garnish.MenuBtn(btn);
-        }
+        loadBackups();
     });
 
     document.getElementById('create-backup-btn')?.addEventListener('click', function() {
@@ -193,8 +234,8 @@
 
             if (data.success) {
                 Craft.cp.displayNotice(data.message || '{{ "Backup created successfully"|t('translation-manager') }}');
-                // Reload page to show new backup
-                window.location.reload();
+                // Reload backups list
+                loadBackups();
             } else {
                 Craft.cp.displayError(data.error || '{{ "Failed to create backup"|t('translation-manager') }}');
             }
@@ -239,8 +280,8 @@
             .then(data => {
                 if (data.success) {
                     Craft.cp.displayNotice(data.message || 'Backup restored successfully');
-                    // Reload page to refresh data
-                    setTimeout(() => window.location.reload(), 1500);
+                    // Reload backups list after restore
+                    setTimeout(() => loadBackups(), 1500);
                 } else {
                     Craft.cp.displayError(data.message || 'Failed to restore backup');
                 }
@@ -280,8 +321,8 @@
             .then(data => {
                 if (data.success) {
                     Craft.cp.displayNotice(data.message || 'Backup deleted successfully');
-                    // Reload page
-                    window.location.reload();
+                    // Reload backups list
+                    loadBackups();
                 } else {
                     Craft.cp.displayError(data.error || 'Failed to delete backup');
                 }

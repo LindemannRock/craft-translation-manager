@@ -56,59 +56,58 @@ class BackupController extends Controller
     }
 
     /**
-     * List all backups
+     * List all backups (page render only - data loaded via AJAX)
      */
     public function actionIndex(): Response
     {
-        $backupService = TranslationManager::getInstance()->backup;
-        $backups = $backupService->getBackups();
-        
-        // Format file sizes and dates for display
-        $craftTimezone = Craft::$app->getTimeZone();
-
-        // Debug: log the timezone info
-        $this->logDebug("Craft timezone", ['timezone' => $craftTimezone]);
-
-        foreach ($backups as &$backup) {
-            $backup['formattedSize'] = $backupService->formatBytes($backup['size']);
-
-            // Convert timestamp to Craft's timezone and format directly
-            $dateTime = new \DateTime('@' . $backup['timestamp']); // Create from timestamp (UTC)
-            $originalTime = $dateTime->format('Y-m-d H:i:s T');
-
-            $dateTime->setTimezone(new \DateTimeZone($craftTimezone)); // Convert to Craft timezone
-            $convertedTime = $dateTime->format('Y-m-d H:i:s T');
-
-            // Debug logging
-            $this->logDebug("Timestamp conversion", [
-                'timestamp' => $backup['timestamp'],
-                'original' => $originalTime,
-                'converted' => $convertedTime
-            ]);
-
-            // Format directly with PHP to avoid Craft's locale formatting
-            $backup['formattedDate'] = $dateTime->format('n/j/Y, g:i A') . ' (' . $craftTimezone . ')';
-
-            // Format reason for display
-            $backup['formattedReason'] = $this->_formatBackupReason($backup['reason'] ?? 'manual');
-        }
-        
-        // Add debug info for troubleshooting
-        $debugInfo = null;
-        if (Craft::$app->getConfig()->getGeneral()->devMode) {
-            $settings = TranslationManager::getInstance()->getSettings();
-            $debugInfo = [
-                'backupVolumeUid' => $settings->backupVolumeUid,
-                'backupPath' => $settings->getBackupPath(),
-                'totalBackups' => count($backups),
-                'craftTimezone' => $craftTimezone
-            ];
-        }
+        $settings = TranslationManager::getInstance()->getSettings();
 
         return $this->renderTemplate('translation-manager/backups/index', [
-            'backups' => $backups,
-            'debugInfo' => $debugInfo,
+            'settings' => $settings,
         ]);
+    }
+
+    /**
+     * Get backups list as JSON (for async loading)
+     */
+    public function actionGetBackups(): Response
+    {
+        $this->requireAcceptsJson();
+
+        try {
+            $backupService = TranslationManager::getInstance()->backup;
+            $backups = $backupService->getBackups();
+
+            // Format file sizes and dates for display
+            $craftTimezone = Craft::$app->getTimeZone();
+
+            foreach ($backups as &$backup) {
+                $backup['formattedSize'] = $backupService->formatBytes($backup['size']);
+
+                // Convert timestamp to Craft's timezone and format directly
+                $dateTime = new \DateTime('@' . $backup['timestamp']);
+                $dateTime->setTimezone(new \DateTimeZone($craftTimezone));
+
+                // Format date for display
+                $backup['formattedDate'] = $dateTime->format('n/j/Y, g:i A');
+
+                // Format reason for display
+                $backup['formattedReason'] = $this->_formatBackupReason($backup['reason'] ?? 'manual');
+            }
+
+            return $this->asJson([
+                'success' => true,
+                'backups' => $backups,
+            ]);
+
+        } catch (\Exception $e) {
+            $this->logError('Failed to fetch backups', ['error' => $e->getMessage()]);
+
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Failed to load backups: ' . $e->getMessage(),
+            ]);
+        }
     }
     
     /**
