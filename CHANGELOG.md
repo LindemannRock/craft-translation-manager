@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.9](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.8...v1.21.9) (2025-10-20)
+
+
+### Code Refactoring
+
+* reorganize plugin navigation to separate operations from configuration ([b041f08](https://github.com/LindemannRock/craft-translation-manager/commit/b041f081832e60308d57ed50d89f0540e644021d))
+
 ## [1.21.8](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.7...v1.21.8) (2025-10-17)
 
 
