@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.5](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.4...v5.0.5) (2025-10-20)
+
+
+### Bug Fixes
+
+* customLabels handling for Formie rating fields ([7fa48b6](https://github.com/LindemannRock/craft-translation-manager/commit/7fa48b6eaedb1f328bc977dab6de4f73c7726a8e))
+
 ## [5.0.4](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.3...v5.0.4) (2025-10-20)
 
 
