@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.3](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.2...v5.0.3) (2025-10-20)
+
+
+### Bug Fixes
+
+* update backup link to point to the backups page ([062fb21](https://github.com/LindemannRock/craft-translation-manager/commit/062fb21c8fee402998142759f5efb820496c5e2e))
+
 ## [5.0.2](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.1...v5.0.2) (2025-10-20)
 
 
