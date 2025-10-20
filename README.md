@@ -1,5 +1,11 @@
 # Translation Manager Plugin for Craft CMS
 
+[![Latest Version](https://img.shields.io/packagist/v/lindemannrock/craft-translation-manager.svg)](https://packagist.org/packages/lindemannrock/craft-translation-manager)
+[![Craft CMS](https://img.shields.io/badge/Craft%20CMS-5.0+-orange.svg)](https://craftcms.com/)
+[![PHP](https://img.shields.io/badge/PHP-8.2+-blue.svg)](https://php.net/)
+[![Logging Library](https://img.shields.io/badge/Logging%20Library-5.0+-green.svg)](https://github.com/LindemannRock/craft-logging-library)
+[![License](https://img.shields.io/packagist/l/lindemannrock/craft-translation-manager.svg)](LICENSE)
+
 A comprehensive translation management system for Craft CMS 5 with Formie integration, advanced filtering, and enterprise-grade security.
 
 ## Why Translation Manager?
@@ -74,6 +80,7 @@ Translation Manager was created to solve critical gaps in Craft CMS multi-langua
 
 - Craft CMS 5.0 or greater
 - PHP 8.2 or greater
+- [Logging Library](https://github.com/LindemannRock/craft-logging-library) 5.0 or greater (installed automatically as dependency)
 - Formie 3.0 or greater (optional, for form translations)
 
 ## Installation
