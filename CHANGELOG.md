@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.4](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.3...v5.0.4) (2025-10-20)
+
+
+### Bug Fixes
+
+* correct query parameter in backup download link ([7af29ff](https://github.com/LindemannRock/craft-translation-manager/commit/7af29ffcbe8a47473e483e34d518d3ede7933add))
+
 ## [5.0.3](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.2...v5.0.3) (2025-10-20)
 
 
