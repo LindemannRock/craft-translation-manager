@@ -19,6 +19,39 @@ use yii\web\Response;
 class MaintenanceController extends Controller
 {
     use LoggingTrait;
+
+    /**
+     * @inheritdoc
+     */
+    public function beforeAction($action): bool
+    {
+        // Require permission to view translations for the index page
+        if ($action->id === 'index') {
+            if (!Craft::$app->getUser()->checkPermission('translationManager:viewTranslations')) {
+                throw new \yii\web\ForbiddenHttpException('User does not have permission to access maintenance');
+            }
+        } else {
+            // Other actions require edit settings permission
+            if (!Craft::$app->getUser()->checkPermission('translationManager:editSettings')) {
+                throw new \yii\web\ForbiddenHttpException('User does not have permission to perform maintenance tasks');
+            }
+        }
+
+        return parent::beforeAction($action);
+    }
+
+    /**
+     * Maintenance index page
+     */
+    public function actionIndex(): Response
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+
+        return $this->renderTemplate('translation-manager/maintenance/index', [
+            'settings' => $settings,
+        ]);
+    }
+
     /**
      * Clean up unused translations
      */

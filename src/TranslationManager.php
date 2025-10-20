@@ -129,6 +129,10 @@ class TranslationManager extends Plugin
                 $event->rules['translation-manager/translations/save'] = 'translation-manager/translations/save';
                 $event->rules['translation-manager/translations/save-all'] = 'translation-manager/translations/save-all';
                 $event->rules['translation-manager/translations/delete'] = 'translation-manager/translations/delete';
+                $event->rules['translation-manager/generate'] = 'translation-manager/generate/index';
+                $event->rules['translation-manager/import-export'] = 'translation-manager/import-export/index';
+                $event->rules['translation-manager/maintenance'] = 'translation-manager/maintenance/index';
+                $event->rules['translation-manager/backups'] = 'translation-manager/backup/index';
                 $event->rules['translation-manager/export'] = 'translation-manager/export/index';
                 $event->rules['translation-manager/export/download'] = 'translation-manager/export/download';
                 $event->rules['translation-manager/export/selected'] = 'translation-manager/export/selected';
@@ -142,8 +146,6 @@ class TranslationManager extends Plugin
                 $event->rules['translation-manager/settings'] = 'translation-manager/settings/index';
                 $event->rules['translation-manager/settings/general'] = 'translation-manager/settings/general';
                 $event->rules['translation-manager/settings/generation'] = 'translation-manager/settings/generation';
-                $event->rules['translation-manager/settings/import-export'] = 'translation-manager/settings/import-export';
-                $event->rules['translation-manager/settings/maintenance'] = 'translation-manager/settings/maintenance';
                 $event->rules['translation-manager/settings/backup'] = 'translation-manager/settings/backup';
                 $event->rules['translation-manager/settings/save'] = 'translation-manager/settings/save';
                 $event->rules['translation-manager/settings/apply-skip-patterns'] = 'translation-manager/settings/apply-skip-patterns';
@@ -268,6 +270,38 @@ class TranslationManager extends Plugin
                     'url' => 'translation-manager',
                 ],
             ];
+
+            // Add Generate section (visible to anyone who can view translations)
+            if (Craft::$app->getUser()->checkPermission('translationManager:viewTranslations')) {
+                $item['subnav']['generate'] = [
+                    'label' => 'Generate',
+                    'url' => 'translation-manager/generate',
+                ];
+            }
+
+            // Add Import/Export section (visible to anyone who can view translations)
+            if (Craft::$app->getUser()->checkPermission('translationManager:viewTranslations')) {
+                $item['subnav']['import-export'] = [
+                    'label' => 'Import/Export',
+                    'url' => 'translation-manager/import-export',
+                ];
+            }
+
+            // Add Maintenance section (visible to anyone who can view translations)
+            if (Craft::$app->getUser()->checkPermission('translationManager:viewTranslations')) {
+                $item['subnav']['maintenance'] = [
+                    'label' => 'Maintenance',
+                    'url' => 'translation-manager/maintenance',
+                ];
+            }
+
+            // Add Backups section (visible to anyone who can view translations)
+            if (Craft::$app->getUser()->checkPermission('translationManager:viewTranslations')) {
+                $item['subnav']['backups'] = [
+                    'label' => 'Backups',
+                    'url' => 'translation-manager/backups',
+                ];
+            }
 
             // Add logs section using the logging library (only if installed)
             if (Craft::$app->getPlugins()->isPluginInstalled('logging-library') &&

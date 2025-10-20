@@ -18,18 +18,8 @@
                 </a>
             </li>
             <li>
-                <a href="{{ url('translation-manager/settings/import-export') }}" {% if selectedSettingsItem == 'import-export' %}class="sel"{% endif %} data-nav-item="import-export">
-                    {{ 'Import/Export'|t('translation-manager') }}
-                </a>
-            </li>
-            <li>
                 <a href="{{ url('translation-manager/settings/backup') }}" {% if selectedSettingsItem == 'backup' %}class="sel"{% endif %} data-nav-item="backup">
                     {{ 'Backup'|t('translation-manager') }}
-                </a>
-            </li>
-            <li>
-                <a href="{{ url('translation-manager/settings/maintenance') }}" {% if selectedSettingsItem == 'maintenance' %}class="sel"{% endif %} data-nav-item="maintenance">
-                    {{ 'Maintenance'|t('translation-manager') }}
                 </a>
             </li>
         </ul>

@@ -175,19 +175,18 @@ Navigate to **Settings → Translation Manager** in the Control Panel to configu
 
 ### File Generation Settings
 - **Auto Generate**: Automatically generate translation files when saved
-  - When OFF, manual "Generate Files" button appears
 - **Generation Path**: Where PHP translation files are generated
   - Must use safe aliases: `@root`, `@storage`, `@config`, or `@webroot`
   - Protected against directory traversal attacks
 
-### Import/Export Settings
-- **CSV Import**: Upload and preview CSV files before importing
-  - Client-side malicious content detection for enhanced security
+### Manual Operations (Main Menu)
+- **Generate** (`Translation Manager → Generate`): Manually generate PHP translation files by type (All/Site/Forms)
+- **Import/Export** (`Translation Manager → Import/Export`):
+  - CSV Import with preview and malicious content detection
+  - CSV Export with filtering support
+  - Import History tracking with user, date, and results
   - Batching support for large imports (50 translations per batch)
   - Cloudflare-compatible to avoid false positive blocks
-- **Import History**: Track all imports with user, date, and results
-- **Export All**: Download all translations as CSV
-- **Export by Type**: Export only Formie or Site translations
 
 ### Interface Settings
 - **Items Per Page**: Number of translations per page (10-500)
@@ -209,7 +208,7 @@ When "Enable Site Translations" is enabled, the following settings become availa
   - Translations are only captured from frontend requests, never from the Control Panel
   - Use "Apply Skip Patterns to Existing Translations" button to remove existing translations that match patterns
 
-### Backup Settings
+### Backup Settings (`Settings → Backup`)
 - **Enable Backups**: Turn on backup functionality
 - **Backup Before Import**: Automatically backup before CSV imports
 - **Backup Schedule**: Manual, Daily, Weekly, or Monthly automatic backups
@@ -218,10 +217,16 @@ When "Enable Site Translations" is enabled, the following settings become availa
   - Choose from existing asset volumes (local or cloud-based like S3, Servd, etc.)
   - Backups are stored in a `translation-manager/backups` subdirectory within the selected volume
   - Supports both local volumes and remote cloud storage with automatic fallback
-  - Volume operations include loading indicators for slower cloud storage
   - Falls back to custom backup path if no volume is selected
 - **Custom Backup Path**: Manual path configuration (only used when no volume is selected)
   - Default: `@storage/translation-manager/backups`
+
+### Backup Operations (`Translation Manager → Backups`)
+- **Create Backup**: Manually create backups at any time
+- **Restore Backup**: Restore from any previous backup (creates safety backup first)
+- **Download Backup**: Download backups as ZIP files from any storage location
+- **Delete Backup**: Remove backups (manual backups must be deleted manually)
+- **Backup History**: View all backups with date, reason, creator, translation count, and size
 
 Backups are automatically organized into:
 - `/scheduled/` - Daily/weekly/monthly automated backups
@@ -230,21 +235,12 @@ Backups are automatically organized into:
 - `/manual/` - User-initiated backups (never auto-deleted)
 - `/other/` - Backups before restore operations and miscellaneous activities
 
-**Backup Interface Features**:
-- **Loading States**: Visual feedback for backup operations, especially with cloud storage
-- **Immediate Feedback**: Progress indicators show immediately when operations start
-- **Volume-Aware Messages**: Different messaging for local vs. cloud storage operations
-- **Download Support**: Download backups as ZIP files from any storage type
-- **Operation Tracking**: Clear messaging for restore and delete operations
-- **Size Display**: File size information for all backup types
-
-### Maintenance
-- **Unused Form Translations**: Clean up translations from deleted forms
-- **Danger Zone**: Clear translations by type with confirmation
+### Maintenance (`Translation Manager → Maintenance`)
+- **Clean Up Unused Translations**: Remove translations by type (All/Site/Forms)
+- **Template Scanner**: Scan all templates to identify unused translations
+- **Danger Zone**: Clear all translations by type with confirmation
   - Auto-backup before clearing (if backups enabled)
   - Automatically deletes corresponding translation files
-  - Export all translations before clearing
-- Apply skip patterns retroactively to existing translations
 
 ## Usage
 
@@ -270,10 +266,9 @@ Use your configured translation category in templates:
    - Click "Save All Changes" button
    - Or use Ctrl/Cmd+S keyboard shortcut
    - Auto-save triggers after configured delay (if enabled)
-6. Import/Export translations:
-   - "Import..." opens CSV import with preview
-   - "Export..." exports current filtered view as CSV
-   - "Generate Files" button (when Auto Generate is OFF) generates PHP files manually
+6. Generate and Import/Export translations:
+   - **Translation Manager → Generate**: Generate PHP translation files manually
+   - **Translation Manager → Import/Export**: Import CSV with preview, export current filtered view as CSV
 
 ### Status Indicators
 
@@ -283,11 +278,12 @@ Use your configured translation category in templates:
 
 ### Maintenance
 
-The plugin includes a maintenance section in settings to manage unused translations:
-1. Navigate to **Settings → Translation Manager**
-2. Scroll to the **Maintenance** section
-3. Click **Clean Up** to remove all unused translations
-4. Translation files are automatically regenerated after cleanup
+The plugin includes a dedicated maintenance section to manage unused translations:
+1. Navigate to **Translation Manager → Maintenance**
+2. Select the type of cleanup to perform (All/Site/Forms unused translations)
+3. Click **Clean Up** to remove unused translations
+4. Use **Rescan Templates** to identify unused translations
+5. Translation files are automatically regenerated after cleanup
 
 ### Formie Integration
 
@@ -349,7 +345,7 @@ Exports respect current filters and are protected against CSV injection.
 
 The plugin provides a secure built-in CSV import feature with preview:
 
-1. **Access Import**: Navigate to Settings → Import/Export or click "Import..." button
+1. **Access Import**: Navigate to **Translation Manager → Import/Export**
 2. **Upload CSV**: Select your CSV file (max 5MB)
 3. **Preview Changes**: Review what will be imported, updated, or skipped
 4. **Confirm Import**: Import with automatic backup (if enabled)

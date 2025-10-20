@@ -73,8 +73,8 @@ The backup system automatically recovers from queue failures:
 ## Using the CP Interface
 
 ### Creating Manual Backups
-1. Navigate to **Translations → Backups**
-2. Click **Create Backup** button
+1. Navigate to **Translation Manager → Backups**
+2. Click **Create Backup Now** button
 3. Backup is created immediately with current timestamp
 
 ### Viewing Backups

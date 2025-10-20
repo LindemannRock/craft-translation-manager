@@ -39,7 +39,7 @@
 **Solutions**:
 
 1. **Check backup settings**:
-   - Go to **Translations → Settings → Backup**
+   - Go to **Settings → Backup**
    - Ensure "Enable Backups" is ON
    - Ensure "Backup Schedule" is not set to "Manual"
 
@@ -209,7 +209,7 @@ tail -f storage/logs/translation-manager-*.log | grep ERROR
    - Can be slow with many forms
 
 3. **Clear old translations**:
-   - Use **Settings → Maintenance** to clean unused translations
+   - Use **Translation Manager → Maintenance** to clean unused translations
 
 ### Timeout During Operations
 

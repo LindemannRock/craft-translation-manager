@@ -67,70 +67,14 @@ class SettingsController extends Controller
             'settings' => $settings,
         ]);
     }
-    
-    /**
-     * Import/Export settings page
-     */
-    public function actionImportExport(): Response
-    {
-        $settings = TranslationManager::getInstance()->getSettings();
-        
-        // Get import history
-        $history = \lindemannrock\translationmanager\records\ImportHistoryRecord::find()
-            ->with('user')
-            ->orderBy(['dateCreated' => SORT_DESC])
-            ->limit(10) // Show last 10 imports like we do with backups
-            ->all();
-        
-        // Format the data for display
-        $formattedHistory = [];
-        foreach ($history as $record) {
-            $formattedHistory[] = [
-                'id' => $record->id,
-                'filename' => $record->filename,
-                'filesize' => Craft::$app->getFormatter()->asShortSize($record->filesize),
-                'imported' => $record->imported,
-                'updated' => $record->updated,
-                'skipped' => $record->skipped,
-                'errors' => $record->errors ? json_decode($record->errors, true) : [],
-                'hasErrors' => !empty($record->errors),
-                'backupPath' => $record->backupPath,
-                'user' => $record->user ? $record->user->username : 'Unknown',
-                'dateCreated' => $record->dateCreated,
-                'formattedDate' => Craft::$app->getFormatter()->asDatetime($record->dateCreated, 'short'),
-            ];
-        }
-        
-        // Get total count for "View All" link
-        $totalImports = \lindemannrock\translationmanager\records\ImportHistoryRecord::find()->count();
 
-        return $this->renderTemplate('translation-manager/settings/import-export', [
-            'settings' => $settings,
-            'importHistory' => $formattedHistory,
-            'totalImports' => $totalImports,
-            'allSites' => TranslationManager::getInstance()->getAllowedSites(),
-        ]);
-    }
-
-    /**
-     * Maintenance settings page
-     */
-    public function actionMaintenance(): Response
-    {
-        $settings = TranslationManager::getInstance()->getSettings();
-
-        return $this->renderTemplate('translation-manager/settings/maintenance', [
-            'settings' => $settings,
-        ]);
-    }
-    
     /**
      * Backup settings page
      */
     public function actionBackup(): Response
     {
         $settings = TranslationManager::getInstance()->getSettings();
-        
+
         return $this->renderTemplate('translation-manager/settings/backup', [
             'settings' => $settings,
         ]);

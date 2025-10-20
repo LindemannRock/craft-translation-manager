@@ -1,0 +1,156 @@
+{% extends "translation-manager/_layouts/cp" %}
+{% set title = "Generate"|t('translation-manager') %}
+{% set selectedSubnavItem = 'generate' %}
+
+{% set plugin = craft.app.plugins.getPlugin('translation-manager') %}
+{% set crumbs = [
+    {
+        label: plugin.settings.pluginName|t('translation-manager'),
+        url: url('translation-manager'),
+    },
+    {
+        label: 'Generate'|t('translation-manager'),
+        url: url('translation-manager/generate'),
+    },
+] %}
+
+{% import "_includes/forms" as forms %}
+
+{% block content %}
+    <h2>{{ "Generate Translation Files"|t('translation-manager') }}</h2>
+
+    <div class="field">
+        <div class="heading">
+            <label>{{ "Generate Translation Files"|t('translation-manager') }}</label>
+            <div class="instructions">
+                <p>{{ "Manually generate PHP translation files that Craft CMS uses for multi-language support"|t('translation-manager') }}</p>
+            </div>
+        </div>
+        <div class="input">
+            <div style="display: flex; align-items: flex-end; gap: 12px;">
+                <div class="flex-grow">
+                    {{ forms.selectField({
+                        label: "Type to Generate"|t('translation-manager'),
+                        id: 'generateType',
+                        name: 'generateType',
+                        options: [
+                            {value: '', label: 'Select type'|t('translation-manager')},
+                            {value: 'all', label: 'Generate All Files'|t('translation-manager')},
+                            (settings.enableFormieIntegration ? {value: 'formie', label: ('Generate ' ~ craft.translationManager.getFormiePluginName() ~ ' Files Only')|t('translation-manager')} : null),
+                            (settings.enableSiteTranslations ? {value: 'site', label: ('Generate ' ~ (settings.translationCategory|title) ~ ' Files Only')|t('translation-manager')} : null)
+                        ]|filter(option => option is not null),
+                        value: ''
+                    }) }}
+                </div>
+
+                <button type="button" class="btn secondary" id="generate-btn" disabled>
+                    {{ "Generate Files"|t('translation-manager') }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {% set generationPath = settings.getExportPath() %}
+    <div style="margin-top: 2rem; padding: 1rem; background: #f3f4f6; border-radius: 4px;">
+        <p class="light" style="margin: 0; display: flex; align-items: flex-start; gap: 8px;">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style="flex-shrink: 0; margin-top: 2px;">
+                <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                <text x="8" y="12" text-anchor="middle" font-size="11" font-weight="bold" fill="currentColor">i</text>
+            </svg>
+            <span><strong>{{ "Generation Location:"|t('translation-manager') }}</strong> <code>{{ generationPath }}</code></span>
+        </p>
+    </div>
+
+    {% include 'translation-manager/_components/plugin-credit.twig' %}
+{% endblock %}
+
+{% js %}
+    // Initialize dropdown + button functionality
+    const generateBtn = document.getElementById('generate-btn');
+    const generateType = document.getElementById('generateType');
+
+    // Enable button when type is selected
+    if (generateType) {
+        generateType.addEventListener('change', function() {
+            generateBtn.disabled = !this.value;
+        });
+    }
+
+    // Handle generate button click
+    if (generateBtn) {
+        generateBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const selectedType = generateType ? generateType.value : '';
+            if (selectedType) {
+                generateTranslationFiles(selectedType);
+                // Reset form state to prevent unsaved changes warning
+                generateType.value = '';
+                generateBtn.disabled = true;
+            }
+        });
+    }
+
+    // Generate files functionality
+    function generateTranslationFiles(type) {
+        console.log('Generating translation files:', type);
+        let url;
+        if (type === 'all') {
+            url = '{{ cpUrl('translation-manager/export/files') }}';
+        } else if (type === 'formie') {
+            url = '{{ cpUrl('translation-manager/export/formie-files') }}';
+        } else if (type === 'site') {
+            url = '{{ cpUrl('translation-manager/export/site-files') }}';
+        }
+
+        console.log('URL:', url);
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                '{{ craft.app.config.general.csrfTokenName }}': '{{ craft.app.request.csrfToken }}'
+            })
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                Craft.cp.displayNotice(data.message || 'Translation files generated successfully');
+            } else {
+                Craft.cp.displayError(data.error || 'Failed to generate translation files');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Craft.cp.displayError('Failed to generate translation files: ' + error.message);
+        });
+    }
+
+    // Use event delegation for dynamically created menu items
+    document.addEventListener('click', function(e) {
+        // Check if the clicked element or its parent has the generate button ID
+        let target = e.target;
+        let id = target.id;
+
+        // Check parent elements too in case the click was on a child element
+        if (!id && target.parentElement) {
+            target = target.parentElement;
+            id = target.id;
+        }
+
+        console.log('Clicked element ID:', id);
+    });
+{% endjs %}
