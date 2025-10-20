@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.0](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.9...v5.0.0) (2025-10-20)
+
+
+### Miscellaneous Chores
+
+* bump version scheme to match Craft 5 ([2f0ca33](https://github.com/LindemannRock/craft-translation-manager/commit/2f0ca334290f0a6087fd39f7c3afc79bcae185d3))
+
 ## [1.21.9](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.8...v1.21.9) (2025-10-20)
 
 
