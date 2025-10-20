@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.0...v5.0.1) (2025-10-20)
+
+
+### Miscellaneous Chores
+
+* update logging library dependency to version 5.0 and enhance README with additional badges ([7774980](https://github.com/LindemannRock/craft-translation-manager/commit/7774980278cdf40d024fdbfa5b8a2306ccc1819e))
+
 ## [5.0.0](https://github.com/LindemannRock/craft-translation-manager/compare/v1.21.9...v5.0.0) (2025-10-20)
 
 
