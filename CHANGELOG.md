@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.2](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.1...v5.0.2) (2025-10-20)
+
+
+### Bug Fixes
+
+* implement async loading for backups page to prevent blocking on remote volumes ([5089e4c](https://github.com/LindemannRock/craft-translation-manager/commit/5089e4c70f2648281c88e6b72ef0aa956662a3fd))
+
 ## [5.0.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.0...v5.0.1) (2025-10-20)
 
 
