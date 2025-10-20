@@ -1094,10 +1094,11 @@ class TranslationsService extends Component
                     }
                 }
 
+                // customLabels is an array of objects: [{"value": "", "label": "Text"}, ...]
                 if (property_exists($field, 'customLabels') && is_array($field->customLabels)) {
-                    foreach ($field->customLabels as $value => $label) {
-                        if (!empty($label)) {
-                            $activeTexts[$label] = true;
+                    foreach ($field->customLabels as $labelData) {
+                        if (is_array($labelData) && !empty($labelData['label'])) {
+                            $activeTexts[$labelData['label']] = true;
                         }
                     }
                 }

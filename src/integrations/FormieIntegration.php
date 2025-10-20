@@ -577,12 +577,15 @@ class FormieIntegration extends BaseIntegration
                 }
 
                 // Capture custom labels for rating values if they exist
+                // customLabels is an array of objects: [{"value": "", "label": "Text"}, ...]
                 if (property_exists($field, 'customLabels') && is_array($field->customLabels)) {
-                    foreach ($field->customLabels as $value => $label) {
-                        if (!empty($label)) {
+                    foreach ($field->customLabels as $index => $labelData) {
+                        if (is_array($labelData) && !empty($labelData['label'])) {
+                            // Use the 'value' property if available and not empty, otherwise use index
+                            $keyValue = !empty($labelData['value']) ? $labelData['value'] : $index;
                             $captured[] = $this->createTranslation(
-                                $label,
-                                "formie.{$formHandle}.{$fieldHandle}.customLabel.{$value}"
+                                $labelData['label'],
+                                "formie.{$formHandle}.{$fieldHandle}.customLabel.{$keyValue}"
                             );
                         }
                     }
