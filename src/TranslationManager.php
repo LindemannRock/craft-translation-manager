@@ -83,19 +83,19 @@ class TranslationManager extends Plugin
 
         // Configure logging using the new logging library
         $settings = $this->getSettings();
-        $logLevel = $settings->logLevel ?? 'info';
 
         LoggingLibrary::configure([
             'pluginHandle' => $this->handle,
             'pluginName' => $settings->pluginName ?? $this->name,
-            'logLevel' => $logLevel,
+            'logLevel' =>  $settings->logLevel ?? 'error',
+            'itemsPerPage' => $settings->itemsPerPage ?? 50,
             'permissions' => ['translationManager:viewLogs'],
         ]);
 
         // Override plugin name from config if available, otherwise use from database settings
         $configFileSettings = Craft::$app->getConfig()->getConfigFromFile('translation-manager');
         $configPath = Craft::$app->getPath()->getConfigPath() . '/translation-manager.php';
-        
+
         // Need to check raw config file for root-level settings since Craft only returns env-specific values
         if (file_exists($configPath)) {
             $rawConfig = require $configPath;
@@ -159,7 +159,7 @@ class TranslationManager extends Plugin
 
                 // Debug route
                 $event->rules['translation-manager/debug/test-search'] = 'translation-manager/debug/test-search';
-                
+
 
                 // Logs routes - use logging-library controller
                 $event->rules['translation-manager/logs'] = 'logging-library/logs/index';
@@ -342,13 +342,13 @@ class TranslationManager extends Plugin
     public function getSettings(): ?Model
     {
         if ($this->_settings === null) {
-            
+
             // Create base settings
             $settings = $this->createSettingsModel();
-            
+
             // Load database values
             $settings = Settings::loadFromDatabase($settings);
-            
+
             // Override ONLY with explicitly set config file values
             $configPath = Craft::$app->getPath()->getConfigPath() . '/translation-manager.php';
             if (file_exists($configPath)) {
@@ -374,19 +374,19 @@ class TranslationManager extends Plugin
                     }
                 }
             }
-            
+
             // CRITICAL: Validate settings even when loaded from config
             // This prevents config files from bypassing security validation
             if (!$settings->validate()) {
                 $errors = $settings->getFirstErrors();
                 $errorMessage = 'Invalid Translation Manager configuration: ' . implode(', ', $errors);
-                
+
                 Craft::error($errorMessage, __METHOD__);
-                
+
                 // For security, throw exception rather than silently using invalid config
                 throw new \Exception($errorMessage . ' Please check your config/translation-manager.php file.');
             }
-            
+
             $this->_settings = $settings;
         }
 
@@ -443,25 +443,25 @@ class TranslationManager extends Plugin
         if ($this->isPro()) {
             return Craft::$app->getSites()->getAllSites();
         }
-        
+
         // Free version: Primary site + one additional (max 2 sites)
         $allSites = Craft::$app->getSites()->getAllSites();
         $primary = Craft::$app->getSites()->getPrimarySite();
-        
+
         if (count($allSites) <= 2) {
             return $allSites; // All sites allowed if 2 or fewer
         }
-        
+
         // More than 2 sites - limit to primary + first non-primary
         $allowedSites = [$primary];
-        
+
         foreach ($allSites as $site) {
             if ($site->id !== $primary->id && count($allowedSites) < 2) {
                 $allowedSites[] = $site;
                 break;
             }
         }
-        
+
         return $allowedSites;
     }
 
