@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.0.6](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.5...v5.0.6) (2025-10-22)
+
+
+### Bug Fixes
+
+* remove inline styles for table headers in translations index template ([7691f35](https://github.com/LindemannRock/craft-translation-manager/commit/7691f35a85100c604ac007a32b9fbddea21820e3))
+* update logging configuration and clean up whitespace in TranslationManager ([0be50e8](https://github.com/LindemannRock/craft-translation-manager/commit/0be50e83cf9a112129ec8fa5f509086d6610d0bf))
+
 ## [5.0.5](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.4...v5.0.5) (2025-10-20)
 
 
