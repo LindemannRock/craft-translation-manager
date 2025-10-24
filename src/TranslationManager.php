@@ -543,7 +543,8 @@ class TranslationManager extends Plugin
         // Check if a backup job is already scheduled
         $existingJob = (new \craft\db\Query())
             ->from('{{%queue}}')
-            ->where(['like', 'job', 'CreateBackupJob'])
+            ->where(['like', 'job', 'translationmanager'])
+            ->andWhere(['like', 'job', 'CreateBackupJob'])
             ->andWhere(['<=', 'timePushed', time() + 86400]) // Within next 24 hours
             ->exists();
 
@@ -580,7 +581,8 @@ class TranslationManager extends Plugin
         // Check if there's already a scheduled backup job in the queue
         $existingJob = (new \craft\db\Query())
             ->from('{{%queue}}')
-            ->where(['like', 'job', '%CreateBackupJob%'])
+            ->where(['like', 'job', 'translationmanager'])
+            ->andWhere(['like', 'job', 'CreateBackupJob'])
             ->andWhere(['fail' => false])
             ->andWhere(['timePushed' => null])
             ->exists();
@@ -618,7 +620,11 @@ class TranslationManager extends Plugin
 
         // Delete any pending CreateBackupJob from queue
         $db->createCommand()
-            ->delete('{{%queue}}', ['like', 'job', '%CreateBackupJob%'])
+            ->delete('{{%queue}}', [
+                'and',
+                ['like', 'job', 'translationmanager'],
+                ['like', 'job', 'CreateBackupJob']
+            ])
             ->execute();
     }
 }
