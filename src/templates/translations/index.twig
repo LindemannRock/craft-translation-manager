@@ -17,7 +17,7 @@
             selected: site.id == currentSiteId
         }]) %}
     {% endfor %}
-    
+
     {% set crumbs = [{
         id: 'site-crumb',
         icon: 'world',
@@ -35,10 +35,6 @@
     {
         label: plugin.settings.pluginName|t('translation-manager'),
         url: url('translation-manager'),
-    },
-    {
-        label: 'Translations'|t('translation-manager'),
-        url: url('translation-manager/translations'),
     },
 ]) %}
 
@@ -102,18 +98,18 @@
                     </div>
                     <div class="search-container texticon flex-grow">
                         <span class="texticon-icon search icon" aria-hidden="true"></span>
-                        <input type="text" 
-                               class="clearable text fullwidth" 
-                               name="search" 
-                               value="{{ search }}" 
-                               placeholder="{{ 'Search'|t('translation-manager') }}" 
-                               autocomplete="off" 
+                        <input type="text"
+                               class="clearable text fullwidth"
+                               name="search"
+                               value="{{ search }}"
+                               placeholder="{{ 'Search'|t('translation-manager') }}"
+                               autocomplete="off"
                                dir="ltr"
                                aria-label="Search"
                                {% if search %}autofocus{% endif %}>
-                        <button type="button" class="clear-btn {{ search ? '' : 'hidden' }}" 
-                                title="Clear search" 
-                                role="button" 
+                        <button type="button" class="clear-btn {{ search ? '' : 'hidden' }}"
+                                title="Clear search"
+                                role="button"
                                 aria-label="Clear search"></button>
                     </div>
                 </div>
@@ -139,26 +135,26 @@
             max-height: 300px;
             overflow-y: auto;
         }
-        
-        
-        
+
+
+
         .page-info {
             margin: 0 12px;
             color: #596673;
         }
-        
+
         /* Checkbox cells */
         .checkbox-cell {
             width: 40px !important;
             text-align: center;
         }
-        
+
         /* Pagination styles */
         .pagination {
             gap: 4px;
             align-items: center;
         }
-        
+
         /* Menu header styling */
         .menu-header {
             font-size: 11px;
@@ -168,14 +164,14 @@
             font-weight: 600;
             letter-spacing: 0.5px;
         }
-        
+
         /* Make gray status more visible in active button */
         .statusmenubtn .status.gray {
             background-color: #8c97a3 !important;
         }
-        
+
     </style>
-    
+
     <div id="elements" class="elements">
         <div class="tableview tablepane">
             <table class="data fullwidth">
@@ -261,20 +257,21 @@
             </table>
         </div>
     </div>
-    
+
     <div id="footer" class="flex-justify flex">
         <div id="count-spinner" class="spinner small hidden"></div>
         <div id="count-container" class="light">
             <div class="pagination flex">
                 <nav class="flex" aria-label="entry pagination">
-                    <button type="button" role="button" class="page-link prev-page {{ page <= 1 ? 'disabled' : '' }}" {{ page <= 1 ? 'disabled' : '' }} title="Previous Page"></button><button type="button" role="button" class="page-link next-page {{ page >= totalPages ? 'disabled' : '' }}" {{ page >= totalPages ? 'disabled' : '' }} title="Next Page"></button>
+                    <button type="button" class="page-link prev-page {{ page <= 1 ? 'disabled' : '' }}" {{ page <= 1 ? 'disabled' : '' }} title="Previous Page"></button>
+                    <button type="button" class="page-link next-page {{ page >= totalPages ? 'disabled' : '' }}" {{ page >= totalPages ? 'disabled' : '' }} title="Next Page"></button>
                 </nav>
                 <div class="page-info">
                     {% set endRange = min(offset + limit, totalCount) %}
                     {% if totalCount == 0 %}
-                        No entries
+                        no entries
                     {% else %}
-                        {{ offset + 1 }}–{{ endRange }} of {{ totalCount }} {{ totalCount == 1 ? 'entry' : 'entries' }}
+                        {{ offset + 1 }} – {{ endRange }} of {{ totalCount }} {{ totalCount == 1 ? 'entry' : 'entries' }}
                     {% endif %}
                 </div>
             </div>
@@ -326,7 +323,7 @@
                 new Garnish.MenuBtn(btn);
             }
         });
-        
+
         // Clear search button
         const clearBtn = document.querySelector('.clear-btn');
         if (clearBtn) {
@@ -336,7 +333,7 @@
                 searchInput.form.submit();
             });
         }
-        
+
         // Handle search form submission on Enter key
         const searchInput = document.querySelector('input[name="search"]');
         if (searchInput) {
@@ -345,7 +342,7 @@
                     this.form.submit();
                 }
             });
-            
+
             // Also submit on blur if value changed
             let originalValue = searchInput.value;
             searchInput.addEventListener('blur', function() {
@@ -354,7 +351,7 @@
                 }
             });
         }
-        
+
         // Sort buttons
         document.querySelectorAll('th.orderable button').forEach(button => {
             button.addEventListener('click', function() {
@@ -362,29 +359,29 @@
                 const currentSort = '{{ sort }}';
                 const currentDir = '{{ dir }}';
                 let newDir = 'asc';
-                
+
                 if (sortField === currentSort) {
                     newDir = currentDir === 'asc' ? 'desc' : 'asc';
                 }
-                
+
                 window.location.href = '?siteId={{ currentSiteId }}&type={{ type }}&status={{ status }}&search={{ search }}&sort=' + sortField + '&dir=' + newDir + '&page=1';
             });
         });
-        
+
         // Pagination buttons
         document.querySelector('.prev-page:not(.disabled)')?.addEventListener('click', function() {
             window.location.href = '?siteId={{ currentSiteId }}&type={{ type }}&status={{ status }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}&page={{ page - 1 }}';
         });
-        
+
         document.querySelector('.next-page:not(.disabled)')?.addEventListener('click', function() {
             window.location.href = '?siteId={{ currentSiteId }}&type={{ type }}&status={{ status }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}&page={{ page + 1 }}';
         });
-        
+
         // Checkbox functionality
         const selectAllCheckbox = document.querySelector('.selectallcontainer .checkbox');
         const checkboxes = document.querySelectorAll('tbody .checkbox');
         let selectedIds = new Set();
-        
+
         // Helper to toggle checkbox state
         function toggleCheckbox(checkbox, checked) {
             if (checked) {
@@ -395,12 +392,12 @@
                 checkbox.setAttribute('aria-checked', 'false');
             }
         }
-        
+
         // Select all functionality
         selectAllCheckbox.addEventListener('click', function() {
             const isChecked = !this.classList.contains('checked');
             toggleCheckbox(this, isChecked);
-            
+
             checkboxes.forEach(checkbox => {
                 toggleCheckbox(checkbox, isChecked);
                 const id = checkbox.closest('tr').dataset.id;
@@ -410,23 +407,23 @@
                     selectedIds.delete(id);
                 }
             });
-            
+
             updateActionButtons();
         });
-        
+
         // Individual checkbox functionality
         checkboxes.forEach(checkbox => {
             checkbox.addEventListener('click', function() {
                 const isChecked = !this.classList.contains('checked');
                 toggleCheckbox(this, isChecked);
-                
+
                 const id = this.closest('tr').dataset.id;
                 if (isChecked) {
                     selectedIds.add(id);
                 } else {
                     selectedIds.delete(id);
                 }
-                
+
                 // Update select all checkbox
                 const allChecked = selectedIds.size === checkboxes.length;
                 const someChecked = selectedIds.size > 0;
@@ -436,42 +433,42 @@
                 } else {
                     selectAllCheckbox.classList.remove('indeterminate');
                 }
-                
+
                 updateActionButtons();
             });
         });
-        
+
         function updateActionButtons() {
             // Actions container visibility is controlled by Twig based on settings
             // No need to update it dynamically
         }
-        
+
         // Export button
         {% if currentUser.can('translationManager:exportTranslations') %}
         document.getElementById('export-btn')?.addEventListener('click', function(e) {
             e.preventDefault();
-            
+
             if (selectedIds.size > 0) {
                 // Export selected
                 const ids = Array.from(selectedIds);
-                
+
                 // Create and submit a form for download
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '{{ actionUrl('translation-manager/export/selected') }}';
-                
+
                 const csrfInput = document.createElement('input');
                 csrfInput.type = 'hidden';
                 csrfInput.name = '{{ craft.app.config.general.csrfTokenName }}';
                 csrfInput.value = '{{ craft.app.request.csrfToken }}';
                 form.appendChild(csrfInput);
-                
+
                 const idsInput = document.createElement('input');
                 idsInput.type = 'hidden';
                 idsInput.name = 'ids';
                 idsInput.value = JSON.stringify(ids);
                 form.appendChild(idsInput);
-                
+
                 document.body.appendChild(form);
                 form.submit();
                 document.body.removeChild(form);
@@ -482,18 +479,18 @@
                 const type = {{ type|json_encode|raw }};
                 const status = {{ status|json_encode|raw }};
                 const search = {{ search|json_encode|raw }};
-                
+
                 // Build URL manually to avoid encoding issues
                 let url = actionUrl;
                 url += (actionUrl.indexOf('?') === -1 ? '?' : '&') + 'type=' + encodeURIComponent(type);
                 url += '&status=' + encodeURIComponent(status);
                 url += '&search=' + encodeURIComponent(search);
-                
+
                 window.location.href = url;
             }
         });
         {% endif %}
-        
+
         // Delete selected (only for not used)
         {% if status == 'unused' and currentUser.can('translationManager:deleteTranslations') %}
         const deleteBtn = document.getElementById('delete-selected-btn');
@@ -501,13 +498,13 @@
             deleteBtn.addEventListener('click', function(e) {
             e.preventDefault();
             const ids = Array.from(selectedIds);
-            
+
             if (ids.length === 0) return;
-            
+
             if (!confirm(`Are you sure you want to delete ${ids.length} translation${ids.length > 1 ? 's' : ''}?`)) {
                 return;
             }
-            
+
             fetch('{{ actionUrl('translation-manager/translations/delete') }}', {
                 method: 'POST',
                 headers: {
@@ -536,7 +533,7 @@
             });
         }
         {% endif %}
-        
+
         // Translation Change Tracker
         class TranslationTracker {
             constructor() {
@@ -544,7 +541,7 @@
                 this.originalValues = new Map();
                 this.savingInProgress = new Set();
             }
-            
+
             init() {
                 // Store original values
                 document.querySelectorAll('.translation-text').forEach(textarea => {
@@ -552,7 +549,7 @@
                     this.originalValues.set(id, textarea.value.trim());
                 });
             }
-            
+
             markChanged(id, value) {
                 const original = this.originalValues.get(id) || '';
                 if (value.trim() !== original) {
@@ -562,16 +559,16 @@
                 }
                 this.updateUI(id);
             }
-            
+
             markSaved(id, value) {
                 this.unsavedChanges.delete(id);
                 this.originalValues.set(id, value.trim());
                 this.updateUI(id);
             }
-            
+
             updateUI(id) {
                 const row = document.querySelector(`tr[data-id="${id}"]`);
-                
+
                 if (this.unsavedChanges.has(id)) {
                     // Light orange/yellow background for unsaved changes
                     row.style.backgroundColor = '#fff4e6';
@@ -581,11 +578,11 @@
                     row.style.backgroundColor = '';
                 }
             }
-            
+
             hasUnsavedChanges() {
                 return this.unsavedChanges.size > 0;
             }
-            
+
             getUnsavedChanges() {
                 return Array.from(this.unsavedChanges.entries()).map(([id, translationText]) => ({
                     id,
@@ -593,15 +590,15 @@
                 }));
             }
         }
-        
+
         const tracker = new TranslationTracker();
         tracker.init();
-        
+
         // Update status display
         function updateStatusDisplay(row, status) {
             const cells = row.querySelectorAll('td');
             let statusCell = null;
-            
+
             // Find the cell containing the status-label
             for (let cell of cells) {
                 if (cell.querySelector('.status-label')) {
@@ -609,7 +606,7 @@
                     break;
                 }
             }
-            
+
             if (statusCell) {
                 let statusHtml = '';
                 switch (status) {
@@ -638,26 +635,26 @@
                         `;
                         break;
                 }
-                
+
                 if (statusHtml) {
                     statusCell.innerHTML = statusHtml;
                 }
             }
         }
-        
+
         // Save individual translation
         async function saveTranslation(id, translationText) {
             if (tracker.savingInProgress.has(id)) {
                 return; // Already saving
             }
-            
+
             tracker.savingInProgress.add(id);
             const row = document.querySelector(`tr[data-id="${id}"]`);
             const textarea = row.querySelector('.translation-text');
-            
+
             // Show saving indicator
             textarea.style.opacity = '0.6';
-            
+
             try {
                 const response = await fetch('{{ actionUrl('translation-manager/translations/save') }}', {
                     method: 'POST',
@@ -669,17 +666,17 @@
                     },
                     body: JSON.stringify({ id, translation: translationText })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     tracker.markSaved(id, translationText);
-                    
+
                     // Update status if provided
                     if (data.status) {
                         updateStatusDisplay(row, data.status);
                     }
-                    
+
                     // Flash green briefly
                     row.style.backgroundColor = '#d4edda';
                     setTimeout(() => row.style.backgroundColor = '', 800);
@@ -697,17 +694,17 @@
                 textarea.style.opacity = '';
             }
         }
-        
+
         // Set up event listeners for each textarea
         document.querySelectorAll('.translation-text').forEach(textarea => {
             const row = textarea.closest('tr');
             const id = row.dataset.id;
-            
+
             // Track changes
             textarea.addEventListener('input', function() {
                 tracker.markChanged(id, this.value);
             });
-            
+
             // Auto-save on blur if enabled
             textarea.addEventListener('blur', function() {
                 if (tracker.unsavedChanges.has(id) && {{ settings.autoSaveEnabled|json_encode|raw }}) {
@@ -717,7 +714,7 @@
                     }, 300);
                 }
             });
-            
+
             // Save on Ctrl/Cmd + Enter
             textarea.addEventListener('keydown', function(e) {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -728,58 +725,58 @@
                 }
             });
         });
-        
+
         // Save all button - only saves changed items
         {% if currentUser.can('translationManager:editTranslations') %}
         document.getElementById('save-all-btn')?.addEventListener('click', async function() {
             const unsavedChanges = tracker.getUnsavedChanges();
-            
+
             if (unsavedChanges.length === 0) {
                 Craft.cp.displayNotice('No changes to save');
                 return;
             }
-            
+
             const btn = this;
             btn.disabled = true;
             btn.classList.add('loading');
-            
+
             // Show which translations we're saving
             Craft.cp.displayNotice(`Saving ${unsavedChanges.length} translation${unsavedChanges.length > 1 ? 's' : ''}...`);
-            
+
             // Save in batches to avoid timeout
             const batchSize = 20;
             let saved = 0;
             let failed = 0;
-            
+
             for (let i = 0; i < unsavedChanges.length; i += batchSize) {
                 const batch = unsavedChanges.slice(i, i + batchSize);
-                
+
                 try {
                     // Save each translation in the batch
-                    const promises = batch.map(({ id, translation }) => 
+                    const promises = batch.map(({ id, translation }) =>
                         saveTranslation(id, translation)
                             .then(() => { saved++; return true; })
                             .catch(() => { failed++; return false; })
                     );
-                    
+
                     await Promise.all(promises);
                 } catch (error) {
                     console.error('Batch save error:', error);
                 }
             }
-            
+
             // Show results
             if (failed === 0) {
                 Craft.cp.displayNotice(`Successfully saved ${saved} translation${saved > 1 ? 's' : ''}`);
             } else {
                 Craft.cp.displayError(`Saved ${saved} translation${saved > 1 ? 's' : ''}, ${failed} failed`);
             }
-            
+
             btn.disabled = false;
             btn.classList.remove('loading');
         });
         {% endif %}
-        
+
         // Save on Ctrl+S / Cmd+S
         document.addEventListener('keydown', function(e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -787,7 +784,7 @@
                 document.getElementById('save-all-btn')?.click();
             }
         });
-        
+
         // Warn before leaving with unsaved changes
         window.addEventListener('beforeunload', function(e) {
             if (tracker.hasUnsavedChanges()) {
@@ -796,7 +793,7 @@
                 return e.returnValue;
             }
         });
-        
+
         // Generate files functionality
         {% if not settings.autoExport and currentUser.can('translationManager:exportTranslations') %}
         function generateTranslationFiles(type) {
@@ -808,17 +805,17 @@
             } else if (type === 'site') {
                 url = '{{ actionUrl('translation-manager/export/site-files') }}';
             }
-            
+
             console.log('Generating files for:', type);
             console.log('URL:', url);
-            
+
             // Show loading spinner
             const generateAllBtn = document.getElementById('generate-all-btn');
             if (generateAllBtn) {
                 generateAllBtn.classList.add('loading');
                 generateAllBtn.disabled = true;
             }
-            
+
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -854,7 +851,7 @@
                 }
             });
         }
-        
+
         // Attach click handlers
         const generateAllBtn = document.getElementById('generate-all-btn');
         if (generateAllBtn) {
@@ -862,7 +859,7 @@
                 generateTranslationFiles('all');
             });
         }
-        
+
         const generateFormieBtn = document.getElementById('generate-formie-btn');
         if (generateFormieBtn) {
             generateFormieBtn.addEventListener('click', function(e) {
@@ -870,7 +867,7 @@
                 generateTranslationFiles('formie');
             });
         }
-        
+
         const generateSiteBtn = document.getElementById('generate-site-btn');
         if (generateSiteBtn) {
             generateSiteBtn.addEventListener('click', function(e) {
@@ -879,7 +876,7 @@
             });
         }
         {% endif %}
-        
+
         // Warn before leaving with unsaved changes
         window.addEventListener('beforeunload', function(e) {
             if (tracker.hasUnsavedChanges()) {
