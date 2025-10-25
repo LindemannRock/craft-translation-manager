@@ -16,12 +16,24 @@ use craft\behaviors\EnvAttributeParserBehavior;
 use craft\db\Query;
 use craft\helpers\Db;
 use craft\helpers\FileHelper;
+use lindemannrock\logginglibrary\traits\LoggingTrait;
 
 /**
  * Translation Manager Settings Model
  */
 class Settings extends Model
 {
+    use LoggingTrait;
+
+    /**
+     * @inheritdoc
+     */
+    public function init(): void
+    {
+        parent::init();
+        $this->setLoggingHandle('translation-manager');
+    }
+
     /**
      * @var string The display name for the plugin (shown in CP menu and breadcrumbs)
      */
@@ -228,16 +240,20 @@ class Settings extends Model
                 if (!Craft::$app->getRequest()->getIsConsoleRequest()) {
                     // Web request - use session to prevent duplicate warnings
                     if (Craft::$app->getSession()->get('tm_debug_config_warning') === null) {
-                        Craft::warning('Log level "debug" from config file changed to "info" because devMode is disabled. Please update your config/translation-manager.php file.', 'translation-manager');
+                        $this->logWarning('Log level "debug" from config file changed to "info" because devMode is disabled', [
+                            'configFile' => 'config/translation-manager.php'
+                        ]);
                         Craft::$app->getSession()->set('tm_debug_config_warning', true);
                     }
                 } else {
                     // Console request - just log without session
-                    Craft::warning('Log level "debug" from config file changed to "info" because devMode is disabled. Please update your config/translation-manager.php file.', 'translation-manager');
+                    $this->logWarning('Log level "debug" from config file changed to "info" because devMode is disabled', [
+                        'configFile' => 'config/translation-manager.php'
+                    ]);
                 }
             } else {
                 // Database setting - save the correction
-                Craft::warning('Log level automatically changed from "debug" to "info" because devMode is disabled. This setting has been saved.', 'translation-manager');
+                $this->logWarning('Log level automatically changed from "debug" to "info" because devMode is disabled');
                 $this->saveToDatabase();
             }
         }
@@ -425,7 +441,7 @@ class Settings extends Model
 
                 } catch (\Exception $e) {
                     // Log the error and fall back
-                    Craft::error('Failed to get volume path: ' . $e->getMessage(), 'translation-manager');
+                    $this->logError('Failed to get volume path', ['error' => $e->getMessage()]);
                 }
             }
         }
@@ -450,7 +466,7 @@ class Settings extends Model
         if ($path === $rootPath || $path === '/' || $path === '') {
             // Force a safe default path
             $path = Craft::getAlias('@storage/translation-manager/backups');
-            Craft::warning('Backup path was pointing to root directory. Using safe default: ' . $path, 'translation-manager');
+            $this->logWarning('Backup path was pointing to root directory. Using safe default', ['path' => $path]);
         }
 
         // Return the resolved path
@@ -520,7 +536,7 @@ class Settings extends Model
             }
         } catch (\Exception $e) {
             // If there's any error, return default settings
-            Craft::error('Failed to load Translation Manager settings from database: ' . $e->getMessage(), 'translation-manager');
+            $settings->logError('Failed to load Translation Manager settings from database', ['error' => $e->getMessage()]);
         }
         
         return $settings;
@@ -655,7 +671,7 @@ class Settings extends Model
             
             return $result !== false;
         } catch (\Exception $e) {
-            Craft::error('Failed to save Translation Manager settings: ' . $e->getMessage(), 'translation-manager');
+            $this->logError('Failed to save Translation Manager settings', ['error' => $e->getMessage()]);
             return false;
         }
     }

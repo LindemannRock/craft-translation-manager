@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\jobs;
 
 use Craft;
 use craft\queue\BaseJob;
+use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\TranslationManager;
 
 /**
@@ -19,17 +20,28 @@ use lindemannrock\translationmanager\TranslationManager;
  */
 class CreateBackupJob extends BaseJob
 {
+    use LoggingTrait;
+
     /**
      * @var string The reason for the backup
      */
     public string $reason = 'scheduled';
-    
+
     /**
      * @var bool Whether to reschedule after completion
      * @deprecated Use cron for scheduling instead
      */
     public bool $reschedule = false;
-    
+
+    /**
+     * @inheritdoc
+     */
+    public function init(): void
+    {
+        parent::init();
+        $this->setLoggingHandle('translation-manager');
+    }
+
     /**
      * @inheritdoc
      */
@@ -50,20 +62,16 @@ class CreateBackupJob extends BaseJob
         $backupPath = $backupService->createBackup($this->reason);
         
         if ($backupPath) {
-            Craft::info(
-                sprintf('Scheduled backup created successfully: %s', basename($backupPath)),
-                'translation-manager'
-            );
+            $this->logInfo('Scheduled backup created successfully', [
+                'filename' => basename($backupPath)
+            ]);
             
             // Clean old backups based on retention policy
             $settings = TranslationManager::getInstance()->getSettings();
             if ($settings->backupRetentionDays > 0) {
                 $deleted = $backupService->cleanupOldBackups();
                 if ($deleted > 0) {
-                    Craft::info(
-                        sprintf('Cleaned %d old backup(s)', $deleted),
-                        'translation-manager'
-                    );
+                    $this->logInfo('Cleaned old backups', ['deleted' => $deleted]);
                 }
             }
             
@@ -102,11 +110,8 @@ class CreateBackupJob extends BaseJob
             ]);
             
             Craft::$app->getQueue()->delay($delay)->push($job);
-            
-            Craft::info(
-                sprintf('Next backup scheduled in %d seconds', $delay),
-                'translation-manager'
-            );
+
+            $this->logInfo('Next backup scheduled', ['delay_seconds' => $delay]);
         }
     }
 }

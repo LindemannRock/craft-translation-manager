@@ -50,7 +50,7 @@ class TranslationsService extends Component
             if (isset($criteria['type'])) $filterDesc[] = "type:{$criteria['type']}";
             if (isset($criteria['allSites']) && $criteria['allSites']) $filterDesc[] = "allSites";
             $filters = implode(', ', $filterDesc);
-            $this->logDebug('Getting translations with filters: ' . $filters);
+            $this->logDebug('Getting translations with filters', ['filters' => $filters]);
         }
 
         // Apply site filter (NEW: Multi-site support)

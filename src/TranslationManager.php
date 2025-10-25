@@ -379,11 +379,14 @@ class TranslationManager extends Plugin
             // This prevents config files from bypassing security validation
             if (!$settings->validate()) {
                 $errors = $settings->getFirstErrors();
-                $errorMessage = 'Invalid Translation Manager configuration: ' . implode(', ', $errors);
 
-                Craft::error($errorMessage, __METHOD__);
+                $this->logError('Invalid Translation Manager configuration', [
+                    'errors' => $errors,
+                    'configFile' => 'config/translation-manager.php'
+                ]);
 
                 // For security, throw exception rather than silently using invalid config
+                $errorMessage = 'Invalid Translation Manager configuration: ' . implode(', ', $errors);
                 throw new \Exception($errorMessage . ' Please check your config/translation-manager.php file.');
             }
 
@@ -559,10 +562,10 @@ class TranslationManager extends Plugin
             // The job will re-queue itself to run at the scheduled interval
             Craft::$app->getQueue()->delay(5 * 60)->push($job); // 5 minute initial delay
 
-            Craft::info(
-                sprintf('Scheduled initial backup job to run in 5 minutes (%s schedule)', $settings->backupSchedule),
-                'translation-manager'
-            );
+            $this->logInfo('Scheduled initial backup job', [
+                'delay' => '5 minutes',
+                'schedule' => $settings->backupSchedule
+            ]);
         }
     }
 
@@ -574,7 +577,7 @@ class TranslationManager extends Plugin
         if (!$settings->backupEnabled || $settings->backupSchedule === 'manual') {
             // Cancel any existing scheduled backup jobs
             $this->cancelScheduledBackupJobs();
-            Craft::info('Backup scheduling disabled', 'translation-manager');
+            $this->logInfo('Backup scheduling disabled');
             return;
         }
 
@@ -588,7 +591,7 @@ class TranslationManager extends Plugin
             ->exists();
 
         if ($existingJob) {
-            Craft::info('Scheduled backup job already exists, not creating a new one', 'translation-manager');
+            $this->logInfo('Scheduled backup job already exists, not creating a new one');
             return;
         }
 
@@ -608,7 +611,7 @@ class TranslationManager extends Plugin
         // Add job with delay
         Craft::$app->getQueue()->delay($delay)->push($job);
 
-        Craft::info('Scheduled backup job queued for ' . $settings->backupSchedule . ' schedule', 'translation-manager');
+        $this->logInfo('Scheduled backup job queued', ['schedule' => $settings->backupSchedule]);
     }
 
     /**
