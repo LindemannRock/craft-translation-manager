@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.8](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.7...v5.0.8) (2025-10-26)
+
+
+### Bug Fixes
+
+* settings page and remove maintenance settings ([74f08e2](https://github.com/LindemannRock/craft-translation-manager/commit/74f08e243b65d63bc1989c0c6514110634d87df9))
+
 ## [5.0.7](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.6...v5.0.7) (2025-10-26)
 
 
