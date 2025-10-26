@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.9](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.8...v5.0.9) (2025-10-26)
+
+
+### Bug Fixes
+
+* improve config override check in Settings model ([ce19d46](https://github.com/LindemannRock/craft-translation-manager/commit/ce19d46b902c628a3af2d06f215ba0ac44df27ff))
+
 ## [5.0.8](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.7...v5.0.8) (2025-10-26)
 
 
