@@ -545,55 +545,39 @@ class Settings extends Model
 
     /**
      * Check if a setting is being overridden by config file
-     * 
+     *
      * @param string $attribute The setting attribute name
      * @return bool
      */
     public function isOverriddenByConfig(string $attribute): bool
     {
-        // Get the config file path
         $configPath = \Craft::$app->getPath()->getConfigPath() . '/translation-manager.php';
 
         if (!file_exists($configPath)) {
             return false;
         }
 
-        // Load the raw config file
+        // Load the raw config file instead of using Craft's config which merges with database
         $rawConfig = require $configPath;
 
-        // Get the current environment
-        $env = \Craft::$app->getConfig()->getGeneral()->env ?? '*';
-
-        // Environment keys to skip
-        $envKeys = ['*', 'dev', 'staging', 'production', 'test'];
-
-        // Check environment-specific config first (highest priority)
-        $hasEnvConfig = isset($rawConfig[$env]) && is_array($rawConfig[$env]) && array_key_exists($attribute, $rawConfig[$env]);
-
-        // Check if the attribute exists in the root config
-        $hasRootConfig = array_key_exists($attribute, $rawConfig) && !in_array($attribute, $envKeys);
-
-        if (!$hasEnvConfig && !$hasRootConfig) {
-            return false;
+        // Check for the attribute in the config
+        // Use array_key_exists instead of isset to detect null values
+        if (array_key_exists($attribute, $rawConfig)) {
+            return true;
         }
 
-        // Special case for logLevel: if config has 'debug' and devMode is true,
-        // then it's NOT an override - it's a valid setting
-        if ($attribute === 'logLevel') {
-            // Get the config value (env-specific takes precedence)
-            $configValue = null;
-            if ($hasEnvConfig) {
-                $configValue = $rawConfig[$env][$attribute];
-            } elseif ($hasRootConfig) {
-                $configValue = $rawConfig[$attribute];
-            }
-
-            if ($configValue === 'debug' && \Craft::$app->getConfig()->getGeneral()->devMode) {
-                return false; // Debug is valid when devMode=true, so not an "override"
-            }
+        // Check environment-specific configs
+        $env = \Craft::$app->getConfig()->env;
+        if ($env && is_array($rawConfig[$env] ?? null) && array_key_exists($attribute, $rawConfig[$env])) {
+            return true;
         }
 
-        return true;
+        // Check wildcard config
+        if (is_array($rawConfig['*'] ?? null) && array_key_exists($attribute, $rawConfig['*'])) {
+            return true;
+        }
+
+        return false;
     }
     
     /**

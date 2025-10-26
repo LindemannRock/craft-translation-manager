@@ -84,7 +84,7 @@ return [
 
         'itemsPerPage' => 100,         // Number of translations to show per page
         'showContext' => false,        // Display the translation context in the interface
-        'enableSuggestions' => false,  // Enable translation suggestions
+        'enableSuggestions' => false,  // Enable translation suggestions (future feature)
 
         // Auto-save Settings
         'autoSaveEnabled' => false,    // Automatically save each translation when you click outside the field
