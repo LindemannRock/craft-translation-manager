@@ -1,5 +1,14 @@
 # Changelog
 
+## [5.0.7](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.6...v5.0.7) (2025-10-26)
+
+
+### Bug Fixes
+
+* clean up whitespace and improve markup in translations index template ([7080e0e](https://github.com/LindemannRock/craft-translation-manager/commit/7080e0e2d58c789ff0dd2f8a095382bd81988892))
+* enhance logging in TranslationManager and related classes ([42ee1cd](https://github.com/LindemannRock/craft-translation-manager/commit/42ee1cd5b7c23c25ef082cbe0cf46a76d6059b3b))
+* refine backup job query conditions in TranslationManager ([bac9cb3](https://github.com/LindemannRock/craft-translation-manager/commit/bac9cb345df73576b12fffbf82c2787beba3270f))
+
 ## [5.0.6](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.5...v5.0.6) (2025-10-22)
 
 
