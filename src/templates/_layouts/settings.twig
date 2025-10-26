@@ -13,6 +13,11 @@
                 </a>
             </li>
             <li>
+                <a href="{{ url('translation-manager/settings/sources') }}" {% if selectedSettingsItem == 'sources' %}class="sel"{% endif %} data-nav-item="sources">
+                    {{ 'Translation Sources'|t('translation-manager') }}
+                </a>
+            </li>
+            <li>
                 <a href="{{ url('translation-manager/settings/generation') }}" {% if selectedSettingsItem == 'generation' %}class="sel"{% endif %} data-nav-item="generation">
                     {{ 'File Generation'|t('translation-manager') }}
                 </a>
@@ -20,6 +25,11 @@
             <li>
                 <a href="{{ url('translation-manager/settings/backup') }}" {% if selectedSettingsItem == 'backup' %}class="sel"{% endif %} data-nav-item="backup">
                     {{ 'Backup'|t('translation-manager') }}
+                </a>
+            </li>
+             <li>
+                <a href="{{ url('translation-manager/settings/interface') }}" {% if selectedSettingsItem == 'interface' %}class="sel"{% endif %} data-nav-item="interface">
+                    {{ 'Interface'|t('translation-manager') }}
                 </a>
             </li>
         </ul>
@@ -31,7 +41,7 @@
     #settings-nav a {
         transition: none;
     }
-    
+
     /* Ensure only the current page link is highlighted */
     #settings-nav a.sel {
         cursor: default;

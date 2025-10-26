@@ -124,58 +124,7 @@ class TranslationManager extends Plugin
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function (RegisterUrlRulesEvent $event) {
-                $event->rules['translation-manager'] = 'translation-manager/translations/index';
-                $event->rules['translation-manager/translations'] = 'translation-manager/translations/index';
-                $event->rules['translation-manager/translations/save'] = 'translation-manager/translations/save';
-                $event->rules['translation-manager/translations/save-all'] = 'translation-manager/translations/save-all';
-                $event->rules['translation-manager/translations/delete'] = 'translation-manager/translations/delete';
-                $event->rules['translation-manager/generate'] = 'translation-manager/generate/index';
-                $event->rules['translation-manager/import-export'] = 'translation-manager/import-export/index';
-                $event->rules['translation-manager/maintenance'] = 'translation-manager/maintenance/index';
-                $event->rules['translation-manager/backups'] = 'translation-manager/backup/index';
-                $event->rules['translation-manager/export'] = 'translation-manager/export/index';
-                $event->rules['translation-manager/export/download'] = 'translation-manager/export/download';
-                $event->rules['translation-manager/export/selected'] = 'translation-manager/export/selected';
-                $event->rules['translation-manager/export/files'] = 'translation-manager/export/files';
-                $event->rules['translation-manager/export/formie-files'] = 'translation-manager/export/formie-files';
-                $event->rules['translation-manager/export/site-files'] = 'translation-manager/export/site-files';
-                $event->rules['translation-manager/import'] = 'translation-manager/import/index';
-                $event->rules['translation-manager/import/check-existing'] = 'translation-manager/import/check-existing';
-                $event->rules['translation-manager/import/history'] = 'translation-manager/import/history';
-                $event->rules['translation-manager/import/clear-logs'] = 'translation-manager/import/clear-logs';
-                $event->rules['translation-manager/settings'] = 'translation-manager/settings/index';
-                $event->rules['translation-manager/settings/general'] = 'translation-manager/settings/general';
-                $event->rules['translation-manager/settings/generation'] = 'translation-manager/settings/generation';
-                $event->rules['translation-manager/settings/backup'] = 'translation-manager/settings/backup';
-                $event->rules['translation-manager/settings/save'] = 'translation-manager/settings/save';
-                $event->rules['translation-manager/settings/apply-skip-patterns'] = 'translation-manager/settings/apply-skip-patterns';
-                $event->rules['translation-manager/settings/clear-formie'] = 'translation-manager/settings/clear-formie';
-                $event->rules['translation-manager/settings/clear-site'] = 'translation-manager/settings/clear-site';
-                $event->rules['translation-manager/settings/clear-all'] = 'translation-manager/settings/clear-all';
-                $event->rules['translation-manager/maintenance/clean-unused'] = 'translation-manager/maintenance/clean-unused';
-                $event->rules['translation-manager/maintenance/debug-search-page'] = 'translation-manager/maintenance/debug-search-page';
-                $event->rules['translation-manager/maintenance/debug-search'] = 'translation-manager/maintenance/debug-search';
-                $event->rules['translation-manager/maintenance/recapture-formie'] = 'translation-manager/maintenance/recapture-formie';
-
-                // Debug route
-                $event->rules['translation-manager/debug/test-search'] = 'translation-manager/debug/test-search';
-
-
-                // Logs routes - use logging-library controller
-                $event->rules['translation-manager/logs'] = 'logging-library/logs/index';
-                $event->rules['translation-manager/logs/download'] = 'logging-library/logs/download';
-
-                // Backup routes (also register as both plural and singular for compatibility)
-                $event->rules['translation-manager/backups'] = 'translation-manager/backup/index';
-                $event->rules['translation-manager/backup/get-backups'] = 'translation-manager/backup/get-backups';
-                $event->rules['translation-manager/backup/create'] = 'translation-manager/backup/create';
-                $event->rules['translation-manager/backup/restore'] = 'translation-manager/backup/restore';
-                $event->rules['translation-manager/backup/delete'] = 'translation-manager/backup/delete';
-                $event->rules['translation-manager/backup/download'] = 'translation-manager/backup/download';
-                $event->rules['translation-manager/backups/create'] = 'translation-manager/backup/create';
-                $event->rules['translation-manager/backups/restore'] = 'translation-manager/backup/restore';
-                $event->rules['translation-manager/backups/delete'] = 'translation-manager/backup/delete';
-                $event->rules['translation-manager/backups/download'] = 'translation-manager/backup/download';
+                $event->rules = array_merge($event->rules, $this->getCpUrlRules());
             }
         );
 
@@ -503,6 +452,63 @@ class TranslationManager extends Plugin
         return 'Formie';
     }
 
+
+    /**
+     * Get CP URL rules
+     */
+    private function getCpUrlRules(): array
+    {
+        return [
+            // Translations routes (main section)
+            'translation-manager' => 'translation-manager/translations/index',
+            'translation-manager/translations' => 'translation-manager/translations/index',
+            'translation-manager/translations/save' => 'translation-manager/translations/save',
+            'translation-manager/translations/save-all' => 'translation-manager/translations/save-all',
+            'translation-manager/translations/delete' => 'translation-manager/translations/delete',
+
+            // Generate routes
+            'translation-manager/generate' => 'translation-manager/generate/index',
+
+            // Import/Export routes
+            'translation-manager/import-export' => 'translation-manager/import-export/index',
+            'translation-manager/import' => 'translation-manager/import/index',
+            'translation-manager/import/check-existing' => 'translation-manager/import/check-existing',
+            'translation-manager/import/history' => 'translation-manager/import/history',
+            'translation-manager/import/clear-logs' => 'translation-manager/import/clear-logs',
+            'translation-manager/export' => 'translation-manager/export/index',
+            'translation-manager/export/download' => 'translation-manager/export/download',
+            'translation-manager/export/selected' => 'translation-manager/export/selected',
+            'translation-manager/export/files' => 'translation-manager/export/files',
+            'translation-manager/export/formie-files' => 'translation-manager/export/formie-files',
+            'translation-manager/export/site-files' => 'translation-manager/export/site-files',
+
+            // Maintenance routes
+            'translation-manager/maintenance' => 'translation-manager/maintenance/index',
+            'translation-manager/maintenance/clean-unused' => 'translation-manager/maintenance/clean-unused',
+            'translation-manager/maintenance/debug-search-page' => 'translation-manager/maintenance/debug-search-page',
+            'translation-manager/maintenance/debug-search' => 'translation-manager/maintenance/debug-search',
+            'translation-manager/maintenance/recapture-formie' => 'translation-manager/maintenance/recapture-formie',
+
+            // Backup routes
+            'translation-manager/backups' => 'translation-manager/backup/index',
+            'translation-manager/backup/get-backups' => 'translation-manager/backup/get-backups',
+            'translation-manager/backup/create' => 'translation-manager/backup/create',
+            'translation-manager/backup/restore' => 'translation-manager/backup/restore',
+            'translation-manager/backup/delete' => 'translation-manager/backup/delete',
+            'translation-manager/backup/download' => 'translation-manager/backup/download',
+
+            // Settings routes
+            'translation-manager/settings' => 'translation-manager/settings/index',
+            'translation-manager/settings/<section:\w+>' => 'translation-manager/settings/<section>',
+
+            // Debug routes
+            'translation-manager/debug/test-search' => 'translation-manager/debug/test-search',
+
+            // Logging routes
+            'translation-manager/logs' => 'logging-library/logs/index',
+            'translation-manager/logs/download' => 'logging-library/logs/download',
+        ];
+    }
 
     /**
      * Register file-based message source for site translations

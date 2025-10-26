@@ -81,6 +81,30 @@ class SettingsController extends Controller
     }
 
     /**
+     * Translation sources settings page
+     */
+    public function actionSources(): Response
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+
+        return $this->renderTemplate('translation-manager/settings/sources', [
+            'settings' => $settings,
+        ]);
+    }
+
+    /**
+     * Interface settings page
+     */
+    public function actionInterface(): Response
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+
+        return $this->renderTemplate('translation-manager/settings/interface', [
+            'settings' => $settings,
+        ]);
+    }
+
+    /**
      * Save settings
      */
     public function actionSave(): Response

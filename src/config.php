@@ -23,61 +23,94 @@
  */
 
 return [
-    // The default translation category for site translations
-    'translationCategory' => 'messages',
+    // Global settings
+    '*' => [
+        // ========================================
+        // GENERAL SETTINGS
+        // ========================================
+        // Basic plugin configuration
 
-    // Enable/disable Formie integration
-    'enableFormieIntegration' => true,
+        'pluginName' => 'Translation Manager',
+        'logLevel' => 'error',         // Log level: 'debug', 'info', 'warning', 'error'
 
-    // Enable/disable site translation integration
-    'enableSiteTranslations' => true,
 
-    // Auto-save settings
-    'autoSaveEnabled' => false,
-    'autoSaveDelay' => 2,
+        // ========================================
+        // TRANSLATION SOURCES
+        // ========================================
+        // Configure which translation sources to capture
 
-    // Interface settings
-    'itemsPerPage' => 100,
-    'showContext' => false,
-    'enableSuggestions' => false,
+        // Site Translations
+        'enableSiteTranslations' => true,
+        'translationCategory' => 'messages', // Category for site translations (e.g., 'messages' for |t('messages'))
 
-    // Export settings
-    'autoExport' => true,
-    'exportPath' => '@root/translations',
+        // Site Translation Skip Patterns
+        // Text patterns to skip when capturing site translations (array of strings to skip)
+        'skipPatterns' => [
+            // 'ID',
+            // 'Title',
+            // 'Status',
+        ],
 
-    // Backup settings
-    'backupEnabled' => true,
-    'backupSchedule' => 'manual', // Options: 'manual', 'daily', 'weekly', 'monthly'
-    'backupRetentionDays' => 30,
-    'backupOnImport' => true,
-    'backupPath' => '@storage/translation-manager/backups',
-    'backupVolumeUid' => null, // Optional: Set a specific asset volume UID for backups
+        // Formie Integration
+        'enableFormieIntegration' => true,
 
-    // Site translation skip patterns (array of strings to skip)
-    'skipPatterns' => [
-        // 'ID',
-        // 'Title',
-        // 'Status',
+
+        // ========================================
+        // FILE GENERATION
+        // ========================================
+        // PHP translation file generation settings
+
+        'autoExport' => true,          // Automatically generate translation files when translations are saved
+        'exportPath' => '@root/translations', // Path where PHP translation files should be generated
+
+
+        // ========================================
+        // BACKUP SETTINGS
+        // ========================================
+        // Backup configuration and retention
+
+        'backupEnabled' => true,
+        'backupSchedule' => 'manual',  // Options: 'manual', 'daily', 'weekly', 'monthly'
+        'backupRetentionDays' => 30,   // Number of days to keep automatic backups (0 = keep forever)
+        'backupOnImport' => true,      // Automatically create backup before importing CSV files
+        'backupPath' => '@storage/translation-manager/backups',
+        'backupVolumeUid' => null,     // Optional: Asset volume UID for backups
+
+
+        // ========================================
+        // INTERFACE SETTINGS
+        // ========================================
+        // Control panel interface options
+
+        'itemsPerPage' => 100,         // Number of translations to show per page
+        'showContext' => false,        // Display the translation context in the interface
+        'enableSuggestions' => false,  // Enable translation suggestions
+
+        // Auto-save Settings
+        'autoSaveEnabled' => false,    // Automatically save each translation when you click outside the field
+        'autoSaveDelay' => 2,          // Delay in seconds before auto-save triggers
     ],
 
-    // Logging settings
-    'logLevel' => 'error', // Options: 'debug', 'info', 'warning', 'error'
+    // Dev environment settings
+    'dev' => [
+        'logLevel' => 'debug',         // More detailed logging in development
+        'autoExport' => false,         // Manual export in dev
+        'backupSchedule' => 'manual',  // Manual backups in dev
+    ],
 
-    // Multi-environment example
-    // '*' => [
-    //     'translationCategory' => 'messages',
-    //     'logLevel' => 'error',
-    // ],
-    // 'dev' => [
-    //     'autoExport' => false,
-    //     'logLevel' => 'debug', // More detailed logging in development
-    //     'backupSchedule' => 'manual',
-    // ],
-    // 'production' => [
-    //     'autoExport' => true,
-    //     'backupEnabled' => true,
-    //     'backupSchedule' => 'daily',
-    //     'logLevel' => 'warning',
-    //     'backupVolumeUid' => 'your-volume-uid-here', // Use asset volume in production
-    // ],
+    // Staging environment settings
+    'staging' => [
+        'logLevel' => 'info',          // Moderate logging in staging
+        'autoExport' => true,
+        'backupSchedule' => 'weekly',
+    ],
+
+    // Production environment settings
+    'production' => [
+        'logLevel' => 'warning',       // Less verbose logging in production
+        'autoExport' => true,
+        'backupEnabled' => true,
+        'backupSchedule' => 'daily',
+        // 'backupVolumeUid' => 'your-volume-uid-here', // Use asset volume in production
+    ],
 ];
