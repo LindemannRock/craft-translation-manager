@@ -28,6 +28,7 @@
 		{{ csrfInput() }}
 		{{ actionInput('translation-manager/settings/save') }}
 		{{ redirectInput('translation-manager/settings/sources') }}
+		{{ hiddenInput('section', 'sources') }}
 
 		<h2 style="margin-top: 0px;">{{ "Translation Sources"|t('translation-manager') }}</h2>
 
@@ -35,7 +36,7 @@
             label: "Enable Site Translations"|t('translation-manager'),
             instructions: "Capture translations from your templates"|t('translation-manager'),
             id: 'enableSiteTranslations',
-            name: 'enableSiteTranslations',
+            name: 'settings[enableSiteTranslations]',
             on: settings.enableSiteTranslations,
             toggle: 'site-translation-settings',
             disabled: settings.isOverriddenByConfig('enableSiteTranslations'),
@@ -48,7 +49,7 @@
                 label: "Site Translation Category"|t('translation-manager'),
                 instructions: "The category to use for site translations (e.g. 'lindemannrock' for |t('lindemannrock')). Cannot use reserved categories: site, app, yii, craft."|t('translation-manager'),
                 id: 'translationCategory',
-                name: 'translationCategory',
+                name: 'settings[translationCategory]',
                 value: settings.translationCategory,
                 errors: settings.getErrors('translationCategory'),
                 required: true,
@@ -62,7 +63,7 @@
                 label: "Site Translations Skip Patterns"|t('translation-manager'),
                 instructions: ("Text patterns to skip when capturing |t('" ~ settings.translationCategory ~ "') translations (one per line). Does not affect " ~ formiePluginName ~ " fields.")|t('translation-manager'),
                 id: 'skipPatterns',
-                name: 'skipPatterns',
+                name: 'settings[skipPatterns]',
                 value: settings.skipPatterns|join("\n"),
                 rows: 5,
                 placeholder: "Example:\nID\nTitle\nStatus"|t('translation-manager'),
@@ -87,7 +88,7 @@
             label: ("Enable " ~ formiePluginName ~ " Integration")|t('translation-manager'),
             instructions: ("Automatically capture translations from " ~ formiePluginName)|t('translation-manager'),
             id: 'enableFormieIntegration',
-            name: 'enableFormieIntegration',
+            name: 'settings[enableFormieIntegration]',
             on: settings.enableFormieIntegration,
             disabled: not craft.app.plugins.isPluginEnabled('formie') or settings.isOverriddenByConfig('enableFormieIntegration'),
             warning: settings.isOverriddenByConfig('enableFormieIntegration') ?

@@ -26,6 +26,7 @@
         {{ csrfInput() }}
         {{ actionInput('translation-manager/settings/save') }}
         {{ redirectInput('translation-manager/settings/backup') }}
+        {{ hiddenInput('section', 'backup') }}
 
         <h2>{{ "Backup Settings"|t('translation-manager') }}</h2>
 
@@ -33,7 +34,7 @@
             label: "Enable Backups"|t('translation-manager'),
             instructions: "Enable automatic backup functionality for translations"|t('translation-manager'),
             id: 'backupEnabled',
-            name: 'backupEnabled',
+            name: 'settings[backupEnabled]',
             on: settings.backupEnabled,
             toggle: 'backup-settings',
             disabled: settings.isOverriddenByConfig('backupEnabled'),
@@ -46,7 +47,7 @@
                 label: "Backup Before Import"|t('translation-manager'),
                 instructions: "Automatically create a backup before importing CSV files"|t('translation-manager'),
                 id: 'backupOnImport',
-                name: 'backupOnImport',
+                name: 'settings[backupOnImport]',
                 on: settings.backupOnImport,
                 disabled: settings.isOverriddenByConfig('backupOnImport'),
                 warning: settings.isOverriddenByConfig('backupOnImport') ?
@@ -57,7 +58,7 @@
                 label: "Backup Schedule"|t('translation-manager'),
                 instructions: "How often to create automatic backups. Uses Craft's queue if running, or set up a cron job:"|t('translation-manager') ~ '<br><code style="display: inline-block; margin-top: 4px;">craft translation-manager/backup/scheduled</code>',
                 id: 'backupSchedule',
-                name: 'backupSchedule',
+                name: 'settings[backupSchedule]',
                 value: settings.backupSchedule,
                 options: [
                     { label: 'Manual Only', value: 'manual' },
@@ -75,7 +76,7 @@
                 label: "Retention Period"|t('translation-manager'),
                 instructions: "Number of days to keep automatic backups (0 = keep forever). Manual backups are never deleted automatically."|t('translation-manager'),
                 id: 'backupRetentionDays',
-                name: 'backupRetentionDays',
+                name: 'settings[backupRetentionDays]',
                 value: settings.backupRetentionDays,
                 errors: settings.getErrors('backupRetentionDays'),
                 type: 'number',
@@ -99,7 +100,7 @@
                 label: "Backup Storage Volume"|t('translation-manager'),
                 instructions: "Which asset volume should be used for storing backups. Backups will be stored in a 'translation-manager/backups' subdirectory. Note: Cloud storage volumes (Servd, S3, etc.) are not supported for backups and will fall back to local storage."|t('translation-manager'),
                 id: 'backupVolumeUid',
-                name: 'backupVolumeUid',
+                name: 'settings[backupVolumeUid]',
                 options: volumeOptions,
                 value: settings.backupVolumeUid ?? '',
                 disabled: settings.isOverriddenByConfig('backupVolumeUid'),
@@ -112,7 +113,7 @@
                     label: "Custom Backup Path"|t('translation-manager'),
                     instructions: "The custom path where backups should be stored (only used when no volume is selected)"|t('translation-manager'),
                     id: 'backupPath',
-                    name: 'backupPath',
+                    name: 'settings[backupPath]',
                     value: settings.backupPath,
                     errors: settings.getErrors('backupPath'),
                     required: not settings.backupVolumeUid,

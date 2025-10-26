@@ -26,6 +26,7 @@
         {{ csrfInput() }}
         {{ actionInput('translation-manager/settings/save') }}
         {{ redirectInput('translation-manager/settings/generation') }}
+        {{ hiddenInput('section', 'generation') }}
 
         <h2>{{ "File Generation Settings"|t('translation-manager') }}</h2>
 
@@ -33,7 +34,7 @@
             label: "Auto Generate"|t('translation-manager'),
             instructions: "Automatically generate translation files when translations are saved"|t('translation-manager'),
             id: 'autoExport',
-            name: 'autoExport',
+            name: 'settings[autoExport]',
             on: settings.autoExport,
             disabled: settings.isOverriddenByConfig('autoExport'),
             warning: settings.isOverriddenByConfig('autoExport') ?
@@ -44,7 +45,7 @@
             label: "Generation Path"|t('translation-manager'),
             instructions: "The path where PHP translation files should be generated for Craft to read"|t('translation-manager'),
             id: 'exportPath',
-            name: 'exportPath',
+            name: 'settings[exportPath]',
             value: settings.exportPath,
             errors: settings.getErrors('exportPath'),
             required: true,

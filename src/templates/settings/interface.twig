@@ -26,6 +26,7 @@
 		{{ csrfInput() }}
 		{{ actionInput('translation-manager/settings/save') }}
 		{{ redirectInput('translation-manager/settings/interface') }}
+		{{ hiddenInput('section', 'interface') }}
 
 		<h2 style="margin-top: 0px;">{{ "Interface Settings"|t('translation-manager') }}</h2>
 
@@ -33,7 +34,7 @@
             label: "Items Per Page"|t('translation-manager'),
             instructions: "Number of translations to show per page"|t('translation-manager'),
             id: 'itemsPerPage',
-            name: 'itemsPerPage',
+            name: 'settings[itemsPerPage]',
             value: settings.itemsPerPage,
             errors: settings.getErrors('itemsPerPage'),
             type: 'number',
@@ -48,7 +49,7 @@
             label: "Show Context"|t('translation-manager'),
             instructions: "Display the translation context in the interface"|t('translation-manager'),
             id: 'showContext',
-            name: 'showContext',
+            name: 'settings[showContext]',
             on: settings.showContext,
             disabled: settings.isOverriddenByConfig('showContext'),
             warning: settings.isOverriddenByConfig('showContext') ?
@@ -59,7 +60,7 @@
             label: "Enable Auto-Save"|t('translation-manager'),
             instructions: "Automatically save each translation when you click outside the field (blur)"|t('translation-manager'),
             id: 'autoSaveEnabled',
-            name: 'autoSaveEnabled',
+            name: 'settings[autoSaveEnabled]',
             on: settings.autoSaveEnabled,
             disabled: settings.isOverriddenByConfig('autoSaveEnabled'),
             warning: settings.isOverriddenByConfig('autoSaveEnabled') ?

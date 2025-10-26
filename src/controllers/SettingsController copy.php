@@ -13,7 +13,6 @@ namespace lindemannrock\translationmanager\controllers;
 use Craft;
 use craft\web\Controller;
 use lindemannrock\translationmanager\TranslationManager;
-use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use yii\web\Response;
 use yii\web\ForbiddenHttpException;
@@ -108,57 +107,69 @@ class SettingsController extends Controller
     /**
      * Save settings
      */
-    public function actionSave(): ?Response
+    public function actionSave(): Response
     {
         $this->requirePostRequest();
 
-        $plugin = TranslationManager::getInstance();
+        $request = Craft::$app->getRequest();
+        $settings = TranslationManager::getInstance()->getSettings();
 
-        // Load current settings from database
-        $settings = Settings::loadFromDatabase();
-        if (!$settings) {
-            $settings = new Settings();
-        }
-
-        // Get only the posted settings (fields from the current page)
-        $settingsData = Craft::$app->getRequest()->getBodyParam('settings', []);
-
-        // Only update fields that were posted and are not overridden by config
-        foreach ($settingsData as $key => $value) {
-            if (!$settings->isOverriddenByConfig($key) && property_exists($settings, $key)) {
-                // Check for setter method first (handles array conversions, etc.)
-                $setterMethod = 'set' . ucfirst($key);
-                if (method_exists($settings, $setterMethod)) {
-                    $settings->$setterMethod($value);
-                } else {
-                    $settings->$key = $value;
-                }
+        // Populate settings from POST data
+        $settings->pluginName = $request->getBodyParam('pluginName', $settings->pluginName);
+        $settings->translationCategory = $request->getBodyParam('translationCategory', $settings->translationCategory);
+        $settings->enableFormieIntegration = (bool) $request->getBodyParam('enableFormieIntegration', $settings->enableFormieIntegration);
+        $settings->enableSiteTranslations = (bool) $request->getBodyParam('enableSiteTranslations', $settings->enableSiteTranslations);
+        $settings->autoExport = (bool) $request->getBodyParam('autoExport', $settings->autoExport);
+        $settings->exportPath = $request->getBodyParam('exportPath', $settings->exportPath);
+        $settings->itemsPerPage = (int) $request->getBodyParam('itemsPerPage', $settings->itemsPerPage);
+        $settings->autoSaveEnabled = (bool) $request->getBodyParam('autoSaveEnabled', $settings->autoSaveEnabled);
+        $settings->autoSaveDelay = (int) $request->getBodyParam('autoSaveDelay', $settings->autoSaveDelay);
+        $settings->showContext = (bool) $request->getBodyParam('showContext', $settings->showContext);
+        $settings->enableSuggestions = (bool) $request->getBodyParam('enableSuggestions', $settings->enableSuggestions);
+        
+        // Backup settings
+        $settings->backupEnabled = (bool) $request->getBodyParam('backupEnabled', $settings->backupEnabled);
+        $settings->backupRetentionDays = (int) $request->getBodyParam('backupRetentionDays', $settings->backupRetentionDays);
+        $settings->backupOnImport = (bool) $request->getBodyParam('backupOnImport', $settings->backupOnImport);
+        $settings->backupSchedule = $request->getBodyParam('backupSchedule', $settings->backupSchedule);
+        $settings->backupPath = $request->getBodyParam('backupPath', $settings->backupPath);
+        $settings->backupVolumeUid = $request->getBodyParam('backupVolumeUid') ?: null;
+        $settings->logLevel = $request->getBodyParam('logLevel', $settings->logLevel);
+        
+        // Handle skip patterns
+        $skipPatterns = $request->getBodyParam('skipPatterns', '');
+        if (is_string($skipPatterns)) {
+            // If the textarea is empty, set to empty array
+            if (trim($skipPatterns) === '') {
+                $settings->skipPatterns = [];
+            } else {
+                $patterns = array_filter(array_map('trim', explode("\n", $skipPatterns)));
+                $settings->skipPatterns = $patterns;
             }
+        } else {
+            // Fallback for non-string values
+            $settings->skipPatterns = [];
         }
 
-        // Validate
+        // Validate settings
         if (!$settings->validate()) {
-            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Could not save settings.'));
-
-            // Get the section to re-render the correct template with errors
-            $section = $this->request->getBodyParam('section', 'general');
-            $template = "translation-manager/settings/{$section}";
-
-            return $this->renderTemplate($template, [
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Couldn\'t save settings.'));
+            
+            return $this->renderTemplate('translation-manager/settings/general', [
                 'settings' => $settings,
             ]);
         }
 
-        // Save settings to database
-        if ($settings->saveToDatabase()) {
-            // Update the plugin's cached settings (CRITICAL - forces Craft to refresh)
-            $plugin->setSettings($settings->getAttributes());
-
-            Craft::$app->getSession()->setNotice(Craft::t('translation-manager', 'Settings saved successfully'));
-        } else {
-            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Could not save settings'));
-            return null;
+        // Save settings to database (bypasses project config)
+        if (!$settings->saveToDatabase()) {
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Couldn\'t save settings.'));
+            
+            return $this->renderTemplate('translation-manager/settings/general', [
+                'settings' => $settings,
+            ]);
         }
+
+        Craft::$app->getSession()->setNotice(Craft::t('translation-manager', 'Settings saved.'));
 
         return $this->redirectToPostedUrl();
     }

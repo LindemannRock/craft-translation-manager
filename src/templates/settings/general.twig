@@ -26,6 +26,7 @@
 		{{ csrfInput() }}
 		{{ actionInput('translation-manager/settings/save') }}
 		{{ redirectInput('translation-manager/settings/general') }}
+		{{ hiddenInput('section', 'general') }}
 
 		<h2 style="margin-top: 0px;">{{ "Plugin Settings"|t('translation-manager') }}</h2>
 
@@ -33,7 +34,7 @@
             label: "Plugin Name"|t('translation-manager'),
             instructions: "The display name for the plugin in the Control Panel menu and breadcrumbs"|t('translation-manager'),
             id: 'pluginName',
-            name: 'pluginName',
+            name: 'settings[pluginName]',
             value: settings.pluginName,
             errors: settings.getErrors('pluginName'),
             required: true,
