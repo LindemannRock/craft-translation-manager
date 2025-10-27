@@ -1,0 +1,194 @@
+{
+  "plugin": {
+    "name": "Translation Manager",
+    "handle": "translation-manager",
+    "description": "A comprehensive translation management system for Craft CMS with Formie integration"
+  },
+  "navigation": {
+    "get-started": {
+      "label": "Get Started",
+      "icon": "rocket",
+      "order": 1,
+      "pages": [
+        {
+          "slug": "installation",
+          "title": "Installation & Setup",
+          "file": "README.md",
+          "section": "Installation",
+          "description": "Install via Composer, DDEV, or Control Panel"
+        },
+        {
+          "slug": "requirements",
+          "title": "Requirements",
+          "file": "README.md",
+          "section": "Requirements",
+          "description": "System requirements and dependencies"
+        },
+        {
+          "slug": "multi-site",
+          "title": "Multi-Site Support",
+          "file": "README.md",
+          "section": "Multi-Site Translation Support",
+          "description": "How multi-site translation works"
+        }
+      ]
+    },
+    "features": {
+      "label": "Features",
+      "icon": "star",
+      "order": 2,
+      "pages": [
+        {
+          "slug": "overview",
+          "title": "Overview",
+          "file": "README.md",
+          "section": "Features",
+          "description": "Complete feature list and capabilities"
+        },
+        {
+          "slug": "why",
+          "title": "Why Translation Manager?",
+          "file": "README.md",
+          "section": "Why Translation Manager?",
+          "description": "Problems solved and use cases"
+        },
+        {
+          "slug": "formie-integration",
+          "title": "Formie Integration",
+          "file": "README.md",
+          "section": "Formie Integration",
+          "description": "Managing Formie form translations"
+        },
+        {
+          "slug": "backups",
+          "title": "Backup System",
+          "file": "docs/BACKUPS.md",
+          "description": "Automatic backups, cloud storage, and restore"
+        }
+      ]
+    },
+    "configuration": {
+      "label": "Configuration",
+      "icon": "settings",
+      "order": 3,
+      "pages": [
+        {
+          "slug": "config-overview",
+          "title": "Configuration Overview",
+          "file": "README.md",
+          "section": "Configuration",
+          "description": "Control Panel and config file setup"
+        },
+        {
+          "slug": "config-reference",
+          "title": "Configuration Reference",
+          "file": "docs/CONFIGURATION.md",
+          "description": "Complete config file options and examples"
+        }
+      ]
+    },
+    "usage": {
+      "label": "Using the Plugin",
+      "icon": "book-open",
+      "order": 4,
+      "pages": [
+        {
+          "slug": "managing-translations",
+          "title": "Managing Translations",
+          "file": "README.md",
+          "section": "Managing Translations",
+          "description": "Using the Control Panel interface"
+        },
+        {
+          "slug": "site-translations",
+          "title": "Site Translations",
+          "file": "README.md",
+          "section": "Site Translations",
+          "description": "Using translations in templates"
+        },
+        {
+          "slug": "import-export",
+          "title": "Import & Export",
+          "file": "README.md",
+          "section": "CSV Import",
+          "description": "CSV import/export and PHP file generation"
+        },
+        {
+          "slug": "maintenance",
+          "title": "Maintenance",
+          "file": "README.md",
+          "section": "Maintenance",
+          "description": "Cleaning unused translations"
+        }
+      ]
+    },
+    "advanced": {
+      "label": "Advanced",
+      "icon": "code",
+      "order": 5,
+      "pages": [
+        {
+          "slug": "console-commands",
+          "title": "Console Commands",
+          "file": "README.md",
+          "section": "Console Commands",
+          "description": "CLI commands for automation"
+        },
+        {
+          "slug": "permissions",
+          "title": "Permissions",
+          "file": "README.md",
+          "section": "Permissions",
+          "description": "User permission settings"
+        },
+        {
+          "slug": "security",
+          "title": "Security",
+          "file": "README.md",
+          "section": "Security",
+          "description": "Security features and best practices"
+        }
+      ]
+    },
+    "troubleshooting": {
+      "label": "Troubleshooting",
+      "icon": "help-circle",
+      "order": 6,
+      "pages": [
+        {
+          "slug": "common-issues",
+          "title": "Common Issues",
+          "file": "README.md",
+          "section": "Troubleshooting",
+          "description": "Solutions to common problems"
+        },
+        {
+          "slug": "troubleshooting-guide",
+          "title": "Troubleshooting Guide",
+          "file": "docs/TROUBLESHOOTING.md",
+          "description": "Detailed troubleshooting steps"
+        }
+      ]
+    },
+    "reference": {
+      "label": "Reference",
+      "icon": "book",
+      "order": 7,
+      "pages": [
+        {
+          "slug": "logging",
+          "title": "Logging",
+          "file": "README.md",
+          "section": "Logging",
+          "description": "Log levels and management"
+        },
+        {
+          "slug": "logging-guide",
+          "title": "Logging Guide",
+          "file": "docs/LOGGING.md",
+          "description": "Complete logging documentation"
+        }
+      ]
+    }
+  }
+}

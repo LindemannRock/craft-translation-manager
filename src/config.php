@@ -1,14 +1,5 @@
 <?php
 /**
- * Translation Manager plugin for Craft CMS 5.x
- *
- * Configuration file template
- *
- * @link      https://lindemannrock.com
- * @copyright Copyright (c) 2025 LindemannRock
- */
-
-/**
  * Translation Manager config.php
  *
  * This file exists only as a template for the Translation Manager settings.
@@ -21,6 +12,8 @@
  * well, so you can have different settings groups for each environment, just as
  * you do for 'general.php'
  */
+
+use craft\helpers\App;
 
 return [
     // Global settings

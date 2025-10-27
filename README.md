@@ -144,9 +144,13 @@ The Control Panel includes a native Craft site switcher in the breadcrumbs:
 
 ## Configuration
 
-### Config File (Recommended)
+### Config File
 
 Create a `config/translation-manager.php` file to override default settings:
+
+```bash
+cp vendor/lindemannrock/craft-translation-manager/src/config.php config/translation-manager.php
+```
 
 ```php
 <?php
@@ -482,7 +486,7 @@ php craft translation-manager/backup/clean
 
 ## Logging
 
-Translation Manager uses the [LindemannRock Logging Library](https://github.com/LindemannRock/craft-logging-library) for centralized, structured logging across all LindemannRock plugins.
+Translation Manager uses the [LindemannRock Logging Library](https://github.com/LindemannRock/craft-logging-library) for centralized logging.
 
 ### Log Levels
 - **Error**: Critical errors only
