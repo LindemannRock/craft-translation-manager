@@ -308,14 +308,98 @@
         reader.readAsText(file);
     });
 
+    // Proper CSV parser that handles multiline quoted values
+    function parseCSV(text) {
+        const rows = [];
+        let currentRow = [];
+        let currentField = '';
+        let inQuotes = false;
+        let i = 0;
+
+        while (i < text.length) {
+            const char = text[i];
+            const nextChar = text[i + 1];
+
+            if (inQuotes) {
+                if (char === '"') {
+                    if (nextChar === '"') {
+                        // Escaped quote - add one quote to field
+                        currentField += '"';
+                        i += 2;
+                        continue;
+                    } else {
+                        // End of quoted field
+                        inQuotes = false;
+                        i++;
+                        continue;
+                    }
+                } else {
+                    // Regular character inside quotes (including newlines)
+                    currentField += char;
+                    i++;
+                }
+            } else {
+                if (char === '"') {
+                    // Start of quoted field
+                    inQuotes = true;
+                    i++;
+                } else if (char === ',') {
+                    // End of field
+                    currentRow.push(currentField);
+                    currentField = '';
+                    i++;
+                } else if (char === '\n' || (char === '\r' && nextChar === '\n')) {
+                    // End of row
+                    currentRow.push(currentField);
+                    if (currentRow.some(field => field.trim() !== '')) {
+                        rows.push(currentRow);
+                    }
+                    currentRow = [];
+                    currentField = '';
+                    i += (char === '\r' ? 2 : 1);
+                } else if (char === '\r') {
+                    // Mac-style line ending
+                    currentRow.push(currentField);
+                    if (currentRow.some(field => field.trim() !== '')) {
+                        rows.push(currentRow);
+                    }
+                    currentRow = [];
+                    currentField = '';
+                    i++;
+                } else {
+                    // Regular character
+                    currentField += char;
+                    i++;
+                }
+            }
+        }
+
+        // Handle last field and row
+        if (currentField !== '' || currentRow.length > 0) {
+            currentRow.push(currentField);
+            if (currentRow.some(field => field.trim() !== '')) {
+                rows.push(currentRow);
+            }
+        }
+
+        // Remove BOM from first field if present
+        if (rows.length > 0 && rows[0].length > 0) {
+            rows[0][0] = rows[0][0].replace(/^\uFEFF/, '');
+        }
+
+        return rows;
+    }
+
     function parseAndPreviewCSV(text) {
-        const lines = text.split('\n').filter(line => line.trim());
-        if (lines.length < 2) {
+        // Parse CSV properly respecting quoted multiline values
+        const rows = parseCSV(text);
+
+        if (rows.length < 2) {
             Craft.cp.displayError('CSV file appears to be empty');
             return;
         }
 
-        const headers = parseCSVLine(lines[0]);
+        const headers = rows[0];
         const keyIdx = findColumnIndex(headers, ['Translation Key']);
 
         if (keyIdx === -1) {
@@ -333,10 +417,10 @@
 
         const toCheck = [];
 
-        // Parse rows
-        for (let i = 1; i < lines.length; i++) {
+        // Parse rows (skip header)
+        for (let i = 1; i < rows.length; i++) {
             try {
-                const row = parseCSVLine(lines[i]);
+                const row = rows[i];
                 if (row.length === 0) continue;
 
 
