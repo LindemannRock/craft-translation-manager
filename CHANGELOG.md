@@ -1,5 +1,18 @@
 # Changelog
 
+## [5.1.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.9...v5.1.0) (2025-11-06)
+
+
+### Features
+
+* implement a robust CSV parser to handle multiline quoted values in import/export functionality ([1efad45](https://github.com/LindemannRock/craft-translation-manager/commit/1efad452292060027a35fed48694898f742857c3))
+* refactor settings management and improve validation in SettingsController ([0e4e036](https://github.com/LindemannRock/craft-translation-manager/commit/0e4e036fbc8b79d8d4b0483bc3d943c07494b594))
+
+
+### Bug Fixes
+
+* enhance documentation and configuration structure for Translation Manager ([8c8bff3](https://github.com/LindemannRock/craft-translation-manager/commit/8c8bff3eea066550359a269dc2d6c342674d85dc))
+
 ## [5.0.9](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.8...v5.0.9) (2025-10-26)
 
 
