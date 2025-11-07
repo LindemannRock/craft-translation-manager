@@ -22,15 +22,15 @@
 {% import "_includes/forms" as forms %}
 
 {% block content %}
-    <form method="post" accept-charset="UTF-8">
-        {{ csrfInput() }}
-        {{ actionInput('translation-manager/settings/save') }}
-        {{ redirectInput('translation-manager/settings/generation') }}
-        {{ hiddenInput('section', 'generation') }}
+	<form method="post" accept-charset="UTF-8">
+		{{ csrfInput() }}
+		{{ actionInput('translation-manager/settings/save') }}
+		{{ redirectInput('translation-manager/settings/generation') }}
+		{{ hiddenInput('section', 'generation') }}
 
-        <h2>{{ "File Generation Settings"|t('translation-manager') }}</h2>
+		<h2>{{ "File Generation Settings"|t('translation-manager') }}</h2>
 
-        {{ forms.lightswitchField({
+		{{ forms.lightswitchField({
             label: "Auto Generate"|t('translation-manager'),
             instructions: "Automatically generate translation files when translations are saved"|t('translation-manager'),
             id: 'autoExport',
@@ -41,9 +41,10 @@
                 "This is being overridden by the <code>autoExport</code> setting in <code>config/translation-manager.php</code>."|raw : null,
         }) }}
 
-        {{ forms.autosuggestField({
+		{{ forms.autosuggestField({
             label: "Generation Path"|t('translation-manager'),
             instructions: "The path where PHP translation files should be generated for Craft to read"|t('translation-manager'),
+            tip: "Use Craft path aliases: <code>@root/translations/translation-manager</code> or <code>@translations/translation-manager</code> (Craft's default translations folder). Paths must be outside webroot for security. Environment variables like <code>$ENV_VAR</code> are supported."|t('translation-manager')|raw,
             id: 'exportPath',
             name: 'settings[exportPath]',
             value: settings.exportPath,
@@ -55,21 +56,24 @@
                 "This is being overridden by the <code>exportPath</code> setting in <code>config/translation-manager.php</code>."|raw : null,
         }) }}
 
-        <div class="buttons">
-            <button type="submit" class="btn submit">{{ "Save"|t('translation-manager') }}</button>
-        </div>
-    </form>
+		<div class="buttons">
+			<button type="submit" class="btn submit">{{ "Save"|t('translation-manager') }}</button>
+		</div>
+	</form>
 
-    {% set generationPath = settings.getExportPath() %}
-    <div style="margin-top: 2rem; padding: 1rem; background: #f3f4f6; border-radius: 4px;">
-        <p class="light" style="margin: 0; display: flex; align-items: flex-start; gap: 8px;">
-            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style="flex-shrink: 0; margin-top: 2px;">
-                <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
-                <text x="8" y="12" text-anchor="middle" font-size="11" font-weight="bold" fill="currentColor">i</text>
-            </svg>
-            <span><strong>{{ "Generation Location:"|t('translation-manager') }}</strong> <code>{{ generationPath }}</code></span>
-        </p>
-    </div>
+	{% set generationPath = settings.getExportPath() %}
+	<div style="margin-top: 2rem; padding: 1rem; background: #f3f4f6; border-radius: 4px;">
+		<p class="light" style="margin: 0; display: flex; align-items: flex-start; gap: 8px;">
+			<svg aria-hidden="true" width="16" height="16" viewbox="0 0 16 16" style="flex-shrink: 0; margin-top: 2px;">
+				<circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+				<text x="8" y="12" text-anchor="middle" font-size="11" font-weight="bold" fill="currentColor">i</text>
+			</svg>
+			<span>
+				<strong>{{ "Generation Location:"|t('translation-manager') }}</strong>
+				<code>{{ generationPath }}</code>
+			</span>
+		</p>
+	</div>
 
-    {% include 'translation-manager/_components/plugin-credit.twig' %}
+	{% include 'translation-manager/_components/plugin-credit.twig' %}
 {% endblock %}

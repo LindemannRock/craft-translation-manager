@@ -25,7 +25,7 @@ class TranslationStatsUtility extends Utility
     public static function displayName(): string
     {
         $pluginName = TranslationManager::getInstance()->getSettings()->pluginName;
-        return $pluginName . ' Stats';
+        return $pluginName;
     }
 
     /**
@@ -75,7 +75,7 @@ class TranslationStatsUtility extends Utility
         }
         
         return Craft::$app->getView()->renderTemplate(
-            'translation-manager/utilities/stats',
+            'translation-manager/utilities/index',
             [
                 'stats' => $stats,
                 'currentSiteId' => (int)$siteId,

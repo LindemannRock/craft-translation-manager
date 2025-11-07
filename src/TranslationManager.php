@@ -501,9 +501,6 @@ class TranslationManager extends Plugin
             'translation-manager/settings' => 'translation-manager/settings/index',
             'translation-manager/settings/<section:\w+>' => 'translation-manager/settings/<section>',
 
-            // Debug routes
-            'translation-manager/debug/test-search' => 'translation-manager/debug/test-search',
-
             // Logging routes
             'translation-manager/logs' => 'logging-library/logs/index',
             'translation-manager/logs/download' => 'logging-library/logs/download',
