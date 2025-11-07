@@ -34,12 +34,29 @@ class CreateBackupJob extends BaseJob
     public bool $reschedule = false;
 
     /**
+     * @var string|null Next run time display string
+     */
+    public ?string $nextRunTime = null;
+
+    /**
      * @inheritdoc
      */
     public function init(): void
     {
         parent::init();
         $this->setLoggingHandle('translation-manager');
+
+        // Calculate and set next run time if not already set
+        if ($this->reschedule && !$this->nextRunTime) {
+            $settings = TranslationManager::getInstance()->getSettings();
+            if ($settings->backupEnabled && $settings->backupSchedule !== 'manual') {
+                $delay = $this->calculateNextRunDelay($settings->backupSchedule);
+                if ($delay > 0) {
+                    // Short format: "Nov 8, 12:00am"
+                    $this->nextRunTime = date('M j, g:ia', time() + $delay);
+                }
+            }
+        }
     }
 
     /**
@@ -48,7 +65,13 @@ class CreateBackupJob extends BaseJob
     public function getDescription(): ?string
     {
         $pluginName = TranslationManager::getInstance()->getSettings()->pluginName;
-        return Craft::t('translation-manager', '{pluginName}: Scheduled auto backup', ['pluginName' => $pluginName]);
+        $description = Craft::t('translation-manager', '{pluginName}: Scheduled auto backup', ['pluginName' => $pluginName]);
+
+        if ($this->nextRunTime) {
+            $description .= " ({$this->nextRunTime})";
+        }
+
+        return $description;
     }
     
     /**
@@ -90,28 +113,43 @@ class CreateBackupJob extends BaseJob
     private function scheduleNextBackup(): void
     {
         $settings = TranslationManager::getInstance()->getSettings();
-        
+
         if (!$settings->backupEnabled || $settings->backupSchedule === 'manual') {
             return;
         }
-        
-        $delay = match ($settings->backupSchedule) {
+
+        $delay = $this->calculateNextRunDelay($settings->backupSchedule);
+
+        if ($delay > 0) {
+            // Calculate next run time for display
+            $nextRunTime = date('M j, g:ia', time() + $delay);
+
+            // Create a new job for the next backup
+            $job = new self([
+                'reason' => 'scheduled',
+                'reschedule' => true,
+                'nextRunTime' => $nextRunTime,
+            ]);
+
+            Craft::$app->getQueue()->delay($delay)->push($job);
+
+            $this->logInfo('Next backup scheduled', [
+                'delay_seconds' => $delay,
+                'next_run' => $nextRunTime
+            ]);
+        }
+    }
+
+    /**
+     * Calculate the delay in seconds for the next backup
+     */
+    private function calculateNextRunDelay(string $schedule): int
+    {
+        return match ($schedule) {
             'daily' => 86400, // 24 hours
             'weekly' => 604800, // 7 days
             'monthly' => 2592000, // 30 days
             default => 0,
         };
-        
-        if ($delay > 0) {
-            // Create a new job for the next backup
-            $job = new self([
-                'reason' => 'scheduled',
-                'reschedule' => true,
-            ]);
-            
-            Craft::$app->getQueue()->delay($delay)->push($job);
-
-            $this->logInfo('Next backup scheduled', ['delay_seconds' => $delay]);
-        }
     }
 }
