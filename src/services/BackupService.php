@@ -212,23 +212,36 @@ class BackupService extends Component
                 }
             }
 
+            // Encode JSON content first
+            $formieContent = !empty($formieTranslations)
+                ? Json::encode($formieTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+                : '';
+            $siteContent = !empty($siteTranslations)
+                ? Json::encode($siteTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+                : '';
+
+            // Calculate checksum for integrity verification
+            $checksum = hash('sha256', $formieContent . $siteContent);
+            $metadata['checksum'] = $checksum;
+            $metadata['checksumAlgorithm'] = 'sha256';
+
+            $this->logInfo('Backup checksum calculated', [
+                'checksum' => substr($checksum, 0, 16) . '...',
+                'formieSize' => strlen($formieContent),
+                'siteSize' => strlen($siteContent)
+            ]);
+
             // Write metadata file
             $this->_volumeFs->write($fullPath . '/metadata.json', Json::encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
             // Save Formie translations
             if (!empty($formieTranslations)) {
-                $this->_volumeFs->write(
-                    $fullPath . '/formie-translations.json',
-                    Json::encode($formieTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-                );
+                $this->_volumeFs->write($fullPath . '/formie-translations.json', $formieContent);
             }
 
             // Save site translations
             if (!empty($siteTranslations)) {
-                $this->_volumeFs->write(
-                    $fullPath . '/site-translations.json',
-                    Json::encode($siteTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-                );
+                $this->_volumeFs->write($fullPath . '/site-translations.json', $siteContent);
             }
 
             // Also backup the generated PHP files if they exist
@@ -261,23 +274,36 @@ class BackupService extends Component
             // Ensure directory exists
             FileHelper::createDirectory($fullPath);
 
+            // Encode JSON content first
+            $formieContent = !empty($formieTranslations)
+                ? Json::encode($formieTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+                : '';
+            $siteContent = !empty($siteTranslations)
+                ? Json::encode($siteTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+                : '';
+
+            // Calculate checksum for integrity verification
+            $checksum = hash('sha256', $formieContent . $siteContent);
+            $metadata['checksum'] = $checksum;
+            $metadata['checksumAlgorithm'] = 'sha256';
+
+            $this->logInfo('Backup checksum calculated', [
+                'checksum' => substr($checksum, 0, 16) . '...',
+                'formieSize' => strlen($formieContent),
+                'siteSize' => strlen($siteContent)
+            ]);
+
             // Write metadata file
             FileHelper::writeToFile($fullPath . '/metadata.json', Json::encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
             // Save Formie translations
             if (!empty($formieTranslations)) {
-                FileHelper::writeToFile(
-                    $fullPath . '/formie-translations.json',
-                    Json::encode($formieTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-                );
+                FileHelper::writeToFile($fullPath . '/formie-translations.json', $formieContent);
             }
 
             // Save site translations
             if (!empty($siteTranslations)) {
-                FileHelper::writeToFile(
-                    $fullPath . '/site-translations.json',
-                    Json::encode($siteTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-                );
+                FileHelper::writeToFile($fullPath . '/site-translations.json', $siteContent);
             }
 
             // Also backup the generated PHP files if they exist
@@ -712,6 +738,60 @@ class BackupService extends Component
                 ];
             }
 
+            // Read and validate metadata with checksum
+            $metadataPath = $backupPath . '/metadata.json';
+            if (!$this->_volumeFs->fileExists($metadataPath)) {
+                return [
+                    'success' => false,
+                    'message' => 'Backup metadata not found'
+                ];
+            }
+
+            $metadataContent = $this->_volumeFs->read($metadataPath);
+            $metadata = Json::decode($metadataContent);
+
+            // Read JSON files
+            $formieContent = '';
+            $formiePath = $backupPath . '/formie-translations.json';
+            if ($this->_volumeFs->fileExists($formiePath)) {
+                $formieContent = $this->_volumeFs->read($formiePath);
+            }
+
+            $siteContent = '';
+            $sitePath = $backupPath . '/site-translations.json';
+            if ($this->_volumeFs->fileExists($sitePath)) {
+                $siteContent = $this->_volumeFs->read($sitePath);
+            }
+
+            // Validate checksum if present
+            if (isset($metadata['checksum'])) {
+                $expectedChecksum = $metadata['checksum'];
+                $actualChecksum = hash('sha256', $formieContent . $siteContent);
+
+                if ($expectedChecksum !== $actualChecksum) {
+                    $this->logError('Backup checksum validation failed', [
+                        'backup' => $backupName,
+                        'expected' => substr($expectedChecksum, 0, 16) . '...',
+                        'actual' => substr($actualChecksum, 0, 16) . '...'
+                    ]);
+
+                    return [
+                        'success' => false,
+                        'message' => 'Backup integrity check failed. The backup files may have been modified or corrupted.'
+                    ];
+                }
+
+                $this->logInfo('Backup checksum validated successfully', [
+                    'backup' => $backupName,
+                    'checksum' => substr($actualChecksum, 0, 16) . '...'
+                ]);
+            } else {
+                // Old backup without checksum - log warning but continue
+                $this->logWarning('Backup does not have checksum (created with older version)', [
+                    'backup' => $backupName
+                ]);
+            }
+
             // Create a backup of current state before restoring if backups are enabled
             $settings = TranslationManager::getInstance()->getSettings();
             $backupStatus = $settings->backupEnabled ? 'enabled' : 'disabled';
@@ -737,19 +817,15 @@ class BackupService extends Component
             $errors = [];
 
             // Restore Formie translations
-            $formiePath = $backupPath . '/formie-translations.json';
-            if ($this->_volumeFs->fileExists($formiePath)) {
-                $content = $this->_volumeFs->read($formiePath);
-                $result = $this->restoreFromContent($content);
+            if (!empty($formieContent)) {
+                $result = $this->restoreFromContent($formieContent);
                 $imported += $result['imported'];
                 $errors = array_merge($errors, $result['errors']);
             }
 
             // Restore site translations
-            $sitePath = $backupPath . '/site-translations.json';
-            if ($this->_volumeFs->fileExists($sitePath)) {
-                $content = $this->_volumeFs->read($sitePath);
-                $result = $this->restoreFromContent($content);
+            if (!empty($siteContent)) {
+                $result = $this->restoreFromContent($siteContent);
                 $imported += $result['imported'];
                 $errors = array_merge($errors, $result['errors']);
             }
@@ -806,6 +882,59 @@ class BackupService extends Component
         }
 
         try {
+            // Read and validate metadata with checksum
+            $metadataFile = $backupDir . '/metadata.json';
+            if (!file_exists($metadataFile)) {
+                return [
+                    'success' => false,
+                    'message' => 'Backup metadata not found'
+                ];
+            }
+
+            $metadata = Json::decode(file_get_contents($metadataFile));
+
+            // Read JSON files
+            $formieContent = '';
+            $formieFile = $backupDir . '/formie-translations.json';
+            if (file_exists($formieFile)) {
+                $formieContent = file_get_contents($formieFile);
+            }
+
+            $siteContent = '';
+            $siteFile = $backupDir . '/site-translations.json';
+            if (file_exists($siteFile)) {
+                $siteContent = file_get_contents($siteFile);
+            }
+
+            // Validate checksum if present
+            if (isset($metadata['checksum'])) {
+                $expectedChecksum = $metadata['checksum'];
+                $actualChecksum = hash('sha256', $formieContent . $siteContent);
+
+                if ($expectedChecksum !== $actualChecksum) {
+                    $this->logError('Backup checksum validation failed', [
+                        'backup' => $backupName,
+                        'expected' => substr($expectedChecksum, 0, 16) . '...',
+                        'actual' => substr($actualChecksum, 0, 16) . '...'
+                    ]);
+
+                    return [
+                        'success' => false,
+                        'message' => 'Backup integrity check failed. The backup files may have been modified or corrupted.'
+                    ];
+                }
+
+                $this->logInfo('Backup checksum validated successfully', [
+                    'backup' => $backupName,
+                    'checksum' => substr($actualChecksum, 0, 16) . '...'
+                ]);
+            } else {
+                // Old backup without checksum - log warning but continue
+                $this->logWarning('Backup does not have checksum (created with older version)', [
+                    'backup' => $backupName
+                ]);
+            }
+
             // Create a backup of current state before restoring if backups are enabled
             $settings = TranslationManager::getInstance()->getSettings();
             $backupStatus = $settings->backupEnabled ? 'enabled' : 'disabled';
@@ -831,17 +960,15 @@ class BackupService extends Component
             $errors = [];
 
             // Restore Formie translations
-            $formieFile = $backupDir . '/formie-translations.json';
-            if (file_exists($formieFile)) {
-                $result = $this->restoreFromFile($formieFile);
+            if (!empty($formieContent)) {
+                $result = $this->restoreFromContent($formieContent);
                 $imported += $result['imported'];
                 $errors = array_merge($errors, $result['errors']);
             }
 
             // Restore site translations
-            $siteFile = $backupDir . '/site-translations.json';
-            if (file_exists($siteFile)) {
-                $result = $this->restoreFromFile($siteFile);
+            if (!empty($siteContent)) {
+                $result = $this->restoreFromContent($siteContent);
                 $imported += $result['imported'];
                 $errors = array_merge($errors, $result['errors']);
             }
