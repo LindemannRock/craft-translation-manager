@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.3.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.2.0...v5.3.0) (2025-11-07)
+
+
+### Features
+
+* add checksum validation for backup integrity and improve logging ([cce90c9](https://github.com/LindemannRock/craft-translation-manager/commit/cce90c90811c493305d7422ca6eb2469a04ba4aa))
+
 ## [5.2.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.1.0...v5.2.0) (2025-11-07)
 
 
