@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.3.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.3.0...v5.3.1) (2025-11-07)
+
+
+### Bug Fixes
+
+* enhance CreateBackupJob to calculate and display next run time for backups ([15e38ae](https://github.com/LindemannRock/craft-translation-manager/commit/15e38ae033de7e61074a69aeda7a906b05b6620d))
+
 ## [5.3.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.2.0...v5.3.0) (2025-11-07)
 
 
