@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.2.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.1.0...v5.2.0) (2025-11-07)
+
+
+### Features
+
+* update translation manager utility templates and enhance backup settings documentation ([93e971f](https://github.com/LindemannRock/craft-translation-manager/commit/93e971f32ecad6204c1b3971ccfbf35a9831d2c4))
+
 ## [5.1.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.0.9...v5.1.0) (2025-11-06)
 
 
