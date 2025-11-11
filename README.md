@@ -13,12 +13,14 @@ A comprehensive translation management system for Craft CMS 5 with Formie integr
 Translation Manager was created to solve critical gaps in Craft CMS multi-language workflows.
 
 **The Primary Problem**: Managing site translations shouldn't require static language files and redeployments for every text change. Traditional approaches meant:
+
 - Editing PHP language files manually for every translation update
 - Redeploying the entire site for simple text changes
 - No centralized interface to manage all site translations
 - Difficult to track what needs translation vs what's already translated
 
 **The Formie Problem**: Our first major integration tackled [Formie](https://verbb.io/craft-plugins/formie/features) forms, which had complex translation management challenges:
+
 - Duplicating entire forms for each language (maintenance nightmare)
 - Manual translation files (formie.php) for each language - difficult to track and manage
 - No centralized workflow for managing all field properties and content
@@ -89,7 +91,13 @@ Translation Manager was created to solve critical gaps in Craft CMS multi-langua
 
 ```bash
 cd /path/to/project
+```
+
+```bash
 composer require lindemannrock/craft-translation-manager
+```
+
+```bash
 ./craft plugin/install translation-manager
 ```
 
@@ -97,7 +105,13 @@ composer require lindemannrock/craft-translation-manager
 
 ```bash
 cd /path/to/project
+```
+
+```bash
 ddev composer require lindemannrock/craft-translation-manager
+```
+
+```bash
 ddev craft plugin/install translation-manager
 ```
 
@@ -125,11 +139,13 @@ Translation Manager supports multi-site setups with any language combination. Th
 ```
 
 **Database Storage:**
+
 - English Site: `translationKey="Welcome"` → `translation="Welcome"`
 - Arabic Site: `translationKey="Welcome"` → `translation="مرحباً"`
 - French Site: `translationKey="Welcome"` → `translation="Bienvenue"`
 
 **Generated Files:**
+
 - `translations/en-US/lindemannrock.php` (English site)
 - `translations/ar/lindemannrock.php` (Arabic site)
 - `translations/en-US/formie.php` (English Formie forms)
@@ -138,6 +154,7 @@ Translation Manager supports multi-site setups with any language combination. Th
 ### Site Switcher
 
 The Control Panel includes a native Craft site switcher in the breadcrumbs:
+
 - 🌍 **En** ▼ > Translation Manager > Translations
 - Switch between sites to manage different language translations
 - All filters and search terms are preserved when switching sites
@@ -176,6 +193,7 @@ See [Configuration Documentation](docs/CONFIGURATION.md) for all available optio
 Navigate to **Settings → Translation Manager** in the Control Panel to configure:
 
 ### General Settings
+
 - **Translation Category**: The category used for site translations (e.g., `lindemannrock`)
   - Cannot use reserved categories: `site`, `app`, `yii`, `craft`
   - Must start with a letter and contain only letters and numbers
@@ -185,12 +203,14 @@ Navigate to **Settings → Translation Manager** in the Control Panel to configu
 - **Enable Translation Suggestions**: Show translation suggestions based on similar existing translations
 
 ### File Generation Settings
+
 - **Auto Generate**: Automatically generate translation files when saved
 - **Generation Path**: Where PHP translation files are generated
   - Must use safe aliases: `@root`, `@storage`, `@config`, or `@webroot`
   - Protected against directory traversal attacks
 
 ### Manual Operations (Main Menu)
+
 - **Generate** (`Translation Manager → Generate`): Manually generate PHP translation files by type (All/Site/Forms)
 - **Import/Export** (`Translation Manager → Import/Export`):
   - CSV Import with preview and malicious content detection
@@ -200,6 +220,7 @@ Navigate to **Settings → Translation Manager** in the Control Panel to configu
   - Cloudflare-compatible to avoid false positive blocks
 
 ### Interface Settings
+
 - **Items Per Page**: Number of translations per page (10-500)
 - **Show Context**: Display translation context in interface and exports
 
@@ -220,6 +241,7 @@ When "Enable Site Translations" is enabled, the following settings become availa
   - Use "Apply Skip Patterns to Existing Translations" button to remove existing translations that match patterns
 
 ### Backup Settings (`Settings → Backup`)
+
 - **Enable Backups**: Turn on backup functionality
 - **Backup Before Import**: Automatically backup before CSV imports
 - **Backup Schedule**: Manual, Daily, Weekly, or Monthly automatic backups
@@ -233,6 +255,7 @@ When "Enable Site Translations" is enabled, the following settings become availa
   - Default: `@storage/translation-manager/backups`
 
 ### Backup Operations (`Translation Manager → Backups`)
+
 - **Create Backup**: Manually create backups at any time
 - **Restore Backup**: Restore from any previous backup (creates safety backup first)
 - **Download Backup**: Download backups as ZIP files from any storage location
@@ -240,6 +263,7 @@ When "Enable Site Translations" is enabled, the following settings become availa
 - **Backup History**: View all backups with date, reason, creator, translation count, and size
 
 Backups are automatically organized into:
+
 - `/scheduled/` - Daily/weekly/monthly automated backups
 - `/imports/` - Backups before CSV imports
 - `/maintenance/` - Backups before cleanup/clear operations
@@ -247,6 +271,7 @@ Backups are automatically organized into:
 - `/other/` - Backups before restore operations and miscellaneous activities
 
 ### Maintenance (`Translation Manager → Maintenance`)
+
 - **Clean Up Unused Translations**: Remove translations by type (All/Site/Forms)
 - **Template Scanner**: Scan all templates to identify unused translations
 - **Danger Zone**: Clear all translations by type with confirmation
@@ -290,6 +315,7 @@ Use your configured translation category in templates:
 ### Maintenance
 
 The plugin includes a dedicated maintenance section to manage unused translations:
+
 1. Navigate to **Translation Manager → Maintenance**
 2. Select the type of cleanup to perform (All/Site/Forms unused translations)
 3. Click **Clean Up** to remove unused translations
@@ -299,6 +325,7 @@ The plugin includes a dedicated maintenance section to manage unused translation
 ### Formie Integration
 
 Formie translations are captured automatically when:
+
 - Creating or editing forms
 - Adding or modifying fields
 - Changing field labels, instructions, placeholders, or error messages
@@ -310,12 +337,15 @@ Formie translations are captured automatically when:
 #### Supported Field Types
 
 **Standard Fields**: SingleLineText, MultiLineText, Email, Number, Phone, Password, etc.
+
 - Label, placeholder, instructions, error message
 
 **Options Fields**: Dropdown, Radio, Checkboxes, Categories, Entries, Products, Tags, Users
+
 - All option labels are captured
 
 **Complex Fields**:
+
 - **Address**: All enabled subfield labels and placeholders (Address 1/2/3, City, State, ZIP, Country)
 - **Name**: Prefix, First Name, Middle Name, Last Name labels and placeholders
 - **Date**: Day, Month, Year, Hour, Minute, Second, AM/PM labels and placeholders
@@ -329,11 +359,13 @@ Formie translations are captured automatically when:
 #### Smart Deduplication
 
 The system prevents duplicate translations:
+
 - If "First Name" appears in multiple forms/fields, it's stored only once
 - When text moves between forms, the context updates automatically
 - Translations marked as "not used" are reactivated when the text is used again
 
 Translation contexts follow the pattern:
+
 - Field labels: `formie.{formHandle}.{fieldHandle}.label`
 - Field options: `formie.{formHandle}.{fieldHandle}.option.{value}`
 - Subfield labels: `formie.{formHandle}.{fieldHandle}.{subfield}.label`
@@ -344,6 +376,7 @@ Translation contexts follow the pattern:
 ### CSV Export
 
 The CSV export includes:
+
 - English Text
 - Arabic Translation
 - Type (Forms/Site)
@@ -363,18 +396,21 @@ The plugin provides a secure built-in CSV import feature with preview:
 5. **View History**: Check import history with results and backup links
 
 **CSV Format Requirements**:
+
 - UTF-8 encoding for proper Arabic text support
 - Headers in first row
 - Comma, semicolon, tab, or pipe delimiter (auto-detected)
 - Double quotes for text containing delimiters
 
 **Required Columns** (flexible naming):
+
 - **English Text** (or English, Source, Original)
 - **Arabic Translation** (or Arabic, Translation, Translated) - optional
 - **Context** (or Category, Type) - optional, defaults to 'site'
 - **Status** - optional: pending/translated/unused
 
 Example CSV:
+
 ```csv
 English Text,Arabic Translation,Status,Context
 "Welcome to our website","مرحباً بكم في موقعنا","translated","site"
@@ -383,6 +419,7 @@ English Text,Arabic Translation,Status,Context
 ```
 
 **Security Features**:
+
 - File type validation (CSV/TXT only)
 - File size limit (5MB)
 - MIME type verification
@@ -397,6 +434,7 @@ English Text,Arabic Translation,Status,Context
 - Detailed error reporting (first 10 errors shown)
 
 **Import Behavior**:
+
 - Updates existing translations with matching English text and context
 - Creates new translations for unmatched entries
 - Skips empty rows
@@ -409,6 +447,7 @@ English Text,Arabic Translation,Status,Context
 ### PHP File Export
 
 Translation files are exported to:
+
 ```
 translations/
 ├── en/
@@ -434,6 +473,7 @@ The plugin provides granular permissions:
 ## Console Commands
 
 ### Translation Commands
+
 ```bash
 # Capture existing Formie fields
 php craft translation-manager/translations/capture-formie
@@ -470,6 +510,7 @@ php craft translation-manager/maintenance/clean-unused
 ```
 
 ### Backup Commands
+
 ```bash
 # Create manual backup
 php craft translation-manager/backup/create [reason]
@@ -489,12 +530,14 @@ php craft translation-manager/backup/clean
 Translation Manager uses the [LindemannRock Logging Library](https://github.com/LindemannRock/craft-logging-library) for centralized logging.
 
 ### Log Levels
+
 - **Error**: Critical errors only
 - **Warning**: Errors and warnings
 - **Info**: General information
 - **Debug**: Detailed debugging (includes performance metrics, requires devMode)
 
 ### Configuration
+
 ```php
 // config/translation-manager.php
 return [
@@ -505,19 +548,23 @@ return [
 **Note:** Debug level requires Craft's `devMode` to be enabled. If set to debug with devMode disabled, it automatically falls back to info level.
 
 ### Log Files
+
 - **Location**: `storage/logs/translation-manager-YYYY-MM-DD.log`
 - **Retention**: 30 days (automatic cleanup via Logging Library)
 - **Format**: Structured JSON logs with context data
 - **Web Interface**: View and filter logs in CP at Translation Manager → Logs
 
 ### What's Logged
+
 - **Error**: File generation failures, database errors, permission denials, backup failures
 - **Warning**: Missing translations, failed operations, slow operations (>1s)
 - **Info**: Translation saves, imports/exports, file generation, backup operations, cleanup actions
 - **Debug**: Performance timing, detailed import/export steps, template scanning, queue operations
 
 ### Log Management
+
 Access logs through the Control Panel:
+
 1. Navigate to Translation Manager → Logs
 2. Filter by date, level, or search terms
 3. Download log files for external analysis
@@ -596,6 +643,7 @@ For security vulnerabilities, please see our [Security Policy](SECURITY.md).
 ## Troubleshooting
 
 ### Search Not Finding Translations
+
 - Check the **Type** filter is set to "All Types" (not just Forms or Site)
 - Check the **Status** filter is set to "All"
 - Try searching for partial text instead of the full phrase
@@ -603,12 +651,14 @@ For security vulnerabilities, please see our [Security Policy](SECURITY.md).
 - Common issues: leading/trailing spaces, text marked as "unused", text contains Twig syntax
 
 ### Scheduled Backups Not Running
+
 - Ensure backups are enabled and schedule is not "Manual"
 - Check queue status: `craft queue/info`
 - For production, ensure queue runner is active
 - The plugin automatically recovers from queue failures on each page load
 
 ### Translations Not Being Captured
+
 - **Formie**: Save the form after adding fields, or run `craft translation-manager/translations/capture-formie`
 - **Site**: Use correct category `{{ 'Text'|t('lindemannrock') }}` and visit the frontend page
 - **Locale Variants**: If using locale-specific languages (en-US, en-GB, fr-CA, etc.):
@@ -620,12 +670,14 @@ For security vulnerabilities, please see our [Security Policy](SECURITY.md).
 - Text with Twig syntax ({{, {%, {#) is automatically excluded
 
 ### Import Blocked by Security
+
 - Use UTF-8 encoding with proper headers
 - Avoid special characters that trigger WAF
 - The plugin uses client-side validation to avoid Cloudflare blocks
 - For large files, split into smaller batches
 
 ### Settings Cannot Be Saved
+
 - This is normal in production - settings are stored in database, not project config
 - If error persists, run migrations: `craft migrate/all`
 
