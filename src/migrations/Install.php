@@ -51,35 +51,6 @@ class Install extends Migration
             $this->createIndex(null, '{{%translationmanager_translations}}', ['sourceHash', 'siteId'], true);
         }
 
-        // Check if old translations table exists and migrate data
-        if ($this->tableExists('{{%translations}}')) {
-            Craft::info('Migrating existing translations from old table', __METHOD__);
-            
-            // Copy data from old table to new table
-            $oldTranslations = (new \craft\db\Query())
-                ->select('*')
-                ->from('{{%translations}}')
-                ->all();
-            
-            foreach ($oldTranslations as $translation) {
-                $this->insert('{{%translationmanager_translations}}', [
-                    'source' => $translation['source'] ?? $translation['englishText'],
-                    'sourceHash' => $translation['sourceHash'] ?? md5($translation['englishText']),
-                    'context' => $translation['context'] ?? 'site',
-                    'englishText' => $translation['englishText'],
-                    'arabicText' => $translation['arabicText'],
-                    'status' => $translation['status'] ?? 'pending',
-                    'usageCount' => $translation['usageCount'] ?? 1,
-                    'lastUsed' => $translation['lastUsed'] ?? null,
-                    'dateCreated' => $translation['dateCreated'] ?? new \DateTime(),
-                    'dateUpdated' => $translation['dateUpdated'] ?? new \DateTime(),
-                    'uid' => $translation['uid'] ?? \craft\helpers\StringHelper::UUID(),
-                ]);
-            }
-            
-            Craft::info('Migration completed: ' . count($oldTranslations) . ' translations migrated', __METHOD__);
-        }
-
         // Create the import history table
         if (!$this->tableExists('{{%translationmanager_import_history}}')) {
             $this->createTable('{{%translationmanager_import_history}}', [
