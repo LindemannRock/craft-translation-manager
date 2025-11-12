@@ -3,7 +3,7 @@
 <div style="margin-bottom: 32px;">
     <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
         <div style="flex: 1;">
-            <h2>{{ "Translation Manager Overview"|t('translation-manager') }}</h2>
+            <h2>{{ "{pluginName} Overview"|t('translation-manager', {pluginName: translationHelper.fullName}) }}</h2>
             <p class="light">{{ "Monitor translation coverage, track progress, and manage translations for your multi-site content."|t('translation-manager') }}</p>
         </div>
         <div>
