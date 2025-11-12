@@ -58,6 +58,11 @@ class TranslationManager extends Plugin
     public bool $hasCpSettings = true;
 
     /**
+     * @var TranslationManager|null
+     */
+    public static ?TranslationManager $plugin = null;
+
+    /**
      * @var Settings|null
      */
     private ?Settings $_settings = null;
@@ -80,13 +85,14 @@ class TranslationManager extends Plugin
     public function init(): void
     {
         parent::init();
+        self::$plugin = $this;
 
         // Configure logging using the new logging library
         $settings = $this->getSettings();
 
         LoggingLibrary::configure([
             'pluginHandle' => $this->handle,
-            'pluginName' => $settings->pluginName ?? $this->name,
+            'pluginName' => $settings->getFullName(),
             'logLevel' =>  $settings->logLevel ?? 'error',
             'itemsPerPage' => $settings->itemsPerPage ?? 50,
             'permissions' => ['translationManager:viewLogs'],
@@ -170,6 +176,9 @@ class TranslationManager extends Plugin
             }
         );
 
+        // Register Twig extension for plugin name helpers
+        Craft::$app->view->registerTwigExtension(new \lindemannrock\translationmanager\twigextensions\PluginNameExtension());
+
         // Register variables
         Event::on(
             CraftVariable::class,
@@ -208,7 +217,7 @@ class TranslationManager extends Plugin
 
         if ($item) {
             // Use dynamic plugin name from settings
-            $item['label'] = $this->getSettings()->pluginName;
+            $item['label'] = $this->getSettings()->getFullName();
 
             // Use Craft's built-in language icon (same as the module used)
             $item['icon'] = '@app/icons/language.svg';

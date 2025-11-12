@@ -105,7 +105,9 @@ class ExportController extends Controller
             }
             
             // Determine filename based on filters
-            $filename = 'translations-export';
+            $settings = TranslationManager::$plugin->getSettings();
+            $filenamePart = strtolower(str_replace(' ', '-', $settings->getPluralLowerDisplayName()));
+            $filename = $filenamePart . '-export';
             
             // Add site info to filename
             if ($exportAllSites) {
@@ -175,7 +177,9 @@ class ExportController extends Controller
         $csv = TranslationManager::getInstance()->export->exportSelected($ids);
         
         // Determine filename based on selected translations
-        $filename = 'translations-export-selected';
+        $settings = TranslationManager::$plugin->getSettings();
+        $filenamePart = strtolower(str_replace(' ', '-', $settings->getPluralLowerDisplayName()));
+        $filename = $filenamePart . '-export-selected';
         
         // Get site info from first few translations to determine if single-site or multi-site
         $translationsService = TranslationManager::getInstance()->translations;

@@ -6,7 +6,7 @@
 {% set plugin = craft.app.plugins.getPlugin('translation-manager') %}
 {% set crumbs = [
     {
-        label: plugin.settings.pluginName|t('translation-manager'),
+        label: translationHelper.fullName|t('translation-manager'),
         url: url('translation-manager'),
     },
     {

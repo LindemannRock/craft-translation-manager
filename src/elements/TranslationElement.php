@@ -31,15 +31,15 @@ class TranslationElement extends Element
      */
     public static function displayName(): string
     {
-        return 'Translation';
+        return \lindemannrock\translationmanager\TranslationManager::$plugin->getSettings()->getDisplayName();
     }
-    
+
     /**
      * @inheritdoc
      */
     public static function pluralDisplayName(): string
     {
-        return 'Translations';
+        return \lindemannrock\translationmanager\TranslationManager::$plugin->getSettings()->getPluralDisplayName();
     }
     
     /**

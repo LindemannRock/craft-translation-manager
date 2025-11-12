@@ -6,7 +6,7 @@
 {% set plugin = craft.app.plugins.getPlugin('translation-manager') %}
 {% set crumbs = [
     {
-        label: plugin.settings.pluginName|t('translation-manager'),
+        label: translationHelper.fullName|t('translation-manager'),
         url: url('translation-manager'),
     },
     {
@@ -65,8 +65,7 @@
                     }) }}
                 </div>
 
-                <button type="submit" class="btn secondary">
-                    <span class="icon" aria-hidden="true" style="margin-right: 5px;">{{ svg('@appicons/download.svg') }}</span>
+                <button type="submit" class="btn secondary">    
                     {{ "Export CSV"|t('translation-manager') }}
                 </button>
             </form>
