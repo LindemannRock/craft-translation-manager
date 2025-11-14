@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.4.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.3.1...v5.4.0) (2025-11-14)
+
+
+### Features
+
+* enhance TranslationManager with plugin name helpers and improve filename generation in exports ([21d4c11](https://github.com/LindemannRock/craft-translation-manager/commit/21d4c11952802df49e40c34af3379a88524efc84))
+* update header to include plugin name in Translation Manager overview ([a8bf3a2](https://github.com/LindemannRock/craft-translation-manager/commit/a8bf3a23f8fa909f8280b3ff5dd98856b459c49f))
+
 ## [5.3.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.3.0...v5.3.1) (2025-11-07)
 
 
