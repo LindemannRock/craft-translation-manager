@@ -1,5 +1,18 @@
 # Changelog
 
+## [5.5.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.4.0...v5.5.0) (2025-11-15)
+
+
+### Features
+
+* add MIT License file to the project ([31493ee](https://github.com/LindemannRock/craft-translation-manager/commit/31493ee50703c082bc76c7d943dcc98111b6edc6))
+
+
+### Bug Fixes
+
+* add margin-top style to Backup Settings header for consistent spacing ([700f94c](https://github.com/LindemannRock/craft-translation-manager/commit/700f94c05d623916bb4a73593feaf961f1240b43))
+* add margin-top style to File Generation Settings header for consistent spacing ([cb2481a](https://github.com/LindemannRock/craft-translation-manager/commit/cb2481a62cf30e71404e741f967b5c2eda7abea2))
+
 ## [5.4.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.3.1...v5.4.0) (2025-11-14)
 
 
