@@ -424,6 +424,9 @@ class TranslationsService extends Component
         return $results;
     }
     
+    /**
+     * @var int Count of template files scanned during usage checks
+     */
     public $_scannedFileCount = 0;
     
     /**
@@ -639,7 +642,7 @@ class TranslationsService extends Component
     /**
      * Get translation statistics
      */
-    public function getStatistics(int $siteId = null): array
+    public function getStatistics(?int $siteId = null): array
     {
         $settings = TranslationManager::getInstance()->getSettings();
         $query = (new Query())

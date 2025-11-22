@@ -20,10 +20,29 @@ use craft\base\Element;
  */
 class TranslationElement extends Element
 {
+    /**
+     * @var int|null Linked translation record ID
+     */
     public ?int $translationId = null;
+
+    /**
+     * @var string|null Source English text for the translation
+     */
     public ?string $englishText = null;
+
+    /**
+     * @var string|null Target Arabic translation text
+     */
     public ?string $arabicText = null;
+
+    /**
+     * @var string|null Translation context or key
+     */
     public ?string $context = null;
+
+    /**
+     * @var string|null Translation status (pending, translated, unused, approved)
+     */
     public ?string $status = null;
     
     /**

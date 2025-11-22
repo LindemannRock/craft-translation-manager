@@ -54,7 +54,15 @@ use lindemannrock\logginglibrary\LoggingLibrary;
 class TranslationManager extends Plugin
 {
     use LoggingTrait;
+
+    /**
+     * @var string Plugin schema version for migrations
+     */
     public string $schemaVersion = '1.0.0';
+
+    /**
+     * @var bool Whether the plugin provides a control panel settings page
+     */
     public bool $hasCpSettings = true;
 
     /**
@@ -66,6 +74,10 @@ class TranslationManager extends Plugin
      * @var Settings|null
      */
     private ?Settings $_settings = null;
+
+    /**
+     * @var bool Whether the plugin registers its own control panel section
+     */
     public bool $hasCpSection = true;
 
 
