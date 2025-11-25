@@ -83,6 +83,7 @@ class Install extends Migration
                 'id' => $this->primaryKey(),
                 'pluginName' => $this->string(100)->notNull()->defaultValue('Translation Manager'),
                 'translationCategory' => $this->string()->notNull()->defaultValue('messages'),
+                'sourceLanguage' => $this->string(10)->notNull()->defaultValue('en'),
                 'enableFormieIntegration' => $this->boolean()->notNull()->defaultValue(true),
                 'enableSiteTranslations' => $this->boolean()->notNull()->defaultValue(true),
                 'autoExport' => $this->boolean()->notNull()->defaultValue(true),

@@ -45,6 +45,13 @@ class Settings extends Model
     public string $translationCategory = 'messages';
 
     /**
+     * @var string The source language of template strings (language your |t() strings are written in)
+     * This should match the language your template strings like 'Copyright', 'Submit', etc. are written in.
+     * Defaults to 'en' since most template strings are written in English.
+     */
+    public string $sourceLanguage = 'en';
+
+    /**
      * @var bool Whether to enable Formie form translation integration
      */
     public bool $enableFormieIntegration = true;
@@ -153,9 +160,12 @@ class Settings extends Model
     public function rules(): array
     {
         return [
-            [['pluginName', 'translationCategory', 'exportPath'], 'required'],
+            [['pluginName', 'translationCategory', 'exportPath', 'sourceLanguage'], 'required'],
             [['pluginName'], 'string', 'max' => 100],
             [['translationCategory'], 'string', 'max' => 50],
+            [['sourceLanguage'], 'string', 'max' => 10],
+            [['sourceLanguage'], 'match', 'pattern' => '/^[a-z]{2}(-[A-Z]{2})?$/',
+             'message' => 'Source language must be a valid locale code (e.g., "en", "en-US", "ar").'],
             [['translationCategory'], 'match', 'pattern' => '/^[a-zA-Z][a-zA-Z0-9_-]*$/',
              'message' => 'Translation category must start with a letter and contain only letters, numbers, hyphens, and underscores.'],
             [['translationCategory'], 'validateTranslationCategory'],
@@ -179,6 +189,7 @@ class Settings extends Model
         return [
             'pluginName' => 'Plugin Name',
             'translationCategory' => 'Translation Category',
+            'sourceLanguage' => 'Source Language',
             'enableFormieIntegration' => 'Enable Formie Integration',
             'enableSiteTranslations' => 'Enable Site Translations',
             'autoExport' => 'Auto Export',
@@ -662,6 +673,7 @@ class Settings extends Model
         $attributes = [
             'pluginName' => $this->pluginName,
             'translationCategory' => $this->translationCategory,
+            'sourceLanguage' => $this->sourceLanguage,
             'enableFormieIntegration' => (int)$this->enableFormieIntegration,
             'enableSiteTranslations' => (int)$this->enableSiteTranslations,
             'autoExport' => (int)$this->autoExport,

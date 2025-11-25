@@ -172,7 +172,7 @@ class TranslationsService extends Component
      */
     public function saveTranslation(TranslationRecord $translation): bool
     {
-        $translation->dateUpdated = new \DateTime();
+        $translation->dateUpdated = Db::prepareDateForDb(new \DateTime());
         
         // Don't override 'unused' status
         if ($translation->status !== 'unused') {
@@ -263,7 +263,7 @@ class TranslationsService extends Component
             } else {
                 // Update existing translation
                 $translation->usageCount++;
-                $translation->lastUsed = new \DateTime();
+                $translation->lastUsed = Db::prepareDateForDb(new \DateTime());
                 
                 // Update context to the most recent usage (for unused tracking)
                 $translation->context = $context;

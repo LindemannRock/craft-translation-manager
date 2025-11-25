@@ -538,13 +538,14 @@ class TranslationManager extends Plugin
         $category = $settings->translationCategory;
         $basePath = $settings->getExportPath(); // Use the configured export path
 
-        // Get the primary site's base language (without locale)
-        $primarySite = Craft::$app->getSites()->getPrimarySite();
-        $sourceLanguage = explode('-', $primarySite->language)[0]; // e.g., 'en' from 'en-US'
+        // Use the configured source language (language your template strings are written in)
+        // This should NOT be based on primary site - it's the language of your source strings
+        // e.g., if your templates have {{ 'Copyright'|t('category') }}, sourceLanguage should be 'en'
+        $sourceLanguage = explode('-', $settings->sourceLanguage)[0]; // e.g., 'en' from 'en-US'
 
         $i18n->translations[$category] = [
             'class' => 'yii\i18n\PhpMessageSource',
-            'sourceLanguage' => $sourceLanguage, // Now dynamic based on primary site
+            'sourceLanguage' => $sourceLanguage, // Based on configured setting, not primary site
             'basePath' => $basePath,
             'forceTranslation' => true, // Force translation even for same language
             'fileMap' => [
