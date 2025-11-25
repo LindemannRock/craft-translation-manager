@@ -1,5 +1,15 @@
 # Changelog
 
+## [5.6.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.5.0...v5.6.0) (2025-11-25)
+
+
+### Features
+
+* add Info Box component for displaying informational notices ([56c8210](https://github.com/LindemannRock/craft-translation-manager/commit/56c821057e897a4e41e038a126ff4003b3e24819))
+* add source language configuration and update translation handling ([1c9e4f1](https://github.com/LindemannRock/craft-translation-manager/commit/1c9e4f193460e999ccb57753c00e9875054c1fb8))
+* enhance TranslationManager and TranslationElement with additional properties and documentation ([e4df281](https://github.com/LindemannRock/craft-translation-manager/commit/e4df281a0c4c5ae54be4562021d315cf26775a56))
+* standardize date handling in ImportController and BackupService using Db helper ([26afee1](https://github.com/LindemannRock/craft-translation-manager/commit/26afee127f65704dc7a1d2c18b010d241211f605))
+
 ## [5.5.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.4.0...v5.5.0) (2025-11-15)
 
 
