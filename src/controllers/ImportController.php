@@ -14,6 +14,7 @@ use Craft;
 use craft\web\Controller;
 use craft\web\Response;
 use craft\web\UploadedFile;
+use craft\helpers\Db;
 use craft\helpers\StringHelper;
 use lindemannrock\translationmanager\TranslationManager;
 use lindemannrock\translationmanager\records\TranslationRecord;
@@ -591,18 +592,18 @@ class ImportController extends Controller
                             $translation->context = $context;
                             $translation->translationKey = $keyText;
                             $translation->usageCount = 1;
-                            $translation->lastUsed = new \DateTime();
-                            $translation->dateCreated = new \DateTime();
+                            $translation->lastUsed = Db::prepareDateForDb(new \DateTime());
+                            $translation->dateCreated = Db::prepareDateForDb(new \DateTime());
                             $isNew = true;
                         }
-                        
+
                         // Update translation and status (ensure source is set)
                         if (!$translation->source) {
                             $translation->source = $keyText; // Fix missing source field
                         }
                         $translation->translation = $translationText;
                         $translation->status = $translationText ? 'translated' : 'pending';
-                        $translation->dateUpdated = new \DateTime();
+                        $translation->dateUpdated = Db::prepareDateForDb(new \DateTime());
                         
                         if ($translation->save()) {
                             if ($isNew) {

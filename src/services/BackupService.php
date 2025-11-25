@@ -12,7 +12,9 @@ namespace lindemannrock\translationmanager\services;
 
 use Craft;
 use craft\base\Component;
+use craft\helpers\App;
 use craft\helpers\DateTimeHelper;
+use craft\helpers\Db;
 use craft\helpers\FileHelper;
 use craft\helpers\Json;
 use craft\helpers\StringHelper;
@@ -98,7 +100,7 @@ class BackupService extends Component
                 // Get the actual filesystem path
                 $fs = $volume->getFs();
                 if ($fs && property_exists($fs, 'path')) {
-                    $path = Craft::parseEnv($fs->path);
+                    $path = App::env($fs->path);
                     return rtrim($path, '/') . '/' . $this->_volumeBackupPath;
                 }
                 return "Volume: {$volume->name} / {$this->_volumeBackupPath}";
@@ -542,7 +544,7 @@ class BackupService extends Component
             // Try to get the local path if it's a local volume
             $basePath = null;
             if (property_exists($fs, 'path')) {
-                $basePath = Craft::parseEnv($fs->path);
+                $basePath = App::env($fs->path);
             } elseif (method_exists($fs, 'getRootPath')) {
                 $basePath = $fs->getRootPath();
             }
@@ -1030,9 +1032,9 @@ class BackupService extends Component
 
                     $translation->status = $data['status'];
                     $translation->usageCount = $data['usageCount'] ?? 1;
-                    $translation->lastUsed = DateTimeHelper::toDateTime($data['lastUsed'] ?? time());
-                    $translation->dateCreated = DateTimeHelper::toDateTime($data['dateCreated'] ?? time());
-                    $translation->dateUpdated = DateTimeHelper::toDateTime($data['dateUpdated'] ?? time());
+                    $translation->lastUsed = Db::prepareDateForDb(DateTimeHelper::toDateTime($data['lastUsed'] ?? time()));
+                    $translation->dateCreated = Db::prepareDateForDb(DateTimeHelper::toDateTime($data['dateCreated'] ?? time()));
+                    $translation->dateUpdated = Db::prepareDateForDb(DateTimeHelper::toDateTime($data['dateUpdated'] ?? time()));
                     $translation->uid = $data['uid'] ?? \craft\helpers\StringHelper::UUID();
 
                     if ($translation->save()) {
@@ -1079,9 +1081,9 @@ class BackupService extends Component
 
                     $translation->status = $data['status'];
                     $translation->usageCount = $data['usageCount'] ?? 1;
-                    $translation->lastUsed = DateTimeHelper::toDateTime($data['lastUsed'] ?? time());
-                    $translation->dateCreated = DateTimeHelper::toDateTime($data['dateCreated'] ?? time());
-                    $translation->dateUpdated = DateTimeHelper::toDateTime($data['dateUpdated'] ?? time());
+                    $translation->lastUsed = Db::prepareDateForDb(DateTimeHelper::toDateTime($data['lastUsed'] ?? time()));
+                    $translation->dateCreated = Db::prepareDateForDb(DateTimeHelper::toDateTime($data['dateCreated'] ?? time()));
+                    $translation->dateUpdated = Db::prepareDateForDb(DateTimeHelper::toDateTime($data['dateUpdated'] ?? time()));
                     $translation->uid = $data['uid'] ?? \craft\helpers\StringHelper::UUID();
 
                     if ($translation->save()) {
