@@ -35,6 +35,7 @@ return [
         // Site Translations
         'enableSiteTranslations' => true,
         'translationCategory' => 'messages', // Category for site translations (e.g., 'messages' for |t('messages'))
+        'sourceLanguage' => 'en',            // Language your template strings are written in (e.g., 'Copyright', 'Submit')
 
         // Site Translation Skip Patterns
         // Text patterns to skip when capturing site translations (array of strings to skip)
