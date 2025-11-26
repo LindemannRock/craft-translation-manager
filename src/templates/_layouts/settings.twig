@@ -1,8 +1,14 @@
 {% extends "_layouts/cp" %}
 
 {% set title = title ?? 'Settings'|t('translation-manager') %}
+{% set docTitle =  title ~  ' - ' ~ translationHelper.fullName %}
+
 {% set selectedSettingsItem = selectedSettingsItem ?? 'general' %}
 {% set selectedSubnavItem = 'settings' %}
+
+
+{# {% set plugin = craft.app.plugins.getPlugin('translation-manager') %} #}
+
 
 {% block sidebar %}
     <nav id="settings-nav">

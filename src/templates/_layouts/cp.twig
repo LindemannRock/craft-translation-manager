@@ -1,6 +1,11 @@
 {% extends "_layouts/cp" %}
 
-{% set title = title ?? pluginName|t('translation-manager') %}
+
+{% set pluginName = translationHelper.fullName %}
+{% set title = title ?? pluginName %}
+{% set docTitle = title ~ ' - ' ~ pluginName %}
+
+{% set selectedSubnavItem = selectedSubnavItem ?? '' %}
 
 {# Sidebar hidden for now - uncomment if needed for sub-navigation in the future
 {% block sidebar %}
