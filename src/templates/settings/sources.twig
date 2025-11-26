@@ -59,6 +59,38 @@
                     "This is being overridden by the <code>translationCategory</code> setting in <code>config/translation-manager.php</code>."|raw : null,
             }) }}
 
+			{% set sourceLanguageOptions = [] %}
+			{% for site in craft.app.sites.allSites %}
+				{% set langCode = site.language|split('-')|first %}
+				{% set sourceLanguageOptions = sourceLanguageOptions|merge([{
+					value: langCode,
+					label: site.name ~ ' (' ~ langCode ~ ')'
+				}]) %}
+			{% endfor %}
+			{# Remove duplicates by converting to unique values #}
+			{% set seenLangs = [] %}
+			{% set uniqueOptions = [] %}
+			{% for option in sourceLanguageOptions %}
+				{% if option.value not in seenLangs %}
+					{% set seenLangs = seenLangs|merge([option.value]) %}
+					{% set uniqueOptions = uniqueOptions|merge([option]) %}
+				{% endif %}
+			{% endfor %}
+
+			{{ forms.selectField({
+                label: "Source Language"|t('translation-manager'),
+                instructions: "The language your template strings are written in (e.g., 'Copyright', 'Submit'). This should match the language of your |t() keys, not your primary site."|t('translation-manager'),
+                id: 'sourceLanguage',
+                name: 'settings[sourceLanguage]',
+                value: settings.sourceLanguage,
+                options: uniqueOptions,
+                errors: settings.getErrors('sourceLanguage'),
+                required: true,
+                disabled: settings.isOverriddenByConfig('sourceLanguage'),
+                warning: settings.isOverriddenByConfig('sourceLanguage') ?
+                    "This is being overridden by the <code>sourceLanguage</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+            }) }}
+
 			{{ forms.textareaField({
                 label: "Site Translations Skip Patterns"|t('translation-manager'),
                 instructions: ("Text patterns to skip when capturing |t('" ~ settings.translationCategory ~ "') translations (one per line). Does not affect " ~ formiePluginName ~ " fields.")|t('translation-manager'),
