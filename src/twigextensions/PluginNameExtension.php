@@ -23,6 +23,7 @@ use Twig\Extension\GlobalsInterface;
  * - {{ translationHelper.fullName }}                // "Translation Manager" (as configured)
  * - {{ translationHelper.lowerDisplayName }}        // "translation" (lowercase singular)
  * - {{ translationHelper.pluralLowerDisplayName }}  // "translations" (lowercase plural)
+ * @since 1.0.0
  */
 class PluginNameExtension extends AbstractExtension implements GlobalsInterface
 {

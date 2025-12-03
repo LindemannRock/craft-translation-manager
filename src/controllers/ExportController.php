@@ -12,13 +12,15 @@ namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
 use craft\web\Controller;
-use lindemannrock\translationmanager\TranslationManager;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
-use yii\web\Response;
+use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
+use yii\web\Response;
 
 /**
  * Export Controller
+ *
+ * @since 1.0.0
  */
 class ExportController extends Controller
 {
@@ -35,7 +37,7 @@ class ExportController extends Controller
     {
         // Require permission to export translations or edit settings (for file generation from settings)
         $user = Craft::$app->getUser();
-        if (!$user->checkPermission('translationManager:exportTranslations') && 
+        if (!$user->checkPermission('translationManager:exportTranslations') &&
             !$user->checkPermission('translationManager:editSettings')) {
             throw new ForbiddenHttpException('User does not have permission to export translations');
         }
@@ -140,7 +142,6 @@ class ExportController extends Controller
             $response->data = $csv;
             
             return $response;
-                
         } catch (\Exception $e) {
             $this->logError('Export failed', ['error' => $e->getMessage()]);
             throw $e;
@@ -249,7 +250,7 @@ class ExportController extends Controller
 
             $this->logInfo("Export preparation", [
                 'formieCount' => $formieCount,
-                'siteCount' => $siteCount
+                'siteCount' => $siteCount,
             ]);
             
             $formieResult = false;
@@ -296,8 +297,8 @@ class ExportController extends Controller
                     'message' => $message,
                     'debug' => [
                         'formie' => $formieResult,
-                        'site' => $siteResult
-                    ]
+                        'site' => $siteResult,
+                    ],
                 ]);
             }
             

@@ -18,14 +18,11 @@ use yii\base\Event;
  * Formie Integration
  *
  * Handles translation capture and management for Formie forms
+ *
+ * @since 1.5.0
  */
 class FormieIntegration extends BaseIntegration
 {
-    /**
-     * @var bool Track if hooks have been logged to prevent spam
-     */
-    private static bool $_hasLoggedHooks = false;
-
     /**
      * @inheritdoc
      */
@@ -66,7 +63,7 @@ class FormieIntegration extends BaseIntegration
         Event::on(
             \verbb\formie\elements\Form::class,
             \verbb\formie\elements\Form::EVENT_AFTER_SAVE,
-            function (\craft\events\ModelEvent $event) {
+            function(\craft\events\ModelEvent $event) {
                 $this->logInfo("FormieIntegration: Form saved", ['handle' => $event->sender->handle]);
                 $this->handleFormSave($event->sender);
             }
@@ -76,7 +73,7 @@ class FormieIntegration extends BaseIntegration
         Event::on(
             \verbb\formie\elements\Form::class,
             \verbb\formie\elements\Form::EVENT_AFTER_DELETE,
-            function (\craft\events\ModelEvent $event) {
+            function(\craft\events\ModelEvent $event) {
                 $this->logInfo("FormieIntegration: Form deleted", ['handle' => $event->sender->handle]);
                 $this->handleFormDelete($event->sender);
             }
@@ -173,7 +170,7 @@ class FormieIntegration extends BaseIntegration
         // Note: formie.defaults.* translations are automatically marked as used in TranslationsService
         $translations = $this->getTranslationsService()->getTranslations([
             'type' => 'forms',
-            'includeUsageCheck' => true
+            'includeUsageCheck' => true,
         ]);
 
         $this->logInfo('Checked Formie translations for usage', ['count' => count($translations)]);
@@ -189,7 +186,7 @@ class FormieIntegration extends BaseIntegration
             'fields' => 'Form Fields',
             'options' => 'Field Options',
             'buttons' => 'Form Buttons',
-            'messages' => 'Form Messages'
+            'messages' => 'Form Messages',
         ];
     }
 
@@ -216,7 +213,7 @@ class FormieIntegration extends BaseIntegration
                 'label' => 'Auto-mark Unused Translations',
                 'instructions' => 'Automatically mark translations as unused when forms are deleted',
                 'default' => true,
-            ]
+            ],
         ]);
     }
 
@@ -240,7 +237,7 @@ class FormieIntegration extends BaseIntegration
 
         $this->logInfo("Captured translations from form", [
             'handle' => $form->handle,
-            'count' => count($captured)
+            'count' => count($captured),
         ]);
 
         // Check for unused translations
@@ -257,7 +254,7 @@ class FormieIntegration extends BaseIntegration
         // Mark all translations for this form as unused
         $translations = $this->getTranslationsService()->getTranslations([
             'type' => 'forms',
-            'search' => "formie.{$form->handle}."
+            'search' => "formie.{$form->handle}.",
         ]);
 
         $translationIds = array_column($translations, 'id');
@@ -867,5 +864,4 @@ class FormieIntegration extends BaseIntegration
 
         return implode('', $htmlParts);
     }
-
 }

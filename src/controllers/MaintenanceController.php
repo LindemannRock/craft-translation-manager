@@ -12,10 +12,15 @@ namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
 use craft\web\Controller;
-use lindemannrock\translationmanager\TranslationManager;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\TranslationManager;
 use yii\web\Response;
 
+/**
+ * Maintenance Controller
+ *
+ * @since 1.0.0
+ */
 class MaintenanceController extends Controller
 {
     use LoggingTrait;
@@ -85,9 +90,9 @@ class MaintenanceController extends Controller
                 return $this->asJson([
                     'success' => true,
                     'deleted' => $deleted,
-                    'message' => $deleted > 0 
+                    'message' => $deleted > 0
                         ? Craft::t('translation-manager', 'Cleaned up {count} unused translation(s) and regenerated translation files.', ['count' => $deleted])
-                        : Craft::t('translation-manager', 'No unused translations found.')
+                        : Craft::t('translation-manager', 'No unused translations found.'),
                 ]);
             }
             
@@ -95,7 +100,7 @@ class MaintenanceController extends Controller
             if ($deleted > 0) {
                 Craft::$app->getSession()->setNotice(
                     Craft::t('translation-manager', 'Cleaned up {count} unused translation(s) and regenerated translation files.', [
-                        'count' => $deleted
+                        'count' => $deleted,
                     ])
                 );
             } else {
@@ -109,15 +114,15 @@ class MaintenanceController extends Controller
                 return $this->asJson([
                     'success' => false,
                     'error' => Craft::t('translation-manager', 'Failed to clean up translations: {error}', [
-                        'error' => $e->getMessage()
-                    ])
+                        'error' => $e->getMessage(),
+                    ]),
                 ]);
             }
             
             // Regular form submission
             Craft::$app->getSession()->setError(
                 Craft::t('translation-manager', 'Failed to clean up translations: {error}', [
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
                 ])
             );
         }
@@ -156,6 +161,7 @@ class MaintenanceController extends Controller
         $results = [];
         
         // 1. Exact match
+        /** @var \lindemannrock\translationmanager\records\TranslationRecord|null $exactMatch */
         $exactMatch = \lindemannrock\translationmanager\records\TranslationRecord::find()
             ->where(['englishText' => $searchTerm])
             ->one();
@@ -170,6 +176,7 @@ class MaintenanceController extends Controller
         }
         
         // 2. Case-insensitive exact match
+        /** @var \lindemannrock\translationmanager\records\TranslationRecord[] $caseInsensitive */
         $caseInsensitive = \lindemannrock\translationmanager\records\TranslationRecord::find()
             ->where(['LOWER([[englishText]])' => strtolower($searchTerm)])
             ->all();
@@ -183,6 +190,7 @@ class MaintenanceController extends Controller
         }, $caseInsensitive);
         
         // 3. Partial matches
+        /** @var \lindemannrock\translationmanager\records\TranslationRecord[] $partialMatches */
         $partialMatches = \lindemannrock\translationmanager\records\TranslationRecord::find()
             ->where(['like', 'englishText', '%' . $searchTerm . '%', false])
             ->limit(10)
@@ -212,6 +220,7 @@ class MaintenanceController extends Controller
         // 6. Check for similar texts (remove punctuation)
         $cleanSearch = preg_replace('/[^\w\s]/u', '', $searchTerm);
         if ($cleanSearch !== $searchTerm) {
+            /** @var \lindemannrock\translationmanager\records\TranslationRecord[] $similarMatches */
             $similarMatches = \lindemannrock\translationmanager\records\TranslationRecord::find()
                 ->where(['like', 'englishText', '%' . $cleanSearch . '%', false])
                 ->limit(5)
@@ -227,6 +236,7 @@ class MaintenanceController extends Controller
         }
         
         // 7. Search in context
+        /** @var \lindemannrock\translationmanager\records\TranslationRecord[] $contextMatches */
         $contextMatches = \lindemannrock\translationmanager\records\TranslationRecord::find()
             ->where(['like', 'context', '%' . $searchTerm . '%', false])
             ->limit(5)
@@ -288,7 +298,7 @@ class MaintenanceController extends Controller
         if (!in_array($type, ['all', 'site', 'formie'])) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Invalid type specified'
+                'error' => 'Invalid type specified',
             ]);
         }
         
@@ -302,23 +312,24 @@ class MaintenanceController extends Controller
                     $query->andWhere(['like', 'context', 'site%', false]);
                     break;
                 case 'formie':
-                    $query->andWhere(['or', 
+                    $query->andWhere(['or',
                         ['like', 'context', 'formie.%', false],
-                        ['=', 'context', 'formie']
+                        ['=', 'context', 'formie'],
                     ]);
                     break;
                 case 'all':
                     // No additional filter needed
                     break;
             }
-            
+
+            /** @var \lindemannrock\translationmanager\records\TranslationRecord[] $unusedTranslations */
             $unusedTranslations = $query->all();
             $count = count($unusedTranslations);
             
             if ($count === 0) {
                 return $this->asJson([
                     'success' => true,
-                    'message' => "No unused {$type} translations found."
+                    'message' => "No unused {$type} translations found.",
                 ]);
             }
             
@@ -330,7 +341,7 @@ class MaintenanceController extends Controller
                     $backupPath = $backupService->createBackup("before_cleanup_{$type}");
                     $this->logInfo("Created backup before cleaning unused translations", [
                         'type' => $type,
-                        'backupPath' => $backupPath
+                        'backupPath' => $backupPath,
                     ]);
                 } catch (\Exception $e) {
                     $this->logError("Failed to create backup", ['error' => $e->getMessage()]);
@@ -343,13 +354,12 @@ class MaintenanceController extends Controller
             
             return $this->asJson([
                 'success' => true,
-                'message' => "Deleted {$deleted} unused {$type} translations."
+                'message' => "Deleted {$deleted} unused {$type} translations.",
             ]);
-            
         } catch (\Exception $e) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Failed to clean unused translations: ' . $e->getMessage()
+                'error' => 'Failed to clean unused translations: ' . $e->getMessage(),
             ]);
         }
     }
@@ -377,13 +387,12 @@ class MaintenanceController extends Controller
             return $this->asJson([
                 'success' => true,
                 'message' => $message,
-                'results' => $results
+                'results' => $results,
             ]);
-            
         } catch (\Exception $e) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Failed to scan templates: ' . $e->getMessage()
+                'error' => 'Failed to scan templates: ' . $e->getMessage(),
             ]);
         }
     }

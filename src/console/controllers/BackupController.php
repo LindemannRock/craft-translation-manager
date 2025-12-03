@@ -10,15 +10,15 @@
 
 namespace lindemannrock\translationmanager\console\controllers;
 
-use Craft;
 use craft\console\Controller;
 use craft\helpers\Console;
 use lindemannrock\translationmanager\TranslationManager;
-use lindemannrock\translationmanager\jobs\CreateBackupJob;
 use yii\console\ExitCode;
 
 /**
  * Backup management commands
+ *
+ * @since 1.0.0
  */
 class BackupController extends Controller
 {

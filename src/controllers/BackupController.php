@@ -11,16 +11,18 @@
 namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
-use craft\web\Controller;
-use craft\web\Response;
 use craft\helpers\FileHelper;
-use lindemannrock\translationmanager\TranslationManager;
+use craft\web\Controller;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
+use yii\web\Response;
 
 /**
  * Backup Controller
+ *
+ * @since 1.0.0
  */
 class BackupController extends Controller
 {
@@ -40,13 +42,13 @@ class BackupController extends Controller
         
         if (in_array($action->id, $actionsRequiringEdit)) {
             // Allow if user has edit translations OR edit settings permission
-            if (!Craft::$app->getUser()->checkPermission('translationManager:editTranslations') && 
+            if (!Craft::$app->getUser()->checkPermission('translationManager:editTranslations') &&
                 !Craft::$app->getUser()->checkPermission('translationManager:editSettings')) {
                 throw new ForbiddenHttpException('User does not have permission to manage backups');
             }
         } else {
             // View/download require at least view permission
-            if (!Craft::$app->getUser()->checkPermission('translationManager:viewTranslations') && 
+            if (!Craft::$app->getUser()->checkPermission('translationManager:viewTranslations') &&
                 !Craft::$app->getUser()->checkPermission('translationManager:editSettings')) {
                 throw new ForbiddenHttpException('User does not have permission to view backups');
             }
@@ -99,7 +101,6 @@ class BackupController extends Controller
                 'success' => true,
                 'backups' => $backups,
             ]);
-
         } catch (\Exception $e) {
             $this->logError('Failed to fetch backups', ['error' => $e->getMessage()]);
 
@@ -129,7 +130,7 @@ class BackupController extends Controller
                 return $this->asJson([
                     'success' => true,
                     'message' => 'Backup created successfully',
-                    'path' => basename($backupResult)
+                    'path' => basename($backupResult),
                 ]);
             }
             
@@ -139,19 +140,19 @@ class BackupController extends Controller
                 return $this->asJson([
                     'success' => false,
                     'error' => 'No translations to backup. Add some translations first.',
-                    'isEmpty' => true
+                    'isEmpty' => true,
                 ]);
             }
             
             return $this->asJson([
                 'success' => false,
-                'error' => 'Failed to create backup'
+                'error' => 'Failed to create backup',
             ]);
         } catch (\Exception $e) {
             $this->logError('Backup creation failed', ['error' => $e->getMessage()]);
             return $this->asJson([
                 'success' => false,
-                'error' => 'Failed to create backup: ' . $e->getMessage()
+                'error' => 'Failed to create backup: ' . $e->getMessage(),
             ]);
         }
     }
@@ -169,7 +170,7 @@ class BackupController extends Controller
         if (!preg_match('/^([\w]+\/)?(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})$/', $backupName)) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Invalid backup name format'
+                'error' => 'Invalid backup name format',
             ]);
         }
 
@@ -193,7 +194,7 @@ class BackupController extends Controller
             $this->logWarning("Invalid backup name format attempted", ['backup' => $backupName]);
             return $this->asJson([
                 'success' => false,
-                'error' => 'Invalid backup name format'
+                'error' => 'Invalid backup name format',
             ]);
         }
 
@@ -204,14 +205,14 @@ class BackupController extends Controller
             $this->logInfo("Backup deletion completed successfully", ['backup' => $backupName]);
             return $this->asJson([
                 'success' => true,
-                'message' => 'Backup deleted successfully'
+                'message' => 'Backup deleted successfully',
             ]);
         }
 
         $this->logWarning("Backup deletion failed", ['backup' => $backupName]);
         return $this->asJson([
             'success' => false,
-            'error' => 'Failed to delete backup'
+            'error' => 'Failed to delete backup',
         ]);
     }
     
@@ -346,7 +347,7 @@ class BackupController extends Controller
      */
     private function _formatBackupReason(string $reason): string
     {
-        return match($reason) {
+        return match ($reason) {
             'manual' => Craft::t('translation-manager', 'Manual'),
             'before_import' => Craft::t('translation-manager', 'Before Import'),
             'before_restore' => Craft::t('translation-manager', 'Before Restore'),

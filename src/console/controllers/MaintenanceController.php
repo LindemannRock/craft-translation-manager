@@ -18,6 +18,8 @@ use yii\console\ExitCode;
 
 /**
  * Translation Manager Maintenance Commands
+ *
+ * @since 1.0.0
  */
 class MaintenanceController extends Controller
 {
@@ -140,7 +142,6 @@ class MaintenanceController extends Controller
                     $this->stdout("- '{$key}'" . PHP_EOL);
                 }
             }
-            
         } catch (\Exception $e) {
             $this->stdout('Error: ' . $e->getMessage() . PHP_EOL, Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;
@@ -169,9 +170,9 @@ class MaintenanceController extends Controller
                 $this->stdout('Cleaning unused site translations...' . PHP_EOL, Console::FG_BLUE);
                 break;
             case 'formie':
-                $query->andWhere(['or', 
+                $query->andWhere(['or',
                     ['like', 'context', 'formie.%', false],
-                    ['=', 'context', 'formie']
+                    ['=', 'context', 'formie'],
                 ]);
                 $this->stdout('Cleaning unused form translations...' . PHP_EOL, Console::FG_BLUE);
                 break;

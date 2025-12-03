@@ -13,11 +13,13 @@ namespace lindemannrock\translationmanager\services;
 use Craft;
 use craft\base\Component;
 use craft\helpers\FileHelper;
-use lindemannrock\translationmanager\TranslationManager;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\TranslationManager;
 
 /**
  * Export Service
+ *
+ * @since 1.0.0
  */
 class ExportService extends Component
 {
@@ -56,7 +58,7 @@ class ExportService extends Component
         $translations = $translationsService->getTranslations([
             'type' => 'forms',
             'status' => 'translated',
-            'allSites' => true  // Get from all sites
+            'allSites' => true,  // Get from all sites
         ]);
 
         $this->logInfo('Found Formie translations to export', ['count' => count($translations)]);
@@ -109,7 +111,7 @@ class ExportService extends Component
                 $this->logInfo("Exported Formie translations", [
                     'count' => count($siteTranslations),
                     'site' => $site->name,
-                    'language' => $site->language
+                    'language' => $site->language,
                 ]);
             }
         }
@@ -134,7 +136,7 @@ class ExportService extends Component
         $translations = $translationsService->getTranslations([
             'type' => 'site',
             'status' => 'translated',
-            'allSites' => true  // Get from all sites
+            'allSites' => true,  // Get from all sites
         ]);
 
         $this->logInfo('Found site translations to export', ['count' => count($translations)]);
@@ -189,7 +191,7 @@ class ExportService extends Component
                 $this->logInfo("Exported site translations", [
                     'count' => count($siteTranslations),
                     'site' => $site->name,
-                    'language' => $site->language
+                    'language' => $site->language,
                 ]);
             }
         }
@@ -252,7 +254,7 @@ class ExportService extends Component
         $this->logInfo("Writing translation file", [
             'language' => $language,
             'path' => $path,
-            'count' => count($translations)
+            'count' => count($translations),
         ]);
         
         $content = "<?php\n/**\n * {$language} translations\n * Auto-generated: " . date('Y-m-d H:i:s') . "\n */\nreturn [\n";
@@ -279,7 +281,7 @@ class ExportService extends Component
             @unlink($tempFile);
             $this->logError("Failed to move translation file", [
                 'from' => $tempFile,
-                'to' => $path
+                'to' => $path,
             ]);
             throw new \Exception('Failed to move translation file');
         }
@@ -306,5 +308,4 @@ class ExportService extends Component
         
         return $value;
     }
-
 }

@@ -12,13 +12,15 @@ namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
 use craft\web\Controller;
-use lindemannrock\translationmanager\TranslationManager;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
-use yii\web\Response;
+use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
+use yii\web\Response;
 
 /**
  * Import/Export Controller
+ *
+ * @since 1.0.0
  */
 class ImportExportController extends Controller
 {
@@ -45,6 +47,7 @@ class ImportExportController extends Controller
         $settings = TranslationManager::getInstance()->getSettings();
 
         // Get import history
+        /** @var \lindemannrock\translationmanager\records\ImportHistoryRecord[] $history */
         $history = \lindemannrock\translationmanager\records\ImportHistoryRecord::find()
             ->with('user')
             ->orderBy(['dateCreated' => SORT_DESC])
@@ -64,7 +67,7 @@ class ImportExportController extends Controller
                 'errors' => $record->errors ? json_decode($record->errors, true) : [],
                 'hasErrors' => !empty($record->errors),
                 'backupPath' => $record->backupPath,
-                'user' => $record->user ? $record->user->username : 'Unknown',
+                'user' => $record->user->username ?? 'Unknown',
                 'dateCreated' => $record->dateCreated,
                 'formattedDate' => Craft::$app->getFormatter()->asDatetime($record->dateCreated, 'short'),
             ];

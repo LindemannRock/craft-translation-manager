@@ -15,7 +15,7 @@ use craft\records\User;
 
 /**
  * Import History Record
- * 
+ *
  * @property int $id
  * @property int $userId
  * @property string $filename
@@ -29,8 +29,9 @@ use craft\records\User;
  * @property \DateTime $dateCreated
  * @property \DateTime $dateUpdated
  * @property string $uid
- * 
+ *
  * @property-read User $user
+ * @since 1.0.0
  */
 class ImportHistoryRecord extends ActiveRecord
 {

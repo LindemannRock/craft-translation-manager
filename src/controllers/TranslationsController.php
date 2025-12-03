@@ -12,13 +12,15 @@ namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
 use craft\web\Controller;
-use lindemannrock\translationmanager\TranslationManager;
 use lindemannrock\translationmanager\records\TranslationRecord;
-use yii\web\Response;
+use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
+use yii\web\Response;
 
 /**
  * Translations Controller
+ *
+ * @since 1.0.0
  */
 class TranslationsController extends Controller
 {
@@ -256,4 +258,3 @@ class TranslationsController extends Controller
         ]);
     }
 }
-

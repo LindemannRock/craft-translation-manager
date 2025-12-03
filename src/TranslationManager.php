@@ -14,28 +14,27 @@ use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\console\Application as ConsoleApplication;
-use craft\events\RegisterUrlRulesEvent;
-use craft\events\RegisterCpNavItemsEvent;
-use craft\events\RegisterUserPermissionsEvent;
 use craft\events\RegisterComponentTypesEvent;
+use craft\events\RegisterUrlRulesEvent;
+use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\UrlHelper;
 use craft\services\UserPermissions;
 use craft\services\Utilities;
-use craft\web\UrlManager;
 use craft\web\twig\variables\Cp;
 use craft\web\twig\variables\CraftVariable;
-use yii\base\Event;
+use craft\web\UrlManager;
+use lindemannrock\logginglibrary\LoggingLibrary;
 
+use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\models\Settings;
-use lindemannrock\translationmanager\services\TranslationsService;
-use lindemannrock\translationmanager\services\FormieService;
-use lindemannrock\translationmanager\services\ExportService;
 use lindemannrock\translationmanager\services\BackupService;
+use lindemannrock\translationmanager\services\ExportService;
+use lindemannrock\translationmanager\services\FormieService;
 use lindemannrock\translationmanager\services\IntegrationService;
+use lindemannrock\translationmanager\services\TranslationsService;
 use lindemannrock\translationmanager\utilities\TranslationStatsUtility;
 use lindemannrock\translationmanager\variables\TranslationManagerVariable;
-use lindemannrock\logginglibrary\traits\LoggingTrait;
-use lindemannrock\logginglibrary\LoggingLibrary;
+use yii\base\Event;
 
 /**
  * Translation Manager plugin
@@ -43,6 +42,7 @@ use lindemannrock\logginglibrary\LoggingLibrary;
  * @author LindemannRock
  * @copyright LindemannRock
  * @license Proprietary
+ * @since 1.0.0
  *
  * @property-read TranslationsService $translations
  * @property-read FormieService $formie
@@ -105,7 +105,7 @@ class TranslationManager extends Plugin
         LoggingLibrary::configure([
             'pluginHandle' => $this->handle,
             'pluginName' => $settings->getFullName(),
-            'logLevel' =>  $settings->logLevel ?? 'error',
+            'logLevel' => $settings->logLevel ?? 'error',
             'itemsPerPage' => $settings->itemsPerPage ?? 50,
             'permissions' => ['translationManager:viewLogs'],
         ]);
@@ -123,7 +123,7 @@ class TranslationManager extends Plugin
         } else {
             // Get from database settings
             $settings = $this->getSettings();
-            if ($settings && !empty($settings->pluginName)) {
+            if (!empty($settings->pluginName)) {
                 $this->name = $settings->pluginName;
             }
         }
@@ -141,7 +141,7 @@ class TranslationManager extends Plugin
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
-            function (RegisterUrlRulesEvent $event) {
+            function(RegisterUrlRulesEvent $event) {
                 $event->rules = array_merge($event->rules, $this->getCpUrlRules());
             }
         );
@@ -150,7 +150,7 @@ class TranslationManager extends Plugin
         Event::on(
             UserPermissions::class,
             UserPermissions::EVENT_REGISTER_PERMISSIONS,
-            function (RegisterUserPermissionsEvent $event) {
+            function(RegisterUserPermissionsEvent $event) {
                 $event->permissions[] = [
                     'heading' => 'Translation Manager',
                     'permissions' => [
@@ -183,7 +183,7 @@ class TranslationManager extends Plugin
         Event::on(
             Utilities::class,
             Utilities::EVENT_REGISTER_UTILITIES,
-            function (RegisterComponentTypesEvent $event) {
+            function(RegisterComponentTypesEvent $event) {
                 $event->types[] = TranslationStatsUtility::class;
             }
         );
@@ -195,7 +195,7 @@ class TranslationManager extends Plugin
         Event::on(
             CraftVariable::class,
             CraftVariable::EVENT_INIT,
-            function (Event $event) {
+            function(Event $event) {
                 $variable = $event->sender;
                 $variable->set('translationManager', TranslationManagerVariable::class);
             }
@@ -278,7 +278,7 @@ class TranslationManager extends Plugin
             if (Craft::$app->getPlugins()->isPluginInstalled('logging-library') &&
                 Craft::$app->getPlugins()->isPluginEnabled('logging-library')) {
                 $item = LoggingLibrary::addLogsNav($item, $this->handle, [
-                    'translationManager:viewLogs'
+                    'translationManager:viewLogs',
                 ]);
             }
 
@@ -314,6 +314,7 @@ class TranslationManager extends Plugin
         if ($this->_settings === null) {
 
             // Create base settings
+            /** @var Settings|null $settings */
             $settings = $this->createSettingsModel();
 
             // Load database values
@@ -337,7 +338,7 @@ class TranslationManager extends Plugin
 
                 $this->logError('Invalid Translation Manager configuration', [
                     'errors' => $errors,
-                    'configFile' => 'config/translation-manager.php'
+                    'configFile' => 'config/translation-manager.php',
                 ]);
 
                 // For security, throw exception rather than silently using invalid config
@@ -365,10 +366,9 @@ class TranslationManager extends Plugin
             $settings->saveToDatabase();
 
             // Check if backup schedule changed
-            if ($oldSettings && (
-                $oldSettings->backupEnabled !== $settings->backupEnabled ||
+            if ($oldSettings->backupEnabled !== $settings->backupEnabled ||
                 $oldSettings->backupSchedule !== $settings->backupSchedule
-            )) {
+            ) {
                 $this->handleBackupScheduleChange($settings);
             }
         }
@@ -414,7 +414,7 @@ class TranslationManager extends Plugin
         $allowedSites = [$primary];
 
         foreach ($allSites as $site) {
-            if ($site->id !== $primary->id && count($allowedSites) < 2) {
+            if ($site->id !== $primary->id) {
                 $allowedSites[] = $site;
                 break;
             }
@@ -574,7 +574,7 @@ class TranslationManager extends Plugin
 
             $this->logInfo('Scheduled initial backup job', [
                 'delay' => '5 minutes',
-                'schedule' => $settings->backupSchedule
+                'schedule' => $settings->backupSchedule,
             ]);
         }
     }
@@ -636,7 +636,7 @@ class TranslationManager extends Plugin
             ->delete('{{%queue}}', [
                 'and',
                 ['like', 'job', 'translationmanager'],
-                ['like', 'job', 'CreateBackupJob']
+                ['like', 'job', 'CreateBackupJob'],
             ])
             ->execute();
     }

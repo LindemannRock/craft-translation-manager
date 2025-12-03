@@ -11,14 +11,16 @@
 namespace lindemannrock\translationmanager\integrations;
 
 use craft\base\Component;
+use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\interfaces\TranslationIntegrationInterface;
 use lindemannrock\translationmanager\TranslationManager;
-use lindemannrock\logginglibrary\traits\LoggingTrait;
 
 /**
  * Base Integration Class
  *
  * Provides common functionality for all translation integrations
+ *
+ * @since 1.5.0
  */
 abstract class BaseIntegration extends Component implements TranslationIntegrationInterface
 {
@@ -55,7 +57,7 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
         $this->logDebug("Capturing translation", [
             'integration' => $integrationName,
             'text' => $text,
-            'context' => $context
+            'context' => $context,
         ]);
 
         return $this->getTranslationsService()->createOrUpdateTranslation($text, $context);
@@ -81,7 +83,7 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
                         'id' => $id,
                         'key' => $record->translationKey,
                         'context' => $record->context,
-                        'integration' => $this->getName()
+                        'integration' => $this->getName(),
                     ]);
                 }
             }
@@ -121,7 +123,7 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
                 'type' => 'boolean',
                 'label' => "Enable {$this->getName()} Integration",
                 'default' => true,
-            ]
+            ],
         ];
     }
 

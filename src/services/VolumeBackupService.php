@@ -15,13 +15,15 @@ use craft\base\Component;
 use craft\helpers\DateTimeHelper;
 use craft\helpers\FileHelper;
 use craft\helpers\Json;
-use lindemannrock\translationmanager\TranslationManager;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\TranslationManager;
 
 /**
  * Volume Backup Service
  *
  * Handles backups using asset volumes (including cloud storage like Servd/S3)
+ *
+ * @since 1.12.0
  */
 class VolumeBackupService extends Component
 {
@@ -54,14 +56,14 @@ class VolumeBackupService extends Component
         // Check if a backup volume is configured
         if ($settings->backupVolumeUid) {
             $volume = Craft::$app->getVolumes()->getVolumeByUid($settings->backupVolumeUid);
-            if ($volume && $volume->getFs()) {
+            if ($volume) {
                 $this->_volumeFs = $volume->getFs();
                 $this->_useVolume = true;
 
                 $this->logInfo('Using volume for backups', [
                     'volumeName' => $volume->name,
                     'volumeUid' => $settings->backupVolumeUid,
-                    'fsClass' => get_class($this->_volumeFs)
+                    'fsClass' => get_class($this->_volumeFs),
                 ]);
 
                 // Ensure base directory exists in the volume
@@ -72,7 +74,7 @@ class VolumeBackupService extends Component
                     }
                 } catch (\Exception $e) {
                     $this->logWarning('Could not create volume directory, will create on demand', [
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ]);
                 }
             }
@@ -105,12 +107,12 @@ class VolumeBackupService extends Component
         $storageType = $this->_useVolume ? 'volume' : 'local';
         $this->logInfo("Creating backup", [
             'reason' => $reasonText,
-            'storageType' => $storageType
+            'storageType' => $storageType,
         ]);
 
         try {
             // Determine the subfolder based on reason
-            $subfolder = match($reason) {
+            $subfolder = match ($reason) {
                 'scheduled' => 'scheduled',
                 'before_import' => 'imports',
                 'before_cleanup' => 'maintenance',
@@ -139,7 +141,7 @@ class VolumeBackupService extends Component
                 'reason' => $reason ?? 'manual',
                 'user' => Craft::$app->getUser()->getIdentity()->username ?? 'system',
                 'userId' => Craft::$app->getUser()->getId(),
-                'translationCount' => count($translations ?? []),
+                'translationCount' => count($translations),
                 'formieEnabled' => TranslationManager::getInstance()->getSettings()->enableFormieIntegration,
                 'siteEnabled' => TranslationManager::getInstance()->getSettings()->enableSiteTranslations,
                 'craftVersion' => Craft::$app->getVersion(),
@@ -150,7 +152,7 @@ class VolumeBackupService extends Component
             $formieTranslations = [];
             $siteTranslations = [];
 
-            foreach ($translations ?? [] as $translation) {
+            foreach ($translations as $translation) {
                 if (str_starts_with($translation['context'], 'formie.')) {
                     $formieTranslations[] = $translation;
                 } else {
@@ -163,7 +165,6 @@ class VolumeBackupService extends Component
             } else {
                 return $this->_createLocalBackup($backupDir, $metadata, $formieTranslations, $siteTranslations);
             }
-
         } catch (\Exception $e) {
             $this->logError('Failed to create backup', ['error' => $e->getMessage()]);
             throw $e;
@@ -198,7 +199,7 @@ class VolumeBackupService extends Component
         $this->logInfo('Backup created in volume', [
             'path' => $fullPath,
             'formieCount' => count($formieTranslations),
-            'siteCount' => count($siteTranslations)
+            'siteCount' => count($siteTranslations),
         ]);
 
         return $fullPath;
@@ -231,7 +232,7 @@ class VolumeBackupService extends Component
         $this->logInfo('Backup created locally', [
             'path' => $fullPath,
             'formieCount' => count($formieTranslations),
-            'siteCount' => count($siteTranslations)
+            'siteCount' => count($siteTranslations),
         ]);
 
         return $fullPath;
@@ -409,7 +410,6 @@ class VolumeBackupService extends Component
 
             // Restore translations
             return $this->_restoreTranslations($translations);
-
         } catch (\Exception $e) {
             $this->logError('Failed to restore volume backup', ['error' => $e->getMessage()]);
             return false;
@@ -443,7 +443,6 @@ class VolumeBackupService extends Component
 
             // Restore translations
             return $this->_restoreTranslations($translations);
-
         } catch (\Exception $e) {
             $this->logError('Failed to restore local backup', ['error' => $e->getMessage()]);
             return false;
@@ -471,7 +470,6 @@ class VolumeBackupService extends Component
 
             $this->logInfo('Translations restored', ['count' => count($translations)]);
             return true;
-
         } catch (\Exception $e) {
             $transaction->rollBack();
             throw $e;
@@ -504,7 +502,7 @@ class VolumeBackupService extends Component
         } catch (\Exception $e) {
             $this->logError('Failed to delete volume backup', [
                 'backup' => $backupName,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             return false;
         }
@@ -528,7 +526,7 @@ class VolumeBackupService extends Component
         } catch (\Exception $e) {
             $this->logError('Failed to delete local backup', [
                 'backup' => $backupName,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             return false;
         }
@@ -567,7 +565,7 @@ class VolumeBackupService extends Component
      */
     private function getDisplayReason(string $reason): string
     {
-        return match($reason) {
+        return match ($reason) {
             'manual' => Craft::t('translation-manager', 'Manual'),
             'before_import' => Craft::t('translation-manager', 'Before Import'),
             'before_restore' => Craft::t('translation-manager', 'Before Restore'),

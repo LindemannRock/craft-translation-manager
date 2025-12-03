@@ -17,6 +17,8 @@ use lindemannrock\translationmanager\TranslationManager;
 
 /**
  * Create Backup Job
+ *
+ * @since 1.0.0
  */
 class CreateBackupJob extends BaseJob
 {
@@ -86,7 +88,7 @@ class CreateBackupJob extends BaseJob
         
         if ($backupPath) {
             $this->logInfo('Scheduled backup created successfully', [
-                'filename' => basename($backupPath)
+                'filename' => basename($backupPath),
             ]);
             
             // Clean old backups based on retention policy
@@ -135,7 +137,7 @@ class CreateBackupJob extends BaseJob
 
             $this->logInfo('Next backup scheduled', [
                 'delay_seconds' => $delay,
-                'next_run' => $nextRunTime
+                'next_run' => $nextRunTime,
             ]);
         }
     }

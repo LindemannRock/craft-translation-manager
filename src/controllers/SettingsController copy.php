@@ -12,10 +12,10 @@ namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
 use craft\web\Controller;
-use lindemannrock\translationmanager\TranslationManager;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
-use yii\web\Response;
+use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
+use yii\web\Response;
 
 /**
  * Settings Controller
@@ -201,7 +201,7 @@ class SettingsController extends Controller
         $count = TranslationManager::getInstance()->translations->clearFormieTranslations();
         
         $pluginName = TranslationManager::getFormiePluginName();
-        $message = $count > 0 
+        $message = $count > 0
             ? Craft::t('translation-manager', '{count} {plugin} translations and corresponding files have been deleted.', ['count' => $count, 'plugin' => $pluginName])
             : Craft::t('translation-manager', 'No {plugin} translations found to delete.', ['plugin' => $pluginName]);
         
@@ -235,7 +235,7 @@ class SettingsController extends Controller
         }
         $count = TranslationManager::getInstance()->translations->clearSiteTranslations();
         
-        $message = $count > 0 
+        $message = $count > 0
             ? Craft::t('translation-manager', '{count} site translations and corresponding files have been deleted.', ['count' => $count])
             : Craft::t('translation-manager', 'No site translations found to delete.');
         
@@ -269,7 +269,7 @@ class SettingsController extends Controller
         }
         $count = TranslationManager::getInstance()->translations->clearAllTranslations();
         
-        $message = $count > 0 
+        $message = $count > 0
             ? Craft::t('translation-manager', 'All {count} translations and corresponding files have been deleted.', ['count' => $count])
             : Craft::t('translation-manager', 'No translations found to delete.');
         
@@ -310,7 +310,7 @@ class SettingsController extends Controller
             
             if ($siteTranslationsCount === 0) {
                 $message = Craft::t('translation-manager', 'No site translations found. Current skip patterns: {patterns}', [
-                    'patterns' => implode(', ', $skipPatterns)
+                    'patterns' => implode(', ', $skipPatterns),
                 ]);
                 Craft::$app->getSession()->setNotice($message);
                 return $this->redirectToPostedUrl();
@@ -318,19 +318,18 @@ class SettingsController extends Controller
             
             $count = $translationsService->applySkipPatternsToExisting();
             
-            $message = $count > 0 
+            $message = $count > 0
                 ? Craft::t('translation-manager', '{count} existing translations matching skip patterns have been removed. Patterns checked: {patterns}', [
                     'count' => $count,
-                    'patterns' => implode(', ', $skipPatterns)
+                    'patterns' => implode(', ', $skipPatterns),
                 ])
                 : Craft::t('translation-manager', 'No existing translations match the current skip patterns. Checked {siteCount} site translations against {patternCount} patterns: {patterns}', [
                     'siteCount' => $siteTranslationsCount,
                     'patternCount' => $skipPatternsCount,
-                    'patterns' => implode(', ', $skipPatterns)
+                    'patterns' => implode(', ', $skipPatterns),
                 ]);
             
             Craft::$app->getSession()->setNotice($message);
-            
         } catch (\Exception $e) {
             $errorMessage = Craft::t('translation-manager', 'Error applying skip patterns: {error}', ['error' => $e->getMessage()]);
             Craft::$app->getSession()->setError($errorMessage);

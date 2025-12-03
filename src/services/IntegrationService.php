@@ -10,15 +10,16 @@
 
 namespace lindemannrock\translationmanager\services;
 
-use Craft;
 use craft\base\Component;
-use lindemannrock\translationmanager\interfaces\TranslationIntegrationInterface;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\interfaces\TranslationIntegrationInterface;
 
 /**
  * Integration Registry Service
- * 
+ *
  * Manages all third-party plugin integrations for Translation Manager
+ *
+ * @since 1.5.0
  */
 class IntegrationService extends Component
 {
@@ -88,7 +89,7 @@ class IntegrationService extends Component
 
     /**
      * Register a new integration
-     * 
+     *
      * @param string $name Integration name
      * @param string|TranslationIntegrationInterface $integration Integration class or instance
      * @param array $config Optional configuration
@@ -185,7 +186,7 @@ class IntegrationService extends Component
                 'name' => ucfirst($name),
                 'pluginHandle' => $integration->getPluginHandle(),
                 'available' => $integration->isAvailable(),
-                'config' => []
+                'config' => [],
             ];
         }
 
@@ -218,8 +219,8 @@ class IntegrationService extends Component
                 'total' => 0,
                 'translated' => 0,
                 'pending' => 0,
-                'unused' => 0
-            ]
+                'unused' => 0,
+            ],
         ];
 
         foreach ($this->getEnabledIntegrations() as $integration) {

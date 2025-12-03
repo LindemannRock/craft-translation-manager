@@ -10,7 +10,6 @@
 
 namespace lindemannrock\translationmanager\console\controllers;
 
-use Craft;
 use craft\console\Controller;
 use craft\helpers\Console;
 use lindemannrock\translationmanager\records\TranslationRecord;
@@ -18,12 +17,14 @@ use yii\console\ExitCode;
 
 /**
  * Debug commands
+ *
+ * @since 1.0.0
  */
 class DebugController extends Controller
 {
     /**
      * Search for translations in the database
-     * 
+     *
      * @param string $search The search term
      */
     public function actionSearch(string $search): int
@@ -32,8 +33,9 @@ class DebugController extends Controller
         
         // Direct database search
         $query = TranslationRecord::find();
-        
+
         // Search in all fields
+        /** @var TranslationRecord[] $results */
         $results = $query->where([
             'or',
             ['like', 'englishText', $search],
@@ -49,6 +51,7 @@ class DebugController extends Controller
             $words = explode(' ', $search);
             foreach ($words as $word) {
                 if (strlen($word) > 3) { // Skip short words
+                    /** @var TranslationRecord[] $partial */
                     $partial = TranslationRecord::find()
                         ->where(['like', 'englishText', $word])
                         ->limit(5)
@@ -87,7 +90,8 @@ class DebugController extends Controller
     public function actionRecent(int $limit = 10): int
     {
         $this->stdout("Recent translations (limit: {$limit}):\n", Console::FG_YELLOW);
-        
+
+        /** @var TranslationRecord[] $results */
         $results = TranslationRecord::find()
             ->orderBy(['dateCreated' => SORT_DESC])
             ->limit($limit)

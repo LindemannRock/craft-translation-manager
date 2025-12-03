@@ -12,11 +12,13 @@ namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
 use craft\web\Controller;
-use craft\web\Response;
 use lindemannrock\translationmanager\TranslationManager;
+use yii\web\Response;
 
 /**
  * Debug Controller
+ *
+ * @since 1.0.0
  */
 class DebugController extends Controller
 {
@@ -41,7 +43,7 @@ class DebugController extends Controller
             'volumeFs' => null,
             'volumePath' => null,
             'backups' => [],
-            'errors' => []
+            'errors' => [],
         ];
 
         try {
@@ -52,33 +54,26 @@ class DebugController extends Controller
                     $debug['volumeHandle'] = $volume->handle;
 
                     $fs = $volume->getFs();
-                    if ($fs) {
-                        $debug['useVolume'] = true;
-                        $debug['volumeFs'] = get_class($fs);
-                        $debug['volumePath'] = 'translation-manager/backups';
+                    $debug['useVolume'] = true;
+                    $debug['volumeFs'] = get_class($fs);
+                    $debug['volumePath'] = 'translation-manager/backups';
 
-                        // Try to list base directory
+                    // Try to list base directory
+                    try {
+                        $debug['baseDirectoryExists'] = $fs->directoryExists('translation-manager/backups');
+                    } catch (\Exception $e) {
+                        $debug['baseDirectoryError'] = $e->getMessage();
+                    }
+
+                    // Try to list subdirectories
+                    $subfolders = ['manual', 'scheduled', 'imports', 'maintenance', 'other'];
+                    foreach ($subfolders as $subfolder) {
+                        $folderPath = 'translation-manager/backups/' . $subfolder;
                         try {
-                            $debug['baseDirectoryExists'] = $fs->directoryExists('translation-manager/backups');
+                            $exists = $fs->directoryExists($folderPath);
+                            $debug['subfolders'][$subfolder] = ['exists' => $exists];
                         } catch (\Exception $e) {
-                            $debug['baseDirectoryError'] = $e->getMessage();
-                        }
-
-                        // Try to list subdirectories
-                        $subfolders = ['manual', 'scheduled', 'imports', 'maintenance', 'other'];
-                        foreach ($subfolders as $subfolder) {
-                            $folderPath = 'translation-manager/backups/' . $subfolder;
-                            try {
-                                $exists = $fs->directoryExists($folderPath);
-                                $debug['subfolders'][$subfolder] = ['exists' => $exists];
-
-                                if ($exists) {
-                                    $contents = $fs->listContents($folderPath, false);
-                                    $debug['subfolders'][$subfolder]['contents'] = $contents;
-                                }
-                            } catch (\Exception $e) {
-                                $debug['subfolders'][$subfolder]['error'] = $e->getMessage();
-                            }
+                            $debug['subfolders'][$subfolder]['error'] = $e->getMessage();
                         }
                     }
                 } else {
@@ -94,7 +89,6 @@ class DebugController extends Controller
             } catch (\Exception $e) {
                 $debug['errors'][] = 'Backup service error: ' . $e->getMessage();
             }
-
         } catch (\Exception $e) {
             $debug['errors'][] = 'General error: ' . $e->getMessage();
         }

@@ -14,14 +14,16 @@ use lindemannrock\translationmanager\TranslationManager;
 
 /**
  * Translation Manager Variable
- * 
+ *
  * Provides template access to translation functions
+ *
+ * @since 1.0.0
  */
 class TranslationManagerVariable
 {
     /**
      * Translate text
-     * 
+     *
      * Usage: {{ craft.translationManager.t('Text to translate', 'context') }}
      */
     public function t(string $text, string $context = ''): string
@@ -32,7 +34,7 @@ class TranslationManagerVariable
         // If no context provided, use the category
         if (empty($context)) {
             $context = "site.{$category}";
-        } else if (!str_starts_with($context, 'site.')) {
+        } elseif (!str_starts_with($context, 'site.')) {
             $context = "site.{$context}";
         }
         
@@ -43,7 +45,7 @@ class TranslationManagerVariable
         $currentSite = \Craft::$app->getSites()->getCurrentSite();
         
         // Return translated text if available and we're on Arabic site
-        if (($currentSite->language === 'ar' || str_starts_with($currentSite->language, 'ar-')) && 
+        if (($currentSite->language === 'ar' || str_starts_with($currentSite->language, 'ar-')) &&
             !empty($translation->arabicText)) {
             return $translation->arabicText;
         }
@@ -95,16 +97,16 @@ class TranslationManagerVariable
             
         $formieCount = $query->from('{{%translationmanager_translations}}')
             ->where(['status' => 'unused'])
-            ->andWhere(['or', 
+            ->andWhere(['or',
                 ['like', 'context', 'formie.%', false],
-                ['=', 'context', 'formie']
+                ['=', 'context', 'formie'],
             ])
             ->count();
         
         return [
             'site' => (int) $siteCount,
             'formie' => (int) $formieCount,
-            'total' => (int) ($siteCount + $formieCount)
+            'total' => (int) ($siteCount + $formieCount),
         ];
     }
     

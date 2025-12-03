@@ -10,15 +10,16 @@
 
 namespace lindemannrock\translationmanager\services;
 
-use Craft;
 use craft\base\Component;
 use craft\helpers\StringHelper;
-use yii\base\Event;
-use lindemannrock\translationmanager\TranslationManager;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\TranslationManager;
+use yii\base\Event;
 
 /**
  * Formie Integration Service
+ *
+ * @since 1.0.0
  */
 class FormieService extends Component
 {
@@ -32,7 +33,7 @@ class FormieService extends Component
         Event::on(
             \verbb\formie\elements\Form::class,
             \verbb\formie\elements\Form::EVENT_AFTER_SAVE,
-            function (\craft\events\ModelEvent $event) {
+            function(\craft\events\ModelEvent $event) {
                 $this->captureFormTranslations($event->sender);
                 
                 // After capturing, run a usage check to mark unused translations
@@ -168,7 +169,7 @@ class FormieService extends Component
         $this->logDebug("Processing field type", [
             'fieldClass' => $fieldClass,
             'handle' => $fieldHandle,
-            'hasOptions' => property_exists($field, 'options')
+            'hasOptions' => property_exists($field, 'options'),
         ]);
         
         switch ($fieldClass) {
@@ -185,13 +186,13 @@ class FormieService extends Component
                 if (property_exists($field, 'options') && is_array($field->options)) {
                     $this->logDebug("Found options for field", [
                         'fieldHandle' => $fieldHandle,
-                        'optionCount' => count($field->options)
+                        'optionCount' => count($field->options),
                     ]);
 
                     foreach ($field->options as $index => $option) {
                         $this->logDebug("Processing option", [
                             'index' => $index,
-                            'option' => $option
+                            'option' => $option,
                         ]);
 
                         if (isset($option['label']) && !empty($option['label'])) {
@@ -360,7 +361,7 @@ class FormieService extends Component
                 if (property_exists($field, 'htmlContent') && $field->htmlContent) {
                     $this->logDebug("HTML field found", [
                         'fieldHandle' => $fieldHandle,
-                        'contentPreview' => substr($field->htmlContent, 0, 50)
+                        'contentPreview' => substr($field->htmlContent, 0, 50),
                     ]);
 
                     // Always capture HTML content - the Twig check will be done in createOrUpdateTranslation
@@ -378,7 +379,7 @@ class FormieService extends Component
                 if (property_exists($field, 'paragraphContent') && $field->paragraphContent) {
                     $this->logDebug("Paragraph field found", [
                         'fieldHandle' => $fieldHandle,
-                        'contentPreview' => substr($field->paragraphContent, 0, 50)
+                        'contentPreview' => substr($field->paragraphContent, 0, 50),
                     ]);
 
                     // Always capture paragraph content - the Twig check will be done in createOrUpdateTranslation
@@ -496,51 +497,9 @@ class FormieService extends Component
         // Get all Formie translations and check their usage
         $translations = TranslationManager::getInstance()->translations->getTranslations([
             'type' => 'forms',
-            'includeUsageCheck' => true
+            'includeUsageCheck' => true,
         ]);
         
         $this->logInfo('Checked form translations for usage', ['count' => count($translations)]);
-    }
-    
-    /**
-     * Extract text from TipTap/ProseMirror JSON format
-     */
-    private function extractTextFromJson($jsonString): string
-    {
-        if (empty($jsonString)) {
-            return '';
-        }
-        
-        // If it's already plain text, return it
-        if (!is_string($jsonString) || $jsonString[0] !== '[') {
-            return $jsonString;
-        }
-        
-        try {
-            $data = json_decode($jsonString, true);
-            if (!is_array($data)) {
-                return $jsonString;
-            }
-            
-            $textParts = [];
-            
-            // Iterate through all blocks
-            foreach ($data as $block) {
-                if (isset($block['content']) && is_array($block['content'])) {
-                    foreach ($block['content'] as $content) {
-                        if (isset($content['type']) && $content['type'] === 'text' && isset($content['text'])) {
-                            $textParts[] = $content['text'];
-                        }
-                    }
-                }
-            }
-            
-            // Join with line breaks to preserve paragraph structure
-            return implode("\n", $textParts);
-            
-        } catch (\Exception) {
-            // If JSON parsing fails, return original
-            return $jsonString;
-        }
     }
 }

@@ -15,12 +15,14 @@ use craft\base\Component;
 use craft\db\Query;
 use craft\helpers\Db;
 use craft\helpers\StringHelper;
-use lindemannrock\translationmanager\TranslationManager;
-use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\records\TranslationRecord;
+use lindemannrock\translationmanager\TranslationManager;
 
 /**
  * Translations Service
+ *
+ * @since 1.0.0
  */
 class TranslationsService extends Component
 {
@@ -45,10 +47,18 @@ class TranslationsService extends Component
         // Log the request if filters are applied
         if (!empty($criteria)) {
             $filterDesc = [];
-            if (isset($criteria['siteId'])) $filterDesc[] = "site:{$criteria['siteId']}";
-            if (isset($criteria['status'])) $filterDesc[] = "status:{$criteria['status']}";
-            if (isset($criteria['type'])) $filterDesc[] = "type:{$criteria['type']}";
-            if (isset($criteria['allSites']) && $criteria['allSites']) $filterDesc[] = "allSites";
+            if (isset($criteria['siteId'])) {
+                $filterDesc[] = "site:{$criteria['siteId']}";
+            }
+            if (isset($criteria['status'])) {
+                $filterDesc[] = "status:{$criteria['status']}";
+            }
+            if (isset($criteria['type'])) {
+                $filterDesc[] = "type:{$criteria['type']}";
+            }
+            if (isset($criteria['allSites']) && $criteria['allSites']) {
+                $filterDesc[] = "allSites";
+            }
             $filters = implode(', ', $filterDesc);
             $this->logDebug('Getting translations with filters', ['filters' => $filters]);
         }
@@ -72,15 +82,15 @@ class TranslationsService extends Component
         $hasTypeFilter = false;
         if (!empty($criteria['type']) && $criteria['type'] !== 'all') {
             if ($criteria['type'] === 'forms') {
-                $query->andWhere(['or', 
+                $query->andWhere(['or',
                     ['like', 'context', 'formie.%', false],
-                    ['=', 'context', 'formie']
+                    ['=', 'context', 'formie'],
                 ]);
                 $hasTypeFilter = true;
             } elseif ($criteria['type'] === 'site') {
                 $query->andWhere(['and',
                     ['not', ['like', 'context', 'formie.%', false]],
-                    ['!=', 'context', 'formie']
+                    ['!=', 'context', 'formie'],
                 ]);
                 $hasTypeFilter = true;
             }
@@ -138,7 +148,7 @@ class TranslationsService extends Component
             'translationKey' => 'translationKey',
             'translation' => 'translation',
             'type' => 'context',
-            'status' => 'status'
+            'status' => 'status',
         ];
 
         $sort = $criteria['sort'] ?? 'translationKey';
@@ -205,13 +215,13 @@ class TranslationsService extends Component
                 $this->logInfo("Extracted plain text from Twig code", [
                     'original' => $text,
                     'extracted' => $plainTexts,
-                    'context' => $context
+                    'context' => $context,
                 ]);
             } else {
                 // No plain text found, skip entirely
                 $this->logInfo("Skipping translation with Twig code (no plain text found)", [
                     'text' => $text,
-                    'context' => $context
+                    'context' => $context,
                 ]);
             }
             
@@ -258,7 +268,7 @@ class TranslationsService extends Component
                 $translation->save();
                 $this->logInfo("Template scanner: Created new multi-site translation", [
                     'text' => $text,
-                    'site' => $site->name
+                    'site' => $site->name,
                 ]);
             } else {
                 // Update existing translation
@@ -277,7 +287,7 @@ class TranslationsService extends Component
                     }
                     $this->logInfo("Reactivated translation", [
                         'text' => $text,
-                        'site' => $site->name
+                        'site' => $site->name,
                     ]);
                 }
                 
@@ -309,7 +319,7 @@ class TranslationsService extends Component
     }
     
     /**
-     * Get default status for a site (NEW: Multi-site helper)  
+     * Get default status for a site (NEW: Multi-site helper)
      */
     private function getDefaultStatus(string $text, $site): string
     {
@@ -332,7 +342,7 @@ class TranslationsService extends Component
             'found_keys' => [],
             'marked_unused' => 0,
             'reactivated' => 0,
-            'errors' => []
+            'errors' => [],
         ];
         
         try {
@@ -354,7 +364,7 @@ class TranslationsService extends Component
             
             $this->logInfo("Template scanner results", [
                 'scanned_files' => $results['scanned_files'],
-                'keys_found' => count($foundKeys)
+                'keys_found' => count($foundKeys),
             ]);
             
             // Get all site translations (not formie)
@@ -388,8 +398,8 @@ class TranslationsService extends Component
                     // Translation key not found in any template
                     if ($translation['status'] !== 'unused') {
                         // Mark as unused
-                        Db::update(TranslationRecord::tableName(), 
-                            ['status' => 'unused'], 
+                        Db::update(TranslationRecord::tableName(),
+                            ['status' => 'unused'],
                             ['id' => $translation['id']]
                         );
                         $results['marked_unused']++;
@@ -406,8 +416,8 @@ class TranslationsService extends Component
                     if ($translation['status'] === 'unused') {
                         // Reactivate unused translation
                         $newStatus = $translation['translation'] ? 'translated' : 'pending';
-                        Db::update(TranslationRecord::tableName(), 
-                            ['status' => $newStatus], 
+                        Db::update(TranslationRecord::tableName(),
+                            ['status' => $newStatus],
                             ['id' => $translation['id']]
                         );
                         $results['reactivated']++;
@@ -415,7 +425,6 @@ class TranslationsService extends Component
                     }
                 }
             }
-            
         } catch (\Exception $e) {
             $results['errors'][] = $e->getMessage();
             $this->logError('Template scanning failed', ['error' => $e->getMessage()]);
@@ -466,7 +475,7 @@ class TranslationsService extends Component
                         if ($key !== $unescapedKey) {
                             $this->logWarning("Template scanner: Unescaped", [
                                 'from' => $key,
-                                'to' => $unescapedKey
+                                'to' => $unescapedKey,
                             ]);
                         }
                     }
@@ -480,7 +489,7 @@ class TranslationsService extends Component
                         $foundKeys[$unescapedKey] = true;
                         
                         $this->logWarning("Template scanner: Found dynamic translation using _globals.primaryTranslationCategory", [
-                            'key' => $unescapedKey
+                            'key' => $unescapedKey,
                         ]);
                     }
                 }
@@ -525,7 +534,7 @@ class TranslationsService extends Component
                         $activeTexts[$pageSettings->submitButtonLabel] = true;
                         $this->logDebug("Form submit button", [
                             'form' => $form->handle,
-                            'label' => $pageSettings->submitButtonLabel
+                            'label' => $pageSettings->submitButtonLabel,
                         ]);
                     }
 
@@ -550,7 +559,7 @@ class TranslationsService extends Component
                         }
                         $this->logDebug("Form submit message", [
                             'form' => $form->handle,
-                            'message' => $htmlMessage
+                            'message' => $htmlMessage,
                         ]);
                     }
                 }
@@ -567,7 +576,7 @@ class TranslationsService extends Component
                         }
                         $this->logDebug("Form error message", [
                             'form' => $form->handle,
-                            'message' => $htmlMessage
+                            'message' => $htmlMessage,
                         ]);
                     }
                 }
@@ -598,7 +607,7 @@ class TranslationsService extends Component
                 $this->logDebug("Checking formie translation", [
                     'key' => $translation['translationKey'],
                     'context' => $translation['context'],
-                    'status' => $usedStatus
+                    'status' => $usedStatus,
                 ]);
             } else {
                 // For site translations, we can't check if they're used
@@ -617,11 +626,11 @@ class TranslationsService extends Component
                     $this->logInfo('Marking translation as unused', [
                         'id' => $translation['id'],
                         'context' => $translation['context'],
-                        'translationKey' => $translation['translationKey']
+                        'translationKey' => $translation['translationKey'],
                     ]);
                     
                     // Use direct DB update for better performance
-                    $updated = Db::update(TranslationRecord::tableName(), 
+                    $updated = Db::update(TranslationRecord::tableName(),
                         ['status' => 'unused'],
                         ['id' => $translation['id']]
                     );
@@ -683,9 +692,9 @@ class TranslationsService extends Component
         $formieCount = (new Query())
             ->from(TranslationRecord::tableName())
             ->andWhere($siteId ? ['siteId' => $siteId] : [])
-            ->andWhere(['or', 
+            ->andWhere(['or',
                 ['like', 'context', 'formie.%', false],
-                ['=', 'context', 'formie']
+                ['=', 'context', 'formie'],
             ])->count();
         
         $siteCount = (new Query())
@@ -693,7 +702,7 @@ class TranslationsService extends Component
             ->andWhere($siteId ? ['siteId' => $siteId] : [])
             ->andWhere(['and',
                 ['not', ['like', 'context', 'formie.%', false]],
-                ['!=', 'context', 'formie']
+                ['!=', 'context', 'formie'],
             ])->count();
 
         $stats = [
@@ -725,7 +734,7 @@ class TranslationsService extends Component
     public function clearFormieTranslations(): int
     {
         $count = Db::delete(TranslationRecord::tableName(), [
-            'like', 'context', 'formie.%', false
+            'like', 'context', 'formie.%', false,
         ]);
         
         // Delete corresponding translation files
@@ -744,7 +753,7 @@ class TranslationsService extends Component
     public function clearSiteTranslations(): int
     {
         $count = Db::delete(TranslationRecord::tableName(), [
-            'not', ['like', 'context', 'formie.%', false]
+            'not', ['like', 'context', 'formie.%', false],
         ]);
         
         // Delete corresponding translation files
@@ -828,7 +837,7 @@ class TranslationsService extends Component
         
         $this->logInfo('Starting applySkipPatternsToExisting', [
             'skipPatterns' => $settings->skipPatterns,
-            'skipPatternsCount' => count($settings->skipPatterns ?? [])
+            'skipPatternsCount' => count($settings->skipPatterns ?? []),
         ]);
         
         if (empty($settings->skipPatterns)) {
@@ -848,7 +857,7 @@ class TranslationsService extends Component
             
             $this->logInfo("Checking translation", [
                 'text' => $translationKey,
-                'id' => $translation['id']
+                'id' => $translation['id'],
             ]);
             
             // Check if this translation matches any skip pattern
@@ -858,14 +867,14 @@ class TranslationsService extends Component
                 $this->logInfo("Checking pattern", [
                     'pattern' => $pattern,
                     'text' => $translationKey,
-                    'contains_check' => str_contains($translationKey, $pattern) ? 'YES' : 'NO'
+                    'contains_check' => str_contains($translationKey, $pattern) ? 'YES' : 'NO',
                 ]);
                 
                 if (!empty($pattern) && str_contains($translationKey, $pattern)) {
                     $this->logInfo("Found matching translation", [
                         'pattern' => $pattern,
                         'text' => $translationKey,
-                        'translationId' => $translation['id']
+                        'translationId' => $translation['id'],
                     ]);
                     
                     // Delete this translation
@@ -876,12 +885,12 @@ class TranslationsService extends Component
                         $this->logInfo("Successfully deleted translation", [
                             'pattern' => $pattern,
                             'text' => $translationKey,
-                            'id' => $translation['id']
+                            'id' => $translation['id'],
                         ]);
                         break; // Stop checking other patterns for this translation
                     } else {
                         $this->logWarning("Translation record not found for deletion", [
-                            'id' => $translation['id']
+                            'id' => $translation['id'],
                         ]);
                     }
                 }
@@ -891,7 +900,7 @@ class TranslationsService extends Component
         $this->logInfo('Completed applying skip patterns to existing translations', [
             'patterns' => $settings->skipPatterns,
             'deleted' => $deleted,
-            'totalSiteTranslations' => count($siteTranslations)
+            'totalSiteTranslations' => count($siteTranslations),
         ]);
         
         return $deleted;
@@ -944,7 +953,7 @@ class TranslationsService extends Component
 
     /**
      * Check if text contains Twig code
-     * 
+     *
      * @param string $text
      * @return bool
      */
@@ -971,7 +980,7 @@ class TranslationsService extends Component
     /**
      * Extract plain text content from between Twig tags
      * For example, from "{% x:text %}Hello World{% endx %}" extract "Hello World"
-     * 
+     *
      * @param string $text
      * @return array
      */
@@ -1175,7 +1184,6 @@ class TranslationsService extends Component
 
             // Join with line breaks to preserve paragraph structure
             return implode("\n", $textParts);
-
         } catch (\Exception) {
             // If JSON parsing fails, return original
             return $jsonString;

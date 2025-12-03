@@ -10,7 +10,6 @@
 
 namespace lindemannrock\translationmanager\console\controllers;
 
-use Craft;
 use craft\console\Controller;
 use craft\helpers\Console;
 use lindemannrock\translationmanager\TranslationManager;
@@ -18,6 +17,8 @@ use yii\console\ExitCode;
 
 /**
  * Console Translations Controller
+ *
+ * @since 1.0.0
  */
 class TranslationsController extends Controller
 {
@@ -81,7 +82,6 @@ class TranslationsController extends Controller
             $this->stdout("Usage check complete.\n", Console::FG_GREEN);
 
             return ExitCode::OK;
-
         } catch (\Exception $e) {
             $this->stderr("Error capturing Formie translations: {$e->getMessage()}\n", Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;
@@ -208,11 +208,10 @@ class TranslationsController extends Controller
                 foreach ($translations as $original => $translation) {
                     // Extract context from the translation key
                     $context = 'formie';
-                    
+
                     $translationsService->createOrUpdateTranslation(
                         $original,
-                        $context,
-                        $language === 'ar' ? $translation : null
+                        $context
                     );
                     
                     $count++;
@@ -225,7 +224,6 @@ class TranslationsController extends Controller
             $this->stdout("\nTotal imported: {$totalImported} translations.\n", Console::FG_GREEN);
             
             return ExitCode::OK;
-            
         } catch (\Exception $e) {
             $this->stderr("Error importing translations: {$e->getMessage()}\n", Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;

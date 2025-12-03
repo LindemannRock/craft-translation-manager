@@ -15,11 +15,12 @@ use craft\base\Model;
 use craft\behaviors\EnvAttributeParserBehavior;
 use craft\db\Query;
 use craft\helpers\Db;
-use craft\helpers\FileHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 
 /**
  * Translation Manager Settings Model
+ *
+ * @since 1.0.0
  */
 class Settings extends Model
 {
@@ -165,9 +166,9 @@ class Settings extends Model
             [['translationCategory'], 'string', 'max' => 50],
             [['sourceLanguage'], 'string', 'max' => 10],
             [['sourceLanguage'], 'match', 'pattern' => '/^[a-z]{2}(-[A-Z]{2})?$/',
-             'message' => 'Source language must be a valid locale code (e.g., "en", "en-US", "ar").'],
+             'message' => 'Source language must be a valid locale code (e.g., "en", "en-US", "ar").', ],
             [['translationCategory'], 'match', 'pattern' => '/^[a-zA-Z][a-zA-Z0-9_-]*$/',
-             'message' => 'Translation category must start with a letter and contain only letters, numbers, hyphens, and underscores.'],
+             'message' => 'Translation category must start with a letter and contain only letters, numbers, hyphens, and underscores.', ],
             [['translationCategory'], 'validateTranslationCategory'],
             [['exportPath'], 'validateExportPath'],
             [['backupPath'], 'validateBackupPath'],
@@ -175,7 +176,7 @@ class Settings extends Model
             [['itemsPerPage'], 'integer', 'min' => 10, 'max' => 500],
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
             [['enableFormieIntegration', 'enableSiteTranslations', 'autoExport',
-              'showContext', 'enableSuggestions', 'autoSaveEnabled', 'backupEnabled', 'backupOnImport'], 'boolean'],
+              'showContext', 'enableSuggestions', 'autoSaveEnabled', 'backupEnabled', 'backupOnImport', ], 'boolean'],
             [['skipPatterns'], 'safe'],
             [['backupRetentionDays'], 'integer', 'min' => 0, 'max' => 365],
             [['backupSchedule'], 'in', 'range' => ['manual', 'daily', 'weekly']],
@@ -224,8 +225,10 @@ class Settings extends Model
             } else {
                 $this->skipPatterns = array_filter(array_map('trim', explode("\n", $value)));
             }
+        } elseif (is_array($value)) {
+            $this->skipPatterns = $value;
         } else {
-            $this->skipPatterns = is_array($value) ? $value : [];
+            $this->skipPatterns = [];
         }
     }
 
@@ -271,14 +274,14 @@ class Settings extends Model
                     // Web request - use session to prevent duplicate warnings
                     if (Craft::$app->getSession()->get('tm_debug_config_warning') === null) {
                         $this->logWarning('Log level "debug" from config file changed to "info" because devMode is disabled', [
-                            'configFile' => 'config/translation-manager.php'
+                            'configFile' => 'config/translation-manager.php',
                         ]);
                         Craft::$app->getSession()->set('tm_debug_config_warning', true);
                     }
                 } else {
                     // Console request - just log without session
                     $this->logWarning('Log level "debug" from config file changed to "info" because devMode is disabled', [
-                        'configFile' => 'config/translation-manager.php'
+                        'configFile' => 'config/translation-manager.php',
                     ]);
                 }
             } else {
@@ -365,7 +368,7 @@ class Settings extends Model
         
         // Check for directory traversal attempts
         if (strpos($path, '..') !== false) {
-            $this->addError($attribute, 'Backup path cannot contain directory traversal sequences (..)'); 
+            $this->addError($attribute, 'Backup path cannot contain directory traversal sequences (..)');
             return;
         }
         
@@ -431,7 +434,7 @@ class Settings extends Model
         // Verify the real path is still within allowed directories
         $validPaths = [
             Craft::getAlias('@root'),
-            Craft::getAlias('@storage'), 
+            Craft::getAlias('@storage'),
             Craft::getAlias('@translations'),
         ];
         
@@ -468,7 +471,6 @@ class Settings extends Model
                     // The actual storage will be handled by VolumeBackupService
                     $volumeName = $volume->name;
                     return "Volume: {$volumeName}/translation-manager/backups";
-
                 } catch (\Exception $e) {
                     // Log the error and fall back
                     $this->logError('Failed to get volume path', ['error' => $e->getMessage()]);
@@ -547,7 +549,7 @@ class Settings extends Model
                     // Handle boolean casting
                     if (in_array($attribute, ['enableFormieIntegration', 'enableSiteTranslations', 'autoExport',
                                                'showContext', 'enableSuggestions', 'autoSaveEnabled',
-                                               'backupEnabled', 'backupOnImport'])) {
+                                               'backupEnabled', 'backupOnImport', ])) {
                         $settings->$attribute = (bool)$row[$attribute];
                     }
                     // Handle integer casting
@@ -628,7 +630,7 @@ class Settings extends Model
     
     /**
      * Get the config file value for a setting
-     * 
+     *
      * @param string $attribute The setting attribute name
      * @return mixed|null
      */
@@ -683,7 +685,7 @@ class Settings extends Model
             'autoSaveDelay' => $this->autoSaveDelay,
             'showContext' => (int)$this->showContext,
             'enableSuggestions' => (int)$this->enableSuggestions,
-            'skipPatterns' => is_array($this->skipPatterns) ? implode("\n", $this->skipPatterns) : '',
+            'skipPatterns' => implode("\n", $this->skipPatterns),
             'backupEnabled' => (int)$this->backupEnabled,
             'backupRetentionDays' => $this->backupRetentionDays,
             'backupOnImport' => (int)$this->backupOnImport,

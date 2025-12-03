@@ -11,25 +11,27 @@
 namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
-use craft\web\Controller;
-use craft\web\Response;
-use craft\web\UploadedFile;
 use craft\helpers\Db;
 use craft\helpers\StringHelper;
-use lindemannrock\translationmanager\TranslationManager;
-use lindemannrock\translationmanager\records\TranslationRecord;
-use lindemannrock\translationmanager\records\ImportHistoryRecord;
+use craft\web\Controller;
+use craft\web\UploadedFile;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\records\ImportHistoryRecord;
+use lindemannrock\translationmanager\records\TranslationRecord;
+use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
+use yii\web\Response;
 
 /**
  * CSV Import Controller
+ *
+ * @since 1.0.0
  */
 class ImportController extends Controller
 {
     use LoggingTrait;
     /**
-     * @var array|bool|int
+     * @var array<int|string>|bool|int
      */
     protected array|bool|int $allowAnonymous = false;
     
@@ -64,7 +66,7 @@ class ImportController extends Controller
         if (!is_array($translations)) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Invalid data format'
+                'error' => 'Invalid data format',
             ]);
         }
         
@@ -97,11 +99,11 @@ class ImportController extends Controller
                         'context' => isset($translation['context']) ? $translation['context'] : 'site',
                         'siteId' => $siteId,
                         'siteLanguage' => 'unknown',
-                        'error' => "Invalid site ID: {$siteId} does not exist"
+                        'error' => "Invalid site ID: {$siteId} does not exist",
                     ];
                     $this->logWarning("Invalid site ID for translation", [
                         'siteId' => $siteId,
-                        'english' => $translation['english']
+                        'english' => $translation['english'],
                     ]);
                     continue; // Skip further processing
                 }
@@ -128,7 +130,7 @@ class ImportController extends Controller
             $fieldsToCheck = [
                 'English' => $originalEnglish,
                 'Arabic' => $originalArabic,
-                'Context' => $originalContext
+                'Context' => $originalContext,
             ];
             
             foreach ($fieldsToCheck as $fieldName => $fieldValue) {
@@ -143,11 +145,11 @@ class ImportController extends Controller
                     'english' => $originalEnglish,
                     'arabic' => $originalArabic,
                     'context' => $originalContext,
-                    'threats' => $detectedThreats
+                    'threats' => $detectedThreats,
                 ];
                 $this->logWarning("Malicious content detected in translation", [
                     'english' => $originalEnglish,
-                    'threats' => array_keys($detectedThreats)
+                    'threats' => array_keys($detectedThreats),
                 ]);
                 continue; // Skip this row
             }
@@ -166,7 +168,7 @@ class ImportController extends Controller
                 '/<object[^>]*>.*?<\/object>/si',
                 '/<embed[^>]*>/i',
                 '/data:text\/html/i',
-                '/vbscript:/i'
+                '/vbscript:/i',
             ];
             
             foreach ($dangerousPatterns as $pattern) {
@@ -183,7 +185,7 @@ class ImportController extends Controller
             $sourceHash = md5($keyText);
             $existing = TranslationRecord::findOne([
                 'sourceHash' => $sourceHash,
-                'siteId' => $targetSiteId
+                'siteId' => $targetSiteId,
             ]);
             
             
@@ -211,18 +213,18 @@ class ImportController extends Controller
                         'currentStatus' => $existing->status,
                         'existingContext' => $existing->context,
                         'siteId' => $targetSiteId,
-                        'siteLanguage' => $this->getSiteLanguageById($targetSiteId)
+                        'siteLanguage' => $this->getSiteLanguageById($targetSiteId),
                     ];
                 } else {
                     $toUpdate[] = [
                         'english' => $keyText,                    // Translation Key
-                        'arabic' => $translationText,            // New Translation (from CSV)  
+                        'arabic' => $translationText,            // New Translation (from CSV)
                         'currentTranslation' => $existing->translation ?? '', // Current Translation (from DB)
                         'context' => $context,
                         'currentStatus' => $existing->status,
                         'existingContext' => $existing->context,
                         'siteId' => $targetSiteId,
-                        'siteLanguage' => $this->getSiteLanguageById($targetSiteId)
+                        'siteLanguage' => $this->getSiteLanguageById($targetSiteId),
                     ];
                 }
             } else {
@@ -231,7 +233,7 @@ class ImportController extends Controller
                     'arabic' => $translationText,
                     'context' => $context,
                     'siteId' => $targetSiteId,
-                    'siteLanguage' => $this->getSiteLanguageById($targetSiteId)
+                    'siteLanguage' => $this->getSiteLanguageById($targetSiteId),
                 ];
             }
         }
@@ -242,7 +244,7 @@ class ImportController extends Controller
             'toUpdate' => $toUpdate,
             'unchanged' => $unchanged,
             'malicious' => $maliciousRows,
-            'errors' => $errors
+            'errors' => $errors,
         ]);
     }
     
@@ -265,13 +267,13 @@ class ImportController extends Controller
             $this->logWarning('Import failed: No file uploaded');
             return $this->asJson([
                 'success' => false,
-                'error' => 'No file uploaded'
+                'error' => 'No file uploaded',
             ]);
         }
 
         $this->logInfo("Import started", [
             'filename' => $uploadedFile->name,
-            'size' => $uploadedFile->size
+            'size' => $uploadedFile->size,
         ]);
         
         // Validate file type
@@ -279,7 +281,7 @@ class ImportController extends Controller
         if (!in_array($extension, ['csv', 'txt'])) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Only CSV files are allowed'
+                'error' => 'Only CSV files are allowed',
             ]);
         }
         
@@ -287,7 +289,7 @@ class ImportController extends Controller
         if ($uploadedFile->size > 5242880) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'File size exceeds 5MB limit'
+                'error' => 'File size exceeds 5MB limit',
             ]);
         }
         
@@ -297,7 +299,7 @@ class ImportController extends Controller
         if (!in_array($mimeType, $allowedMimeTypes)) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Invalid file type'
+                'error' => 'Invalid file type',
             ]);
         }
         
@@ -340,7 +342,7 @@ class ImportController extends Controller
                 'imported' => $results['imported'],
                 'updated' => $results['updated'],
                 'skipped' => $results['skipped'],
-                'filename' => $uploadedFile->name
+                'filename' => $uploadedFile->name,
             ]);
             
             $response = [
@@ -348,7 +350,7 @@ class ImportController extends Controller
                 'imported' => $results['imported'],
                 'updated' => $results['updated'],
                 'skipped' => $results['skipped'],
-                'errors' => $results['errors']
+                'errors' => $results['errors'],
             ];
             
             if ($includeDetails && isset($results['details'])) {
@@ -356,16 +358,15 @@ class ImportController extends Controller
             }
             
             return $this->asJson($response);
-            
         } catch (\Exception $e) {
             $this->logError('CSV import failed', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
             
             return $this->asJson([
                 'success' => false,
-                'error' => 'Import failed: ' . $e->getMessage()
+                'error' => 'Import failed: ' . $e->getMessage(),
             ]);
         }
     }
@@ -421,7 +422,7 @@ class ImportController extends Controller
         // Detailed results
         $details = $includeDetails ? [
             'imported' => [],
-            'updated' => []
+            'updated' => [],
         ] : null;
         
         while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
@@ -432,7 +433,7 @@ class ImportController extends Controller
                 $this->logDebug("CSV DEBUG: Row data", [
                     'rowNumber' => $rowNumber,
                     'raw' => $row[$keyIndex],
-                    'length' => strlen($row[$keyIndex])
+                    'length' => strlen($row[$keyIndex]),
                 ]);
             }
             
@@ -448,7 +449,7 @@ class ImportController extends Controller
                 $context = ($contextIndex !== false && isset($row[$contextIndex])) ? $row[$contextIndex] : 'site';
                 
                 // Only skip truly empty keys
-                if ($keyText === '' || $keyText === null) {
+                if ($keyText === '') {
                     $skipped++;
                     continue;
                 }
@@ -486,7 +487,7 @@ class ImportController extends Controller
                     '/<object[^>]*>.*?<\/object>/si',
                     '/<embed[^>]*>/i',
                     '/data:text\/html/i',
-                    '/vbscript:/i'
+                    '/vbscript:/i',
                 ];
                 
                 foreach ($dangerousPatterns as $pattern) {
@@ -512,7 +513,7 @@ class ImportController extends Controller
                     $this->logWarning("Import validation failed: Text too long", [
                         'rowNumber' => $rowNumber,
                         'keyLength' => strlen($keyText),
-                        'translationLength' => strlen($translationText)
+                        'translationLength' => strlen($translationText),
                     ]);
                     continue;
                 }
@@ -527,7 +528,7 @@ class ImportController extends Controller
                 // Check if translation exists for this specific site (match unique constraint)
                 $existingTranslation = TranslationRecord::findOne([
                     'sourceHash' => $sourceHash,
-                    'siteId' => $siteId
+                    'siteId' => $siteId,
                 ]);
                 
                 if ($existingTranslation) {
@@ -565,7 +566,7 @@ class ImportController extends Controller
                                 'key' => $keyText,
                                 'translation' => $translationText,
                                 'context' => $context,
-                                'previousTranslation' => $existingTranslation->getOldAttribute('translation')
+                                'previousTranslation' => $existingTranslation->getOldAttribute('translation'),
                             ];
                         }
                     } else {
@@ -579,7 +580,7 @@ class ImportController extends Controller
                         // Look for existing translation for this site (match unique constraint)
                         $translation = TranslationRecord::findOne([
                             'sourceHash' => md5($keyText),
-                            'siteId' => $siteId
+                            'siteId' => $siteId,
                         ]);
                         
                         $isNew = false;
@@ -610,13 +611,13 @@ class ImportController extends Controller
                                 $imported++;
                                 $this->logInfo("Import: Created new translation", [
                                     'key' => $keyText,
-                                    'siteId' => $siteId
+                                    'siteId' => $siteId,
                                 ]);
                             } else {
                                 $updated++;
                                 $this->logInfo("Import: Updated translation", [
                                     'key' => $keyText,
-                                    'siteId' => $siteId
+                                    'siteId' => $siteId,
                                 ]);
                             }
                             
@@ -626,7 +627,7 @@ class ImportController extends Controller
                                     'key' => $keyText,
                                     'translation' => $translationText,
                                     'context' => $context,
-                                    'siteId' => $siteId
+                                    'siteId' => $siteId,
                                 ];
                             }
                         } else {
@@ -636,14 +637,13 @@ class ImportController extends Controller
                             $this->logWarning("Import: Failed to save translation", [
                                 'key' => $keyText,
                                 'siteId' => $siteId,
-                                'error' => $errorMsg
+                                'error' => $errorMsg,
                             ]);
                         }
                     } catch (\Exception $e) {
                         $errors[] = "Row $rowNumber: " . $e->getMessage();
                     }
                 }
-                
             } catch (\Exception $e) {
                 $errors[] = "Row $rowNumber: " . $e->getMessage();
             }
@@ -655,7 +655,7 @@ class ImportController extends Controller
             'imported' => $imported,
             'updated' => $updated,
             'skipped' => $skipped,
-            'errors' => array_slice($errors, 0, 10) // Limit errors to prevent huge responses
+            'errors' => array_slice($errors, 0, 10), // Limit errors to prevent huge responses
         ];
         
         if ($includeDetails) {
@@ -713,6 +713,7 @@ class ImportController extends Controller
         }
         
         // Get all import history records
+        /** @var ImportHistoryRecord[] $history */
         $history = ImportHistoryRecord::find()
             ->with('user')
             ->orderBy(['dateCreated' => SORT_DESC])
@@ -731,7 +732,7 @@ class ImportController extends Controller
                 'errors' => $record->errors ? json_decode($record->errors, true) : [],
                 'hasErrors' => !empty($record->errors),
                 'backupPath' => $record->backupPath,
-                'user' => $record->user ? $record->user->username : 'Unknown',
+                'user' => $record->user->username ?? 'Unknown',
                 'dateCreated' => $record->dateCreated,
                 'formattedDate' => Craft::$app->getFormatter()->asDatetime($record->dateCreated, 'short'),
             ];
@@ -765,7 +766,7 @@ class ImportController extends Controller
             
             $this->logWarning("Malicious content blocked in import", [
                 'english' => $english,
-                'threats' => $threatList
+                'threats' => $threatList,
             ]);
         }
         
@@ -792,7 +793,7 @@ class ImportController extends Controller
             '/data:text\/html/i' => 'Data URL',
             '/on\w+\s*=/i' => 'Event handler',
             '/<meta[^>]*http-equiv/i' => 'Meta refresh',
-            '/<base[^>]*href/i' => 'Base tag'
+            '/<base[^>]*href/i' => 'Base tag',
         ];
         
         // Check for formula injection patterns but exclude phone numbers
@@ -852,13 +853,12 @@ class ImportController extends Controller
                 Craft::$app->getSession()->setNotice(Craft::t('translation-manager', 'Import logs cleared successfully.'));
                 
                 return $this->asJson([
-                    'success' => true
+                    'success' => true,
                 ]);
             }
             
             Craft::$app->getSession()->setNotice(Craft::t('translation-manager', 'Import logs cleared successfully.'));
             return $this->redirect('translation-manager/settings/import-export#history');
-            
         } catch (\Exception $e) {
             $this->logError('Failed to clear import logs', ['error' => $e->getMessage()]);
             
@@ -883,7 +883,7 @@ class ImportController extends Controller
             if ($site->language === $language) {
                 return $site;
             }
-            // Case insensitive match  
+            // Case insensitive match
             if (strcasecmp($site->language, $language) === 0) {
                 return $site;
             }

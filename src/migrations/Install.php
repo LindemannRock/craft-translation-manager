@@ -10,13 +10,14 @@
 
 namespace lindemannrock\translationmanager\migrations;
 
-use Craft;
 use craft\db\Migration;
 use craft\helpers\Db;
 use craft\helpers\StringHelper;
 
 /**
  * Installation Migration
+ *
+ * @since 1.0.0
  */
 class Install extends Migration
 {

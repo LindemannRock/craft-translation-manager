@@ -28,6 +28,12 @@ use craft\db\ActiveRecord;
  * @property string|null $dateCreated
  * @property string|null $dateUpdated
  * @property string $uid
+ * @property string|null $englishText
+ * @property string|null $arabicText
+ * @property string|null $frenchText
+ * @property string|null $germanText
+ * @property string|null $spanishText
+ * @since 1.0.0
  */
 class TranslationRecord extends ActiveRecord
 {

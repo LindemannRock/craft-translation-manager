@@ -12,8 +12,10 @@ namespace lindemannrock\translationmanager\interfaces;
 
 /**
  * Translation Integration Interface
- * 
+ *
  * Defines the contract for all third-party plugin integrations with Translation Manager
+ *
+ * @since 1.5.0
  */
 interface TranslationIntegrationInterface
 {
@@ -39,7 +41,7 @@ interface TranslationIntegrationInterface
 
     /**
      * Capture all translatable content from an element/model
-     * 
+     *
      * @param mixed $element The element to extract translations from
      * @return array Array of captured translation data
      */
@@ -53,7 +55,7 @@ interface TranslationIntegrationInterface
 
     /**
      * Get all translatable fields/content types this integration supports
-     * 
+     *
      * @return array List of supported content types
      */
     public function getSupportedContentTypes(): array;
@@ -61,14 +63,14 @@ interface TranslationIntegrationInterface
     /**
      * Get configuration schema for this integration
      * Used to generate settings UI and validation
-     * 
+     *
      * @return array Configuration schema
      */
     public function getConfigSchema(): array;
 
     /**
      * Validate integration-specific configuration
-     * 
+     *
      * @param array $config Configuration to validate
      * @return array Validation errors (empty if valid)
      */
@@ -76,7 +78,7 @@ interface TranslationIntegrationInterface
 
     /**
      * Get statistics for this integration (translation counts, etc.)
-     * 
+     *
      * @return array Statistics data
      */
     public function getStatistics(): array;

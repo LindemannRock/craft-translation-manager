@@ -16,6 +16,8 @@ use lindemannrock\translationmanager\TranslationManager;
 
 /**
  * Translation Stats Utility
+ *
+ * @since 1.0.0
  */
 class TranslationStatsUtility extends Utility
 {

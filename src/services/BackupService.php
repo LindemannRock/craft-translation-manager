@@ -17,14 +17,15 @@ use craft\helpers\DateTimeHelper;
 use craft\helpers\Db;
 use craft\helpers\FileHelper;
 use craft\helpers\Json;
-use craft\helpers\StringHelper;
-use lindemannrock\translationmanager\TranslationManager;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\TranslationManager;
 
 /**
  * Backup Service
  *
  * Handles automatic backups of translations to @storage/translation-manager/backups/[date]
+ *
+ * @since 1.0.0
  */
 class BackupService extends Component
 {
@@ -58,14 +59,14 @@ class BackupService extends Component
         // Check if a backup volume is configured
         if ($settings->backupVolumeUid) {
             $volume = Craft::$app->getVolumes()->getVolumeByUid($settings->backupVolumeUid);
-            if ($volume && $volume->getFs()) {
+            if ($volume) {
                 $this->_volumeFs = $volume->getFs();
                 $this->_useVolume = true;
 
                 $fsType = basename(str_replace('\\', '/', get_class($this->_volumeFs)));
                 $this->logInfo("Using volume for backups", [
                     'volumeName' => $volume->name,
-                    'fsType' => $fsType
+                    'fsType' => $fsType,
                 ]);
 
                 // Ensure base directory exists in the volume
@@ -76,7 +77,7 @@ class BackupService extends Component
                     }
                 } catch (\Exception $e) {
                     $this->logWarning('Could not create volume directory, will create on demand', [
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ]);
                 }
             }
@@ -99,7 +100,7 @@ class BackupService extends Component
             if ($volume) {
                 // Get the actual filesystem path
                 $fs = $volume->getFs();
-                if ($fs && property_exists($fs, 'path')) {
+                if (property_exists($fs, 'path')) {
                     $path = App::env($fs->path);
                     return rtrim($path, '/') . '/' . $this->_volumeBackupPath;
                 }
@@ -124,12 +125,12 @@ class BackupService extends Component
         $storageType = $this->_useVolume ? 'volume' : 'local';
         $this->logInfo("Creating backup", [
             'reason' => $reasonText,
-            'storageType' => $storageType
+            'storageType' => $storageType,
         ]);
 
         try {
             // Determine the subfolder based on reason
-            $subfolder = match($reason) {
+            $subfolder = match ($reason) {
                 'scheduled' => 'scheduled',
                 'before_import' => 'imports',
                 'before_cleanup' => 'maintenance',
@@ -146,7 +147,7 @@ class BackupService extends Component
             $translations = TranslationManager::getInstance()->translations->getTranslations([
                 'status' => 'all', // Include all statuses
                 'allSites' => true, // Include all sites
-                'type' => 'all' // Include both formie and site translations
+                'type' => 'all', // Include both formie and site translations
             ]);
 
             if (empty($translations) && $reason !== 'Before Restore') {
@@ -161,7 +162,7 @@ class BackupService extends Component
                 'reason' => $reason ?? 'manual',
                 'user' => Craft::$app->getUser()->getIdentity()->username ?? 'system',
                 'userId' => Craft::$app->getUser()->getId(),
-                'translationCount' => count($translations ?? []),
+                'translationCount' => count($translations),
                 'formieEnabled' => TranslationManager::getInstance()->getSettings()->enableFormieIntegration,
                 'siteEnabled' => TranslationManager::getInstance()->getSettings()->enableSiteTranslations,
                 'craftVersion' => Craft::$app->getVersion(),
@@ -172,7 +173,7 @@ class BackupService extends Component
             $formieTranslations = [];
             $siteTranslations = [];
 
-            foreach ($translations ?? [] as $translation) {
+            foreach ($translations as $translation) {
                 if (str_starts_with($translation['context'], 'formie.')) {
                     $formieTranslations[] = $translation;
                 } else {
@@ -186,8 +187,6 @@ class BackupService extends Component
             } else {
                 return $this->_createLocalBackup($subfolder . '/' . $date, $metadata, $formieTranslations, $siteTranslations);
             }
-
-
         } catch (\Exception $e) {
             $this->logError('Failed to create backup', ['error' => $e->getMessage()]);
             return null;
@@ -230,7 +229,7 @@ class BackupService extends Component
             $this->logInfo('Backup checksum calculated', [
                 'checksum' => substr($checksum, 0, 16) . '...',
                 'formieSize' => strlen($formieContent),
-                'siteSize' => strlen($siteContent)
+                'siteSize' => strlen($siteContent),
             ]);
 
             // Write metadata file
@@ -254,7 +253,7 @@ class BackupService extends Component
             $this->logInfo("Backup created in volume", [
                 'path' => $fullPath,
                 'formieCount' => $formieCount,
-                'siteCount' => $siteCount
+                'siteCount' => $siteCount,
             ]);
 
             return $fullPath;
@@ -292,7 +291,7 @@ class BackupService extends Component
             $this->logInfo('Backup checksum calculated', [
                 'checksum' => substr($checksum, 0, 16) . '...',
                 'formieSize' => strlen($formieContent),
-                'siteSize' => strlen($siteContent)
+                'siteSize' => strlen($siteContent),
             ]);
 
             // Write metadata file
@@ -316,7 +315,7 @@ class BackupService extends Component
             $this->logInfo("Backup created locally", [
                 'path' => $fullPath,
                 'formieCount' => $formieCount,
-                'siteCount' => $siteCount
+                'siteCount' => $siteCount,
             ]);
 
             return $fullPath;
@@ -416,7 +415,7 @@ class BackupService extends Component
         $fsClass = $this->_volumeFs ? get_class($this->_volumeFs) : 'null';
         $this->logInfo("Starting volume backup listing", [
             'path' => $this->_volumeBackupPath,
-            'fsClass' => $fsClass
+            'fsClass' => $fsClass,
         ]);
 
         // Add debug info to response for remote debugging
@@ -466,7 +465,7 @@ class BackupService extends Component
 
                         $this->logDebug('Found backup directory', [
                             'backupPath' => $backupPath,
-                            'metadataPath' => $metadataPath
+                            'metadataPath' => $metadataPath,
                         ]);
 
                         try {
@@ -499,7 +498,7 @@ class BackupService extends Component
                         } catch (\Exception $e) {
                             $this->logError('Error processing backup', [
                                 'backupPath' => $backupPath,
-                                'error' => $e->getMessage()
+                                'error' => $e->getMessage(),
                             ]);
                             continue;
                         }
@@ -601,13 +600,12 @@ class BackupService extends Component
                         } catch (\Exception $e) {
                             $this->logError('Error processing backup in fallback', [
                                 'dir' => $dir,
-                                'error' => $e->getMessage()
+                                'error' => $e->getMessage(),
                             ]);
                         }
                     }
                 }
             }
-
         } catch (\Exception $e) {
             $this->logError('Direct volume backup listing failed', ['error' => $e->getMessage()]);
         }
@@ -655,7 +653,7 @@ class BackupService extends Component
                 } catch (\Exception $e) {
                     $this->logError('Failed to read backup metadata', [
                         'dir' => $dir,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ]);
                 }
             }
@@ -685,7 +683,7 @@ class BackupService extends Component
                     } catch (\Exception $e) {
                         $this->logError('Failed to read backup metadata', [
                             'dir' => $dir,
-                            'error' => $e->getMessage()
+                            'error' => $e->getMessage(),
                         ]);
                     }
                 }
@@ -714,7 +712,7 @@ class BackupService extends Component
         $storageType = $this->_useVolume ? 'volume' : 'local';
         $this->logInfo("Starting backup restore", [
             'backup' => $backupName,
-            'storageType' => $storageType
+            'storageType' => $storageType,
         ]);
 
         if ($this->_useVolume) {
@@ -736,7 +734,7 @@ class BackupService extends Component
             if (!$this->_volumeFs->directoryExists($backupPath)) {
                 return [
                     'success' => false,
-                    'message' => 'Backup not found in volume'
+                    'message' => 'Backup not found in volume',
                 ];
             }
 
@@ -745,7 +743,7 @@ class BackupService extends Component
             if (!$this->_volumeFs->fileExists($metadataPath)) {
                 return [
                     'success' => false,
-                    'message' => 'Backup metadata not found'
+                    'message' => 'Backup metadata not found',
                 ];
             }
 
@@ -774,23 +772,23 @@ class BackupService extends Component
                     $this->logError('Backup checksum validation failed', [
                         'backup' => $backupName,
                         'expected' => substr($expectedChecksum, 0, 16) . '...',
-                        'actual' => substr($actualChecksum, 0, 16) . '...'
+                        'actual' => substr($actualChecksum, 0, 16) . '...',
                     ]);
 
                     return [
                         'success' => false,
-                        'message' => 'Backup integrity check failed. The backup files may have been modified or corrupted.'
+                        'message' => 'Backup integrity check failed. The backup files may have been modified or corrupted.',
                     ];
                 }
 
                 $this->logInfo('Backup checksum validated successfully', [
                     'backup' => $backupName,
-                    'checksum' => substr($actualChecksum, 0, 16) . '...'
+                    'checksum' => substr($actualChecksum, 0, 16) . '...',
                 ]);
             } else {
                 // Old backup without checksum - log warning but continue
                 $this->logWarning('Backup does not have checksum (created with older version)', [
-                    'backup' => $backupName
+                    'backup' => $backupName,
                 ]);
             }
 
@@ -839,7 +837,7 @@ class BackupService extends Component
             $this->logInfo("Volume backup restored successfully", [
                 'backup' => $backupName,
                 'imported' => $imported,
-                'errorCount' => $errorCount
+                'errorCount' => $errorCount,
             ]);
 
             return [
@@ -847,18 +845,17 @@ class BackupService extends Component
                 'message' => "Restored {$imported} translations from volume backup",
                 'imported' => $imported,
                 'errors' => $errors,
-                'preRestoreBackup' => $preRestoreBackup
+                'preRestoreBackup' => $preRestoreBackup,
             ];
-
         } catch (\Exception $e) {
             $this->logError('Failed to restore volume backup', [
                 'backup' => $backupName,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Failed to restore backup: ' . $e->getMessage()
+                'message' => 'Failed to restore backup: ' . $e->getMessage(),
             ];
         }
     }
@@ -879,7 +876,7 @@ class BackupService extends Component
         if (!is_dir($backupDir)) {
             return [
                 'success' => false,
-                'message' => 'Backup not found'
+                'message' => 'Backup not found',
             ];
         }
 
@@ -889,7 +886,7 @@ class BackupService extends Component
             if (!file_exists($metadataFile)) {
                 return [
                     'success' => false,
-                    'message' => 'Backup metadata not found'
+                    'message' => 'Backup metadata not found',
                 ];
             }
 
@@ -917,23 +914,23 @@ class BackupService extends Component
                     $this->logError('Backup checksum validation failed', [
                         'backup' => $backupName,
                         'expected' => substr($expectedChecksum, 0, 16) . '...',
-                        'actual' => substr($actualChecksum, 0, 16) . '...'
+                        'actual' => substr($actualChecksum, 0, 16) . '...',
                     ]);
 
                     return [
                         'success' => false,
-                        'message' => 'Backup integrity check failed. The backup files may have been modified or corrupted.'
+                        'message' => 'Backup integrity check failed. The backup files may have been modified or corrupted.',
                     ];
                 }
 
                 $this->logInfo('Backup checksum validated successfully', [
                     'backup' => $backupName,
-                    'checksum' => substr($actualChecksum, 0, 16) . '...'
+                    'checksum' => substr($actualChecksum, 0, 16) . '...',
                 ]);
             } else {
                 // Old backup without checksum - log warning but continue
                 $this->logWarning('Backup does not have checksum (created with older version)', [
-                    'backup' => $backupName
+                    'backup' => $backupName,
                 ]);
             }
 
@@ -982,7 +979,7 @@ class BackupService extends Component
             $this->logInfo("Local backup restored successfully", [
                 'backup' => $backupName,
                 'imported' => $imported,
-                'errorCount' => $errorCount
+                'errorCount' => $errorCount,
             ]);
 
             return [
@@ -990,70 +987,19 @@ class BackupService extends Component
                 'message' => "Restored {$imported} translations from backup",
                 'imported' => $imported,
                 'errors' => $errors,
-                'preRestoreBackup' => $preRestoreBackup
+                'preRestoreBackup' => $preRestoreBackup,
             ];
-
         } catch (\Exception $e) {
             $this->logError('Failed to restore local backup', [
                 'backup' => $backupName,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Restore failed: ' . $e->getMessage()
+                'message' => 'Restore failed: ' . $e->getMessage(),
             ];
         }
-    }
-
-    /**
-     * Restore translations from a JSON file
-     */
-    private function restoreFromFile(string $filePath): array
-    {
-        $imported = 0;
-        $errors = [];
-
-        try {
-            $content = file_get_contents($filePath);
-            $translations = Json::decode($content);
-
-            foreach ($translations as $data) {
-                try {
-                    $translation = new \lindemannrock\translationmanager\records\TranslationRecord();
-                    $translation->source = $data['source'];
-                    $translation->sourceHash = $data['sourceHash'];
-                    $translation->context = $data['context'];
-
-                    // Handle both old and new field names for backward compatibility
-                    $translation->translationKey = $data['translationKey'] ?? $data['englishText'] ?? '';
-                    $translation->translation = $data['translation'] ?? $data['arabicText'] ?? '';
-                    $translation->siteId = $data['siteId'] ?? 1; // Default to primary site for old backups
-
-                    $translation->status = $data['status'];
-                    $translation->usageCount = $data['usageCount'] ?? 1;
-                    $translation->lastUsed = Db::prepareDateForDb(DateTimeHelper::toDateTime($data['lastUsed'] ?? time()));
-                    $translation->dateCreated = Db::prepareDateForDb(DateTimeHelper::toDateTime($data['dateCreated'] ?? time()));
-                    $translation->dateUpdated = Db::prepareDateForDb(DateTimeHelper::toDateTime($data['dateUpdated'] ?? time()));
-                    $translation->uid = $data['uid'] ?? \craft\helpers\StringHelper::UUID();
-
-                    if ($translation->save()) {
-                        $imported++;
-                    } else {
-                        $errors[] = 'Failed to import: ' . ($data['translationKey'] ?? $data['englishText'] ?? 'Unknown');
-                    }
-                } catch (\Exception $e) {
-                    $errors[] = 'Import error: ' . $e->getMessage();
-                }
-            }
-        } catch (\Exception $e) {
-            $errors[] = 'Failed to read file: ' . $e->getMessage();
-        }
-
-        return [
-            'imported' => $imported,
-            'errors' => $errors
-        ];
     }
 
     /**
@@ -1101,7 +1047,7 @@ class BackupService extends Component
 
         return [
             'imported' => $imported,
-            'errors' => $errors
+            'errors' => $errors,
         ];
     }
 
@@ -1126,7 +1072,7 @@ class BackupService extends Component
 
         $this->logInfo("Attempting to delete volume backup", [
             'backup' => $backupName,
-            'path' => $backupPath
+            'path' => $backupPath,
         ]);
 
         try {
@@ -1141,7 +1087,7 @@ class BackupService extends Component
         } catch (\Exception $e) {
             $this->logError('Failed to delete volume backup', [
                 'backup' => $backupName,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             return false;
         }
@@ -1164,7 +1110,7 @@ class BackupService extends Component
         $this->logInfo("Attempting to delete local backup", [
             'backup' => $backupName,
             'path' => $backupDir,
-            'exists' => $exists
+            'exists' => $exists,
         ]);
 
         if (!is_dir($backupDir)) {
@@ -1179,7 +1125,7 @@ class BackupService extends Component
         } catch (\Exception $e) {
             $this->logError('Failed to delete local backup', [
                 'backup' => $backupName,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             return false;
         }
@@ -1223,7 +1169,7 @@ class BackupService extends Component
             $this->logInfo('Cleaned up old backups', [
                 'deleted' => $deleted,
                 'skipped_manual' => $skipped,
-                'retentionDays' => $retentionDays
+                'retentionDays' => $retentionDays,
             ]);
         }
 
@@ -1261,7 +1207,7 @@ class BackupService extends Component
             // Return 0 if we can't calculate size
             $this->logWarning('Could not calculate volume backup size', [
                 'backupPath' => $backupPath,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
         }
 
@@ -1302,7 +1248,7 @@ class BackupService extends Component
      */
     private function getDisplayReason(string $reason): string
     {
-        return match($reason) {
+        return match ($reason) {
             'manual' => Craft::t('translation-manager', 'Manual'),
             'before_import' => Craft::t('translation-manager', 'Before Import'),
             'before_restore' => Craft::t('translation-manager', 'Before Restore'),

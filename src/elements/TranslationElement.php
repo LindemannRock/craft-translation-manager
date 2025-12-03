@@ -14,9 +14,11 @@ use craft\base\Element;
 
 /**
  * Translation element - a wrapper for Feed Me compatibility
- * 
+ *
  * This is not a full Craft element, just a minimal implementation
  * to allow Feed Me imports of translation data.
+ *
+ * @since 1.0.0
  */
 class TranslationElement extends Element
 {
