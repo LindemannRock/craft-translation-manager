@@ -1,5 +1,15 @@
 # Changelog
 
+## [5.7.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.6.0...v5.7.0) (2025-12-03)
+
+
+### Features
+
+* add source language configuration to Translation Manager settings ([ebda2f4](https://github.com/LindemannRock/craft-translation-manager/commit/ebda2f41b3e2cc9bbe31dde287e5f6f214e58ece))
+* add source language selection to Translation Sources settings ([ca92431](https://github.com/LindemannRock/craft-translation-manager/commit/ca924311ebc90fadfb5af9e48d2e2a0a7274a2b8))
+* simplify config loading by using Craft's native multi-environment handling ([1f3682c](https://github.com/LindemannRock/craft-translation-manager/commit/1f3682c0b4477f06698170ca18774732dbe1e6f2))
+* update titles and improve layout for settings and backup pages ([68a23b8](https://github.com/LindemannRock/craft-translation-manager/commit/68a23b83ba7b5a7964f73f88a002603ef2484466))
+
 ## [5.6.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.5.0...v5.6.0) (2025-11-25)
 
 
