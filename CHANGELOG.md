@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.9.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.8.0...v5.9.0) (2025-12-09)
+
+
+### Features
+
+* enhance Google Review integration with default messages and button label ([c240ff3](https://github.com/LindemannRock/craft-translation-manager/commit/c240ff3a8d140210ee4aee90618b3ff17e3e7d01))
+
 ## [5.8.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.7.0...v5.8.0) (2025-12-09)
 
 
