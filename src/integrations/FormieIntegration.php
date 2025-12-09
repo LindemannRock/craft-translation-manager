@@ -591,7 +591,7 @@ class FormieIntegration extends BaseIntegration
                 // Capture Google Review integration messages if enabled
                 if (property_exists($field, 'enableGoogleReview') && $field->enableGoogleReview) {
                     // Capture message high (custom or default)
-                    $messageHigh = $field->googleReviewMessageHigh ?: 'Thank you for the excellent rating! 🎉 We would love if you could share your experience with others.';
+                    $messageHigh = $field->googleReviewMessageHigh ?: 'Thank you for the excellent rating! We would love if you could share your experience with others.';
                     $captured[] = $this->createTranslation(
                         $messageHigh,
                         "formie.{$formHandle}.{$fieldHandle}.googleReview.messageHigh"
