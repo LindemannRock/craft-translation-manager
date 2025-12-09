@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.9.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.9.0...v5.9.1) (2025-12-09)
+
+
+### Bug Fixes
+
+* remove emoji from Google Review integration default message ([5c380b2](https://github.com/LindemannRock/craft-translation-manager/commit/5c380b229219b2ae094eb53f164262bd5dcfc714))
+
 ## [5.9.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.8.0...v5.9.0) (2025-12-09)
 
 
