@@ -590,33 +590,33 @@ class FormieIntegration extends BaseIntegration
 
                 // Capture Google Review integration messages if enabled
                 if (property_exists($field, 'enableGoogleReview') && $field->enableGoogleReview) {
-                    if (property_exists($field, 'googleReviewMessageHigh') && $field->googleReviewMessageHigh) {
-                        $captured[] = $this->createTranslation(
-                            $field->googleReviewMessageHigh,
-                            "formie.{$formHandle}.{$fieldHandle}.googleReview.messageHigh"
-                        );
-                    }
+                    // Capture message high (custom or default)
+                    $messageHigh = $field->googleReviewMessageHigh ?: 'Thank you for the excellent rating! 🎉 We would love if you could share your experience with others.';
+                    $captured[] = $this->createTranslation(
+                        $messageHigh,
+                        "formie.{$formHandle}.{$fieldHandle}.googleReview.messageHigh"
+                    );
 
-                    if (property_exists($field, 'googleReviewMessageMedium') && $field->googleReviewMessageMedium) {
-                        $captured[] = $this->createTranslation(
-                            $field->googleReviewMessageMedium,
-                            "formie.{$formHandle}.{$fieldHandle}.googleReview.messageMedium"
-                        );
-                    }
+                    // Capture message medium (custom or default)
+                    $messageMedium = $field->googleReviewMessageMedium ?: 'Thank you for your feedback!';
+                    $captured[] = $this->createTranslation(
+                        $messageMedium,
+                        "formie.{$formHandle}.{$fieldHandle}.googleReview.messageMedium"
+                    );
 
-                    if (property_exists($field, 'googleReviewMessageLow') && $field->googleReviewMessageLow) {
-                        $captured[] = $this->createTranslation(
-                            $field->googleReviewMessageLow,
-                            "formie.{$formHandle}.{$fieldHandle}.googleReview.messageLow"
-                        );
-                    }
+                    // Capture message low (custom or default)
+                    $messageLow = $field->googleReviewMessageLow ?: 'Thank you for your feedback. We will use it to improve our service.';
+                    $captured[] = $this->createTranslation(
+                        $messageLow,
+                        "formie.{$formHandle}.{$fieldHandle}.googleReview.messageLow"
+                    );
 
-                    if (property_exists($field, 'googleReviewButtonLabel') && $field->googleReviewButtonLabel) {
-                        $captured[] = $this->createTranslation(
-                            $field->googleReviewButtonLabel,
-                            "formie.{$formHandle}.{$fieldHandle}.googleReview.buttonLabel"
-                        );
-                    }
+                    // Capture button label (custom or default)
+                    $buttonLabel = $field->googleReviewButtonLabel ?: 'Review on Google';
+                    $captured[] = $this->createTranslation(
+                        $buttonLabel,
+                        "formie.{$formHandle}.{$fieldHandle}.googleReview.buttonLabel"
+                    );
                 }
                 break;
 

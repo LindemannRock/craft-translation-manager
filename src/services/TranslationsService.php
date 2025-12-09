@@ -1114,6 +1114,25 @@ class TranslationsService extends Component
                         }
                     }
                 }
+
+                // Google Review integration messages
+                if (property_exists($field, 'enableGoogleReview') && $field->enableGoogleReview) {
+                    // Add message high (custom or default)
+                    $messageHigh = $field->googleReviewMessageHigh ?: 'Thank you for the excellent rating! 🎉 We would love if you could share your experience with others.';
+                    $activeTexts[$messageHigh] = true;
+
+                    // Add message medium (custom or default)
+                    $messageMedium = $field->googleReviewMessageMedium ?: 'Thank you for your feedback!';
+                    $activeTexts[$messageMedium] = true;
+
+                    // Add message low (custom or default)
+                    $messageLow = $field->googleReviewMessageLow ?: 'Thank you for your feedback. We will use it to improve our service.';
+                    $activeTexts[$messageLow] = true;
+
+                    // Add button label (custom or default)
+                    $buttonLabel = $field->googleReviewButtonLabel ?: 'Review on Google';
+                    $activeTexts[$buttonLabel] = true;
+                }
                 break;
 
             case 'verbb\formie\fields\Dropdown':
