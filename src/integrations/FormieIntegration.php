@@ -587,6 +587,37 @@ class FormieIntegration extends BaseIntegration
                         }
                     }
                 }
+
+                // Capture Google Review integration messages if enabled
+                if (property_exists($field, 'enableGoogleReview') && $field->enableGoogleReview) {
+                    if (property_exists($field, 'googleReviewMessageHigh') && $field->googleReviewMessageHigh) {
+                        $captured[] = $this->createTranslation(
+                            $field->googleReviewMessageHigh,
+                            "formie.{$formHandle}.{$fieldHandle}.googleReview.messageHigh"
+                        );
+                    }
+
+                    if (property_exists($field, 'googleReviewMessageMedium') && $field->googleReviewMessageMedium) {
+                        $captured[] = $this->createTranslation(
+                            $field->googleReviewMessageMedium,
+                            "formie.{$formHandle}.{$fieldHandle}.googleReview.messageMedium"
+                        );
+                    }
+
+                    if (property_exists($field, 'googleReviewMessageLow') && $field->googleReviewMessageLow) {
+                        $captured[] = $this->createTranslation(
+                            $field->googleReviewMessageLow,
+                            "formie.{$formHandle}.{$fieldHandle}.googleReview.messageLow"
+                        );
+                    }
+
+                    if (property_exists($field, 'googleReviewButtonLabel') && $field->googleReviewButtonLabel) {
+                        $captured[] = $this->createTranslation(
+                            $field->googleReviewButtonLabel,
+                            "formie.{$formHandle}.{$fieldHandle}.googleReview.buttonLabel"
+                        );
+                    }
+                }
                 break;
 
             // Section field
