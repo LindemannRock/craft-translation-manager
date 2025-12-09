@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.8.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.7.0...v5.8.0) (2025-12-09)
+
+
+### Features
+
+* add support for capturing Google Review integration messages ([6f1bb09](https://github.com/LindemannRock/craft-translation-manager/commit/6f1bb09fa48315d7ce2611d0518ee27211b588ac))
+
 ## [5.7.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.6.0...v5.7.0) (2025-12-03)
 
 
