@@ -36,7 +36,7 @@ Translation Manager was created to solve critical gaps in Craft CMS multi-langua
   - Dynamic text direction (RTL/LTR) based on site language
   - Per-site translation files generation
   - **Locale Variant Support**: Full support for regional language variants (en-US, en-GB, en-CA, etc.)
-  - Automatic source language detection based on primary site configuration (uses the base language of your primary site)
+  - Configurable source language setting (Settings → Translation Manager → Sources) to match the language of your template strings
 - **Unified Translation Management**: Manage all translations in one place with an intuitive interface
 - **Smart Deduplication**: Each unique text is stored only once, regardless of how many forms use it
 - **Comprehensive Formie Support**:
@@ -173,6 +173,7 @@ cp vendor/lindemannrock/craft-translation-manager/src/config.php config/translat
 <?php
 return [
     'translationCategory' => 'messages',
+    'sourceLanguage' => 'en',            // Language your template strings are written in (e.g., 'Copyright', 'Submit')
     'autoExport' => true,
     'backupEnabled' => true,
     'logLevel' => 'error', // Options: 'debug', 'info', 'warning', 'error'
@@ -197,6 +198,10 @@ Navigate to **Settings → Translation Manager** in the Control Panel to configu
 - **Translation Category**: The category used for site translations (e.g., `lindemannrock`)
   - Cannot use reserved categories: `site`, `app`, `yii`, `craft`
   - Must start with a letter and contain only letters and numbers
+- **Source Language**: The language your template strings are written in (e.g., 'en' for English)
+  - Used for translation file generation and Craft's translation system
+  - Should match the language of your `|t()` keys, not necessarily your primary site
+  - Format: `en`, `en-US`, `ar`, etc.
 - **Enable Formie Integration**: Capture translations from Formie forms
 - **Enable Site Translations**: Capture translations using your configured category
 - **Auto Save**: Enable/disable automatic saving with configurable delay (1-10 seconds)
@@ -663,10 +668,10 @@ For security vulnerabilities, please see our [Security Policy](SECURITY.md).
 - **Site**: Use correct category `{{ 'Text'|t('lindemannrock') }}` and visit the frontend page
 - **Locale Variants**: If using locale-specific languages (en-US, en-GB, fr-CA, etc.):
   - Translation files are automatically exported to the correct locale folder (e.g., `/translations/en-US/lindemannrock.php`)
-  - The plugin automatically detects the source language from your primary site (the site with `primary: true`)
+  - The plugin uses the configured **Source Language** setting (Settings → Translation Manager → Sources) for translation keys
   - Each locale variant can have its own unique translations
-  - **Important**: Changing your primary site's language may affect existing translations
-  - Clear Craft's cache after changing site language settings
+  - **Important**: Changing the Source Language setting will affect which language translation files are generated
+  - Clear Craft's cache after changing the Source Language setting
 - Text with Twig syntax ({{, {%, {#) is automatically excluded
 
 ### Import Blocked by Security
