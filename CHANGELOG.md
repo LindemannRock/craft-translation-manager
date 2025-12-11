@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.9.2](https://github.com/LindemannRock/craft-translation-manager/compare/v5.9.1...v5.9.2) (2025-12-11)
+
+
+### Bug Fixes
+
+* clear current site value in import/export template ([b3bc308](https://github.com/LindemannRock/craft-translation-manager/commit/b3bc30838f77fe2821646ec89421a2c73fa466b3))
+* update form message handling to use raw properties and add TipTap to HTML conversion ([1d19ac3](https://github.com/LindemannRock/craft-translation-manager/commit/1d19ac3fb255262035465a8f899b56d7b4ddb8ba))
+
 ## [5.9.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.9.0...v5.9.1) (2025-12-09)
 
 
