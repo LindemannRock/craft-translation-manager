@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.9.3](https://github.com/LindemannRock/craft-translation-manager/compare/v5.9.2...v5.9.3) (2025-12-11)
+
+
+### Bug Fixes
+
+* update source language configuration details in README ([5f86bad](https://github.com/LindemannRock/craft-translation-manager/commit/5f86bad70353aca92730d22aa3e8ebc7d4a469cf))
+
 ## [5.9.2](https://github.com/LindemannRock/craft-translation-manager/compare/v5.9.1...v5.9.2) (2025-12-11)
 
 
