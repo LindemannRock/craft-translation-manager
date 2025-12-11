@@ -548,8 +548,9 @@ class TranslationsService extends Component
                 }
                 
                 // Collect submission message (both HTML and plain text versions)
-                if (method_exists($form->settings, 'getSubmitActionMessage')) {
-                    $htmlMessage = $form->settings->getSubmitActionMessage();
+                // IMPORTANT: Use RAW property, NOT getter - getter returns translated content
+                if ($form->settings->submitActionMessage ?? false) {
+                    $htmlMessage = $this->convertTipTapToHtml($form->settings->submitActionMessage);
                     if ($htmlMessage) {
                         // Store both HTML and plain text versions
                         $activeTexts[$htmlMessage] = true;
@@ -557,16 +558,18 @@ class TranslationsService extends Component
                         if ($plainMessage && $plainMessage !== $htmlMessage) {
                             $activeTexts[$plainMessage] = true;
                         }
-                        $this->logDebug("Form submit message", [
+                        $this->logDebug("Form submit message (using raw property)", [
                             'form' => $form->handle,
-                            'message' => $htmlMessage,
+                            'message' => substr($htmlMessage, 0, 80),
+                            'length' => strlen($htmlMessage),
                         ]);
                     }
                 }
                 
                 // Collect error message (both HTML and plain text versions)
-                if (method_exists($form->settings, 'getErrorMessage')) {
-                    $htmlMessage = $form->settings->getErrorMessage();
+                // IMPORTANT: Use RAW property, NOT getter - getter returns translated content
+                if ($form->settings->errorMessage ?? false) {
+                    $htmlMessage = $this->convertTipTapToHtml($form->settings->errorMessage);
                     if ($htmlMessage) {
                         // Store both HTML and plain text versions
                         $activeTexts[$htmlMessage] = true;
@@ -574,9 +577,10 @@ class TranslationsService extends Component
                         if ($plainMessage && $plainMessage !== $htmlMessage) {
                             $activeTexts[$plainMessage] = true;
                         }
-                        $this->logDebug("Form error message", [
+                        $this->logDebug("Form error message (using raw property)", [
                             'form' => $form->handle,
-                            'message' => $htmlMessage,
+                            'message' => substr($htmlMessage, 0, 80),
+                            'length' => strlen($htmlMessage),
                         ]);
                     }
                 }
@@ -1166,6 +1170,64 @@ class TranslationsService extends Component
                 }
                 break;
         }
+    }
+
+    /**
+     * Convert TipTap JSON to HTML (same as FormieIntegration)
+     */
+    private function convertTipTapToHtml($content): string
+    {
+        if (empty($content)) {
+            return '';
+        }
+
+        // If content is already an array (JSON-decoded), use it directly
+        if (is_array($content)) {
+            $data = $content;
+        }
+        // If it's a string, try to decode it
+        elseif (is_string($content)) {
+            // If it doesn't look like JSON, return as-is
+            if ($content[0] !== '[' && $content[0] !== '{') {
+                return $content;
+            }
+
+            try {
+                $data = json_decode($content, true);
+                if (!is_array($data)) {
+                    return $content;
+                }
+            } catch (\Exception) {
+                return $content;
+            }
+        } else {
+            return (string)$content;
+        }
+
+        $htmlParts = [];
+
+        // Convert TipTap blocks to HTML
+        foreach ($data as $block) {
+            if (isset($block['type']) && $block['type'] === 'paragraph') {
+                $paragraphText = '';
+
+                if (isset($block['content']) && is_array($block['content'])) {
+                    foreach ($block['content'] as $textNode) {
+                        if (isset($textNode['type']) && $textNode['type'] === 'text' && isset($textNode['text'])) {
+                            $paragraphText .= $textNode['text'];
+                        }
+                    }
+                }
+
+                if (!empty(trim($paragraphText))) {
+                    $htmlParts[] = '<p>' . htmlspecialchars($paragraphText) . '</p>';
+                } else {
+                    $htmlParts[] = '<p></p>';
+                }
+            }
+        }
+
+        return implode('', $htmlParts);
     }
 
     /**
