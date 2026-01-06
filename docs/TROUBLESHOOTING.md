@@ -1,3 +1,16 @@
+---
+title: Troubleshooting Guide
+category: troubleshooting
+order: 1
+description: Solutions to common issues, debugging tips, and problem resolution
+keywords: troubleshooting, problems, issues, errors, debugging, solutions
+relatedPages:
+  - slug: logging-guide
+    title: Logging Guide
+  - slug: config-reference
+    title: Configuration Reference
+---
+
 # Translation Manager Troubleshooting Guide
 
 ## Common Issues

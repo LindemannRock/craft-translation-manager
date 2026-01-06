@@ -1,3 +1,16 @@
+---
+title: Backup System
+category: features
+order: 4
+description: Automatic backups, cloud storage, restore functionality, and backup management
+keywords: backup, restore, cloud storage, asset volumes, s3, servd
+relatedPages:
+  - slug: config-reference
+    title: Configuration Reference
+  - slug: maintenance
+    title: Maintenance
+---
+
 # Translation Manager Backup System
 
 ## Overview

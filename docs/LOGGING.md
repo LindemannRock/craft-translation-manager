@@ -1,3 +1,16 @@
+---
+title: Logging Guide
+category: reference
+order: 2
+description: Complete logging documentation, log levels, configuration, and monitoring
+keywords: logging, logs, debugging, monitoring, errors
+relatedPages:
+  - slug: config-reference
+    title: Configuration Reference
+  - slug: troubleshooting-guide
+    title: Troubleshooting Guide
+---
+
 # Translation Manager Logging
 
 Translation Manager uses the [LindemannRock Logging Library](https://github.com/LindemannRock/craft-logging-library) for centralized, structured logging across all LindemannRock plugins.
