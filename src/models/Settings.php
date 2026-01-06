@@ -13,8 +13,9 @@ namespace lindemannrock\translationmanager\models;
 use Craft;
 use craft\base\Model;
 use craft\behaviors\EnvAttributeParserBehavior;
-use craft\db\Query;
-use craft\helpers\Db;
+use lindemannrock\base\traits\SettingsConfigTrait;
+use lindemannrock\base\traits\SettingsDisplayNameTrait;
+use lindemannrock\base\traits\SettingsPersistenceTrait;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 
 /**
@@ -25,6 +26,9 @@ use lindemannrock\logginglibrary\traits\LoggingTrait;
 class Settings extends Model
 {
     use LoggingTrait;
+    use SettingsConfigTrait;
+    use SettingsDisplayNameTrait;
+    use SettingsPersistenceTrait;
 
     /**
      * @inheritdoc
@@ -505,279 +509,70 @@ class Settings extends Model
         return $path;
     }
 
-    /**
-     * Load settings from database
-     *
-     * @param Settings|null $settings Optional existing settings instance
-     * @return self
-     */
-    public static function loadFromDatabase(?Settings $settings = null): self
-    {
-        if ($settings === null) {
-            $settings = new self();
-        }
-        
-        // Check if table exists before querying
-        $db = Craft::$app->getDb();
-        $tableSchema = $db->getSchema()->getTableSchema('{{%translationmanager_settings}}');
-        
-        if ($tableSchema === null) {
-            // Table doesn't exist yet, return default settings
-            return $settings;
-        }
-        
-        try {
-            // Load from database
-            $row = (new Query())
-                ->from('{{%translationmanager_settings}}')
-                ->where(['id' => 1])
-                ->one();
-            
-            if ($row) {
-                // Handle JSON/array fields
-                if (isset($row['skipPatterns'])) {
-                    $row['skipPatterns'] = $row['skipPatterns'] ? explode("\n", $row['skipPatterns']) : [];
-                }
-                
-                // Apply database values
-                $safeAttributes = $settings->safeAttributes();
-                foreach ($safeAttributes as $attribute) {
-                    if (!property_exists($settings, $attribute) || !isset($row[$attribute])) {
-                        continue;
-                    }
-                    
-                    // Handle boolean casting
-                    if (in_array($attribute, ['enableFormieIntegration', 'enableSiteTranslations', 'autoExport',
-                                               'showContext', 'enableSuggestions', 'autoSaveEnabled',
-                                               'backupEnabled', 'backupOnImport', ])) {
-                        $settings->$attribute = (bool)$row[$attribute];
-                    }
-                    // Handle integer casting
-                    elseif (in_array($attribute, ['itemsPerPage', 'autoSaveDelay', 'backupRetentionDays'])) {
-                        $settings->$attribute = (int)$row[$attribute];
-                    }
-                    // Handle nullable strings
-                    elseif (in_array($attribute, ['backupVolumeUid'])) {
-                        $settings->$attribute = $row[$attribute] ?: null;
-                    }
-                    // Regular assignment for strings and arrays
-                    else {
-                        $settings->$attribute = $row[$attribute];
-                    }
-                }
-            }
-        } catch (\Exception $e) {
-            // If there's any error, return default settings
-            $settings->logError('Failed to load Translation Manager settings from database', ['error' => $e->getMessage()]);
-        }
-        
-        return $settings;
-    }
-    
+    // =========================================================================
+    // Trait Configuration Methods
+    // =========================================================================
 
     /**
-     * Check if a setting is being overridden by config file
-     * Supports dot notation for nested settings like: skipPatterns.0
-     *
-     * @param string $attribute The setting attribute name or dot-notation path
-     * @return bool
+     * Database table name for settings storage
      */
-    public function isOverriddenByConfig(string $attribute): bool
+    protected static function tableName(): string
     {
-        $configPath = \Craft::$app->getPath()->getConfigPath() . '/translation-manager.php';
-
-        if (!file_exists($configPath)) {
-            return false;
-        }
-
-        // Load the raw config file instead of using Craft's config which merges with database
-        $rawConfig = require $configPath;
-
-        // Handle dot notation for nested config
-        if (str_contains($attribute, '.')) {
-            $parts = explode('.', $attribute);
-            $current = $rawConfig;
-
-            foreach ($parts as $part) {
-                if (!is_array($current) || !array_key_exists($part, $current)) {
-                    return false;
-                }
-                $current = $current[$part];
-            }
-
-            return true;
-        }
-
-        // Check for the attribute in the config
-        // Use array_key_exists instead of isset to detect null values
-        if (array_key_exists($attribute, $rawConfig)) {
-            return true;
-        }
-
-        // Check environment-specific configs
-        $env = \Craft::$app->getConfig()->env;
-        if ($env && is_array($rawConfig[$env] ?? null) && array_key_exists($attribute, $rawConfig[$env])) {
-            return true;
-        }
-
-        // Check wildcard config
-        if (is_array($rawConfig['*'] ?? null) && array_key_exists($attribute, $rawConfig['*'])) {
-            return true;
-        }
-
-        return false;
-    }
-    
-    /**
-     * Get the config file value for a setting
-     *
-     * @param string $attribute The setting attribute name
-     * @return mixed|null
-     */
-    public function getConfigFileValue(string $attribute): mixed
-    {
-        $handle = 'translation-manager';
-        $configService = \Craft::$app->getConfig();
-        $config = $configService->getConfigFromFile($handle);
-        
-        if (!$config) {
-            return null;
-        }
-        
-        // Check environment-specific config first
-        $env = \Craft::$app->getConfig()->getGeneral()->env ?? '*';
-        if (isset($config[$env][$attribute])) {
-            return $config[$env][$attribute];
-        }
-        
-        // Then check base config
-        if (isset($config[$attribute])) {
-            return $config[$attribute];
-        }
-        
-        return null;
+        return 'translationmanager_settings';
     }
 
     /**
-     * Save settings to database
-     *
-     * @return bool
+     * Plugin handle for config file resolution
      */
-    public function saveToDatabase(): bool
+    protected static function pluginHandle(): string
     {
-        if (!$this->validate()) {
-            return false;
-        }
+        return 'translation-manager';
+    }
 
-        $db = Craft::$app->getDb();
-        
-        // Get specific attributes to save
-        $attributes = [
-            'pluginName' => $this->pluginName,
-            'translationCategory' => $this->translationCategory,
-            'sourceLanguage' => $this->sourceLanguage,
-            'enableFormieIntegration' => (int)$this->enableFormieIntegration,
-            'enableSiteTranslations' => (int)$this->enableSiteTranslations,
-            'autoExport' => (int)$this->autoExport,
-            'exportPath' => $this->exportPath,
-            'itemsPerPage' => $this->itemsPerPage,
-            'autoSaveEnabled' => (int)$this->autoSaveEnabled,
-            'autoSaveDelay' => $this->autoSaveDelay,
-            'showContext' => (int)$this->showContext,
-            'enableSuggestions' => (int)$this->enableSuggestions,
-            'skipPatterns' => implode("\n", $this->skipPatterns),
-            'backupEnabled' => (int)$this->backupEnabled,
-            'backupRetentionDays' => $this->backupRetentionDays,
-            'backupOnImport' => (int)$this->backupOnImport,
-            'backupSchedule' => $this->backupSchedule,
-            'backupPath' => $this->backupPath,
-            'backupVolumeUid' => $this->backupVolumeUid,
-            'logLevel' => $this->logLevel,
-            'dateUpdated' => Db::prepareDateForDb(new \DateTime()),
+    /**
+     * Fields that should be cast to boolean
+     */
+    protected static function booleanFields(): array
+    {
+        return [
+            'enableFormieIntegration',
+            'enableSiteTranslations',
+            'autoExport',
+            'showContext',
+            'enableSuggestions',
+            'autoSaveEnabled',
+            'backupEnabled',
+            'backupOnImport',
         ];
-        
-        // Update existing settings (we know there's always one row from migration)
-        try {
-            $result = $db->createCommand()
-                ->update('{{%translationmanager_settings}}', $attributes, ['id' => 1])
-                ->execute();
-            
-            return $result !== false;
-        } catch (\Exception $e) {
-            $this->logError('Failed to save ' . $this->getFullName() . ' settings', ['error' => $e->getMessage()]);
-            return false;
-        }
     }
 
     /**
-     * Get display name (singular, without "Manager")
-     *
-     * Strips "Manager" and singularizes the plugin name for use in UI labels.
-     * E.g., "Translation Manager" → "Translation", "Translations" → "Translation"
-     *
-     * @return string
+     * Fields that should be cast to integer
      */
-    public function getDisplayName(): string
+    protected static function integerFields(): array
     {
-        // Strip "Manager" or "manager" from the name
-        $name = str_replace([' Manager', ' manager'], '', $this->pluginName);
-
-        // Singularize by removing trailing 's' if present
-        $singular = preg_replace('/s$/', '', $name) ?: $name;
-
-        return $singular;
+        return [
+            'itemsPerPage',
+            'autoSaveDelay',
+            'backupRetentionDays',
+        ];
     }
 
     /**
-     * Get full plugin name (as configured, with "Manager" if present)
-     *
-     * Returns the plugin name exactly as configured in settings.
-     * E.g., "Translation Manager", "Translations", etc.
-     *
-     * @return string
+     * Fields that should be JSON encoded/decoded
      */
-    public function getFullName(): string
+    protected static function jsonFields(): array
     {
-        return $this->pluginName;
+        return [
+            'skipPatterns',
+        ];
     }
 
     /**
-     * Get plural display name (without "Manager")
-     *
-     * Strips "Manager" from the plugin name but keeps plural form.
-     * E.g., "Translation Manager" → "Translations", "Translations" → "Translations"
-     *
-     * @return string
+     * Fields to exclude from database save
      */
-    public function getPluralDisplayName(): string
+    protected static function excludeFromSave(): array
     {
-        // Strip "Manager" or "manager" from the name
-        return str_replace([' Manager', ' manager'], '', $this->pluginName);
-    }
-
-    /**
-     * Get lowercase display name (singular, without "Manager")
-     *
-     * Lowercase version of getDisplayName() for use in messages, handles, etc.
-     * E.g., "Translation Manager" → "translation", "Translations" → "translation"
-     *
-     * @return string
-     */
-    public function getLowerDisplayName(): string
-    {
-        return strtolower($this->getDisplayName());
-    }
-
-    /**
-     * Get lowercase plural display name (without "Manager")
-     *
-     * Lowercase version of getPluralDisplayName() for use in messages, handles, etc.
-     * E.g., "Translation Manager" → "translations", "Translations" → "translations"
-     *
-     * @return string
-     */
-    public function getPluralLowerDisplayName(): string
-    {
-        return strtolower($this->getPluralDisplayName());
+        return ['integrationSettings'];
     }
 }

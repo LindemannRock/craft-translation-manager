@@ -23,6 +23,7 @@ use craft\services\Utilities;
 use craft\web\twig\variables\Cp;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
+use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\logginglibrary\LoggingLibrary;
 
 use lindemannrock\logginglibrary\traits\LoggingTrait;
@@ -98,6 +99,9 @@ class TranslationManager extends Plugin
     {
         parent::init();
         self::$plugin = $this;
+
+        // Bootstrap the base plugin helper
+        PluginHelper::bootstrap($this, 'translationHelper');
 
         // Configure logging using the new logging library
         $settings = $this->getSettings();
