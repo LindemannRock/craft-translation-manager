@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.10.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.9.4...v5.10.0) (2026-01-06)
+
+
+### Features
+
+* migrate to shared base plugin ([3732107](https://github.com/LindemannRock/craft-translation-manager/commit/37321072814efd030ce43f52ba55dded944c5ef7))
+
 ## [5.9.4](https://github.com/LindemannRock/craft-translation-manager/compare/v5.9.3...v5.9.4) (2026-01-06)
 
 
