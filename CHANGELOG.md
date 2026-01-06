@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.9.4](https://github.com/LindemannRock/craft-translation-manager/compare/v5.9.3...v5.9.4) (2026-01-06)
+
+
+### Miscellaneous Chores
+
+* format composer.json for consistency ([498b333](https://github.com/LindemannRock/craft-translation-manager/commit/498b333b5c30427b58389d6caab48899387f2c03))
+
 ## [5.9.3](https://github.com/LindemannRock/craft-translation-manager/compare/v5.9.2...v5.9.3) (2025-12-11)
 
 
