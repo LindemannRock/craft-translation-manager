@@ -1,58 +1,59 @@
 {
-    "name": "lindemannrock/craft-translation-manager",
-    "description": "Comprehensive translation management system for Craft CMS with Formie integration",
-    "type": "craft-plugin",
-    "version": "5.9.3",
-    "keywords": [
-        "craft",
-        "cms",
-        "craftcms",
-        "craft-plugin",
-        "translation",
-        "formie",
-        "multilingual"
-    ],
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Bilal Hary Lindemann",
-            "email": "bh@lindemannrock.com",
-            "homepage": "https://lindemannrock.com",
-            "role": "Developer"
-        }
-    ],
-    "support": {
-        "email": "support@lindemannrock.com",
-        "issues": "https://github.com/LindemannRock/craft-translation-manager/issues",
-        "source": "https://github.com/LindemannRock/craft-translation-manager",
-        "docs": "https://github.com/LindemannRock/craft-translation-manager/blob/main/README.md",
-        "rss": "https://github.com/LindemannRock/craft-translation-manager/commits/main.atom"
-    },
-    "require": {
-        "php": "^8.2",
-        "craftcms/cms": "^5.0.0",
-        "lindemannrock/craft-logging-library": "^5.0"
-    },
-    "require-dev": {
-        "craftcms/phpstan": "dev-main"
-    },
-    "autoload": {
-        "psr-4": {
-            "lindemannrock\\translationmanager\\": "src/"
-        }
-    },
-    "scripts": {
-        "phpstan": "phpstan --ansi --memory-limit=1G",
-        "check-cs": "ecs check --ansi",
-        "fix-cs": "ecs check --fix --ansi"
-    },
-    "extra": {
-        "name": "Translation Manager",
-        "handle": "translation-manager",
-        "developer": "LindemannRock",
-        "developerUrl": "https://lindemannrock.com",
-        "documentationUrl": "https://github.com/LindemannRock/craft-translation-manager/blob/main/README.md",
-        "changelogUrl": "https://github.com/LindemannRock/craft-translation-manager/blob/main/CHANGELOG.md",
-        "class": "lindemannrock\\translationmanager\\TranslationManager"
-    }
+	"name": "lindemannrock/craft-translation-manager",
+	"description": "Comprehensive translation management system for Craft CMS with Formie integration",
+	"type": "craft-plugin",
+	"version": "5.9.3",
+	"keywords": [
+		"craft",
+		"cms",
+		"craftcms",
+		"craft-plugin",
+		"translation",
+		"formie",
+		"multilingual"
+	],
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Bilal Hary Lindemann",
+			"email": "bh@lindemannrock.com",
+			"homepage": "https://lindemannrock.com",
+			"role": "Developer"
+		}
+	],
+	"support": {
+		"email": "support@lindemannrock.com",
+		"issues": "https://github.com/LindemannRock/craft-translation-manager/issues",
+		"source": "https://github.com/LindemannRock/craft-translation-manager",
+		"docs": "https://github.com/LindemannRock/craft-translation-manager/blob/main/README.md",
+		"rss": "https://github.com/LindemannRock/craft-translation-manager/commits/main.atom"
+	},
+	"require": {
+		"php": "^8.2",
+		"craftcms/cms": "^5.0.0",
+		"lindemannrock/craft-logging-library": "^5.0"
+	},
+	"require-dev": {
+		"craftcms/ecs": "dev-main",
+		"craftcms/phpstan": "dev-main"
+	},
+	"autoload": {
+		"psr-4": {
+			"lindemannrock\\translationmanager\\": "src/"
+		}
+	},
+	"scripts": {
+		"phpstan": "phpstan --ansi --memory-limit=1G",
+		"check-cs": "ecs check --ansi",
+		"fix-cs": "ecs check --fix --ansi"
+	},
+	"extra": {
+		"name": "Translation Manager",
+		"handle": "translation-manager",
+		"developer": "LindemannRock",
+		"developerUrl": "https://lindemannrock.com",
+		"documentationUrl": "https://github.com/LindemannRock/craft-translation-manager/blob/main/README.md",
+		"changelogUrl": "https://github.com/LindemannRock/craft-translation-manager/blob/main/CHANGELOG.md",
+		"class": "lindemannrock\\translationmanager\\TranslationManager"
+	}
 }
