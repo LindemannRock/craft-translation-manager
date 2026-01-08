@@ -29,8 +29,44 @@ class TranslationsController extends Controller
      */
     public function beforeAction($action): bool
     {
-        // Require permission to view translations
-        if (!Craft::$app->getUser()->checkPermission('translationManager:viewTranslations')) {
+        $user = Craft::$app->getUser();
+
+        // For index action, redirect to first accessible section if no viewTranslations permission
+        if ($action->id === 'index' && !$user->checkPermission('translationManager:viewTranslations')) {
+            // Check other permissions and redirect accordingly
+            if ($user->checkPermission('translationManager:generateTranslations')) {
+                Craft::$app->getResponse()->redirect('translation-manager/generate')->send();
+                return false;
+            }
+            if ($user->checkPermission('translationManager:importTranslations') ||
+                $user->checkPermission('translationManager:exportTranslations')) {
+                Craft::$app->getResponse()->redirect('translation-manager/import-export')->send();
+                return false;
+            }
+            if ($user->checkPermission('translationManager:maintenance') ||
+                $user->checkPermission('translationManager:clearTranslations')) {
+                Craft::$app->getResponse()->redirect('translation-manager/maintenance')->send();
+                return false;
+            }
+            if ($user->checkPermission('translationManager:manageBackups')) {
+                Craft::$app->getResponse()->redirect('translation-manager/backups')->send();
+                return false;
+            }
+            if ($user->checkPermission('translationManager:viewLogs')) {
+                Craft::$app->getResponse()->redirect('translation-manager/logs')->send();
+                return false;
+            }
+            if ($user->checkPermission('translationManager:editSettings')) {
+                Craft::$app->getResponse()->redirect('translation-manager/settings')->send();
+                return false;
+            }
+
+            // No access at all
+            throw new ForbiddenHttpException('User does not have permission to access Translation Manager');
+        }
+
+        // For other actions, require viewTranslations permission
+        if ($action->id !== 'index' && !$user->checkPermission('translationManager:viewTranslations')) {
             throw new ForbiddenHttpException('User does not have permission to view translations');
         }
 

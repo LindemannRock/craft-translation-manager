@@ -164,22 +164,26 @@ class TranslationManager extends Plugin
                 $event->permissions[] = [
                     'heading' => $fullName,
                     'permissions' => [
-                        'translationManager:viewTranslations' => [
-                            'label' => Craft::t('translation-manager', 'View {plural}', ['plural' => $plural]),
-                        ],
-                        'translationManager:editTranslations' => [
-                            'label' => Craft::t('translation-manager', 'Edit {plural}', ['plural' => $plural]),
+                        // Translations - grouped
+                        'translationManager:manageTranslations' => [
+                            'label' => Craft::t('translation-manager', 'Manage {plural}', ['plural' => $plural]),
                             'nested' => [
+                                'translationManager:viewTranslations' => [
+                                    'label' => Craft::t('translation-manager', 'View {plural}', ['plural' => $plural]),
+                                ],
+                                'translationManager:editTranslations' => [
+                                    'label' => Craft::t('translation-manager', 'Edit {plural}', ['plural' => $plural]),
+                                ],
                                 'translationManager:deleteTranslations' => [
                                     'label' => Craft::t('translation-manager', 'Delete unused {plural}', ['plural' => $plural]),
                                 ],
+                                'translationManager:importTranslations' => [
+                                    'label' => Craft::t('translation-manager', 'Import {plural}', ['plural' => $plural]),
+                                ],
+                                'translationManager:exportTranslations' => [
+                                    'label' => Craft::t('translation-manager', 'Export {plural}', ['plural' => $plural]),
+                                ],
                             ],
-                        ],
-                        'translationManager:importTranslations' => [
-                            'label' => Craft::t('translation-manager', 'Import {plural}', ['plural' => $plural]),
-                        ],
-                        'translationManager:exportTranslations' => [
-                            'label' => Craft::t('translation-manager', 'Export {plural}', ['plural' => $plural]),
                         ],
                         'translationManager:generateTranslations' => [
                             'label' => Craft::t('translation-manager', 'Generate {name} files', ['name' => $settings->getLowerDisplayName()]),
@@ -311,21 +315,28 @@ class TranslationManager extends Plugin
             // Use Craft's built-in language icon (same as the module used)
             $item['icon'] = '@app/icons/language.svg';
 
-            // Always add the main translations item
-            $item['subnav'] = [
-                'translations' => [
+            $user = Craft::$app->getUser();
+
+            // Check view access to each section
+            $hasTranslationsAccess = $user->checkPermission('translationManager:viewTranslations');
+            $hasGenerateAccess = $user->checkPermission('translationManager:generateTranslations');
+            $hasImportExportAccess = $user->checkPermission('translationManager:importTranslations') ||
+                $user->checkPermission('translationManager:exportTranslations');
+            $hasMaintenanceAccess = $user->checkPermission('translationManager:maintenance') ||
+                $user->checkPermission('translationManager:clearTranslations');
+            $hasBackupAccess = $user->checkPermission('translationManager:manageBackups');
+
+            $item['subnav'] = [];
+
+            // Add Translations section (requires view permission)
+            if ($hasTranslationsAccess) {
+                $item['subnav']['translations'] = [
                     'label' => 'Translations',
                     'url' => 'translation-manager',
-                ],
-            ];
+                ];
+            }
 
-            // Add Generate section (requires any generate permission)
-            $hasGenerateAccess =
-                Craft::$app->getUser()->checkPermission('translationManager:generateTranslations') ||
-                Craft::$app->getUser()->checkPermission('translationManager:generateAllTranslations') ||
-                Craft::$app->getUser()->checkPermission('translationManager:generateFormieTranslations') ||
-                Craft::$app->getUser()->checkPermission('translationManager:generateSiteTranslations');
-
+            // Add Generate section
             if ($hasGenerateAccess) {
                 $item['subnav']['generate'] = [
                     'label' => 'Generate',
@@ -334,25 +345,14 @@ class TranslationManager extends Plugin
             }
 
             // Add Import/Export section (requires import or export permission)
-            if (Craft::$app->getUser()->checkPermission('translationManager:importTranslations') ||
-                Craft::$app->getUser()->checkPermission('translationManager:exportTranslations')) {
+            if ($hasImportExportAccess) {
                 $item['subnav']['import-export'] = [
                     'label' => 'Import/Export',
                     'url' => 'translation-manager/import-export',
                 ];
             }
 
-            // Add Maintenance section (requires any maintenance or clear permission)
-            $hasMaintenanceAccess =
-                Craft::$app->getUser()->checkPermission('translationManager:maintenance') ||
-                Craft::$app->getUser()->checkPermission('translationManager:cleanUnused') ||
-                Craft::$app->getUser()->checkPermission('translationManager:scanTemplates') ||
-                Craft::$app->getUser()->checkPermission('translationManager:recaptureFormie') ||
-                Craft::$app->getUser()->checkPermission('translationManager:clearTranslations') ||
-                Craft::$app->getUser()->checkPermission('translationManager:clearFormie') ||
-                Craft::$app->getUser()->checkPermission('translationManager:clearSite') ||
-                Craft::$app->getUser()->checkPermission('translationManager:clearAll');
-
+            // Add Maintenance section
             if ($hasMaintenanceAccess) {
                 $item['subnav']['maintenance'] = [
                     'label' => 'Maintenance',
@@ -360,14 +360,7 @@ class TranslationManager extends Plugin
                 ];
             }
 
-            // Add Backups section (requires any backup permission)
-            $hasBackupAccess =
-                Craft::$app->getUser()->checkPermission('translationManager:manageBackups') ||
-                Craft::$app->getUser()->checkPermission('translationManager:createBackups') ||
-                Craft::$app->getUser()->checkPermission('translationManager:downloadBackups') ||
-                Craft::$app->getUser()->checkPermission('translationManager:restoreBackups') ||
-                Craft::$app->getUser()->checkPermission('translationManager:deleteBackups');
-
+            // Add Backups section
             if ($hasBackupAccess) {
                 $item['subnav']['backups'] = [
                     'label' => 'Backups',
