@@ -134,11 +134,16 @@
 </div>
 
 <!-- Quick Actions -->
+{% set canViewTranslations = currentUser.can('translationManager:viewTranslations') %}
+{% set canExportTranslations = currentUser.can('translationManager:exportTranslations') %}
+{% set hasAnyQuickAction = canViewTranslations or canExportTranslations %}
+
+{% if hasAnyQuickAction %}
 <div>
     <h2>{{ 'Quick Actions'|t('translation-manager') }}</h2>
 
     <div class="pane">
-        {% if currentUser.can('translationManager:viewTranslations') %}
+        {% if canViewTranslations %}
         <div style="margin-bottom: 24px;">
             <h3 style="margin-bottom: 8px;">{{ "Navigation"|t('translation-manager') }}</h3>
             <p class="light" style="margin-bottom: 16px;">{{ "Access main translation management sections"|t('translation-manager') }}</p>
@@ -150,8 +155,8 @@
         </div>
         {% endif %}
 
-        {% if currentUser.can('translationManager:exportTranslations') %}
-            {% if currentUser.can('translationManager:viewTranslations') %}
+        {% if canExportTranslations %}
+            {% if canViewTranslations %}
             <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;">
             {% endif %}
 
@@ -167,6 +172,7 @@
         {% endif %}
     </div>
 </div>
+{% endif %}
 
 {% if stats.siteInfo %}
     <div style="margin-top: 24px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center;">
