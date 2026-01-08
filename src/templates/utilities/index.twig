@@ -138,6 +138,7 @@
     <h2>{{ 'Quick Actions'|t('translation-manager') }}</h2>
 
     <div class="pane">
+        {% if currentUser.can('translationManager:viewTranslations') %}
         <div style="margin-bottom: 24px;">
             <h3 style="margin-bottom: 8px;">{{ "Navigation"|t('translation-manager') }}</h3>
             <p class="light" style="margin-bottom: 16px;">{{ "Access main translation management sections"|t('translation-manager') }}</p>
@@ -147,9 +148,12 @@
                 </a>
             </div>
         </div>
+        {% endif %}
 
         {% if currentUser.can('translationManager:exportTranslations') %}
+            {% if currentUser.can('translationManager:viewTranslations') %}
             <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;">
+            {% endif %}
 
             <div>
                 <h3 style="margin-bottom: 8px;">{{ "Export"|t('translation-manager') }}</h3>
