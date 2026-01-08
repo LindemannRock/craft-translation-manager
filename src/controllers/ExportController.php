@@ -35,11 +35,38 @@ class ExportController extends Controller
      */
     public function beforeAction($action): bool
     {
-        // Require permission to export translations or edit settings (for file generation from settings)
         $user = Craft::$app->getUser();
-        if (!$user->checkPermission('translationManager:exportTranslations') &&
-            !$user->checkPermission('translationManager:editSettings')) {
-            throw new ForbiddenHttpException('User does not have permission to export translations');
+
+        switch ($action->id) {
+            case 'index':
+                // CSV export
+                if (!$user->checkPermission('translationManager:exportTranslations')) {
+                    throw new ForbiddenHttpException('User does not have permission to export translations');
+                }
+                break;
+            case 'files':
+                // Generate all files
+                if (!$user->checkPermission('translationManager:generateAllTranslations')) {
+                    throw new ForbiddenHttpException('User does not have permission to generate translation files');
+                }
+                break;
+            case 'formie-files':
+                // Generate Formie files
+                if (!$user->checkPermission('translationManager:generateFormieTranslations')) {
+                    throw new ForbiddenHttpException('User does not have permission to generate Formie translation files');
+                }
+                break;
+            case 'site-files':
+                // Generate site files
+                if (!$user->checkPermission('translationManager:generateSiteTranslations')) {
+                    throw new ForbiddenHttpException('User does not have permission to generate site translation files');
+                }
+                break;
+            default:
+                // For any other actions, require export permission
+                if (!$user->checkPermission('translationManager:exportTranslations')) {
+                    throw new ForbiddenHttpException('User does not have permission to export translations');
+                }
         }
 
         return parent::beforeAction($action);

@@ -31,9 +31,30 @@ class SettingsController extends Controller
      */
     public function beforeAction($action): bool
     {
-        // Require permission to edit settings
-        if (!Craft::$app->getUser()->checkPermission('translationManager:editSettings')) {
-            throw new ForbiddenHttpException('User does not have permission to edit settings');
+        // Check granular permissions based on action
+        $user = Craft::$app->getUser();
+
+        switch ($action->id) {
+            case 'clear-formie':
+                if (!$user->checkPermission('translationManager:clearFormie')) {
+                    throw new ForbiddenHttpException('User does not have permission to clear Formie translations');
+                }
+                break;
+            case 'clear-site':
+                if (!$user->checkPermission('translationManager:clearSite')) {
+                    throw new ForbiddenHttpException('User does not have permission to clear site translations');
+                }
+                break;
+            case 'clear-all':
+                if (!$user->checkPermission('translationManager:clearAll')) {
+                    throw new ForbiddenHttpException('User does not have permission to clear all translations');
+                }
+                break;
+            default:
+                // All other actions require editSettings permission
+                if (!$user->checkPermission('translationManager:editSettings')) {
+                    throw new ForbiddenHttpException('User does not have permission to edit settings');
+                }
         }
 
         return parent::beforeAction($action);

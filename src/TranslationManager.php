@@ -111,7 +111,8 @@ class TranslationManager extends Plugin
             'pluginName' => $settings->getFullName(),
             'logLevel' => $settings->logLevel ?? 'error',
             'itemsPerPage' => $settings->itemsPerPage ?? 50,
-            'permissions' => ['translationManager:viewLogs'],
+            'viewPermissions' => ['translationManager:viewLogs'],
+            'downloadPermissions' => ['translationManager:downloadLogs'],
         ]);
 
         // Override plugin name from config if available, otherwise use from database settings
@@ -165,15 +166,82 @@ class TranslationManager extends Plugin
                             'label' => 'Edit translations',
                             'nested' => [
                                 'translationManager:deleteTranslations' => [
-                                    'label' => 'Delete translations',
+                                    'label' => 'Delete unused translations',
                                 ],
-                                'translationManager:exportTranslations' => [
-                                    'label' => 'Export translations',
+                            ],
+                        ],
+                        'translationManager:importTranslations' => [
+                            'label' => 'Import translations',
+                        ],
+                        'translationManager:exportTranslations' => [
+                            'label' => 'Export translations',
+                        ],
+                        'translationManager:generateTranslations' => [
+                            'label' => 'Generate translation files',
+                            'nested' => [
+                                'translationManager:generateAllTranslations' => [
+                                    'label' => 'Generate all files',
+                                ],
+                                'translationManager:generateFormieTranslations' => [
+                                    'label' => 'Generate Formie files',
+                                ],
+                                'translationManager:generateSiteTranslations' => [
+                                    'label' => 'Generate site files',
+                                ],
+                            ],
+                        ],
+                        'translationManager:manageBackups' => [
+                            'label' => 'Manage backups',
+                            'nested' => [
+                                'translationManager:createBackups' => [
+                                    'label' => 'Create backups',
+                                ],
+                                'translationManager:downloadBackups' => [
+                                    'label' => 'Download backups',
+                                ],
+                                'translationManager:restoreBackups' => [
+                                    'label' => 'Restore backups',
+                                ],
+                                'translationManager:deleteBackups' => [
+                                    'label' => 'Delete backups',
+                                ],
+                            ],
+                        ],
+                        'translationManager:maintenance' => [
+                            'label' => 'Perform maintenance',
+                            'nested' => [
+                                'translationManager:cleanUnused' => [
+                                    'label' => 'Clean unused translations',
+                                ],
+                                'translationManager:scanTemplates' => [
+                                    'label' => 'Scan templates',
+                                ],
+                                'translationManager:recaptureFormie' => [
+                                    'label' => 'Recapture Formie translations',
+                                ],
+                            ],
+                        ],
+                        'translationManager:clearTranslations' => [
+                            'label' => 'Clear translations',
+                            'nested' => [
+                                'translationManager:clearFormie' => [
+                                    'label' => 'Clear Formie translations',
+                                ],
+                                'translationManager:clearSite' => [
+                                    'label' => 'Clear site translations',
+                                ],
+                                'translationManager:clearAll' => [
+                                    'label' => 'Clear all translations',
                                 ],
                             ],
                         ],
                         'translationManager:viewLogs' => [
                             'label' => 'View logs',
+                            'nested' => [
+                                'translationManager:downloadLogs' => [
+                                    'label' => 'Download logs',
+                                ],
+                            ],
                         ],
                         'translationManager:editSettings' => [
                             'label' => 'Edit plugin settings',
@@ -246,32 +314,56 @@ class TranslationManager extends Plugin
                 ],
             ];
 
-            // Add Generate section (visible to anyone who can view translations)
-            if (Craft::$app->getUser()->checkPermission('translationManager:viewTranslations')) {
+            // Add Generate section (requires any generate permission)
+            $hasGenerateAccess =
+                Craft::$app->getUser()->checkPermission('translationManager:generateTranslations') ||
+                Craft::$app->getUser()->checkPermission('translationManager:generateAllTranslations') ||
+                Craft::$app->getUser()->checkPermission('translationManager:generateFormieTranslations') ||
+                Craft::$app->getUser()->checkPermission('translationManager:generateSiteTranslations');
+
+            if ($hasGenerateAccess) {
                 $item['subnav']['generate'] = [
                     'label' => 'Generate',
                     'url' => 'translation-manager/generate',
                 ];
             }
 
-            // Add Import/Export section (visible to anyone who can view translations)
-            if (Craft::$app->getUser()->checkPermission('translationManager:viewTranslations')) {
+            // Add Import/Export section (requires import or export permission)
+            if (Craft::$app->getUser()->checkPermission('translationManager:importTranslations') ||
+                Craft::$app->getUser()->checkPermission('translationManager:exportTranslations')) {
                 $item['subnav']['import-export'] = [
                     'label' => 'Import/Export',
                     'url' => 'translation-manager/import-export',
                 ];
             }
 
-            // Add Maintenance section (visible to anyone who can view translations)
-            if (Craft::$app->getUser()->checkPermission('translationManager:viewTranslations')) {
+            // Add Maintenance section (requires any maintenance or clear permission)
+            $hasMaintenanceAccess =
+                Craft::$app->getUser()->checkPermission('translationManager:maintenance') ||
+                Craft::$app->getUser()->checkPermission('translationManager:cleanUnused') ||
+                Craft::$app->getUser()->checkPermission('translationManager:scanTemplates') ||
+                Craft::$app->getUser()->checkPermission('translationManager:recaptureFormie') ||
+                Craft::$app->getUser()->checkPermission('translationManager:clearTranslations') ||
+                Craft::$app->getUser()->checkPermission('translationManager:clearFormie') ||
+                Craft::$app->getUser()->checkPermission('translationManager:clearSite') ||
+                Craft::$app->getUser()->checkPermission('translationManager:clearAll');
+
+            if ($hasMaintenanceAccess) {
                 $item['subnav']['maintenance'] = [
                     'label' => 'Maintenance',
                     'url' => 'translation-manager/maintenance',
                 ];
             }
 
-            // Add Backups section (visible to anyone who can view translations)
-            if (Craft::$app->getUser()->checkPermission('translationManager:viewTranslations')) {
+            // Add Backups section (requires any backup permission)
+            $hasBackupAccess =
+                Craft::$app->getUser()->checkPermission('translationManager:manageBackups') ||
+                Craft::$app->getUser()->checkPermission('translationManager:createBackups') ||
+                Craft::$app->getUser()->checkPermission('translationManager:downloadBackups') ||
+                Craft::$app->getUser()->checkPermission('translationManager:restoreBackups') ||
+                Craft::$app->getUser()->checkPermission('translationManager:deleteBackups');
+
+            if ($hasBackupAccess) {
                 $item['subnav']['backups'] = [
                     'label' => 'Backups',
                     'url' => 'translation-manager/backups',
@@ -283,6 +375,7 @@ class TranslationManager extends Plugin
                 Craft::$app->getPlugins()->isPluginEnabled('logging-library')) {
                 $item = LoggingLibrary::addLogsNav($item, $this->handle, [
                     'translationManager:viewLogs',
+                    'translationManager:downloadLogs',
                 ]);
             }
 

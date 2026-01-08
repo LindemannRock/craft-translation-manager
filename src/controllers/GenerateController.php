@@ -31,9 +31,16 @@ class GenerateController extends Controller
      */
     public function beforeAction($action): bool
     {
-        // Require permission to view translations
-        if (!Craft::$app->getUser()->checkPermission('translationManager:viewTranslations')) {
-            throw new ForbiddenHttpException('User does not have permission to access generate');
+        // Require any generate permission to access the generate page
+        $user = Craft::$app->getUser();
+        $hasGenerateAccess =
+            $user->checkPermission('translationManager:generateTranslations') ||
+            $user->checkPermission('translationManager:generateAllTranslations') ||
+            $user->checkPermission('translationManager:generateFormieTranslations') ||
+            $user->checkPermission('translationManager:generateSiteTranslations');
+
+        if (!$hasGenerateAccess) {
+            throw new ForbiddenHttpException('User does not have permission to generate translation files');
         }
 
         return parent::beforeAction($action);

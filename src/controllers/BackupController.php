@@ -37,21 +37,42 @@ class BackupController extends Controller
      */
     public function beforeAction($action): bool
     {
-        // Most actions require edit permissions
-        $actionsRequiringEdit = ['create', 'restore', 'delete'];
-        
-        if (in_array($action->id, $actionsRequiringEdit)) {
-            // Allow if user has edit translations OR edit settings permission
-            if (!Craft::$app->getUser()->checkPermission('translationManager:editTranslations') &&
-                !Craft::$app->getUser()->checkPermission('translationManager:editSettings')) {
-                throw new ForbiddenHttpException('User does not have permission to manage backups');
-            }
-        } else {
-            // View/download require at least view permission
-            if (!Craft::$app->getUser()->checkPermission('translationManager:viewTranslations') &&
-                !Craft::$app->getUser()->checkPermission('translationManager:editSettings')) {
-                throw new ForbiddenHttpException('User does not have permission to view backups');
-            }
+        // Check granular permissions based on action
+        $user = Craft::$app->getUser();
+
+        switch ($action->id) {
+            case 'create':
+                if (!$user->checkPermission('translationManager:createBackups')) {
+                    throw new ForbiddenHttpException('User does not have permission to create backups');
+                }
+                break;
+            case 'restore':
+                if (!$user->checkPermission('translationManager:restoreBackups')) {
+                    throw new ForbiddenHttpException('User does not have permission to restore backups');
+                }
+                break;
+            case 'delete':
+                if (!$user->checkPermission('translationManager:deleteBackups')) {
+                    throw new ForbiddenHttpException('User does not have permission to delete backups');
+                }
+                break;
+            case 'download':
+                if (!$user->checkPermission('translationManager:downloadBackups')) {
+                    throw new ForbiddenHttpException('User does not have permission to download backups');
+                }
+                break;
+            default:
+                // Index/view - allow if user has ANY backup-related permission
+                $hasAccess =
+                    $user->checkPermission('translationManager:manageBackups') ||
+                    $user->checkPermission('translationManager:createBackups') ||
+                    $user->checkPermission('translationManager:downloadBackups') ||
+                    $user->checkPermission('translationManager:restoreBackups') ||
+                    $user->checkPermission('translationManager:deleteBackups');
+
+                if (!$hasAccess) {
+                    throw new ForbiddenHttpException('User does not have permission to manage backups');
+                }
         }
 
         return parent::beforeAction($action);

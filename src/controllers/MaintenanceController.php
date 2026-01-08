@@ -30,16 +30,43 @@ class MaintenanceController extends Controller
      */
     public function beforeAction($action): bool
     {
-        // Require permission to view translations for the index page
-        if ($action->id === 'index') {
-            if (!Craft::$app->getUser()->checkPermission('translationManager:viewTranslations')) {
-                throw new \yii\web\ForbiddenHttpException('User does not have permission to access maintenance');
-            }
-        } else {
-            // Other actions require edit settings permission
-            if (!Craft::$app->getUser()->checkPermission('translationManager:editSettings')) {
-                throw new \yii\web\ForbiddenHttpException('User does not have permission to perform maintenance tasks');
-            }
+        // Check granular permissions based on action
+        $user = Craft::$app->getUser();
+
+        switch ($action->id) {
+            case 'clean-unused':
+            case 'clean-unused-type':
+                if (!$user->checkPermission('translationManager:cleanUnused')) {
+                    throw new \yii\web\ForbiddenHttpException('User does not have permission to clean unused translations');
+                }
+                break;
+            case 'scan-templates-action':
+            case 'debug-search-page':
+            case 'debug-search':
+                if (!$user->checkPermission('translationManager:scanTemplates')) {
+                    throw new \yii\web\ForbiddenHttpException('User does not have permission to scan templates');
+                }
+                break;
+            case 'recapture-formie':
+                if (!$user->checkPermission('translationManager:recaptureFormie')) {
+                    throw new \yii\web\ForbiddenHttpException('User does not have permission to recapture Formie translations');
+                }
+                break;
+            default:
+                // Index page - allow if user has ANY maintenance-related permission
+                $hasAccess =
+                    $user->checkPermission('translationManager:maintenance') ||
+                    $user->checkPermission('translationManager:cleanUnused') ||
+                    $user->checkPermission('translationManager:scanTemplates') ||
+                    $user->checkPermission('translationManager:recaptureFormie') ||
+                    $user->checkPermission('translationManager:clearTranslations') ||
+                    $user->checkPermission('translationManager:clearFormie') ||
+                    $user->checkPermission('translationManager:clearSite') ||
+                    $user->checkPermission('translationManager:clearAll');
+
+                if (!$hasAccess) {
+                    throw new \yii\web\ForbiddenHttpException('User does not have permission to access maintenance');
+                }
         }
 
         return parent::beforeAction($action);
@@ -63,7 +90,7 @@ class MaintenanceController extends Controller
     public function actionCleanUnused(): Response
     {
         $this->requirePostRequest();
-        $this->requirePermission('translationManager:editSettings');
+        $this->requirePermission('translationManager:cleanUnused');
         
         $translationsService = TranslationManager::getInstance()->translations;
         
@@ -135,7 +162,7 @@ class MaintenanceController extends Controller
      */
     public function actionDebugSearchPage(): mixed
     {
-        $this->requirePermission('translationManager:viewTranslations');
+        $this->requirePermission('translationManager:scanTemplates');
         
         return $this->renderTemplate('translation-manager/debug-search');
     }
@@ -146,7 +173,7 @@ class MaintenanceController extends Controller
     public function actionDebugSearch(): Response
     {
         // Check permission
-        $this->requirePermission('translationManager:viewTranslations');
+        $this->requirePermission('translationManager:scanTemplates');
 
         $request = Craft::$app->getRequest();
         $searchTerm = $request->getParam('search', '');
@@ -264,23 +291,32 @@ class MaintenanceController extends Controller
     public function actionRecaptureFormie(): Response
     {
         $this->requirePostRequest();
-        $this->requirePermission('translationManager:editSettings');
+        $this->requireAcceptsJson();
+        $this->requirePermission('translationManager:recaptureFormie');
 
-        $count = 0;
-        
-        if (class_exists('verbb\\formie\\Formie')) {
-            $forms = \verbb\formie\Formie::getInstance()->getForms()->getAllForms();
-            
-            foreach ($forms as $form) {
-                TranslationManager::getInstance()->formie->captureFormTranslations($form);
-                $count++;
+        try {
+            $count = 0;
+            $pluginName = TranslationManager::getFormiePluginName();
+
+            if (class_exists('verbb\\formie\\Formie')) {
+                $forms = \verbb\formie\Formie::getInstance()->getForms()->getAllForms();
+
+                foreach ($forms as $form) {
+                    TranslationManager::getInstance()->formie->captureFormTranslations($form);
+                    $count++;
+                }
             }
+
+            return $this->asJson([
+                'success' => true,
+                'message' => "Recaptured {$pluginName} translations from {$count} form(s)",
+            ]);
+        } catch (\Exception $e) {
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Failed to recapture translations: ' . $e->getMessage(),
+            ]);
         }
-        
-        return $this->asJson([
-            'success' => true,
-            'message' => "Recaptured translations from {$count} forms",
-        ]);
     }
     
     /**
@@ -290,7 +326,7 @@ class MaintenanceController extends Controller
     {
         $this->requirePostRequest();
         $this->requireAcceptsJson();
-        $this->requirePermission('translationManager:editSettings');
+        $this->requirePermission('translationManager:cleanUnused');
         
         $request = Craft::$app->getRequest();
         $type = $request->getBodyParam('type');
@@ -371,7 +407,7 @@ class MaintenanceController extends Controller
     {
         $this->requirePostRequest();
         $this->requireAcceptsJson();
-        $this->requirePermission('translationManager:editSettings');
+        $this->requirePermission('translationManager:scanTemplates');
         
         try {
             $results = TranslationManager::getInstance()->translations->scanTemplatesForUnused();

@@ -276,21 +276,29 @@
                 </div>
             </div>
         </div>
-        <div id="actions-container" class="{% if not settings.autoExport and currentUser.can('translationManager:exportTranslations') %}flex{% else %}hidden{% endif %}">
-            {% if not settings.autoExport and currentUser.can('translationManager:exportTranslations') %}
+        {% set hasAnyGeneratePermission =
+            currentUser.can('translationManager:generateTranslations') or
+            currentUser.can('translationManager:generateAllTranslations') or
+            currentUser.can('translationManager:generateFormieTranslations') or
+            currentUser.can('translationManager:generateSiteTranslations')
+        %}
+        <div id="actions-container" class="{% if not settings.autoExport and hasAnyGeneratePermission %}flex{% else %}hidden{% endif %}">
+            {% if not settings.autoExport and hasAnyGeneratePermission %}
                 <form>
                     <button type="button" class="btn secondary menubtn" data-icon="settings" title="Generate translation files" id="generate-menu-btn"></button>
                     <div class="menu" data-align="right">
                         <ul>
+                            {% if currentUser.can('translationManager:generateAllTranslations') %}
                             <li><a href="#" id="generate-all-btn">
                                 Generate All Files
                             </a></li>
-                            {% if settings.enableFormieIntegration %}
+                            {% endif %}
+                            {% if settings.enableFormieIntegration and currentUser.can('translationManager:generateFormieTranslations') %}
                             <li><a href="#" id="generate-formie-btn">
                                 Generate {{ craft.translationManager.getFormiePluginName() }} Files Only
                             </a></li>
                             {% endif %}
-                            {% if settings.enableSiteTranslations %}
+                            {% if settings.enableSiteTranslations and currentUser.can('translationManager:generateSiteTranslations') %}
                             <li><a href="#" id="generate-site-btn">
                                 Generate {{ settings.translationCategory|title }} Files Only
                             </a></li>
@@ -303,6 +311,11 @@
         <div class="flex flex-nowrap">
             {% if currentUser.can('translationManager:exportTranslations') %}
                 <button type="button" class="btn" id="export-btn" tabindex="0" aria-expanded="false" title="Export translations as CSV file">Export…</button>
+            {% endif %}
+            {% if status == 'unused' and currentUser.can('translationManager:deleteTranslations') %}
+                <button type="button" class="btn secondary" id="delete-selected-btn" style="display: none;">
+                    <span id="delete-label">{{ 'Delete'|t('translation-manager') }}</span>
+                </button>
             {% endif %}
             {% if currentUser.can('translationManager:editTranslations') %}
                 <button type="button" class="btn submit" id="save-all-btn" tabindex="0">
@@ -439,8 +452,20 @@
         });
 
         function updateActionButtons() {
-            // Actions container visibility is controlled by Twig based on settings
-            // No need to update it dynamically
+            {% if status == 'unused' and currentUser.can('translationManager:deleteTranslations') %}
+            const deleteBtn = document.getElementById('delete-selected-btn');
+            const deleteLabel = document.getElementById('delete-label');
+
+            if (deleteBtn && deleteLabel) {
+                const hasSelection = selectedIds.size > 0;
+                if (hasSelection) {
+                    deleteBtn.style.display = '';
+                    deleteLabel.textContent = `{{ 'Delete'|t('translation-manager') }} (${selectedIds.size})`;
+                } else {
+                    deleteBtn.style.display = 'none';
+                }
+            }
+            {% endif %}
         }
 
         // Export button

@@ -31,8 +31,9 @@ class ImportExportController extends Controller
      */
     public function beforeAction($action): bool
     {
-        // Require permission to view translations
-        if (!Craft::$app->getUser()->checkPermission('translationManager:viewTranslations')) {
+        // Require permission to import or export translations
+        if (!Craft::$app->getUser()->checkPermission('translationManager:importTranslations') &&
+            !Craft::$app->getUser()->checkPermission('translationManager:exportTranslations')) {
             throw new ForbiddenHttpException('User does not have permission to access import/export');
         }
 

@@ -20,7 +20,8 @@
 {% block content %}
     <h2>{{ "Maintenance Tools"|t('translation-manager') }}</h2>
 
-    {# NEW: Enhanced unused translations cleanup with dropdown #}
+    {% if currentUser.can('translationManager:cleanUnused') %}
+    {# Enhanced unused translations cleanup with dropdown #}
     {% set unusedCounts = craft.translationManager.getUnusedTranslationCounts() %}
     {% set totalUnused = unusedCounts.site + unusedCounts.formie %}
 
@@ -74,8 +75,10 @@
     </div>
 
     <hr>
+    {% endif %}
 
-    {# NEW: Template Scanner Section #}
+    {% if currentUser.can('translationManager:scanTemplates') %}
+    {# Template Scanner Section #}
     <div class="field">
         <div class="heading">
             <label>{{ "Template Scanner"|t('translation-manager') }}</label>
@@ -94,8 +97,31 @@
     </div>
 
     <hr>
+    {% endif %}
 
+    {% if settings.enableFormieIntegration and currentUser.can('translationManager:recaptureFormie') %}
+    {# Formie Scanner Section #}
+    <div class="field">
+        <div class="heading">
+            <label>{{ craft.translationManager.getFormiePluginName() ~ " Scanner"|t('translation-manager') }}</label>
+            <div class="instructions">
+                <p>{{ "Rescan all forms to capture any missing translations"|t('translation-manager') }}</p>
+            </div>
+        </div>
+        <div class="input">
+            <div style="margin-bottom: 10px;">
+                <button type="button" class="btn secondary" id="recapture-formie-btn">
+                    {{ "Recapture {pluginName} Translations"|t('translation-manager', {pluginName: craft.translationManager.getFormiePluginName()}) }}
+                </button>
+            </div>
+            <p class="light">{{ "Scans all forms to capture field labels, placeholders, and other translatable strings"|t('translation-manager') }}</p>
+        </div>
+    </div>
 
+    <hr>
+    {% endif %}
+
+    {% if currentUser.can('translationManager:clearTranslations') %}
     <h2 class="error">{{ "Danger Zone"|t('translation-manager') }}</h2>
 
     <div class="field">
@@ -112,19 +138,22 @@
     </div>
 
     {% set clearOptions = [{ value: '', label: 'Select an option'|t('translation-manager') }] %}
-    {% if settings.enableFormieIntegration %}
+    {% if settings.enableFormieIntegration and currentUser.can('translationManager:clearFormie') %}
         {% set clearOptions = clearOptions|merge([{ value: 'formie', label: (craft.translationManager.getFormiePluginName() ~ ' Only')|t('translation-manager') }]) %}
     {% endif %}
-    {% if settings.enableSiteTranslations %}
+    {% if settings.enableSiteTranslations and currentUser.can('translationManager:clearSite') %}
         {% set clearOptions = clearOptions|merge([{ value: 'site', label: ((settings.translationCategory|title) ~ ' Only')|t('translation-manager') }]) %}
     {% endif %}
-    {% if settings.enableFormieIntegration or settings.enableSiteTranslations %}
+    {% if (settings.enableFormieIntegration or settings.enableSiteTranslations) and currentUser.can('translationManager:clearAll') %}
         {% set clearOptions = clearOptions|merge([{ value: 'all', label: 'All'|t('translation-manager') }]) %}
     {% endif %}
 
     {% set formiePluginName = craft.translationManager.getFormiePluginName() %}
 
-    {% if settings.enableFormieIntegration or settings.enableSiteTranslations %}
+    {# Only show if user has at least one clear permission and there are options #}
+    {% set hasClearOptions = clearOptions|length > 1 %}
+
+    {% if hasClearOptions %}
     {{ forms.selectField({
         label: "Clear Translations"|t('translation-manager'),
         instructions: "Select which translations to permanently delete from the database and remove corresponding translation files."|t('translation-manager'),
@@ -133,7 +162,7 @@
         options: clearOptions,
         value: ''
     }) }}
-    {% else %}
+    {% elseif not (settings.enableFormieIntegration or settings.enableSiteTranslations) %}
     <div class="field">
         <div class="heading">
             <label>{{ "Clear Translations"|t('translation-manager') }}</label>
@@ -142,7 +171,7 @@
     </div>
     {% endif %}
 
-    {% if settings.enableFormieIntegration or settings.enableSiteTranslations %}
+    {% if hasClearOptions %}
     <div id="clearDescription" style="margin-top: 12px; padding: 12px; background: #FEE2E2; border: 1px solid #FECACA; border-radius: 4px; display: none;">
         <p id="clearDescriptionText" style="margin: 0; color: #991B1B;"></p>
     </div>
@@ -152,6 +181,7 @@
             {{ "Clear Selected Translations"|t('translation-manager') }}
         </button>
     </div>
+    {% endif %}
     {% endif %}
 
     {% include 'translation-manager/_components/plugin-credit.twig' %}
@@ -277,6 +307,42 @@
     }
     if (rescanTemplatesBtn) {
         handleTemplateScan(rescanTemplatesBtn);
+    }
+
+    // Handle recapture Formie button
+    const recaptureFormieBtn = document.getElementById('recapture-formie-btn');
+    if (recaptureFormieBtn) {
+        recaptureFormieBtn.addEventListener('click', function() {
+            const btn = this;
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            fetch('{{ actionUrl('translation-manager/maintenance/recapture-formie') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                if (data.success) {
+                    Craft.cp.displayNotice(data.message);
+                } else {
+                    Craft.cp.displayError(data.error || 'Failed to recapture form translations');
+                }
+            })
+            .catch(error => {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                Craft.cp.displayError('Failed to recapture form translations: ' + error.message);
+            });
+        });
     }
 
     // Handle clean unused button (original)

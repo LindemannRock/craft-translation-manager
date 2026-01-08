@@ -210,9 +210,11 @@ class FormieService extends Component
                 break;
 
             case 'verbb\formie\fields\Agree':
-                if (property_exists($field, 'description') && $field->description) {
+                // Use descriptionHtml which renders the rich text array to HTML string
+                $descriptionHtml = $field->descriptionHtml ?? null;
+                if ($descriptionHtml) {
                     $translationsService->createOrUpdateTranslation(
-                        $field->description,
+                        (string)$descriptionHtml,
                         "formie.{$formHandle}.{$fieldHandle}.description"
                     );
                 }

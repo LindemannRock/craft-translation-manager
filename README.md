@@ -475,13 +475,73 @@ Files use atomic write operations for safety.
 
 ## Permissions
 
-The plugin provides granular permissions:
+The plugin provides granular permissions that can be assigned to user groups via **Settings → Users → User Groups → [Group Name] → Translation Manager**.
 
-- **View translations** - Access the translations interface
-- **Edit translations** - Modify and save translations
-- **Delete translations** - Delete unused translations
-- **Export translations** - Export to CSV or PHP files
-- **Manage plugin settings** - Access settings and danger zone
+### Translation Permissions
+
+| Permission | Description |
+|------------|-------------|
+| **View translations** | Access the translations interface and view all translations |
+| **Edit translations** | Modify and save translation values |
+| └─ Delete unused translations | Delete selected unused translations from the translations page |
+
+### Import/Export Permissions
+
+| Permission | Description |
+|------------|-------------|
+| **Import translations** | Import translations from CSV files |
+| **Export translations** | Export translations as CSV files |
+
+### Generate Permissions
+
+| Permission | Description |
+|------------|-------------|
+| **Generate translation files** | Access the Generate page (parent permission) |
+| └─ Generate all files | Generate PHP translation files for all types |
+| └─ Generate Formie files | Generate PHP translation files for Formie only |
+| └─ Generate site files | Generate PHP translation files for site only |
+
+### Backup Permissions
+
+| Permission | Description |
+|------------|-------------|
+| **Manage backups** | Access the Backups page (parent permission) |
+| └─ Create backups | Create new backups manually |
+| └─ Download backups | Download backup files as ZIP |
+| └─ Restore backups | Restore translations from a backup |
+| └─ Delete backups | Delete backup files |
+
+### Maintenance Permissions
+
+| Permission | Description |
+|------------|-------------|
+| **Perform maintenance** | Access the Maintenance page (parent permission) |
+| └─ Clean unused translations | Clean up unused translations |
+| └─ Scan templates | Run template scanner to identify unused translations |
+| └─ Recapture Formie translations | Recapture all Formie form translations |
+
+### Clear Permissions (Danger Zone)
+
+| Permission | Description |
+|------------|-------------|
+| **Clear translations** | Access clear operations (parent permission) |
+| └─ Clear Formie translations | Delete all Formie translations |
+| └─ Clear site translations | Delete all site translations |
+| └─ Clear all translations | Delete all translations |
+
+### Other Permissions
+
+| Permission | Description |
+|------------|-------------|
+| **View logs** | View plugin logs |
+| └─ Download logs | Download log files |
+| **Edit plugin settings** | Access and modify plugin settings |
+
+### Permission Hierarchy
+
+Parent permissions (like "Manage backups" or "Perform maintenance") grant access to the page but not the specific actions. Users need the nested permissions to perform specific operations.
+
+**Example**: A user with only "Manage backups" can view the backups list but cannot create, restore, download, or delete backups without the corresponding nested permissions.
 
 ## Console Commands
 

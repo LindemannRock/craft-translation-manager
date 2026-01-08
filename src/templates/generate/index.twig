@@ -29,16 +29,21 @@
         <div class="input">
             <div style="display: flex; align-items: flex-end; gap: 12px;">
                 <div class="grow">
+                    {% set generateOptions = [{value: '', label: 'Select type'|t('translation-manager')}] %}
+                    {% if currentUser.can('translationManager:generateAllTranslations') %}
+                        {% set generateOptions = generateOptions|merge([{value: 'all', label: 'Generate All Files'|t('translation-manager')}]) %}
+                    {% endif %}
+                    {% if settings.enableFormieIntegration and currentUser.can('translationManager:generateFormieTranslations') %}
+                        {% set generateOptions = generateOptions|merge([{value: 'formie', label: ('Generate ' ~ craft.translationManager.getFormiePluginName() ~ ' Files Only')|t('translation-manager')}]) %}
+                    {% endif %}
+                    {% if settings.enableSiteTranslations and currentUser.can('translationManager:generateSiteTranslations') %}
+                        {% set generateOptions = generateOptions|merge([{value: 'site', label: ('Generate ' ~ (settings.translationCategory|title) ~ ' Files Only')|t('translation-manager')}]) %}
+                    {% endif %}
                     {{ forms.selectField({
                         label: "Type to Generate"|t('translation-manager'),
                         id: 'generateType',
                         name: 'generateType',
-                        options: [
-                            {value: '', label: 'Select type'|t('translation-manager')},
-                            {value: 'all', label: 'Generate All Files'|t('translation-manager')},
-                            (settings.enableFormieIntegration ? {value: 'formie', label: ('Generate ' ~ craft.translationManager.getFormiePluginName() ~ ' Files Only')|t('translation-manager')} : null),
-                            (settings.enableSiteTranslations ? {value: 'site', label: ('Generate ' ~ (settings.translationCategory|title) ~ ' Files Only')|t('translation-manager')} : null)
-                        ]|filter(option => option is not null),
+                        options: generateOptions,
                         value: ''
                     }) }}
                 </div>
