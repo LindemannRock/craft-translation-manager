@@ -1,5 +1,21 @@
 # Changelog
 
+## [5.11.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.10.0...v5.11.0) (2026-01-08)
+
+
+### Features
+
+* Add granular user permissions system ([80133c6](https://github.com/LindemannRock/craft-translation-manager/commit/80133c67675a4d83ff1d462450d2cdf7f6b2d435))
+* Enhance Quick Actions with user permission checks for viewing translations ([2890571](https://github.com/LindemannRock/craft-translation-manager/commit/28905717f125fdd34688c124301b1844dd05b6ab))
+* Enhance user permissions handling and redirection in TranslationsController ([c655d1a](https://github.com/LindemannRock/craft-translation-manager/commit/c655d1a7b4e62e056ac3bbb3f22f2c5371d0a5e5))
+* Implement user permission checks for Quick Actions visibility ([d05f486](https://github.com/LindemannRock/craft-translation-manager/commit/d05f486720fd3bbb5f7cb60780f20d2ceac7ace9))
+* Update user permissions labels to use dynamic settings values ([e68874d](https://github.com/LindemannRock/craft-translation-manager/commit/e68874d60d111a650ee1188498313651feed4348))
+
+
+### Bug Fixes
+
+* update success message for saved settings ([4862488](https://github.com/LindemannRock/craft-translation-manager/commit/48624881cfaf0dc04458453abcc138d5df8ef3e5))
+
 ## [5.10.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.9.4...v5.10.0) (2026-01-06)
 
 
