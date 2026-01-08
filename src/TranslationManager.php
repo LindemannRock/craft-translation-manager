@@ -156,95 +156,100 @@ class TranslationManager extends Plugin
             UserPermissions::class,
             UserPermissions::EVENT_REGISTER_PERMISSIONS,
             function(RegisterUserPermissionsEvent $event) {
+                $settings = $this->getSettings();
+                $fullName = $settings->getFullName();
+                $plural = $settings->getPluralLowerDisplayName();
+                $formieName = self::getFormiePluginName();
+
                 $event->permissions[] = [
-                    'heading' => 'Translation Manager',
+                    'heading' => $fullName,
                     'permissions' => [
                         'translationManager:viewTranslations' => [
-                            'label' => 'View translations',
+                            'label' => Craft::t('translation-manager', 'View {plural}', ['plural' => $plural]),
                         ],
                         'translationManager:editTranslations' => [
-                            'label' => 'Edit translations',
+                            'label' => Craft::t('translation-manager', 'Edit {plural}', ['plural' => $plural]),
                             'nested' => [
                                 'translationManager:deleteTranslations' => [
-                                    'label' => 'Delete unused translations',
+                                    'label' => Craft::t('translation-manager', 'Delete unused {plural}', ['plural' => $plural]),
                                 ],
                             ],
                         ],
                         'translationManager:importTranslations' => [
-                            'label' => 'Import translations',
+                            'label' => Craft::t('translation-manager', 'Import {plural}', ['plural' => $plural]),
                         ],
                         'translationManager:exportTranslations' => [
-                            'label' => 'Export translations',
+                            'label' => Craft::t('translation-manager', 'Export {plural}', ['plural' => $plural]),
                         ],
                         'translationManager:generateTranslations' => [
-                            'label' => 'Generate translation files',
+                            'label' => Craft::t('translation-manager', 'Generate {name} files', ['name' => $settings->getLowerDisplayName()]),
                             'nested' => [
                                 'translationManager:generateAllTranslations' => [
-                                    'label' => 'Generate all files',
+                                    'label' => Craft::t('translation-manager', 'Generate all files'),
                                 ],
                                 'translationManager:generateFormieTranslations' => [
-                                    'label' => 'Generate Formie files',
+                                    'label' => Craft::t('translation-manager', 'Generate {name} files', ['name' => $formieName]),
                                 ],
                                 'translationManager:generateSiteTranslations' => [
-                                    'label' => 'Generate site files',
+                                    'label' => Craft::t('translation-manager', 'Generate site files'),
                                 ],
                             ],
                         ],
                         'translationManager:manageBackups' => [
-                            'label' => 'Manage backups',
+                            'label' => Craft::t('translation-manager', 'Manage backups'),
                             'nested' => [
                                 'translationManager:createBackups' => [
-                                    'label' => 'Create backups',
+                                    'label' => Craft::t('translation-manager', 'Create backups'),
                                 ],
                                 'translationManager:downloadBackups' => [
-                                    'label' => 'Download backups',
+                                    'label' => Craft::t('translation-manager', 'Download backups'),
                                 ],
                                 'translationManager:restoreBackups' => [
-                                    'label' => 'Restore backups',
+                                    'label' => Craft::t('translation-manager', 'Restore backups'),
                                 ],
                                 'translationManager:deleteBackups' => [
-                                    'label' => 'Delete backups',
+                                    'label' => Craft::t('translation-manager', 'Delete backups'),
                                 ],
                             ],
                         ],
                         'translationManager:maintenance' => [
-                            'label' => 'Perform maintenance',
+                            'label' => Craft::t('translation-manager', 'Perform maintenance'),
                             'nested' => [
                                 'translationManager:cleanUnused' => [
-                                    'label' => 'Clean unused translations',
+                                    'label' => Craft::t('translation-manager', 'Clean unused {plural}', ['plural' => $plural]),
                                 ],
                                 'translationManager:scanTemplates' => [
-                                    'label' => 'Scan templates',
+                                    'label' => Craft::t('translation-manager', 'Scan templates'),
                                 ],
                                 'translationManager:recaptureFormie' => [
-                                    'label' => 'Recapture Formie translations',
+                                    'label' => Craft::t('translation-manager', 'Recapture {name} {plural}', ['name' => $formieName, 'plural' => $plural]),
                                 ],
                             ],
                         ],
                         'translationManager:clearTranslations' => [
-                            'label' => 'Clear translations',
+                            'label' => Craft::t('translation-manager', 'Clear {plural}', ['plural' => $plural]),
                             'nested' => [
                                 'translationManager:clearFormie' => [
-                                    'label' => 'Clear Formie translations',
+                                    'label' => Craft::t('translation-manager', 'Clear {name} {plural}', ['name' => $formieName, 'plural' => $plural]),
                                 ],
                                 'translationManager:clearSite' => [
-                                    'label' => 'Clear site translations',
+                                    'label' => Craft::t('translation-manager', 'Clear site {plural}', ['plural' => $plural]),
                                 ],
                                 'translationManager:clearAll' => [
-                                    'label' => 'Clear all translations',
+                                    'label' => Craft::t('translation-manager', 'Clear all {plural}', ['plural' => $plural]),
                                 ],
                             ],
                         ],
                         'translationManager:viewLogs' => [
-                            'label' => 'View logs',
+                            'label' => Craft::t('translation-manager', 'View logs'),
                             'nested' => [
                                 'translationManager:downloadLogs' => [
-                                    'label' => 'Download logs',
+                                    'label' => Craft::t('translation-manager', 'Download logs'),
                                 ],
                             ],
                         ],
                         'translationManager:editSettings' => [
-                            'label' => 'Edit plugin settings',
+                            'label' => Craft::t('translation-manager', 'Edit plugin settings'),
                         ],
                     ],
                 ];
