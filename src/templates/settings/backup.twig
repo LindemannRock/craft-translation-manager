@@ -98,7 +98,7 @@
 
             {{ forms.selectField({
                 label: "Backup Storage Volume"|t('translation-manager'),
-                instructions: "Which asset volume should be used for storing backups. Backups will be stored in a 'translation-manager/backups' subdirectory. Note: Cloud storage volumes (Servd, S3, etc.) are not supported for backups and will fall back to local storage."|t('translation-manager'),
+                instructions: "Select an asset volume or use a custom path for storing backups."|t('translation-manager'),
                 id: 'backupVolumeUid',
                 name: 'settings[backupVolumeUid]',
                 options: volumeOptions,
