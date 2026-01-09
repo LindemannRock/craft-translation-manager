@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.12.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.11.0...v5.12.0) (2026-01-09)
+
+
+### Features
+
+* Update backup storage volume instructions for clarity ([cf7367d](https://github.com/LindemannRock/craft-translation-manager/commit/cf7367d9ae49817fab467a3faf1baf3cf25f5d10))
+
 ## [5.11.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.10.0...v5.11.0) (2026-01-08)
 
 
