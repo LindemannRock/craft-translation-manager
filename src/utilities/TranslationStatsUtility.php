@@ -26,8 +26,7 @@ class TranslationStatsUtility extends Utility
      */
     public static function displayName(): string
     {
-        $pluginName = TranslationManager::getInstance()->getSettings()->pluginName;
-        return $pluginName;
+        return TranslationManager::$plugin->getSettings()->getFullName();
     }
 
     /**
