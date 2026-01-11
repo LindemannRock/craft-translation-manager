@@ -100,8 +100,9 @@ class TranslationManager extends Plugin
         parent::init();
         self::$plugin = $this;
 
-        // Bootstrap the base plugin helper
-        PluginHelper::bootstrap($this, 'translationHelper');
+        // Bootstrap shared plugin functionality (Twig helper, logging nav)
+        PluginHelper::bootstrap($this, 'translationHelper', ['translationManager:viewLogs']);
+        PluginHelper::applyPluginNameFromConfig($this);
 
         // Configure logging using the new logging library
         $settings = $this->getSettings();
@@ -114,24 +115,6 @@ class TranslationManager extends Plugin
             'viewPermissions' => ['translationManager:viewLogs'],
             'downloadPermissions' => ['translationManager:downloadLogs'],
         ]);
-
-        // Override plugin name from config if available, otherwise use from database settings
-        $configFileSettings = Craft::$app->getConfig()->getConfigFromFile('translation-manager');
-        $configPath = Craft::$app->getPath()->getConfigPath() . '/translation-manager.php';
-
-        // Need to check raw config file for root-level settings since Craft only returns env-specific values
-        if (file_exists($configPath)) {
-            $rawConfig = require $configPath;
-            if (isset($rawConfig['pluginName'])) {
-                $this->name = $rawConfig['pluginName'];
-            }
-        } else {
-            // Get from database settings
-            $settings = $this->getSettings();
-            if (!empty($settings->pluginName)) {
-                $this->name = $settings->pluginName;
-            }
-        }
 
         // Register services
         $this->setComponents([
@@ -268,9 +251,6 @@ class TranslationManager extends Plugin
                 $event->types[] = TranslationStatsUtility::class;
             }
         );
-
-        // Register Twig extension for plugin name helpers
-        Craft::$app->view->registerTwigExtension(new \lindemannrock\translationmanager\twigextensions\PluginNameExtension());
 
         // Register variables
         Event::on(
