@@ -1,5 +1,14 @@
 # Changelog
 
+## [5.13.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.12.0...v5.13.0) (2026-01-11)
+
+
+### Features
+
+* Enhance plugin initialization and streamline configuration handling ([3ad83fe](https://github.com/LindemannRock/craft-translation-manager/commit/3ad83fe062ce0c12a48e285d528465f400d5463e))
+* Refactor displayName method to use getFullName for plugin name ([aebd93e](https://github.com/LindemannRock/craft-translation-manager/commit/aebd93e3977096051e33258160f2b415089dec33))
+* Remove PluginNameExtension and PluginNameHelper classes ([0f1c51c](https://github.com/LindemannRock/craft-translation-manager/commit/0f1c51cfd5254cb49129f9c7a8e6cb781317c43a))
+
 ## [5.12.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.11.0...v5.12.0) (2026-01-09)
 
 
