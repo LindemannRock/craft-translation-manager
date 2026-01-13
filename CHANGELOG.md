@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.14.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.13.0...v5.14.0) (2026-01-13)
+
+
+### Features
+
+* Add form exclusion patterns and script-based filtering for translations ([bbc9adc](https://github.com/LindemannRock/craft-translation-manager/commit/bbc9adc6fa61e5d4330686c491b81ad5609bd538))
+
 ## [5.13.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.12.0...v5.13.0) (2026-01-11)
 
 
