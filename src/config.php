@@ -49,6 +49,16 @@ return [
         // Formie Integration
         'enableFormieIntegration' => true,
 
+        // Form Exclusion Patterns
+        // Forms with handles OR titles containing these patterns will be skipped entirely (case-insensitive)
+        // Useful for excluding language-specific duplicates like 'booking-ar' or 'Contact Form (Ar)'
+        'excludeFormHandlePatterns' => [
+            // '(Ar)',     // Matches form titles like "Geely Service Survey (Ar)"
+            // '(ar)',     // Matches form titles like "Contact Form (ar)"
+            // 'Ar1',      // Matches handles like offersBmwX1X2Ar11, fantasypremiurleagueAr11
+            // 'PricesAr', // Matches handles like offersGeelySpecialPricesAr
+        ],
+
 
         // ========================================
         // FILE GENERATION

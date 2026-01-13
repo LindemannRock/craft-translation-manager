@@ -51,6 +51,8 @@ Translation Manager was created to solve critical gaps in Craft CMS multi-langua
   - Automatic capture of ALL field types including options, subfields, and special properties
   - Support for Radio, Dropdown, Checkboxes, Address, Name, Date, Table, Repeater, and more
   - Respects Formie's configured plugin name
+  - **Form Exclusion**: Skip forms by handle OR title pattern (e.g., exclude `(Ar)`, `*-ar` for Arabic duplicates)
+  - **Script-Based Filtering**: Automatically skips non-source-language text based on Unicode script detection (supports 50+ languages)
 - **Site Translations**: Custom translation category for site content with namespace protection
 - **Advanced Filtering**: Filter by type (Forms/Site), status (Pending/Translated/Not Used), and search
 - **Bulk Operations**: Save all changes at once, bulk delete unused translations
@@ -186,6 +188,14 @@ return [
     'backupEnabled' => true,
     'logLevel' => 'error', // Options: 'debug', 'info', 'warning', 'error'
     // 'backupVolumeUid' => 'abc123-your-volume-uid', // Optional: Set backup volume
+
+    // Form Exclusion Patterns (for sites with language-specific form duplicates)
+    // Patterns are checked against both form HANDLE and TITLE
+    'excludeFormHandlePatterns' => [
+        '(Ar)',     // Matches titles like "Geely Service Survey (Ar)"
+        'Ar1',      // Matches handles like offersBmwX1X2Ar11
+    ],
+
     // Multi-environment support
     'production' => [
         'autoExport' => true,
@@ -211,6 +221,13 @@ Navigate to **Settings → Translation Manager** in the Control Panel to configu
   - Should match the language of your `|t()` keys, not necessarily your primary site
   - Format: `en`, `en-US`, `ar`, etc.
 - **Enable Formie Integration**: Capture translations from Formie forms
+  - **Exclude Form Patterns**: Skip forms with handles OR titles matching patterns (case-insensitive)
+    - Useful for sites with language-specific form duplicates (e.g., `booking-ar`, `Contact Form (Ar)`)
+    - Patterns are substring matches: `(Ar)` matches title "Geely Survey (Ar)", `Ar1` matches handle `offersBmwX1X2Ar11`
+  - **Script-Based Filtering**: Automatically skips text not in the source language
+    - Based on `sourceLanguage` setting (e.g., `en` = Latin script)
+    - Text with Arabic/Chinese/Cyrillic/etc. characters is skipped when source is Latin
+    - Supports 50+ languages and 19 script families
 - **Enable Site Translations**: Capture translations using your configured category
 - **Auto Save**: Enable/disable automatic saving with configurable delay (1-10 seconds)
 - **Enable Translation Suggestions**: Show translation suggestions based on similar existing translations
@@ -385,6 +402,36 @@ Translation contexts follow the pattern:
 - Button text: `formie.{formHandle}.button.{type}`
 
 **Note**: The plugin automatically detects and uses Formie's configured plugin name (e.g., "Forms" instead of "Formie") throughout the interface. This is configured in Formie's settings or via `config/formie.php`.
+
+#### Multi-Language Form Filtering
+
+For sites with duplicated forms for different languages (e.g., `booking-en` and `booking-ar`), the plugin provides two filtering mechanisms:
+
+**1. Form Exclusion Patterns**
+
+Skip entire forms based on handle OR title patterns. Configure in **Settings → Translation Manager → Sources**:
+
+```
+(Ar)
+(ar)
+Ar1
+```
+
+This skips:
+- Forms with titles like `Geely Service Survey (Ar)`, `Contact Form (ar)`
+- Forms with handles like `offersBmwX1X2Ar11`, `fantasypremiurleagueAr11`
+
+**2. Script-Based Text Detection**
+
+Automatically skips text that doesn't match the source language script:
+
+| Source Language | Captures | Skips |
+|-----------------|----------|-------|
+| `en` (Latin) | "First Name", "Submit" | "الاسم الأول", "BMW الفئة الثانية" |
+| `ar` (Arabic) | "الاسم الأول", "BMW الفئة" | "First Name", "Submit" |
+| `zh` (Chinese) | "名字", "提交" | "First Name", "الاسم" |
+
+Supported script families: Latin, Arabic, Chinese, Japanese, Korean, Cyrillic, Hebrew, Greek, Thai, Devanagari, Bengali, Tamil, Telugu, Kannada, Malayalam, Gujarati, Gurmukhi, Georgian, Armenian.
 
 ### CSV Export
 

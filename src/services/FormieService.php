@@ -24,6 +24,13 @@ use yii\base\Event;
 class FormieService extends Component
 {
     use LoggingTrait;
+
+    public function init(): void
+    {
+        parent::init();
+        $this->setLoggingHandle('translation-manager');
+    }
+
     /**
      * Register Formie event hooks
      */
@@ -48,6 +55,15 @@ class FormieService extends Component
     public function captureFormTranslations($form): void
     {
         if (!$form) {
+            return;
+        }
+
+        // Check if form handle or title is excluded by pattern
+        if ($this->isFormExcluded($form->handle, $form->title)) {
+            $this->logInfo("Skipping excluded form", [
+                'handle' => $form->handle,
+                'title' => $form->title,
+            ]);
             return;
         }
 
@@ -495,13 +511,62 @@ class FormieService extends Component
     public function checkFormUsage(): void
     {
         $this->logInfo('Running form usage check after form save');
-        
+
         // Get all Formie translations and check their usage
         $translations = TranslationManager::getInstance()->translations->getTranslations([
             'type' => 'forms',
             'includeUsageCheck' => true,
         ]);
-        
+
         $this->logInfo('Checked form translations for usage', ['count' => count($translations)]);
+    }
+
+    /**
+     * Check if a form should be excluded based on patterns
+     * Checks both form handle and title against exclusion patterns
+     *
+     * @param string $formHandle The form handle to check
+     * @param string|null $formTitle The form title/name to check (optional)
+     * @return bool True if form should be excluded
+     */
+    private function isFormExcluded(string $formHandle, ?string $formTitle = null): bool
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $patterns = $settings->excludeFormHandlePatterns ?? [];
+
+        if (empty($patterns)) {
+            return false;
+        }
+
+        foreach ($patterns as $pattern) {
+            $pattern = trim($pattern);
+            if (empty($pattern)) {
+                continue;
+            }
+
+            // Case-insensitive check if handle contains the pattern
+            if (stripos($formHandle, $pattern) !== false) {
+                $this->logInfo("Form excluded by handle pattern", [
+                    'handle' => $formHandle,
+                    'title' => $formTitle,
+                    'pattern' => $pattern,
+                    'matchedIn' => 'handle',
+                ]);
+                return true;
+            }
+
+            // Also check form title if provided
+            if ($formTitle !== null && stripos($formTitle, $pattern) !== false) {
+                $this->logInfo("Form excluded by title pattern", [
+                    'handle' => $formHandle,
+                    'title' => $formTitle,
+                    'pattern' => $pattern,
+                    'matchedIn' => 'title',
+                ]);
+                return true;
+            }
+        }
+
+        return false;
     }
 }

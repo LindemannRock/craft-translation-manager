@@ -28,6 +28,78 @@ class TranslationsService extends Component
 {
     use LoggingTrait;
 
+    /**
+     * Script family mapping for language codes
+     */
+    private const LANGUAGE_SCRIPT_MAP = [
+        // Latin script languages
+        'en' => 'latin', 'en-US' => 'latin', 'en-GB' => 'latin',
+        'de' => 'latin', 'de-DE' => 'latin', 'de-AT' => 'latin', 'de-CH' => 'latin',
+        'fr' => 'latin', 'fr-FR' => 'latin', 'fr-CA' => 'latin',
+        'es' => 'latin', 'es-ES' => 'latin', 'es-MX' => 'latin',
+        'it' => 'latin', 'pt' => 'latin', 'pt-BR' => 'latin',
+        'nl' => 'latin', 'sv' => 'latin', 'da' => 'latin', 'no' => 'latin',
+        'fi' => 'latin', 'pl' => 'latin', 'cs' => 'latin', 'sk' => 'latin',
+        'hu' => 'latin', 'ro' => 'latin', 'hr' => 'latin', 'sl' => 'latin',
+        'et' => 'latin', 'lv' => 'latin', 'lt' => 'latin',
+        'id' => 'latin', 'ms' => 'latin', 'vi' => 'latin',
+        'tr' => 'latin', 'az' => 'latin',
+        // Arabic script languages
+        'ar' => 'arabic', 'ar-SA' => 'arabic', 'ar-AE' => 'arabic', 'ar-EG' => 'arabic',
+        'fa' => 'arabic', 'fa-IR' => 'arabic',
+        'ur' => 'arabic', 'ur-PK' => 'arabic',
+        'ps' => 'arabic', 'ku' => 'arabic',
+        // CJK languages
+        'zh' => 'chinese', 'zh-CN' => 'chinese', 'zh-TW' => 'chinese', 'zh-HK' => 'chinese',
+        'ja' => 'japanese', 'ja-JP' => 'japanese',
+        'ko' => 'korean', 'ko-KR' => 'korean',
+        // Cyrillic script languages
+        'ru' => 'cyrillic', 'ru-RU' => 'cyrillic',
+        'uk' => 'cyrillic', 'uk-UA' => 'cyrillic',
+        'bg' => 'cyrillic', 'sr' => 'cyrillic', 'mk' => 'cyrillic',
+        'be' => 'cyrillic', 'kk' => 'cyrillic', 'ky' => 'cyrillic',
+        // Hebrew
+        'he' => 'hebrew', 'he-IL' => 'hebrew', 'yi' => 'hebrew',
+        // Greek
+        'el' => 'greek', 'el-GR' => 'greek',
+        // Thai
+        'th' => 'thai', 'th-TH' => 'thai',
+        // Indic scripts
+        'hi' => 'devanagari', 'hi-IN' => 'devanagari',
+        'mr' => 'devanagari', 'ne' => 'devanagari', 'sa' => 'devanagari',
+        'bn' => 'bengali', 'bn-BD' => 'bengali', 'bn-IN' => 'bengali',
+        'ta' => 'tamil', 'ta-IN' => 'tamil',
+        'te' => 'telugu', 'kn' => 'kannada', 'ml' => 'malayalam',
+        'gu' => 'gujarati', 'pa' => 'gurmukhi',
+        // Other scripts
+        'ka' => 'georgian', 'hy' => 'armenian',
+    ];
+
+    /**
+     * Unicode regex patterns for each script family
+     */
+    private const SCRIPT_PATTERNS = [
+        'latin' => '/[\x{0041}-\x{007A}\x{00C0}-\x{00FF}\x{0100}-\x{017F}\x{0180}-\x{024F}]/u',
+        'arabic' => '/[\x{0600}-\x{06FF}\x{0750}-\x{077F}\x{08A0}-\x{08FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}]/u',
+        'chinese' => '/[\x{4E00}-\x{9FFF}\x{3400}-\x{4DBF}\x{20000}-\x{2A6DF}]/u',
+        'japanese' => '/[\x{3040}-\x{309F}\x{30A0}-\x{30FF}\x{4E00}-\x{9FFF}]/u',
+        'korean' => '/[\x{AC00}-\x{D7AF}\x{1100}-\x{11FF}\x{3130}-\x{318F}]/u',
+        'cyrillic' => '/[\x{0400}-\x{04FF}\x{0500}-\x{052F}]/u',
+        'hebrew' => '/[\x{0590}-\x{05FF}\x{FB1D}-\x{FB4F}]/u',
+        'greek' => '/[\x{0370}-\x{03FF}\x{1F00}-\x{1FFF}]/u',
+        'thai' => '/[\x{0E00}-\x{0E7F}]/u',
+        'devanagari' => '/[\x{0900}-\x{097F}\x{A8E0}-\x{A8FF}]/u',
+        'bengali' => '/[\x{0980}-\x{09FF}]/u',
+        'tamil' => '/[\x{0B80}-\x{0BFF}]/u',
+        'telugu' => '/[\x{0C00}-\x{0C7F}]/u',
+        'kannada' => '/[\x{0C80}-\x{0CFF}]/u',
+        'malayalam' => '/[\x{0D00}-\x{0D7F}]/u',
+        'gujarati' => '/[\x{0A80}-\x{0AFF}]/u',
+        'gurmukhi' => '/[\x{0A00}-\x{0A7F}]/u',
+        'georgian' => '/[\x{10A0}-\x{10FF}]/u',
+        'armenian' => '/[\x{0530}-\x{058F}]/u',
+    ];
+
     public function init(): void
     {
         parent::init();
@@ -198,9 +270,19 @@ class TranslationsService extends Component
 
     /**
      * Create or update a translation
+     * Automatically skips text that is not in the source language
      */
     public function createOrUpdateTranslation(string $text, string $context = 'site'): ?TranslationRecord
     {
+        // Check if text is in source language (skip non-source language text)
+        if (!$this->isTextInSourceLanguage($text)) {
+            $this->logDebug("Skipping non-source-language text", [
+                'text' => mb_substr($text, 0, 50) . (mb_strlen($text) > 50 ? '...' : ''),
+                'context' => $context,
+            ]);
+            return null;
+        }
+
         // First check if this text contains Twig component blocks with plain text
         if ($this->containsTwigCode($text)) {
             // Try to extract plain text from Twig component blocks
@@ -1269,5 +1351,79 @@ class TranslationsService extends Component
             // If JSON parsing fails, return original
             return $jsonString;
         }
+    }
+
+    // =========================================================================
+    // Script Detection Methods (for source language filtering)
+    // =========================================================================
+
+    /**
+     * Get the script family for a language code
+     */
+    private function getScriptForLanguage(string $languageCode): string
+    {
+        if (isset(self::LANGUAGE_SCRIPT_MAP[$languageCode])) {
+            return self::LANGUAGE_SCRIPT_MAP[$languageCode];
+        }
+
+        $baseCode = explode('-', $languageCode)[0];
+        if (isset(self::LANGUAGE_SCRIPT_MAP[$baseCode])) {
+            return self::LANGUAGE_SCRIPT_MAP[$baseCode];
+        }
+
+        return 'latin';
+    }
+
+    /**
+     * Check if text contains characters from a specific script
+     */
+    private function textContainsScript(string $text, string $script): bool
+    {
+        if (!isset(self::SCRIPT_PATTERNS[$script])) {
+            return true;
+        }
+
+        return (bool) preg_match(self::SCRIPT_PATTERNS[$script], $text);
+    }
+
+    /**
+     * Check if text appears to be in the source language (based on script)
+     */
+    private function isTextInSourceLanguage(string $text): bool
+    {
+        if (trim($text) === '') {
+            return true;
+        }
+
+        $sourceLanguage = TranslationManager::getInstance()->getSettings()->sourceLanguage;
+        $sourceScript = $this->getScriptForLanguage($sourceLanguage);
+
+        if ($sourceScript === 'latin') {
+            $nonLatinScripts = ['arabic', 'chinese', 'japanese', 'korean', 'cyrillic', 'hebrew',
+                                'greek', 'thai', 'devanagari', 'bengali', 'tamil', 'telugu',
+                                'kannada', 'malayalam', 'gujarati', 'gurmukhi', 'georgian', 'armenian', ];
+
+            foreach ($nonLatinScripts as $script) {
+                if ($this->textContainsScript($text, $script)) {
+                    $this->logDebug("Text contains non-source script", [
+                        'text' => mb_substr($text, 0, 50),
+                        'detectedScript' => $script,
+                    ]);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        if (!$this->textContainsScript($text, $sourceScript)) {
+            $this->logDebug("Text does not contain source script", [
+                'text' => mb_substr($text, 0, 50),
+                'expectedScript' => $sourceScript,
+            ]);
+            return false;
+        }
+
+        return true;
     }
 }

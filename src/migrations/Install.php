@@ -101,6 +101,7 @@ class Install extends Migration
                 'backupPath' => $this->string()->defaultValue('@storage/translation-manager/backups'),
                 'backupVolumeUid' => $this->string()->null(),
                 'skipPatterns' => $this->text()->null(),
+                'excludeFormHandlePatterns' => $this->text()->null(),
                 'logLevel' => $this->string(20)->notNull()->defaultValue('error'),
                 'dateCreated' => $this->dateTime()->notNull(),
                 'dateUpdated' => $this->dateTime()->notNull(),

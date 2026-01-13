@@ -89,8 +89,18 @@ class FormieIntegration extends BaseIntegration
             return [];
         }
 
-        $captured = [];
         $form = $element;
+
+        // Check if form handle or title is excluded by pattern
+        if ($this->isFormExcluded($form->handle, $form->title)) {
+            $this->logInfo("Skipping excluded form", [
+                'handle' => $form->handle,
+                'title' => $form->title,
+            ]);
+            return [];
+        }
+
+        $captured = [];
 
         // Capture Formie default translations (validation messages, etc.)
         $captured = array_merge($captured, $this->captureDefaultTranslations());

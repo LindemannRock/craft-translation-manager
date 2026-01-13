@@ -113,6 +113,13 @@ class Settings extends Model
     public array $skipPatterns = [];
 
     /**
+     * @var array List of form handle patterns to exclude from Formie translation capture
+     * Patterns are matched case-insensitively against form handles
+     * Examples: ['-ar', '_ar', 'Ar', '(ar)'] would exclude forms like 'booking-ar', 'form_ar', 'formAr', 'form(ar)'
+     */
+    public array $excludeFormHandlePatterns = [];
+
+    /**
      * @var array Dynamic integration settings for discovered integrations
      */
     public array $integrationSettings = [];
@@ -181,7 +188,7 @@ class Settings extends Model
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
             [['enableFormieIntegration', 'enableSiteTranslations', 'autoExport',
               'showContext', 'enableSuggestions', 'autoSaveEnabled', 'backupEnabled', 'backupOnImport', ], 'boolean'],
-            [['skipPatterns'], 'safe'],
+            [['skipPatterns', 'excludeFormHandlePatterns'], 'safe'],
             [['backupRetentionDays'], 'integer', 'min' => 0, 'max' => 365],
             [['backupSchedule'], 'in', 'range' => ['manual', 'daily', 'weekly']],
             [['logLevel'], 'in', 'range' => ['debug', 'info', 'warning', 'error']],
@@ -204,6 +211,7 @@ class Settings extends Model
             'autoSaveDelay' => 'Auto-Save Delay',
             'showContext' => 'Show Context',
             'skipPatterns' => 'Skip Patterns',
+            'excludeFormHandlePatterns' => 'Exclude Form Handle Patterns',
             'enableSuggestions' => 'Enable Translation Suggestions',
             'backupEnabled' => 'Enable Backups',
             'backupRetentionDays' => 'Backup Retention Days',
@@ -233,6 +241,26 @@ class Settings extends Model
             $this->skipPatterns = $value;
         } else {
             $this->skipPatterns = [];
+        }
+    }
+
+    /**
+     * Set exclude form handle patterns from string (for form submission)
+     *
+     * @param string|array $value
+     */
+    public function setExcludeFormHandlePatterns($value): void
+    {
+        if (is_string($value)) {
+            if (trim($value) === '') {
+                $this->excludeFormHandlePatterns = [];
+            } else {
+                $this->excludeFormHandlePatterns = array_filter(array_map('trim', explode("\n", $value)));
+            }
+        } elseif (is_array($value)) {
+            $this->excludeFormHandlePatterns = $value;
+        } else {
+            $this->excludeFormHandlePatterns = [];
         }
     }
 
@@ -565,6 +593,7 @@ class Settings extends Model
     {
         return [
             'skipPatterns',
+            'excludeFormHandlePatterns',
         ];
     }
 
