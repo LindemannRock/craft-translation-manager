@@ -413,9 +413,9 @@
         const translationIdx = findColumnIndex(headers, ['Translation', 'Arabic Translation', 'Arabic', 'Ar', 'AR', 'ar', 'Translated']);
         const typeIdx = findColumnIndex(headers, ['Type']);
         const contextIdx = findColumnIndex(headers, ['Context']);
+        const categoryIdx = findColumnIndex(headers, ['Category']);
         const statusIdx = findColumnIndex(headers, ['Status']);
-        const siteIdIdx = findColumnIndex(headers, ['Site ID', 'SiteID', 'Site_ID']);
-        const siteLanguageIdx = findColumnIndex(headers, ['Site Language', 'Site_Language', 'Language']);
+        const siteLanguageIdx = findColumnIndex(headers, ['Language', 'Site Language', 'Site_Language']);
 
 
         const toCheck = [];
@@ -430,22 +430,22 @@
                 const translationKey = row[keyIdx] || '';
                 const translation = translationIdx !== -1 ? (row[translationIdx] || '') : '';
                 const context = contextIdx !== -1 ? (row[contextIdx] || 'site') : 'site';
-                let siteId = siteIdIdx !== -1 ? (row[siteIdIdx] || '') : '';
+                const category = categoryIdx !== -1 ? (row[categoryIdx] || '') : '';
+                const type = typeIdx !== -1 ? (row[typeIdx] || '') : '';
                 let siteLanguage = siteLanguageIdx !== -1 ? (row[siteLanguageIdx] || '') : '';
 
-                // Default to primary site if no site info in CSV
-                if (!siteId && !siteLanguage) {
-                    siteId = '{{ craft.app.sites.primarySite.id }}';
+                // Default to primary site's language if no language in CSV
+                if (!siteLanguage) {
                     siteLanguage = '{{ craft.app.sites.primarySite.language }}';
                 }
-
 
                 if (translationKey) {
                     toCheck.push({
                         english: translationKey,
                         arabic: translation,
                         context: context,
-                        siteId: siteId,
+                        category: category,
+                        type: type,
                         siteLanguage: siteLanguage
                     });
                 }
@@ -716,8 +716,7 @@
                         <th>Current Translation</th>
                         <th>New Translation</th>
                         <th>Context</th>
-                        <th>Site ID</th>
-                        <th>Site Language</th>
+                        <th>Language</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -732,8 +731,7 @@
                     <td>${escapeHtml(item.currentTranslation) || '<span class="light">Empty</span>'}</td>
                     <td>${escapeHtml(item.arabic) || '<span class="light">Empty</span>'}</td>
                     <td>${escapeHtml(item.context)}</td>
-                    <td>${item.siteId || '<span class="light">Auto</span>'}</td>
-                    <td>${item.siteLanguage || '<span class="light">Auto</span>'}</td>
+                    <td>${item.language || item.siteLanguage || '<span class="light">Auto</span>'}</td>
                     <td><span class="warning">Will update</span></td>
                 </tr>
             `;
@@ -747,8 +745,7 @@
                     <td><span class="light">—</span></td>
                     <td>${item.arabic ? escapeHtml(item.arabic) : '<span class="light">Empty</span>'}</td>
                     <td>${escapeHtml(item.context)}</td>
-                    <td>${item.siteId || '<span class="light">Auto</span>'}</td>
-                    <td>${item.siteLanguage || '<span class="light">Auto</span>'}</td>
+                    <td>${item.language || item.siteLanguage || '<span class="light">Auto</span>'}</td>
                     <td><span class="success">Will create</span></td>
                 </tr>
             `;
@@ -762,8 +759,7 @@
                     <td>${item.currentTranslation ? escapeHtml(item.currentTranslation) : '<span class="light">Empty</span>'}</td>
                     <td>${item.arabic ? escapeHtml(item.arabic) : '<span class="light">Empty</span>'}</td>
                     <td>${escapeHtml(item.context)}</td>
-                    <td>${item.siteId || '<span class="light">Auto</span>'}</td>
-                    <td>${item.siteLanguage || '<span class="light">Auto</span>'}</td>
+                    <td>${item.language || item.siteLanguage || '<span class="light">Auto</span>'}</td>
                     <td><span class="light">Skip (no change)</span></td>
                 </tr>
             `;
@@ -778,8 +774,7 @@
                         <td><span class="light">—</span></td>
                         <td>${item.arabic ? escapeHtml(item.arabic) : '<span class="light">Empty</span>'}</td>
                         <td>${escapeHtml(item.context)}</td>
-                        <td>${item.siteId}</td>
-                        <td>${item.siteLanguage}</td>
+                        <td>${item.language || item.siteLanguage || '<span class="light">—</span>'}</td>
                         <td><span class="error">Error: ${item.error}</span></td>
                     </tr>
                 `;

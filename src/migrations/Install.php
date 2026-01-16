@@ -23,7 +23,7 @@ class Install extends Migration
 {
     public function safeUp(): bool
     {
-        // Create the translations table with multi-site support
+        // Create the translations table with multi-language support
         if (!$this->tableExists('{{%translationmanager_translations}}')) {
             $this->createTable('{{%translationmanager_translations}}', [
                 'id' => $this->primaryKey(),
@@ -31,9 +31,10 @@ class Install extends Migration
                 'sourceHash' => $this->string(32)->notNull(),
                 'context' => $this->string(255)->notNull(),
                 'category' => $this->string(50)->notNull()->defaultValue('messages')->comment('Translation category used in |t() - e.g., messages, formie, emails'),
-                'siteId' => $this->integer()->notNull()->defaultValue(1),
+                'siteId' => $this->integer()->notNull()->defaultValue(1)->comment('Legacy - kept for backwards compatibility'),
+                'language' => $this->string(12)->notNull()->comment('Language code (e.g., en-US, ar, fr)'),
                 'translationKey' => $this->text()->notNull()->comment('The key used in code (any language)'),
-                'translation' => $this->text()->null()->comment('Site-specific translation'),
+                'translation' => $this->text()->null()->comment('Language-specific translation'),
                 'status' => $this->enum('status', ['pending', 'translated', 'unused', 'approved'])->notNull()->defaultValue('pending'),
                 'usageCount' => $this->integer()->notNull()->defaultValue(1),
                 'lastUsed' => $this->dateTime()->null(),
@@ -42,17 +43,18 @@ class Install extends Migration
                 'uid' => $this->uid(),
             ]);
 
-            // Create indexes for multi-site support
+            // Create indexes for multi-language support
             $this->createIndex(null, '{{%translationmanager_translations}}', 'sourceHash', false);
             $this->createIndex(null, '{{%translationmanager_translations}}', 'context', false);
             $this->createIndex(null, '{{%translationmanager_translations}}', 'category', false);
             $this->createIndex(null, '{{%translationmanager_translations}}', 'status', false);
+            $this->createIndex(null, '{{%translationmanager_translations}}', 'language', false);
             $this->createIndex(null, '{{%translationmanager_translations}}', 'siteId', false);
-            $this->createIndex(null, '{{%translationmanager_translations}}', ['siteId', 'status'], false);
-            $this->createIndex(null, '{{%translationmanager_translations}}', ['siteId', 'context'], false);
-            $this->createIndex(null, '{{%translationmanager_translations}}', ['siteId', 'category'], false);
-            // Unique constraint: same key can exist once per site per category
-            $this->createIndex(null, '{{%translationmanager_translations}}', ['sourceHash', 'siteId', 'category'], true);
+            $this->createIndex(null, '{{%translationmanager_translations}}', ['language', 'status'], false);
+            $this->createIndex(null, '{{%translationmanager_translations}}', ['language', 'context'], false);
+            $this->createIndex(null, '{{%translationmanager_translations}}', ['language', 'category'], false);
+            // Unique constraint: same key can exist once per language per category
+            $this->createIndex(null, '{{%translationmanager_translations}}', ['sourceHash', 'language', 'category'], true);
         }
 
         // Create the import history table

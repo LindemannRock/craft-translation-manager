@@ -38,13 +38,18 @@ Translation Manager was created to solve critical gaps in Craft CMS multi-langua
 
 ## Features
 
-- **Multi-Site Translation Support**:
-  - Site-aware translation management for any language combination
-  - Site selector in breadcrumbs like native Craft elements
-  - Dynamic text direction (RTL/LTR) based on site language
-  - Per-site translation files generation
+- **Multi-Language Translation Support**:
+  - Language-based translation management (not site-based)
+  - Multiple sites can share the same language translations
+  - Language selector in breadcrumbs for easy switching
+  - Dynamic text direction (RTL/LTR) based on selected language
+  - Per-language translation files generation
   - **Locale Variant Support**: Full support for regional language variants (en-US, en-GB, en-CA, etc.)
   - Configurable source language setting (Settings → Translation Manager → Sources) to match the language of your template strings
+- **Multi-Category Support**:
+  - Support for multiple translation categories (e.g., site, emails, errors)
+  - Each category generates separate translation files
+  - Categories configurable via Settings or config file
 - **Unified Translation Management**: Manage all translations in one place with an intuitive interface
 - **Smart Deduplication**: Each unique text is stored only once, regardless of how many forms use it
 - **Comprehensive Formie Support**:
@@ -129,45 +134,47 @@ ddev craft plugin/install translation-manager
 
 In the Control Panel, go to Settings → Plugins and click "Install" for Translation Manager.
 
-## Multi-Site Translation Support
+## Multi-Language Translation Support
 
-Translation Manager supports multi-site setups with any language combination. The system automatically creates translations for all configured sites when new text is discovered.
+Translation Manager uses a **language-based** approach to translations. Unlike site-based systems, translations are stored per unique language - meaning multiple sites sharing the same language will use the same translations.
 
-### How Multi-Site Works
+### How Multi-Language Works
 
 - **Translation Key**: The universal identifier (can be any language: English, Arabic, German, etc.)
-- **Site-Specific Translations**: Each site has its own translation of the same key
-- **Site Switcher**: Native Craft site selector in breadcrumbs
-- **Dynamic Interface**: Text direction (RTL/LTR) adapts to site language
-- **Per-Site Export**: Generates separate translation files for each site language (e.g., `en-US/lindemannrock.php`, `ar/formie.php`)
+- **Language-Based Storage**: Each unique language has its own translation records
+- **Shared Translations**: Sites with the same language (e.g., two English sites) share translations
+- **Language Switcher**: Select language in breadcrumbs to manage translations
+- **Dynamic Interface**: Text direction (RTL/LTR) adapts to selected language
+- **Per-Language Export**: Generates separate translation files for each language (e.g., `en-US/lindemannrock.php`, `ar/formie.php`)
 
-### Example Multi-Site Workflow
+### Example Multi-Language Workflow
 
 ```twig
 {# Template uses same translation key #}
 {{ 'Welcome'|t('lindemannrock') }}
 ```
 
-**Database Storage:**
+**Database Storage (by language, not site):**
 
-- English Site: `translationKey="Welcome"` → `translation="Welcome"`
-- Arabic Site: `translationKey="Welcome"` → `translation="مرحباً"`
-- French Site: `translationKey="Welcome"` → `translation="Bienvenue"`
+- Language `en-US`: `translationKey="Welcome"` → `translation="Welcome"`
+- Language `ar`: `translationKey="Welcome"` → `translation="مرحباً"`
+- Language `fr`: `translationKey="Welcome"` → `translation="Bienvenue"`
 
 **Generated Files:**
 
-- `translations/en-US/lindemannrock.php` (English site)
-- `translations/ar/lindemannrock.php` (Arabic site)
-- `translations/en-US/formie.php` (English Formie forms)
-- `translations/ar/formie.php` (Arabic Formie forms)
+- `translations/en-US/lindemannrock.php` (English translations)
+- `translations/ar/lindemannrock.php` (Arabic translations)
+- `translations/en-US/formie.php` (English Formie)
+- `translations/ar/formie.php` (Arabic Formie)
 
-### Site Switcher
+### Language Switcher
 
-The Control Panel includes a native Craft site switcher in the breadcrumbs:
+The Control Panel includes a language switcher in the breadcrumbs:
 
-- 🌍 **En** ▼ > Translation Manager > Translations
-- Switch between sites to manage different language translations
-- All filters and search terms are preserved when switching sites
+- 🌍 **EN-US** ▼ > Translation Manager > Translations
+- Switch between languages to manage different translations
+- All filters and search terms are preserved when switching languages
+- Source language (e.g., English) shows translations pre-filled with the source text
 
 ## Configuration
 
@@ -182,8 +189,13 @@ cp vendor/lindemannrock/craft-translation-manager/src/config.php config/translat
 ```php
 <?php
 return [
-    'translationCategory' => 'messages',
-    'sourceLanguage' => 'en',            // Language your template strings are written in (e.g., 'Copyright', 'Submit')
+    'translationCategory' => 'messages',       // Primary/default translation category
+    'translationCategories' => [               // Multiple categories support
+        ['key' => 'messages', 'enabled' => true],
+        ['key' => 'emails', 'enabled' => true],
+        ['key' => 'errors', 'enabled' => false],
+    ],
+    'sourceLanguage' => 'en',                  // Language your template strings are written in
     'autoExport' => true,
     'backupEnabled' => true,
     'logLevel' => 'error', // Options: 'debug', 'info', 'warning', 'error'
@@ -213,9 +225,13 @@ Navigate to **Settings → Translation Manager** in the Control Panel to configu
 
 ### General Settings
 
-- **Translation Category**: The category used for site translations (e.g., `lindemannrock`)
+- **Translation Category**: The primary category used for site translations (e.g., `lindemannrock`)
   - Cannot use reserved categories: `site`, `app`, `yii`, `craft`
   - Must start with a letter and contain only letters and numbers
+- **Translation Categories**: Configure multiple categories for different translation contexts
+  - Enable/disable categories as needed (e.g., `messages`, `emails`, `errors`)
+  - Each category generates separate translation files
+  - Formie translations always use the `formie` category
 - **Source Language**: The language your template strings are written in (e.g., 'en' for English)
   - Used for translation file generation and Craft's translation system
   - Should match the language of your `|t()` keys, not necessarily your primary site
@@ -437,13 +453,15 @@ Supported script families: Latin, Arabic, Chinese, Japanese, Korean, Cyrillic, H
 
 The CSV export includes:
 
-- English Text
-- Arabic Translation
+- Translation Key (English Text)
+- Translation (Arabic/target language)
+- Category (formie, messages, or your custom category)
 - Type (Forms/Site)
 - Context (if enabled in settings)
 - Status
+- Language
 
-Exports respect current filters and are protected against CSV injection.
+Exports respect current filters (including language) and are protected against CSV injection. Filenames include the selected language (e.g., `translations-export-ar-2025-01-16.csv`).
 
 ### CSV Import
 
@@ -464,18 +482,22 @@ The plugin provides a secure built-in CSV import feature with preview:
 
 **Required Columns** (flexible naming):
 
-- **English Text** (or English, Source, Original)
-- **Arabic Translation** (or Arabic, Translation, Translated) - optional
-- **Context** (or Category, Type) - optional, defaults to 'site'
+- **Translation Key** (or English Text, English, Source, Original)
+- **Translation** (or Arabic Translation, Arabic, Translated) - optional
+- **Context** - optional, defaults to 'site'
+- **Category** - optional, defaults to 'messages' (use 'formie' for form translations)
+- **Type** - optional, used to protect formie translations
 - **Status** - optional: pending/translated/unused
+- **Language** (or Site Language) - required for matching translations
+- **Site ID** - legacy, only for old CSV imports (converted to language)
 
 Example CSV:
 
 ```csv
-English Text,Arabic Translation,Status,Context
-"Welcome to our website","مرحباً بكم في موقعنا","translated","site"
-"Contact Us","اتصل بنا","translated","site"
-"Submit","إرسال","translated","formie.contactForm"
+Translation Key,Translation,Category,Type,Context,Status,Language
+"Welcome to our website","مرحباً بكم في موقعنا","alhatab","Site","site","translated","ar"
+"Contact Us","اتصل بنا","alhatab","Site","site","translated","ar"
+"Submit","إرسال","formie","Forms","formie.contactForm","translated","ar"
 ```
 
 **Security Features**:

@@ -83,16 +83,18 @@ class ImportController extends Controller
                 continue;
             }
             
-            // Extract site information from CSV data
-            $targetSiteId = null;
-            if (isset($translation['siteId']) && !empty($translation['siteId'])) {
+            // Extract language from CSV data (preferred) or fall back to siteId
+            $targetLanguage = null;
+            if (isset($translation['siteLanguage']) && !empty($translation['siteLanguage'])) {
+                // Direct language from CSV
+                $targetLanguage = $translation['siteLanguage'];
+            } elseif (isset($translation['siteId']) && !empty($translation['siteId'])) {
+                // Legacy: get language from siteId
                 $siteId = (int) $translation['siteId'];
-                // Validate that site ID actually exists
                 $site = Craft::$app->getSites()->getSiteById($siteId);
                 if ($site) {
-                    $targetSiteId = $siteId;
+                    $targetLanguage = $site->language;
                 } else {
-                    // Invalid site ID - add to errors array for preview
                     $errors[] = [
                         'english' => $translation['english'],
                         'arabic' => isset($translation['arabic']) ? $translation['arabic'] : '',
@@ -105,16 +107,13 @@ class ImportController extends Controller
                         'siteId' => $siteId,
                         'english' => $translation['english'],
                     ]);
-                    continue; // Skip further processing
+                    continue;
                 }
-            } elseif (isset($translation['siteLanguage']) && !empty($translation['siteLanguage'])) {
-                $site = $this->findSiteByLanguage($translation['siteLanguage']);
-                $targetSiteId = $site ? $site->id : null;
             }
-            
-            // Default to primary site if no site info provided
-            if (!$targetSiteId) {
-                $targetSiteId = Craft::$app->getSites()->getPrimarySite()->id;
+
+            // Default to primary site's language if no language info provided
+            if (!$targetLanguage) {
+                $targetLanguage = Craft::$app->getSites()->getPrimarySite()->language;
             }
             
             // Store original values for comparison
@@ -180,12 +179,26 @@ class ImportController extends Controller
             if (empty($context)) {
                 $context = 'site';
             }
-            
-            // Find existing by hash - match unique constraint (sourceHash + siteId)
+
+            // Extract category from CSV or determine from context/type
+            $category = isset($translation['category']) ? StringHelper::stripHtml($translation['category']) : '';
+            $type = isset($translation['type']) ? strtolower(trim($translation['type'])) : '';
+
+            if (empty($category)) {
+                $category = 'messages';
+            }
+
+            // Protection: if type is 'forms' or context indicates formie, category must be 'formie'
+            if ($type === 'forms' || $context === 'formie' || str_starts_with($context, 'formie.')) {
+                $category = 'formie';
+            }
+
+            // Find existing by hash - match unique constraint (sourceHash + language + category)
             $sourceHash = md5($keyText);
             $existing = TranslationRecord::findOne([
                 'sourceHash' => $sourceHash,
-                'siteId' => $targetSiteId,
+                'language' => $targetLanguage,
+                'category' => $category,
             ]);
             
             
@@ -209,22 +222,22 @@ class ImportController extends Controller
                         'english' => $keyText,
                         'arabic' => $translationText,
                         'context' => $context,
+                        'category' => $category,
                         'currentTranslation' => $existing->translation,
                         'currentStatus' => $existing->status,
                         'existingContext' => $existing->context,
-                        'siteId' => $targetSiteId,
-                        'siteLanguage' => $this->getSiteLanguageById($targetSiteId),
+                        'language' => $targetLanguage,
                     ];
                 } else {
                     $toUpdate[] = [
-                        'english' => $keyText,                    // Translation Key
-                        'arabic' => $translationText,            // New Translation (from CSV)
-                        'currentTranslation' => $existing->translation ?? '', // Current Translation (from DB)
+                        'english' => $keyText,
+                        'arabic' => $translationText,
+                        'currentTranslation' => $existing->translation ?? '',
                         'context' => $context,
+                        'category' => $category,
                         'currentStatus' => $existing->status,
                         'existingContext' => $existing->context,
-                        'siteId' => $targetSiteId,
-                        'siteLanguage' => $this->getSiteLanguageById($targetSiteId),
+                        'language' => $targetLanguage,
                     ];
                 }
             } else {
@@ -232,8 +245,8 @@ class ImportController extends Controller
                     'english' => $keyText,
                     'arabic' => $translationText,
                     'context' => $context,
-                    'siteId' => $targetSiteId,
-                    'siteLanguage' => $this->getSiteLanguageById($targetSiteId),
+                    'category' => $category,
+                    'language' => $targetLanguage,
                 ];
             }
         }
@@ -458,21 +471,24 @@ class ImportController extends Controller
                     continue;
                 }
                 
-                // Extract site information
-                $siteId = null;
-                if ($siteIdIndex !== false && isset($row[$siteIdIndex])) {
+                // Extract language (preferred) or fall back to siteId
+                $language = null;
+                if ($siteLanguageIndex !== false && isset($row[$siteLanguageIndex])) {
+                    $language = trim($row[$siteLanguageIndex]);
+                } elseif ($siteIdIndex !== false && isset($row[$siteIdIndex])) {
+                    // Legacy: get language from siteId
                     $siteId = (int) trim($row[$siteIdIndex]);
-                } elseif ($siteLanguageIndex !== false && isset($row[$siteLanguageIndex])) {
-                    // Try to find site by language if Site ID not provided
-                    $siteLanguage = trim($row[$siteLanguageIndex]);
-                    $site = $this->findSiteByLanguage($siteLanguage);
-                    $siteId = $site ? $site->id : null;
+                    $site = Craft::$app->getSites()->getSiteById($siteId);
+                    $language = $site ? $site->language : null;
                 }
-                
-                // Default to first site if no site info provided
-                if (!$siteId) {
-                    $siteId = Craft::$app->getSites()->getPrimarySite()->id;
+
+                // Default to primary site's language if no language info provided
+                if (!$language) {
+                    $language = Craft::$app->getSites()->getPrimarySite()->language;
                 }
+
+                // Get a siteId for backwards compatibility (used when creating new records)
+                $siteId = $this->getSiteIdForLanguage($language);
                 
                 
                 // Validate required fields
@@ -540,10 +556,11 @@ class ImportController extends Controller
                 $translationService = TranslationManager::getInstance()->translations;
                 $sourceHash = md5($keyText);
                 
-                // Check if translation exists for this specific site (match unique constraint)
+                // Check if translation exists (match unique constraint: sourceHash + language + category)
                 $existingTranslation = TranslationRecord::findOne([
                     'sourceHash' => $sourceHash,
-                    'siteId' => $siteId,
+                    'language' => $language,
+                    'category' => $category,
                 ]);
                 
                 if ($existingTranslation) {
@@ -590,21 +607,23 @@ class ImportController extends Controller
                         $errors[] = "Row $rowNumber: $errorMsg (Key: " . substr($keyText, 0, 50) . "...)";
                     }
                 } else {
-                    // Find or create translation for this specific site
+                    // Find or create translation for this language + category
                     try {
-                        // Look for existing translation for this site (match unique constraint)
+                        // Look for existing translation (match unique constraint)
                         $translation = TranslationRecord::findOne([
                             'sourceHash' => md5($keyText),
-                            'siteId' => $siteId,
+                            'language' => $language,
+                            'category' => $category,
                         ]);
                         
                         $isNew = false;
                         if (!$translation) {
-                            // Create new translation for this site
+                            // Create new translation for this language + category
                             $translation = new TranslationRecord();
-                            $translation->source = $keyText; // ← MISSING FIELD
+                            $translation->source = $keyText;
                             $translation->sourceHash = md5($keyText);
-                            $translation->siteId = $siteId;
+                            $translation->siteId = $siteId; // Backwards compatibility
+                            $translation->language = $language;
                             $translation->context = $context;
                             $translation->category = $category;
                             $translation->translationKey = $keyText;
@@ -913,11 +932,16 @@ class ImportController extends Controller
     }
     
     /**
-     * Get site language by ID (helper for server response)
+     * Get a site ID for a given language (for backwards compatibility)
      */
-    private function getSiteLanguageById(int $siteId): string
+    private function getSiteIdForLanguage(string $language): int
     {
-        $site = Craft::$app->getSites()->getSiteById($siteId);
-        return $site ? $site->language : 'unknown';
+        $site = $this->findSiteByLanguage($language);
+        if ($site) {
+            return $site->id;
+        }
+
+        // Fallback to primary site
+        return Craft::$app->getSites()->getPrimarySite()->id;
     }
 }

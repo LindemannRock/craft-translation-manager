@@ -311,11 +311,11 @@ class ExportService extends Component
         // Build CSV content with UTF-8 BOM for Excel compatibility
         $csv = "\xEF\xBB\xBF"; // UTF-8 BOM
 
-        // Build header based on showContext setting (Updated for multi-site and category)
+        // Build header based on showContext setting
         if ($settings->showContext) {
-            $csv .= "Translation Key,Translation,Category,Type,Context,Status,Site ID,Site Language\n";
+            $csv .= "Translation Key,Translation,Category,Type,Context,Status,Language\n";
         } else {
-            $csv .= "Translation Key,Translation,Category,Type,Status,Site ID,Site Language\n";
+            $csv .= "Translation Key,Translation,Category,Type,Status,Language\n";
         }
 
         foreach ($ids as $id) {
@@ -326,16 +326,13 @@ class ExportService extends Component
                 $translationText = $this->sanitizeForCsv($translation->translation ?? '');
                 $category = $this->sanitizeForCsv($translation->category ?? 'messages');
                 $type = strpos($translation->context, 'formie.') === 0 ? TranslationManager::getFormiePluginName() : 'Site';
-
-                // Get site information
-                $site = Craft::$app->getSites()->getSiteById($translation->siteId);
-                $siteLanguage = $site ? $site->language : 'unknown';
+                $language = $translation->language ?? 'unknown';
 
                 if ($settings->showContext) {
                     $context = $this->sanitizeForCsv($translation->context);
-                    $csv .= "\"{$translationKey}\",\"{$translationText}\",\"{$category}\",\"{$type}\",\"{$context}\",\"{$translation->status}\",\"{$translation->siteId}\",\"{$siteLanguage}\"\n";
+                    $csv .= "\"{$translationKey}\",\"{$translationText}\",\"{$category}\",\"{$type}\",\"{$context}\",\"{$translation->status}\",\"{$language}\"\n";
                 } else {
-                    $csv .= "\"{$translationKey}\",\"{$translationText}\",\"{$category}\",\"{$type}\",\"{$translation->status}\",\"{$translation->siteId}\",\"{$siteLanguage}\"\n";
+                    $csv .= "\"{$translationKey}\",\"{$translationText}\",\"{$category}\",\"{$type}\",\"{$translation->status}\",\"{$language}\"\n";
                 }
             }
         }

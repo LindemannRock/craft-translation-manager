@@ -142,9 +142,9 @@ class ExportController extends Controller
                 $settings = TranslationManager::getInstance()->getSettings();
                 $csv = "\xEF\xBB\xBF"; // UTF-8 BOM
                 if ($settings->showContext) {
-                    $csv .= "Translation Key,Translation,Type,Context,Status,Site ID,Site Language\n";
+                    $csv .= "Translation Key,Translation,Category,Type,Context,Status,Language\n";
                 } else {
-                    $csv .= "Translation Key,Translation,Type,Status,Site ID,Site Language\n";
+                    $csv .= "Translation Key,Translation,Category,Type,Status,Language\n";
                 }
             } else {
                 // Convert to array of IDs
