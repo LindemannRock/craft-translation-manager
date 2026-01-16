@@ -144,7 +144,7 @@
 {% block content %}
     <style>
         .translation-text {
-            direction: {{ currentSite.language starts with 'ar' ? 'rtl' : 'ltr' }};
+            direction: {{ currentLanguage starts with 'ar' ? 'rtl' : 'ltr' }};
             font-family: system-ui, -apple-system, sans-serif;
             font-size: 1rem;
             line-height: 1.5;
@@ -227,7 +227,7 @@
                         </th>
                         <th scope="col" data-attribute="translation" class="orderable {{ sort == 'translation' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'translation' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
                             <button type="button" aria-pressed="{{ sort == 'translation' ? 'true' : 'false' }}" data-sort="translation">
-                                Translation ({{ currentSite.name }})
+                                Translation ({{ currentLanguage|upper }})
                                 <div class="spinner"></div>
                             </button>
                         </th>
@@ -262,7 +262,7 @@
                             {% endif %}
                             <td style="white-space: pre-wrap;">{{ translation.translationKey|e }}</td>
                             <td>
-                                <textarea class="translation-text" placeholder="{% if currentSite.language starts with 'ar' %}أدخل الترجمة العربية هنا...{% else %}Enter translation for {{ currentSite.name }}...{% endif %}">{{ translation.translation|e }}</textarea>
+                                <textarea class="translation-text" placeholder="{% if currentLanguage starts with 'ar' %}أدخل الترجمة العربية هنا...{% else %}Enter translation for {{ currentLanguage|upper }}...{% endif %}">{{ translation.translation|e }}</textarea>
                             </td>
                             <td>
                                 {% if translation.status == 'unused' %}
