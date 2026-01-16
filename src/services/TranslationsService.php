@@ -119,6 +119,9 @@ class TranslationsService extends Component
         // Log the request if filters are applied
         if (!empty($criteria)) {
             $filterDesc = [];
+            if (isset($criteria['language'])) {
+                $filterDesc[] = "language:{$criteria['language']}";
+            }
             if (isset($criteria['siteId'])) {
                 $filterDesc[] = "site:{$criteria['siteId']}";
             }
@@ -135,15 +138,18 @@ class TranslationsService extends Component
             $this->logDebug('Getting translations with filters', ['filters' => $filters]);
         }
 
-        // Apply site filter (NEW: Multi-site support)
-        if (isset($criteria['siteId']) && $criteria['siteId'] !== null) {
+        // Apply language filter (preferred over siteId)
+        if (isset($criteria['language']) && $criteria['language'] !== null) {
+            $query->andWhere(['language' => $criteria['language']]);
+        } elseif (isset($criteria['siteId']) && $criteria['siteId'] !== null) {
+            // Legacy: filter by siteId
             $query->andWhere(['siteId' => $criteria['siteId']]);
         } elseif (!isset($criteria['allSites']) || !$criteria['allSites']) {
-            // Default to current site if no specific site requested and allSites not explicitly set
-            $currentSiteId = Craft::$app->getSites()->getCurrentSite()->id;
-            $query->andWhere(['siteId' => $currentSiteId]);
+            // Default to current site's language if no specific filter and allSites not set
+            $currentLanguage = Craft::$app->getSites()->getCurrentSite()->language;
+            $query->andWhere(['language' => $currentLanguage]);
         }
-        // If allSites is true, don't add any site filter
+        // If allSites is true, don't add any language/site filter
 
         // Apply status filter
         if (!empty($criteria['status']) && $criteria['status'] !== 'all') {
@@ -178,7 +184,7 @@ class TranslationsService extends Component
             if (!$settings->enableSiteTranslations) {
                 $conditions[] = ['like', 'context', 'formie.%', false];
             }
-            
+
             // Apply integration filters if both are not disabled
             if (!empty($conditions)) {
                 if (count($conditions) === 2) {
@@ -188,6 +194,11 @@ class TranslationsService extends Component
                     $query->andWhere($conditions[0]);
                 }
             }
+        }
+
+        // Apply category filter
+        if (!empty($criteria['category']) && $criteria['category'] !== 'all') {
+            $query->andWhere(['category' => $criteria['category']]);
         }
 
         // Apply search
@@ -272,13 +283,19 @@ class TranslationsService extends Component
      * Create or update a translation
      * Automatically skips text that is not in the source language
      */
-    public function createOrUpdateTranslation(string $text, string $context = 'site'): ?TranslationRecord
+    public function createOrUpdateTranslation(string $text, string $context = 'site', ?string $category = null): ?TranslationRecord
     {
+        // Determine category: use provided, derive from context, or use primary category
+        if ($category === null) {
+            $category = $this->deriveCategoryFromContext($context);
+        }
+
         // Check if text is in source language (skip non-source language text)
         if (!$this->isTextInSourceLanguage($text)) {
             $this->logDebug("Skipping non-source-language text", [
                 'text' => mb_substr($text, 0, 50) . (mb_strlen($text) > 50 ? '...' : ''),
                 'context' => $context,
+                'category' => $category,
             ]);
             return null;
         }
@@ -287,60 +304,84 @@ class TranslationsService extends Component
         if ($this->containsTwigCode($text)) {
             // Try to extract plain text from Twig component blocks
             $plainTexts = $this->extractPlainTextFromTwig($text);
-            
+
             if (!empty($plainTexts)) {
                 // Process each extracted plain text
                 foreach ($plainTexts as $plainText) {
-                    $this->createOrUpdateTranslation($plainText, $context);
+                    $this->createOrUpdateTranslation($plainText, $context, $category);
                 }
-                
+
                 $this->logInfo("Extracted plain text from Twig code", [
                     'original' => $text,
                     'extracted' => $plainTexts,
                     'context' => $context,
+                    'category' => $category,
                 ]);
             } else {
                 // No plain text found, skip entirely
                 $this->logInfo("Skipping translation with Twig code (no plain text found)", [
                     'text' => $text,
                     'context' => $context,
+                    'category' => $category,
                 ]);
             }
-            
+
             return null;
         }
 
         $hash = md5($text);
-        
-        // NEW: Multi-site support - create translations for ALL sites
-        return $this->createOrUpdateMultiSiteTranslation($text, $hash, $context);
+
+        // Multi-site support - create translations for ALL sites
+        return $this->createOrUpdateMultiSiteTranslation($text, $hash, $context, $category);
+    }
+
+    /**
+     * Derive translation category from context
+     * - formie.* contexts use 'formie' category
+     * - site.* contexts use the primary configured category
+     */
+    private function deriveCategoryFromContext(string $context): string
+    {
+        // Formie contexts always use 'formie' category
+        if (str_starts_with($context, 'formie.') || $context === 'formie') {
+            return 'formie';
+        }
+
+        // Site contexts use the primary configured category
+        return TranslationManager::getInstance()->getSettings()->getPrimaryCategory();
     }
     
     /**
-     * Create or update translations for all sites (NEW: Multi-site support)
+     * Create or update translations for all unique languages
      */
-    private function createOrUpdateMultiSiteTranslation(string $text, string $hash, string $context): ?TranslationRecord
+    private function createOrUpdateMultiSiteTranslation(string $text, string $hash, string $context, string $category): ?TranslationRecord
     {
-        $sites = TranslationManager::getInstance()->getAllowedSites();
+        $languages = TranslationManager::getInstance()->getUniqueLanguages();
         $primaryTranslation = null;
-        
-        foreach ($sites as $site) {
-            // Check if translation already exists for this site (IGNORE context - text should be unique per site)
+
+        foreach ($languages as $language) {
+            // Check if translation already exists for this language AND category
             $translation = TranslationRecord::findOne([
                 'sourceHash' => $hash,
-                'siteId' => $site->id,
+                'language' => $language,
+                'category' => $category,
             ]);
-            
+
             if (!$translation) {
-                // Create new translation for this site
+                // Get a siteId for this language (for backwards compatibility)
+                $siteId = $this->getSiteIdForLanguage($language);
+
+                // Create new translation for this language
                 $translation = new TranslationRecord([
                     'source' => $text,
                     'sourceHash' => $hash,
                     'context' => $context,
-                    'siteId' => $site->id,
-                    'translationKey' => $text, // Always the original text
-                    'translation' => $this->getDefaultTranslation($text, $site),
-                    'status' => $this->getDefaultStatus($text, $site),
+                    'category' => $category,
+                    'siteId' => $siteId,
+                    'language' => $language,
+                    'translationKey' => $text,
+                    'translation' => $this->getDefaultTranslationForLanguage($text, $language),
+                    'status' => $this->getDefaultStatusForLanguage($language),
                     'usageCount' => 1,
                     'lastUsed' => new \DateTime(),
                     'dateCreated' => new \DateTime(),
@@ -348,18 +389,19 @@ class TranslationsService extends Component
                     'uid' => StringHelper::UUID(),
                 ]);
                 $translation->save();
-                $this->logInfo("Template scanner: Created new multi-site translation", [
+                $this->logInfo("Created new translation for language", [
                     'text' => $text,
-                    'site' => $site->name,
+                    'language' => $language,
+                    'category' => $category,
                 ]);
             } else {
                 // Update existing translation
                 $translation->usageCount++;
                 $translation->lastUsed = Db::prepareDateForDb(new \DateTime());
-                
+
                 // Update context to the most recent usage (for unused tracking)
                 $translation->context = $context;
-                
+
                 // Reactivate if marked as unused
                 if ($translation->status === 'unused') {
                     if ($translation->translation) {
@@ -369,53 +411,85 @@ class TranslationsService extends Component
                     }
                     $this->logInfo("Reactivated translation", [
                         'text' => $text,
-                        'site' => $site->name,
+                        'language' => $language,
+                        'category' => $category,
                     ]);
                 }
-                
+
                 $translation->save();
             }
-            
+
             // Return the first translation created (for compatibility)
             if ($primaryTranslation === null) {
                 $primaryTranslation = $translation;
             }
         }
-        
+
         return $primaryTranslation;
     }
-    
+
     /**
-     * Get default translation for a site (NEW: Multi-site helper)
+     * Get a site ID for a given language (for backwards compatibility)
      */
-    private function getDefaultTranslation(string $text, $site): ?string
+    private function getSiteIdForLanguage(string $language): int
     {
-        // If the text language matches the site language, return the text
-        // For English sites, English text = translated
-        // For other languages, return null (pending translation)
-        if ($site->language === 'en' || $site->language === 'en-US') {
-            return $text; // English text = English translation
+        $sites = Craft::$app->getSites()->getAllSites();
+        foreach ($sites as $site) {
+            if ($site->language === $language) {
+                return $site->id;
+            }
         }
-        
+        // Fallback to primary site
+        return Craft::$app->getSites()->getPrimarySite()->id;
+    }
+
+    /**
+     * Get default translation for a language
+     */
+    private function getDefaultTranslationForLanguage(string $text, string $language): ?string
+    {
+        // For source language, the source text is the translation
+        if ($this->isSourceLanguage($language)) {
+            return $text;
+        }
+
         return null; // Other languages start as pending
     }
-    
+
     /**
-     * Get default status for a site (NEW: Multi-site helper)
+     * Get default status for a language
      */
-    private function getDefaultStatus(string $text, $site): string
+    private function getDefaultStatusForLanguage(string $language): string
     {
-        // English sites are automatically "translated" (text = translation)
-        // Other languages are "pending"
-        if ($site->language === 'en' || $site->language === 'en-US') {
+        // Source language is automatically "translated"
+        if ($this->isSourceLanguage($language)) {
             return 'translated';
         }
-        
+
         return 'pending';
     }
 
     /**
-     * Scan all templates for translation usage and mark unused ones (NEW)
+     * Check if a language matches the configured source language
+     */
+    private function isSourceLanguage(string $language): bool
+    {
+        $sourceLanguage = TranslationManager::getInstance()->getSettings()->sourceLanguage;
+
+        // Exact match
+        if ($language === $sourceLanguage) {
+            return true;
+        }
+
+        // Base language match (e.g., 'en-US' matches source 'en', or 'en' matches source 'en-US')
+        $languageBase = explode('-', $language)[0];
+        $sourceBase = explode('-', $sourceLanguage)[0];
+
+        return $languageBase === $sourceBase;
+    }
+
+    /**
+     * Scan all templates for translation usage and mark unused ones
      */
     public function scanTemplatesForUnused(): array
     {
@@ -424,60 +498,83 @@ class TranslationsService extends Component
             'found_keys' => [],
             'marked_unused' => 0,
             'reactivated' => 0,
+            'created' => 0,
             'errors' => [],
         ];
-        
+
         try {
-            // Get the configured translation category
+            // Get the configured translation categories (not formie)
             $settings = TranslationManager::getInstance()->getSettings();
-            $category = $settings->translationCategory;
-            
+            $categories = $settings->getEnabledCategories();
+
             // Scan all .twig files in templates directory
             $templatePath = Craft::$app->getPath()->getSiteTemplatesPath();
-            
+
             // Add warning logs for debugging staging vs local differences
-            $this->logInfo("Template scanner starting", ['category' => $category]);
+            $this->logInfo("Template scanner starting", ['categories' => $categories]);
             $this->logInfo("Template scanner path", ['path' => $templatePath]);
-            
-            $foundKeys = $this->scanTemplateDirectory($templatePath, $category);
-            
+
+            // Scan for ALL enabled categories at once
+            $foundKeysByCategory = $this->scanTemplateDirectoryAllCategories($templatePath, $categories);
+
             $results['scanned_files'] = $this->_scannedFileCount;
-            $results['found_keys'] = array_keys($foundKeys);
-            
+
+            // Flatten for results reporting
+            $allFoundKeys = [];
+            foreach ($foundKeysByCategory as $category => $keys) {
+                foreach ($keys as $key => $data) {
+                    $allFoundKeys[$key] = true;
+                }
+            }
+            $results['found_keys'] = array_keys($allFoundKeys);
+
             $this->logInfo("Template scanner results", [
                 'scanned_files' => $results['scanned_files'],
-                'keys_found' => count($foundKeys),
+                'keys_found' => count($allFoundKeys),
+                'by_category' => array_map('count', $foundKeysByCategory),
             ]);
-            
-            // Get all site translations (not formie)
+
+            // Get all site translations (not formie) - filter by enabled categories
             $siteTranslations = (new Query())
                 ->from(TranslationRecord::tableName())
                 ->where(['like', 'context', 'site%', false])
+                ->andWhere(['category' => $categories])
                 ->all();
-            
-            // Create a map of existing translation keys for quick lookup
-            $existingKeys = [];
+
+            // Create a map of existing translation keys by category for quick lookup
+            $existingKeysByCategory = [];
             foreach ($siteTranslations as $translation) {
-                $existingKeys[$translation['translationKey']] = $translation;
+                $cat = $translation['category'];
+                if (!isset($existingKeysByCategory[$cat])) {
+                    $existingKeysByCategory[$cat] = [];
+                }
+                $existingKeysByCategory[$cat][$translation['translationKey']] = $translation;
             }
-            
+
             // First pass: Create new translations found in templates but not in database
-            $results['created'] = 0;
-            foreach ($foundKeys as $key => $count) {
-                if (!isset($existingKeys[$key])) {
-                    // New translation key found in templates - create database entry
-                    $this->createOrUpdateTranslation($key, 'site');
-                    $results['created']++;
-                    $this->logInfo("Template scanner: Created new translation (found in templates)", ['key' => $key]);
+            foreach ($foundKeysByCategory as $category => $keys) {
+                foreach ($keys as $key => $data) {
+                    $existing = $existingKeysByCategory[$category][$key] ?? null;
+                    if (!$existing) {
+                        // New translation key found in templates - create database entry with correct category
+                        $this->createOrUpdateTranslation($key, 'site', $category);
+                        $results['created']++;
+                        $this->logInfo("Template scanner: Created new translation", [
+                            'key' => $key,
+                            'category' => $category,
+                        ]);
+                    }
                 }
             }
-            
-            // Second pass: Manage existing translations
+
+            // Second pass: Manage existing translations - check if still used
             foreach ($siteTranslations as $translation) {
                 $key = $translation['translationKey'];
-                
-                if (!isset($foundKeys[$key])) {
-                    // Translation key not found in any template
+                $category = $translation['category'];
+                $foundInCategory = isset($foundKeysByCategory[$category][$key]);
+
+                if (!$foundInCategory) {
+                    // Translation key not found in templates for this category
                     if ($translation['status'] !== 'unused') {
                         // Mark as unused
                         Db::update(TranslationRecord::tableName(),
@@ -485,13 +582,10 @@ class TranslationsService extends Component
                             ['id' => $translation['id']]
                         );
                         $results['marked_unused']++;
-                        $this->logInfo("Template scanner: Marked as unused (not found in templates)", ['key' => $key]);
-                        
-                        // Debug: Show available keys that might be similar
-                        $similarKeys = array_filter(array_keys($foundKeys), fn($fk) => stripos($fk, substr($key, 0, 10)) !== false);
-                        if (!empty($similarKeys)) {
-                            $this->logDebug("Template scanner: Similar found keys", ['similarKeys' => $similarKeys]);
-                        }
+                        $this->logInfo("Template scanner: Marked as unused", [
+                            'key' => $key,
+                            'category' => $category,
+                        ]);
                     }
                 } else {
                     // Translation key found in templates
@@ -503,7 +597,10 @@ class TranslationsService extends Component
                             ['id' => $translation['id']]
                         );
                         $results['reactivated']++;
-                        $this->logWarning("Template scanner: Reactivated (found in templates)", ['key' => $key]);
+                        $this->logWarning("Template scanner: Reactivated", [
+                            'key' => $key,
+                            'category' => $category,
+                        ]);
                     }
                 }
             }
@@ -511,7 +608,7 @@ class TranslationsService extends Component
             $results['errors'][] = $e->getMessage();
             $this->logError('Template scanning failed', ['error' => $e->getMessage()]);
         }
-        
+
         return $results;
     }
     
@@ -519,40 +616,116 @@ class TranslationsService extends Component
      * @var int Count of template files scanned during usage checks
      */
     public $_scannedFileCount = 0;
-    
+
     /**
-     * Recursively scan template directory for translation usage
+     * Scan template directory for ALL enabled categories at once
+     * Returns: ['category' => ['key' => ['file' => 'path']], ...]
+     */
+    public function scanTemplateDirectoryAllCategories(string $path, array $categories): array
+    {
+        $foundKeysByCategory = [];
+
+        // Initialize categories
+        foreach ($categories as $category) {
+            $foundKeysByCategory[$category] = [];
+        }
+
+        if (!is_dir($path)) {
+            return $foundKeysByCategory;
+        }
+
+        $this->_scannedFileCount = 0;
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($path, \RecursiveDirectoryIterator::SKIP_DOTS)
+        );
+
+        // Build regex pattern that captures the text AND category
+        // Pattern: 'Text'|t('category') or "Text"|t("category")
+        $pattern = '/([\'"`])((?:\\\\.|(?!\1).)*)\1\s*\|\s*t\s*\(\s*[\'"`]([a-zA-Z][a-zA-Z0-9_-]*)[\'"`]/s';
+
+        // Also capture dynamic category: 'Text'|t(_globals.primaryTranslationCategory)
+        $dynamicPattern = '/([\'"`])((?:\\\\.|(?!\1).)*)\1\s*\|\s*t\s*\(\s*_globals\.primaryTranslationCategory/s';
+
+        $settings = TranslationManager::getInstance()->getSettings();
+        $primaryCategory = $settings->getPrimaryCategory();
+
+        foreach ($iterator as $file) {
+            if ($file->getExtension() === 'twig') {
+                $this->_scannedFileCount++;
+                $filePath = $file->getPathname();
+                $content = file_get_contents($filePath);
+
+                // Find all |t('category') calls with literal category
+                if (preg_match_all($pattern, $content, $matches, PREG_SET_ORDER)) {
+                    foreach ($matches as $match) {
+                        $key = stripslashes($match[2]); // The translation key
+                        $category = $match[3]; // The category name
+
+                        // Only track if this category is in our enabled list
+                        if (in_array($category, $categories, true)) {
+                            $foundKeysByCategory[$category][$key] = [
+                                'file' => str_replace($path . '/', '', $filePath),
+                            ];
+                        }
+                    }
+                }
+
+                // Find dynamic category usage - assign to primary category
+                if (preg_match_all($dynamicPattern, $content, $matches, PREG_SET_ORDER)) {
+                    foreach ($matches as $match) {
+                        $key = stripslashes($match[2]);
+                        $foundKeysByCategory[$primaryCategory][$key] = [
+                            'file' => str_replace($path . '/', '', $filePath),
+                            'dynamic' => true,
+                        ];
+
+                        $this->logDebug("Template scanner: Found dynamic translation", [
+                            'key' => $key,
+                            'assignedCategory' => $primaryCategory,
+                        ]);
+                    }
+                }
+            }
+        }
+
+        return $foundKeysByCategory;
+    }
+
+    /**
+     * Recursively scan template directory for translation usage (single category - legacy)
+     * @deprecated Use scanTemplateDirectoryAllCategories instead
      */
     public function scanTemplateDirectory(string $path, string $category): array
     {
         $foundKeys = [];
-        
+
         if (!is_dir($path)) {
             return $foundKeys;
         }
-        
+
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($path, \RecursiveDirectoryIterator::SKIP_DOTS)
         );
-        
+
         foreach ($iterator as $file) {
             if ($file->getExtension() === 'twig') {
                 $this->_scannedFileCount++;
                 $content = file_get_contents($file->getPathname());
-                
+
                 // Find all |t('category') usage - handle escaped quotes and multi-line
-                $literalPattern = '/([\'"`])((?:\\\\.|(?!\1).)*)\1\s*\|\s*t\s*\(\s*[\'"`]' . preg_quote($category) . '[\'"`][\s\S]*?\)/s';
-                
+                $literalPattern = '/([\'"`])((?:\\\\.|(?!\1).)*)\1\s*\|\s*t\s*\(\s*[\'"`]' . preg_quote($category, '/') . '[\'"`][\s\S]*?\)/s';
+
                 // Also find |t(_globals.primaryTranslationCategory) usage - multi-line support
                 $dynamicPattern = '/([\'"`])((?:\\\\.|(?!\1).)*)\1\s*\|\s*t\s*\(\s*_globals\.primaryTranslationCategory[\s\S]*?\)/s';
-                
+
                 // Check for literal category usage: 'Text'|t('category')
                 if (preg_match_all($literalPattern, $content, $matches)) {
                     foreach ($matches[2] as $key) { // matches[2] now contains the quoted content
                         // Unescape quotes and other escaped characters
                         $unescapedKey = stripslashes($key);
                         $foundKeys[$unescapedKey] = true;
-                        
+
                         // Also store original escaped version for debugging
                         if ($key !== $unescapedKey) {
                             $this->logWarning("Template scanner: Unescaped", [
@@ -562,14 +735,14 @@ class TranslationsService extends Component
                         }
                     }
                 }
-                
+
                 // Check for dynamic category usage: 'Text'|t(_globals.primaryTranslationCategory)
                 if (preg_match_all($dynamicPattern, $content, $matches)) {
                     foreach ($matches[2] as $key) { // matches[2] now contains the quoted content
                         // Unescape quotes and other escaped characters
                         $unescapedKey = stripslashes($key);
                         $foundKeys[$unescapedKey] = true;
-                        
+
                         $this->logWarning("Template scanner: Found dynamic translation using _globals.primaryTranslationCategory", [
                             'key' => $unescapedKey,
                         ]);
@@ -577,7 +750,7 @@ class TranslationsService extends Component
                 }
             }
         }
-        
+
         return $foundKeys;
     }
 
@@ -866,10 +1039,29 @@ class TranslationsService extends Component
         }
         
         $this->logInfo("Cleared ALL translations", ['count' => $count]);
-        
+
         return $count;
     }
-    
+
+    /**
+     * Clear translations for a specific category
+     */
+    public function clearCategoryTranslations(string $category): int
+    {
+        $count = Db::delete(TranslationRecord::tableName(), [
+            'category' => $category,
+        ]);
+
+        // Delete corresponding translation files
+        if ($count > 0) {
+            $this->deleteCategoryTranslationFiles($category);
+        }
+
+        $this->logInfo("Cleared category translations", ['category' => $category, 'count' => $count]);
+
+        return $count;
+    }
+
     /**
      * Delete Formie translation files
      */
@@ -912,7 +1104,27 @@ class TranslationsService extends Component
             $this->logInfo("Deleted site Arabic translation file", ['file' => $arFile]);
         }
     }
-    
+
+    /**
+     * Delete translation files for a specific category
+     */
+    private function deleteCategoryTranslationFiles(string $category): void
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $basePath = $settings->getExportPath();
+        $filename = $category . '.php';
+
+        // Get actual site languages dynamically
+        $sites = TranslationManager::getInstance()->getAllowedSites();
+        foreach ($sites as $site) {
+            $file = $basePath . '/' . $site->language . '/' . $filename;
+            if (file_exists($file)) {
+                @unlink($file);
+                $this->logInfo("Deleted category translation file", ['file' => $file, 'category' => $category]);
+            }
+        }
+    }
+
     /**
      * Apply skip patterns to existing site translations
      * This method removes existing site translations that match the current skip patterns

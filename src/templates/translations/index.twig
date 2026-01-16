@@ -3,28 +3,28 @@
 {% set fullPageForm = false %}
 {% set selectedSubnavItem = 'translations' %}
 
-{# Set up breadcrumbs with site switcher #}
+{# Set up breadcrumbs with language switcher #}
 {% set crumbs = [] %}
 
-{# Site switcher (first item) - like Smart Links #}
-{% if craft.app.getIsMultiSite() %}
-    {# Get site menu items #}
-    {% set siteMenuItems = [] %}
-    {% for site in allSites %}
-        {% set siteMenuItems = siteMenuItems|merge([{
-            label: site.name,
-            url: url('translation-manager/translations', {siteId: site.id, status: status, type: type, search: search, sort: sort, dir: dir}),
-            selected: site.id == currentSiteId
+{# Language switcher (first item) - shows unique languages across all sites #}
+{% if uniqueLanguages|length > 1 %}
+    {# Get language menu items #}
+    {% set languageMenuItems = [] %}
+    {% for lang in uniqueLanguages %}
+        {% set languageMenuItems = languageMenuItems|merge([{
+            label: lang|upper,
+            url: url('translation-manager/translations', {language: lang, status: status, type: type, category: category, search: search, sort: sort, dir: dir}),
+            selected: lang == currentLanguage
         }]) %}
     {% endfor %}
 
     {% set crumbs = [{
-        id: 'site-crumb',
-        icon: 'world',
-        label: currentSite.name|t('site'),
+        id: 'language-crumb',
+        icon: 'language',
+        label: currentLanguage|upper,
         menu: {
-            items: siteMenuItems,
-            label: 'Select site'|t('app')
+            items: languageMenuItems,
+            label: 'Select language'|t('translation-manager')
         }
     }] %}
 {% endif %}
@@ -43,8 +43,9 @@
         <div class="flex-grow">
             <form method="get" action="{{ url('translation-manager') }}">
                 {# Preserve other parameters #}
-                <input type="hidden" name="siteId" value="{{ currentSiteId }}">
+                <input type="hidden" name="language" value="{{ currentLanguage }}">
                 <input type="hidden" name="type" value="{{ type }}">
+                <input type="hidden" name="category" value="{{ category }}">
                 <input type="hidden" name="status" value="{{ status }}">
                 <input type="hidden" name="sort" value="{{ sort }}">
                 <input type="hidden" name="dir" value="{{ dir }}">
@@ -62,18 +63,18 @@
                         </button>
                         <div class="menu">
                             <ul>
-                                <li><a class="{{ status == 'all' ? 'sel' : '' }}" href="?siteId={{ currentSiteId }}&status=all&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
+                                <li><a class="{{ status == 'all' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=all&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
                                     <span class="status all"></span>All
                                 </a></li>
                                 <li><hr class="padded"></li>
                                 <li class="menu-header">Status</li>
-                                <li><a class="{{ status == 'pending' ? 'sel' : '' }}" href="?siteId={{ currentSiteId }}&status=pending&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
+                                <li><a class="{{ status == 'pending' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=pending&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
                                     <span class="status orange"></span>Pending
                                 </a></li>
-                                <li><a class="{{ status == 'translated' ? 'sel' : '' }}" href="?siteId={{ currentSiteId }}&status=translated&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
+                                <li><a class="{{ status == 'translated' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=translated&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
                                     <span class="status teal"></span>Translated
                                 </a></li>
-                                <li><a class="{{ status == 'unused' ? 'sel' : '' }}" href="?siteId={{ currentSiteId }}&status=unused&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
+                                <li><a class="{{ status == 'unused' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=unused&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
                                     <span class="status gray"></span>Unused
                                 </a></li>
                                 {% if settings.enableFormieIntegration or settings.enableSiteTranslations %}
@@ -96,6 +97,28 @@
                             </ul>
                         </div>
                     </div>
+                    {# Category filter dropdown #}
+                    {% if allCategories|length > 1 %}
+                    <div class="btngroup">
+                        <button type="button" class="btn menubtn">
+                            <span class="icon" data-icon="tag"></span>
+                            {{ category == 'all' ? 'All Categories' : category|title }}
+                        </button>
+                        <div class="menu">
+                            <ul>
+                                <li><a class="{{ category == 'all' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status={{ status }}&type={{ type }}&category=all&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
+                                    All Categories
+                                </a></li>
+                                <li><hr class="padded"></li>
+                                {% for cat in allCategories %}
+                                <li><a class="{{ category == cat ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status={{ status }}&type={{ type }}&category={{ cat }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
+                                    {{ cat|title }}
+                                </a></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
                     <div class="search-container texticon flex-grow">
                         <span class="texticon-icon search icon" aria-hidden="true"></span>
                         <input type="text"
@@ -188,6 +211,14 @@
                             </button>
                         </th>
                         {% endif %}
+                        {% if allCategories|length > 1 %}
+                        <th scope="col" data-attribute="category" class="orderable {{ sort == 'category' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'category' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                            <button type="button" aria-pressed="{{ sort == 'category' ? 'true' : 'false' }}" data-sort="category">
+                                Category
+                                <div class="spinner"></div>
+                            </button>
+                        </th>
+                        {% endif %}
                         <th scope="col" data-attribute="translationKey" class="orderable {{ sort == 'translationKey' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'translationKey' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
                             <button type="button" aria-pressed="{{ sort == 'translationKey' ? 'true' : 'false' }}" data-sort="translationKey">
                                 Translation Key
@@ -225,6 +256,9 @@
                                     <span class="light">Site</span>
                                 {% endif %}
                             </td>
+                            {% endif %}
+                            {% if allCategories|length > 1 %}
+                            <td><span class="light">{{ translation.category }}</span></td>
                             {% endif %}
                             <td style="white-space: pre-wrap;">{{ translation.translationKey|e }}</td>
                             <td>
@@ -377,17 +411,17 @@
                     newDir = currentDir === 'asc' ? 'desc' : 'asc';
                 }
 
-                window.location.href = '?siteId={{ currentSiteId }}&type={{ type }}&status={{ status }}&search={{ search }}&sort=' + sortField + '&dir=' + newDir + '&page=1';
+                window.location.href = '?language={{ currentLanguage }}&type={{ type }}&category={{ category }}&status={{ status }}&search={{ search }}&sort=' + sortField + '&dir=' + newDir + '&page=1';
             });
         });
 
         // Pagination buttons
         document.querySelector('.prev-page:not(.disabled)')?.addEventListener('click', function() {
-            window.location.href = '?siteId={{ currentSiteId }}&type={{ type }}&status={{ status }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}&page={{ page - 1 }}';
+            window.location.href = '?language={{ currentLanguage }}&type={{ type }}&category={{ category }}&status={{ status }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}&page={{ page - 1 }}';
         });
 
         document.querySelector('.next-page:not(.disabled)')?.addEventListener('click', function() {
-            window.location.href = '?siteId={{ currentSiteId }}&type={{ type }}&status={{ status }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}&page={{ page + 1 }}';
+            window.location.href = '?language={{ currentLanguage }}&type={{ type }}&category={{ category }}&status={{ status }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}&page={{ page + 1 }}';
         });
 
         // Checkbox functionality

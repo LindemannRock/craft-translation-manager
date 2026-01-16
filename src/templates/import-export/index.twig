@@ -37,41 +37,42 @@
 <div id="import-export">
     {% if currentUser.can('translationManager:exportTranslations') %}
     <h2>{{ "Export Translations"|t('translation-manager') }}</h2>
+    <p class="light" style="margin-bottom: 16px;">{{ "Download translations as a CSV file"|t('translation-manager') }}</p>
 
-    <div class="field">
-        <div class="heading">
-            <label>{{ "Export Translations"|t('translation-manager') }}</label>
-            <div class="instructions">
-                <p>{{ "Download translations as a CSV file"|t('translation-manager') }}</p>
-            </div>
-        </div>
-        <div class="input">
-            <form method="post" action="{{ actionUrl('translation-manager/export') }}" style="display: flex; align-items: flex-end; gap: 12px;">
-                {{ csrfInput() }}
+    <form method="post" action="{{ actionUrl('translation-manager/export') }}" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        {{ csrfInput() }}
 
-                <div class="flex-grow">
-                    {{ forms.selectField({
-                        label: "Site to Export"|t('translation-manager'),
-                        id: 'exportSiteId',
-                        name: 'siteId',
-                        options: [
-                            {value: '', label: 'All Sites'|t('translation-manager')},
-                        ]|merge(
-                            allSites|map(site => {
-                                value: site.id,
-                                label: site.name ~ ' (' ~ site.language|upper ~ ')'
-                            })
-                        ),
-                        value: ''
-                    }) }}
-                </div>
+        {% set languageOptions = [{value: '', label: 'All Languages'|t('translation-manager')}] %}
+        {% for lang in uniqueLanguages %}
+            {% set languageOptions = languageOptions|merge([{value: lang, label: lang|upper}]) %}
+        {% endfor %}
+        {{ forms.select({
+            id: 'exportLanguage',
+            name: 'language',
+            options: languageOptions,
+            value: ''
+        }) }}
 
-                <button type="submit" class="btn secondary">
-                    {{ "Export CSV"|t('translation-manager') }}
-                </button>
-            </form>
-        </div>
-    </div>
+        {% set categoryOptions = [{value: '', label: 'All Categories'|t('translation-manager')}] %}
+        {% if settings.enableFormieIntegration %}
+            {% set categoryOptions = categoryOptions|merge([{value: 'formie', label: craft.translationManager.getFormiePluginName()}]) %}
+        {% endif %}
+        {% if settings.enableSiteTranslations %}
+            {% for category in settings.getEnabledCategories() %}
+                {% set categoryOptions = categoryOptions|merge([{value: category, label: category|title}]) %}
+            {% endfor %}
+        {% endif %}
+        {{ forms.select({
+            id: 'exportCategory',
+            name: 'category',
+            options: categoryOptions,
+            value: ''
+        }) }}
+
+        <button type="submit" class="btn secondary">
+            {{ "Export CSV"|t('translation-manager') }}
+        </button>
+    </form>
 
     <hr>
     {% endif %}
@@ -222,7 +223,7 @@
     {% endif %}
 </div>
 
-{% include 'translation-manager/_components/plugin-credit.twig' %}
+{% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}
 
 {% css %}

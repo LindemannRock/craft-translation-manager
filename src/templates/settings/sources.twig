@@ -45,19 +45,52 @@
         }) }}
 
 		<div id="site-translation-settings" class="{{ not settings.enableSiteTranslations ? 'hidden' }}">
-			{{ forms.textField({
-                label: "Site Translation Category"|t('translation-manager'),
-                instructions: "The category to use for site translations (e.g. 'lindemannrock' for |t('lindemannrock')). Cannot use reserved categories: site, app, yii, craft."|t('translation-manager'),
-                id: 'translationCategory',
-                name: 'settings[translationCategory]',
-                value: settings.translationCategory,
-                errors: settings.getErrors('translationCategory'),
-                required: true,
-                disabled: settings.isOverriddenByConfig('translationCategory'),
-                tip: ("<span id='translation-category-tip'>Use this in your templates: <code>|t('" ~ settings.translationCategory ~ "')</code></span>")|raw,
-                warning: settings.isOverriddenByConfig('translationCategory') ?
-                    "This is being overridden by the <code>translationCategory</code> setting in <code>config/translation-manager.php</code>."|raw : null,
-            }) }}
+			{# Multiple Translation Categories - Editable Table #}
+			{% set categoriesTableData = settings.translationCategories|default([]) %}
+			{% if categoriesTableData is empty and settings.translationCategory %}
+				{# Migrate from old single category format #}
+				{% set categoriesTableData = [{'key': settings.translationCategory, 'enabled': true}] %}
+			{% endif %}
+
+			{{ forms.editableTableField({
+				label: "Translation Categories"|t('translation-manager'),
+				instructions: "Define the translation categories to use in your templates (e.g., <code>|t('messages')</code>, <code>|t('emails')</code>). Cannot use reserved categories: site, app, yii, craft."|t('translation-manager')|raw,
+				id: 'translationCategories',
+				name: 'settings[translationCategories]',
+				cols: {
+					key: {
+						heading: "Category Key"|t('translation-manager'),
+						type: 'singleline',
+						info: "Use in templates: |t('key')"|t('translation-manager'),
+						placeholder: "e.g., messages"|t('translation-manager'),
+					},
+					enabled: {
+						heading: "Enabled"|t('translation-manager'),
+						type: 'lightswitch',
+						thin: true,
+					}
+				},
+				rows: categoriesTableData,
+				errors: settings.getErrors('translationCategories'),
+				addRowLabel: "Add category"|t('translation-manager'),
+				allowAdd: true,
+				allowDelete: true,
+				allowReorder: true,
+				disabled: settings.isOverriddenByConfig('translationCategories'),
+				warning: settings.isOverriddenByConfig('translationCategories') ?
+					"This is being overridden by the <code>translationCategories</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+			}) }}
+
+			<div class="field">
+				<p class="light">
+					<strong>{{ "Tip:"|t('translation-manager') }}</strong>
+					{{ "The first enabled category is your primary category. Use it in templates like:"|t('translation-manager') }}
+					<code>|t('{{ settings.getPrimaryCategory() }}')</code>
+				</p>
+			</div>
+
+			{# Keep deprecated field as hidden for backward compatibility #}
+			{{ hiddenInput('settings[translationCategory]', settings.translationCategory) }}
 
 			{% set sourceLanguageOptions = [] %}
 			{% for site in craft.app.sites.allSites %}
@@ -93,7 +126,7 @@
 
 			{{ forms.textareaField({
                 label: "Site Translations Skip Patterns"|t('translation-manager'),
-                instructions: ("Text patterns to skip when capturing |t('" ~ settings.translationCategory ~ "') translations (one per line). Does not affect " ~ formiePluginName ~ " fields.")|t('translation-manager'),
+                instructions: ("Text patterns to skip when capturing site translations (one per line). Does not affect " ~ formiePluginName ~ " fields.")|t('translation-manager'),
                 id: 'skipPatterns',
                 name: 'settings[skipPatterns]',
                 value: settings.skipPatterns|join("\n"),
@@ -156,54 +189,39 @@
 
 	</form>
 
-	{% include 'translation-manager/_components/plugin-credit.twig' %}
+	{% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}
 
 {% js %}
-// Similar JS from original settings page
-    document.getElementById('translationCategory').addEventListener('input', function(e) {
-        const value = e.target.value.trim();
-        const valueLower = value.toLowerCase();
-        const field = e.target.closest('.field');
-        let warningElement = field.querySelector('.warning');
+    // Validate translation categories in editable table
+    const reservedCategories = ['site', 'app', 'yii', 'craft'];
 
-        // Reserved categories that cannot be used
-        const reservedCategories = ['site', 'app', 'yii', 'craft'];
-        const isReserved = reservedCategories.includes(valueLower);
+    // Listen for changes in the editable table
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('#translationCategories input[type="text"]')) {
+            const value = e.target.value.trim().toLowerCase();
+            const row = e.target.closest('tr');
 
-        // Update the tip to show current value
-        const tipElement = document.getElementById('translation-category-tip');
-        if (tipElement) {
-            tipElement.innerHTML = 'Use this in your templates: <code>|t(\'' + value + '\')</code>';
-        }
-
-        if (isReserved) {
-            if (!warningElement) {
-                warningElement = document.createElement('p');
-                warningElement.className = 'warning';
-                field.appendChild(warningElement);
-            }
-            warningElement.innerHTML = '<span class="icon" aria-hidden="true"></span>' +
-                '{{ "Error: Cannot use reserved categories: site, app, yii, craft. Please use a unique identifier like your company name."|t('translation-manager')|e('js') }}';
-
-            if (!this.dataset.confirmed && isReserved) {
-                alert('{{ "Cannot use reserved category. The following categories are reserved: site, app, yii, craft. Please use a unique identifier like your company name instead."|t('translation-manager')|e('js') }}');
-                this.value = this.defaultValue || '{{ settings.translationCategory|e('js') }}';
-                // Update tip back to original value
-                if (tipElement) {
-                    tipElement.innerHTML = 'Use this in your templates: <code>|t(\'' + (this.defaultValue || '{{ settings.translationCategory|e('js') }}') + '\')</code>';
+            if (reservedCategories.includes(value)) {
+                e.target.classList.add('error');
+                if (!row.querySelector('.category-error')) {
+                    const errorSpan = document.createElement('span');
+                    errorSpan.className = 'category-error';
+                    errorSpan.style.cssText = 'color: #cf1124; font-size: 12px; display: block;';
+                    errorSpan.textContent = '{{ "Reserved category - cannot use: site, app, yii, craft"|t('translation-manager')|e('js') }}';
+                    e.target.parentNode.appendChild(errorSpan);
                 }
-            }
-        } else if (warningElement && !isReserved) {
-            if (this.defaultValue && value !== this.defaultValue) {
-                warningElement.innerHTML = '<span class="icon" aria-hidden="true"></span>' +
-                    '{{ "Changing this will affect all existing site translations. Make sure to update all |t() calls in your templates."|t('translation-manager')|e('js') }}';
             } else {
-                warningElement.remove();
+                e.target.classList.remove('error');
+                const errorSpan = row.querySelector('.category-error');
+                if (errorSpan) {
+                    errorSpan.remove();
+                }
             }
         }
     });
 
+    // Apply skip patterns button
     const applySkipPatternsBtn = document.getElementById('applySkipPatternsBtn');
     if (applySkipPatternsBtn) {
         applySkipPatternsBtn.addEventListener('click', function() {

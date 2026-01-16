@@ -62,6 +62,12 @@ class ExportController extends Controller
                     throw new ForbiddenHttpException('User does not have permission to generate site translation files');
                 }
                 break;
+            case 'category-files':
+                // Generate single category files
+                if (!$user->checkPermission('translationManager:generateSiteTranslations')) {
+                    throw new ForbiddenHttpException('User does not have permission to generate category translation files');
+                }
+                break;
             default:
                 // For any other actions, require export permission
                 if (!$user->checkPermission('translationManager:exportTranslations')) {
@@ -85,17 +91,23 @@ class ExportController extends Controller
             
             // Check if we have filters from the translations page
             $criteria = [];
-            
-            // NEW: Multi-site support - get site parameter
-            $siteParam = $request->getParam('siteId') ?: $request->getBodyParam('siteId');
-            $exportAllSites = empty($siteParam); // True if "All Sites" selected
-            
-            if (!$exportAllSites) {
-                $criteria['siteId'] = $siteParam;
+
+            // Language filter (preferred) or legacy siteId support
+            $languageParam = $request->getParam('language') ?: $request->getBodyParam('language');
+            $siteParam = $request->getParam('siteId') ?: $request->getBodyParam('siteId'); // Legacy
+            $exportAll = empty($languageParam) && empty($siteParam);
+
+            if (!empty($languageParam)) {
+                $criteria['language'] = $languageParam;
+            } elseif (!empty($siteParam)) {
+                // Legacy: convert siteId to language
+                $site = Craft::$app->getSites()->getSiteById($siteParam);
+                if ($site) {
+                    $criteria['language'] = $site->language;
+                }
             } else {
-                // Explicitly tell service to export all sites
+                // Export all languages
                 $criteria['allSites'] = true;
-                $criteria['siteId'] = null; // Ensure no site filter
             }
             
             $typeParam = $request->getParam('type') ?: $request->getBodyParam('type');
@@ -110,7 +122,18 @@ class ExportController extends Controller
             if ($searchParam) {
                 $criteria['search'] = $searchParam;
             }
-            
+
+            // Category filter
+            $categoryParam = $request->getParam('category') ?: $request->getBodyParam('category');
+            if ($categoryParam && $categoryParam !== 'all') {
+                if ($categoryParam === 'formie') {
+                    $criteria['type'] = 'forms';
+                } else {
+                    $criteria['type'] = 'site';
+                    $criteria['category'] = $categoryParam;
+                }
+            }
+
             // Get translations with filters
             $translations = $translationsService->getTranslations($criteria);
             
@@ -137,26 +160,32 @@ class ExportController extends Controller
             $settings = TranslationManager::$plugin->getSettings();
             $filenamePart = strtolower(str_replace(' ', '-', $settings->getPluralLowerDisplayName()));
             $filename = $filenamePart . '-export';
-            
-            // Add site info to filename
-            if ($exportAllSites) {
-                $filename .= '-all-sites';
-            } else {
-                // Get site info for filename
+
+            // Add language info to filename
+            if ($exportAll) {
+                $filename .= '-all-languages';
+            } elseif (!empty($languageParam)) {
+                $filename .= '-' . strtolower($languageParam);
+            } elseif (!empty($siteParam)) {
+                // Legacy: use site's language
                 $site = Craft::$app->getSites()->getSiteById($siteParam);
                 if ($site) {
-                    $siteLanguage = strtolower($site->language); // en-US -> en-us, ar -> ar
-                    $filename .= '-' . $siteLanguage;
+                    $filename .= '-' . strtolower($site->language);
                 }
             }
-            
+
+            // Add category to filename
+            if ($categoryParam && $categoryParam !== 'all') {
+                $filename .= '-' . strtolower($categoryParam);
+            }
+
             if ($typeParam && $typeParam !== 'all') {
                 $filename .= '-' . $typeParam;
             }
             if ($statusParam && $statusParam !== 'all') {
                 $filename .= '-' . $statusParam;
             }
-            $filename .= '-' . date('Y-m-d-His') . '.csv';
+            $filename .= '-' . date('Y-m-d') . '.csv';
             
             // Create response with CSV data
             $response = Craft::$app->getResponse();
@@ -209,31 +238,27 @@ class ExportController extends Controller
         $filenamePart = strtolower(str_replace(' ', '-', $settings->getPluralLowerDisplayName()));
         $filename = $filenamePart . '-export-selected';
         
-        // Get site info from first few translations to determine if single-site or multi-site
+        // Get language info from first few translations to determine if single-language or multi-language
         $translationsService = TranslationManager::getInstance()->translations;
-        $siteIds = [];
+        $languages = [];
         $types = [];
-        
+
         foreach (array_slice($ids, 0, 5) as $id) { // Check first 5 to determine pattern
             $translation = $translationsService->getTranslationById($id);
             if ($translation) {
-                $siteIds[] = $translation->siteId;
+                $languages[] = $translation->language;
                 $types[] = strpos($translation->context, 'formie.') === 0 ? 'formie' : 'site';
             }
         }
-        
-        $siteIds = array_unique($siteIds);
+
+        $languages = array_unique($languages);
         $types = array_unique($types);
-        
-        // Add site info to filename
-        if (count($siteIds) === 1) {
-            $site = Craft::$app->getSites()->getSiteById($siteIds[0]);
-            if ($site) {
-                $siteLanguage = strtolower($site->language); // en-US -> en-us, ar -> ar
-                $filename .= '-' . $siteLanguage;
-            }
+
+        // Add language info to filename
+        if (count($languages) === 1 && !empty($languages[0])) {
+            $filename .= '-' . strtolower($languages[0]);
         } else {
-            $filename .= '-multi-site';
+            $filename .= '-multi-language';
         }
         
         // Add type info if all selected are same type
@@ -241,7 +266,7 @@ class ExportController extends Controller
             $filename .= '-' . $types[0];
         }
         
-        $filename .= '-' . date('Y-m-d-His') . '.csv';
+        $filename .= '-' . date('Y-m-d') . '.csv';
         
         // Set headers for CSV download
         $response = Craft::$app->getResponse();
@@ -432,6 +457,66 @@ class ExportController extends Controller
             }
             
             Craft::$app->getSession()->setError('Failed to generate site translation files: ' . $e->getMessage());
+            return $this->redirect('translation-manager');
+        }
+    }
+
+    /**
+     * Export a specific category's translations to files
+     */
+    public function actionCategoryFiles(): Response
+    {
+        $this->requirePostRequest();
+
+        try {
+            $request = Craft::$app->getRequest();
+            $category = $request->getRequiredBodyParam('category');
+
+            // Validate category is enabled
+            $settings = TranslationManager::getInstance()->getSettings();
+            $enabledCategories = $settings->getEnabledCategories();
+
+            if (!in_array($category, $enabledCategories, true)) {
+                throw new \Exception("Category '{$category}' is not enabled");
+            }
+
+            $this->logInfo('User requested single category export', ['category' => $category]);
+            $translationsService = TranslationManager::getInstance()->translations;
+            $count = count($translationsService->getTranslations([
+                'type' => 'site',
+                'category' => $category,
+                'status' => 'translated',
+                'allSites' => true,
+            ]));
+
+            $this->logInfo("Category export preparation", ['category' => $category, 'count' => $count]);
+
+            if ($count > 0) {
+                TranslationManager::getInstance()->export->exportCategoryTranslations($category);
+                $message = ucfirst($category) . " translation files generated successfully ({$count} translations)";
+                $this->logInfo("Category export completed", ['message' => $message]);
+            } else {
+                $message = "No translated translations found for category '{$category}'. Add translations for |t('{$category}') strings first.";
+            }
+
+            if (Craft::$app->getRequest()->getAcceptsJson()) {
+                return $this->asJson([
+                    'success' => true,
+                    'message' => $message,
+                ]);
+            }
+
+            Craft::$app->getSession()->setNotice($message);
+            return $this->redirect('translation-manager');
+        } catch (\Exception $e) {
+            if (Craft::$app->getRequest()->getAcceptsJson()) {
+                return $this->asJson([
+                    'success' => false,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            Craft::$app->getSession()->setError('Failed to generate category translation files: ' . $e->getMessage());
             return $this->redirect('translation-manager');
         }
     }

@@ -81,7 +81,8 @@ class ImportExportController extends Controller
             'settings' => $settings,
             'importHistory' => $formattedHistory,
             'totalImports' => $totalImports,
-            'allSites' => TranslationManager::getInstance()->getAllowedSites(),
+            'uniqueLanguages' => TranslationManager::getInstance()->getUniqueLanguages(),
+            'allSites' => TranslationManager::getInstance()->getAllowedSites(), // Legacy
         ]);
     }
 }

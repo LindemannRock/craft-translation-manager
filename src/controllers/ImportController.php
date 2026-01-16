@@ -403,7 +403,9 @@ class ImportController extends Controller
         $translationIndex = $this->findColumnIndex($headers, ['Translation', 'Arabic Translation', 'Arabic', 'Ar', 'AR', 'ar', 'Translated']);
         $siteIdIndex = $this->findColumnIndex($headers, ['Site ID', 'SiteID', 'Site_ID']);
         $siteLanguageIndex = $this->findColumnIndex($headers, ['Site Language', 'Site_Language', 'Language', 'Site']);
-        $contextIndex = $this->findColumnIndex($headers, ['Context', 'Category']);
+        $contextIndex = $this->findColumnIndex($headers, ['Context']);
+        $categoryIndex = $this->findColumnIndex($headers, ['Category']);
+        $typeIndex = $this->findColumnIndex($headers, ['Type']);
         $statusIndex = $this->findColumnIndex($headers, ['Status']);
         
         
@@ -447,6 +449,8 @@ class ImportController extends Controller
                 $keyText = isset($row[$keyIndex]) ? $row[$keyIndex] : '';
                 $translationText = ($translationIndex !== false && isset($row[$translationIndex])) ? $row[$translationIndex] : '';
                 $context = ($contextIndex !== false && isset($row[$contextIndex])) ? $row[$contextIndex] : 'site';
+                $category = ($categoryIndex !== false && isset($row[$categoryIndex])) ? $row[$categoryIndex] : '';
+                $type = ($typeIndex !== false && isset($row[$typeIndex])) ? strtolower(trim($row[$typeIndex])) : '';
                 
                 // Only skip truly empty keys
                 if ($keyText === '') {
@@ -496,14 +500,25 @@ class ImportController extends Controller
                     $context = preg_replace($pattern, '', $context);
                 }
                 
-                // Only sanitize context field (should be simple text)
+                // Only sanitize context and category fields (should be simple text)
                 $context = StringHelper::stripHtml($context);
-                
+                $category = StringHelper::stripHtml($category);
+
                 // Default empty context to 'site'
                 if (empty($context)) {
                     $context = 'site';
                 }
-                
+
+                // Default empty category to 'messages'
+                if (empty($category)) {
+                    $category = 'messages';
+                }
+
+                // Protection: if type is 'forms' or context indicates formie, category must be 'formie'
+                if ($type === 'forms' || $context === 'formie' || str_starts_with($context, 'formie.')) {
+                    $category = 'formie';
+                }
+
                 // Use context exactly as provided in CSV (don't normalize for re-import)
                 // This preserves the exact context from the export
                 
@@ -591,6 +606,7 @@ class ImportController extends Controller
                             $translation->sourceHash = md5($keyText);
                             $translation->siteId = $siteId;
                             $translation->context = $context;
+                            $translation->category = $category;
                             $translation->translationKey = $keyText;
                             $translation->usageCount = 1;
                             $translation->lastUsed = Db::prepareDateForDb(new \DateTime());
@@ -604,6 +620,10 @@ class ImportController extends Controller
                         }
                         $translation->translation = $translationText;
                         $translation->status = $translationText ? 'translated' : 'pending';
+                        // Update category if provided in CSV
+                        if ($categoryIndex !== false) {
+                            $translation->category = $category;
+                        }
                         $translation->dateUpdated = Db::prepareDateForDb(new \DateTime());
                         
                         if ($translation->save()) {

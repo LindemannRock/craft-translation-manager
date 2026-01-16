@@ -100,21 +100,14 @@ class TranslationManager extends Plugin
         parent::init();
         self::$plugin = $this;
 
-        // Bootstrap shared plugin functionality (Twig helper, logging nav)
-        PluginHelper::bootstrap($this, 'translationHelper', ['translationManager:viewLogs']);
+        // Bootstrap shared plugin functionality (Twig helper, logging)
+        PluginHelper::bootstrap(
+            $this,
+            'translationHelper',
+            ['translationManager:viewLogs'],
+            ['translationManager:downloadLogs']
+        );
         PluginHelper::applyPluginNameFromConfig($this);
-
-        // Configure logging using the new logging library
-        $settings = $this->getSettings();
-
-        LoggingLibrary::configure([
-            'pluginHandle' => $this->handle,
-            'pluginName' => $settings->getFullName(),
-            'logLevel' => $settings->logLevel ?? 'error',
-            'itemsPerPage' => $settings->itemsPerPage ?? 50,
-            'viewPermissions' => ['translationManager:viewLogs'],
-            'downloadPermissions' => ['translationManager:downloadLogs'],
-        ]);
 
         // Register services
         $this->setComponents([
@@ -460,56 +453,47 @@ class TranslationManager extends Plugin
     }
 
     /**
-     * Check if this is a Pro license (future implementation)
-     */
-    public function isPro(): bool
-    {
-        // TODO: Implement license checking when commercialized
-        return false; // Always free for now
-    }
-
-    /**
-     * Get sites allowed for the current license
+     * Get all allowed sites
      */
     public function getAllowedSites(): array
     {
-        if ($this->isPro()) {
-            return Craft::$app->getSites()->getAllSites();
-        }
-
-        // Free version: Primary site + one additional (max 2 sites)
-        $allSites = Craft::$app->getSites()->getAllSites();
-        $primary = Craft::$app->getSites()->getPrimarySite();
-
-        if (count($allSites) <= 2) {
-            return $allSites; // All sites allowed if 2 or fewer
-        }
-
-        // More than 2 sites - limit to primary + first non-primary
-        $allowedSites = [$primary];
-
-        foreach ($allSites as $site) {
-            if ($site->id !== $primary->id) {
-                $allowedSites[] = $site;
-                break;
-            }
-        }
-
-        return $allowedSites;
+        return Craft::$app->getSites()->getAllSites();
     }
 
     /**
-     * Check if site is allowed for current license
+     * Check if site is allowed
      */
     public function isSiteAllowed(int $siteId): bool
     {
-        $allowedSites = $this->getAllowedSites();
-        foreach ($allowedSites as $site) {
-            if ($site->id === $siteId) {
-                return true;
+        return Craft::$app->getSites()->getSiteById($siteId) !== null;
+    }
+
+    /**
+     * Get unique language codes from all sites
+     *
+     * @return array<string> Array of unique language codes (e.g., ['en-US', 'ar', 'fr'])
+     */
+    public function getUniqueLanguages(): array
+    {
+        $languages = [];
+        $sites = Craft::$app->getSites()->getAllSites();
+
+        foreach ($sites as $site) {
+            if (!in_array($site->language, $languages, true)) {
+                $languages[] = $site->language;
             }
         }
-        return false;
+
+        return $languages;
+    }
+
+    /**
+     * Get site language by site ID
+     */
+    public function getSiteLanguage(int $siteId): ?string
+    {
+        $site = Craft::$app->getSites()->getSiteById($siteId);
+        return $site?->language;
     }
 
     /**
@@ -562,6 +546,7 @@ class TranslationManager extends Plugin
             'translation-manager/export/files' => 'translation-manager/export/files',
             'translation-manager/export/formie-files' => 'translation-manager/export/formie-files',
             'translation-manager/export/site-files' => 'translation-manager/export/site-files',
+            'translation-manager/export/category-files' => 'translation-manager/export/category-files',
 
             // Maintenance routes
             'translation-manager/maintenance' => 'translation-manager/maintenance/index',
@@ -589,13 +574,13 @@ class TranslationManager extends Plugin
     }
 
     /**
-     * Register file-based message source for site translations
+     * Register file-based message source for all enabled translation categories
      */
     private function registerFileMessageSource(): void
     {
         $i18n = Craft::$app->getI18n();
         $settings = $this->getSettings();
-        $category = $settings->translationCategory;
+        $categories = $settings->getEnabledCategories();
         $basePath = $settings->getExportPath(); // Use the configured export path
 
         // Use the configured source language (language your template strings are written in)
@@ -603,15 +588,18 @@ class TranslationManager extends Plugin
         // e.g., if your templates have {{ 'Copyright'|t('category') }}, sourceLanguage should be 'en'
         $sourceLanguage = explode('-', $settings->sourceLanguage)[0]; // e.g., 'en' from 'en-US'
 
-        $i18n->translations[$category] = [
-            'class' => 'yii\i18n\PhpMessageSource',
-            'sourceLanguage' => $sourceLanguage, // Based on configured setting, not primary site
-            'basePath' => $basePath,
-            'forceTranslation' => true, // Force translation even for same language
-            'fileMap' => [
-                $category => $category . '.php',
-            ],
-        ];
+        // Register message source for each enabled category
+        foreach ($categories as $category) {
+            $i18n->translations[$category] = [
+                'class' => 'yii\i18n\PhpMessageSource',
+                'sourceLanguage' => $sourceLanguage, // Based on configured setting, not primary site
+                'basePath' => $basePath,
+                'forceTranslation' => true, // Force translation even for same language
+                'fileMap' => [
+                    $category => $category . '.php',
+                ],
+            ];
+        }
     }
 
 

@@ -327,25 +327,35 @@ class MaintenanceController extends Controller
         $this->requirePostRequest();
         $this->requireAcceptsJson();
         $this->requirePermission('translationManager:cleanUnused');
-        
+
         $request = Craft::$app->getRequest();
         $type = $request->getBodyParam('type');
-        
-        if (!in_array($type, ['all', 'site', 'formie'])) {
+
+        // Handle per-category types (category:xxx)
+        $category = null;
+        if (str_starts_with($type, 'category:')) {
+            $category = substr($type, 9);
+            $type = 'category';
+        }
+
+        if (!in_array($type, ['all', 'category', 'formie'])) {
             return $this->asJson([
                 'success' => false,
                 'error' => 'Invalid type specified',
             ]);
         }
-        
+
         try {
             $query = new \craft\db\Query();
             $query->from('{{%translationmanager_translations}}')
                   ->where(['status' => 'unused']);
-            
+
+            $displayType = $type;
             switch ($type) {
-                case 'site':
-                    $query->andWhere(['like', 'context', 'site%', false]);
+                case 'category':
+                    // Filter by specific category
+                    $query->andWhere(['category' => $category]);
+                    $displayType = $category;
                     break;
                 case 'formie':
                     $query->andWhere(['or',
@@ -365,32 +375,32 @@ class MaintenanceController extends Controller
             if ($count === 0) {
                 return $this->asJson([
                     'success' => true,
-                    'message' => "No unused {$type} translations found.",
+                    'message' => "No unused {$displayType} translations found.",
                 ]);
             }
-            
+
             // Create backup if enabled
             $settings = TranslationManager::getInstance()->getSettings();
             if ($settings->backupEnabled) {
                 try {
                     $backupService = TranslationManager::getInstance()->backup;
-                    $backupPath = $backupService->createBackup("before_cleanup_{$type}");
+                    $backupPath = $backupService->createBackup("before_cleanup_{$displayType}");
                     $this->logInfo("Created backup before cleaning unused translations", [
-                        'type' => $type,
+                        'type' => $displayType,
                         'backupPath' => $backupPath,
                     ]);
                 } catch (\Exception $e) {
                     $this->logError("Failed to create backup", ['error' => $e->getMessage()]);
                 }
             }
-            
+
             $deleted = TranslationManager::getInstance()->translations->deleteTranslations(
                 array_column($unusedTranslations, 'id')
             );
-            
+
             return $this->asJson([
                 'success' => true,
-                'message' => "Deleted {$deleted} unused {$type} translations.",
+                'message' => "Deleted {$deleted} unused {$displayType} translations.",
             ]);
         } catch (\Exception $e) {
             return $this->asJson([

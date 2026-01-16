@@ -46,8 +46,15 @@ class Settings extends Model
     
     /**
      * @var string The translation category to use for site translations (e.g. |t('messages'))
+     * @deprecated Use translationCategories instead
      */
     public string $translationCategory = 'messages';
+
+    /**
+     * @var array Multiple translation categories configuration
+     * Format: [['key' => 'messages', 'enabled' => true], ['key' => 'emails', 'enabled' => true]]
+     */
+    public array $translationCategories = [];
 
     /**
      * @var string The source language of template strings (language your |t() strings are written in)
@@ -172,7 +179,7 @@ class Settings extends Model
     public function rules(): array
     {
         return [
-            [['pluginName', 'translationCategory', 'exportPath', 'sourceLanguage'], 'required'],
+            [['pluginName', 'exportPath', 'sourceLanguage'], 'required'],
             [['pluginName'], 'string', 'max' => 100],
             [['translationCategory'], 'string', 'max' => 50],
             [['sourceLanguage'], 'string', 'max' => 10],
@@ -181,6 +188,7 @@ class Settings extends Model
             [['translationCategory'], 'match', 'pattern' => '/^[a-zA-Z][a-zA-Z0-9_-]*$/',
              'message' => 'Translation category must start with a letter and contain only letters, numbers, hyphens, and underscores.', ],
             [['translationCategory'], 'validateTranslationCategory'],
+            [['translationCategories'], 'validateTranslationCategories'],
             [['exportPath'], 'validateExportPath'],
             [['backupPath'], 'validateBackupPath'],
             [['backupVolumeUid'], 'string'],
@@ -188,7 +196,7 @@ class Settings extends Model
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
             [['enableFormieIntegration', 'enableSiteTranslations', 'autoExport',
               'showContext', 'enableSuggestions', 'autoSaveEnabled', 'backupEnabled', 'backupOnImport', ], 'boolean'],
-            [['skipPatterns', 'excludeFormHandlePatterns'], 'safe'],
+            [['skipPatterns', 'excludeFormHandlePatterns', 'translationCategories'], 'safe'],
             [['backupRetentionDays'], 'integer', 'min' => 0, 'max' => 365],
             [['backupSchedule'], 'in', 'range' => ['manual', 'daily', 'weekly']],
             [['logLevel'], 'in', 'range' => ['debug', 'info', 'warning', 'error']],
@@ -200,7 +208,8 @@ class Settings extends Model
     {
         return [
             'pluginName' => 'Plugin Name',
-            'translationCategory' => 'Translation Category',
+            'translationCategory' => 'Translation Category (Deprecated)',
+            'translationCategories' => 'Translation Categories',
             'sourceLanguage' => 'Source Language',
             'enableFormieIntegration' => 'Enable Formie Integration',
             'enableSiteTranslations' => 'Enable Site Translations',
@@ -265,11 +274,21 @@ class Settings extends Model
     }
 
     /**
-     * Validates the translation category
+     * Reserved categories that cannot be used (conflict with Craft/Yii)
+     */
+    public const RESERVED_CATEGORIES = ['site', 'app', 'yii', 'craft'];
+
+    /**
+     * Validates the translation category (deprecated single category)
      */
     public function validateTranslationCategory($attribute, $params, $validator)
     {
         $category = $this->$attribute;
+
+        // Skip validation if empty (using new translationCategories instead)
+        if (empty($category)) {
+            return;
+        }
 
         // Must start with a letter and contain only letters, numbers, hyphens, and underscores
         if (!preg_match('/^[a-zA-Z][a-zA-Z0-9_-]*$/', $category)) {
@@ -278,10 +297,119 @@ class Settings extends Model
         }
 
         // Check for reserved categories
-        $reserved = ['site', 'app', 'yii', 'craft'];
-        if (in_array(strtolower($category), $reserved)) {
+        if (in_array(strtolower($category), self::RESERVED_CATEGORIES)) {
             $this->addError($attribute, 'Cannot use reserved category "' . $category . '". The following categories are reserved by Craft: site, app, yii, craft. Please use a unique identifier like your company name.');
         }
+    }
+
+    /**
+     * Validates the translation categories array
+     */
+    public function validateTranslationCategories($attribute, $params, $validator): void
+    {
+        $categories = $this->$attribute;
+
+        if (!is_array($categories)) {
+            return;
+        }
+
+        foreach ($categories as $index => $categoryConfig) {
+            if (!isset($categoryConfig['key']) || empty($categoryConfig['key'])) {
+                $this->addError($attribute, "Category at row " . ($index + 1) . " must have a key.");
+                continue;
+            }
+
+            $key = $categoryConfig['key'];
+
+            // Must start with a letter and contain only letters, numbers, hyphens, and underscores
+            if (!preg_match('/^[a-zA-Z][a-zA-Z0-9_-]*$/', $key)) {
+                $this->addError($attribute, "Category \"{$key}\" must start with a letter and contain only letters, numbers, hyphens, and underscores.");
+                continue;
+            }
+
+            // Check for reserved categories
+            if (in_array(strtolower($key), self::RESERVED_CATEGORIES)) {
+                $this->addError($attribute, "Cannot use reserved category \"{$key}\". Reserved categories: site, app, yii, craft.");
+            }
+        }
+    }
+
+    /**
+     * Gets all enabled translation category keys
+     * Falls back to deprecated translationCategory if translationCategories is empty
+     *
+     * @return string[]
+     */
+    public function getEnabledCategories(): array
+    {
+        // If new format has categories, use those
+        if (!empty($this->translationCategories)) {
+            $enabled = [];
+            foreach ($this->translationCategories as $config) {
+                if (isset($config['key']) && !empty($config['key'])) {
+                    // Default to enabled if not specified
+                    $isEnabled = $config['enabled'] ?? true;
+                    if ($isEnabled) {
+                        $enabled[] = $config['key'];
+                    }
+                }
+            }
+            if (!empty($enabled)) {
+                return $enabled;
+            }
+        }
+
+        // Fall back to deprecated single category
+        if (!empty($this->translationCategory)) {
+            return [$this->translationCategory];
+        }
+
+        // Default to 'messages' if nothing configured
+        return ['messages'];
+    }
+
+    /**
+     * Gets the primary (first enabled) translation category
+     *
+     * @return string
+     */
+    public function getPrimaryCategory(): string
+    {
+        $enabled = $this->getEnabledCategories();
+        return $enabled[0] ?? 'messages';
+    }
+
+    /**
+     * Checks if a category is enabled
+     *
+     * @param string $category
+     * @return bool
+     */
+    public function isCategoryEnabled(string $category): bool
+    {
+        // Special case: 'formie' is always enabled if Formie integration is enabled
+        if ($category === 'formie') {
+            return $this->enableFormieIntegration;
+        }
+
+        return in_array($category, $this->getEnabledCategories(), true);
+    }
+
+    /**
+     * Gets all categories including formie (if enabled)
+     *
+     * @return string[]
+     */
+    public function getAllCategories(): array
+    {
+        $categories = $this->getEnabledCategories();
+
+        // Add formie if integration is enabled and not already in list
+        if ($this->enableFormieIntegration && !in_array('formie', $categories, true)) {
+            $categories[] = 'formie';
+        }
+
+        return $categories;
     }
 
     /**
@@ -612,6 +740,7 @@ class Settings extends Model
         return [
             'skipPatterns',
             'excludeFormHandlePatterns',
+            'translationCategories',
         ];
     }
 

@@ -133,11 +133,11 @@
 
     {% set backupPath = craft.translationManager.backup.getBackupPath() %}
 
-    {% include 'translation-manager/_components/info-box' with {
+    {% include 'lindemannrock-base/_components/info-box' with {
 	    message: '<strong>' ~ "Backup Location:"|t('translation-manager') ~ '</strong> <code>' ~ backupPath ~ '</code>'
     } %}
 
-    {% include 'translation-manager/_components/plugin-credit.twig' %}
+    {% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}
 
 {% js %}

@@ -84,17 +84,13 @@ class TranslationManagerVariable
     }
     
     /**
-     * Get unused translation counts by type (NEW: For maintenance dropdown)
+     * Get unused translation counts by type and category (for maintenance dropdown)
      */
     public function getUnusedTranslationCounts(): array
     {
         $query = new \craft\db\Query();
-        
-        $siteCount = $query->from('{{%translationmanager_translations}}')
-            ->where(['status' => 'unused'])
-            ->andWhere(['like', 'context', 'site%', false])
-            ->count();
-            
+
+        // Get formie count
         $formieCount = $query->from('{{%translationmanager_translations}}')
             ->where(['status' => 'unused'])
             ->andWhere(['or',
@@ -102,14 +98,82 @@ class TranslationManagerVariable
                 ['=', 'context', 'formie'],
             ])
             ->count();
-        
-        return [
-            'site' => (int) $siteCount,
+
+        // Get per-category counts for site translations
+        $categoryCounts = (new \craft\db\Query())
+            ->select(['category', 'COUNT(*) as count'])
+            ->from('{{%translationmanager_translations}}')
+            ->where(['status' => 'unused'])
+            ->andWhere(['not', ['or',
+                ['like', 'context', 'formie.%', false],
+                ['=', 'context', 'formie'],
+            ]])
+            ->groupBy(['category'])
+            ->all();
+
+        $result = [
             'formie' => (int) $formieCount,
-            'total' => (int) ($siteCount + $formieCount),
         ];
+
+        $siteTotal = 0;
+        foreach ($categoryCounts as $row) {
+            $category = $row['category'] ?? 'messages';
+            $count = (int) $row['count'];
+            $result[$category] = $count;
+            $siteTotal += $count;
+        }
+
+        // Keep 'site' for backwards compatibility (sum of all non-formie)
+        $result['site'] = $siteTotal;
+        $result['total'] = $siteTotal + (int) $formieCount;
+
+        return $result;
     }
     
+    /**
+     * Get total translation counts by type and category (for clear translations dropdown)
+     */
+    public function getTranslationCounts(): array
+    {
+        $query = new \craft\db\Query();
+
+        // Get formie count
+        $formieCount = $query->from('{{%translationmanager_translations}}')
+            ->where(['or',
+                ['like', 'context', 'formie.%', false],
+                ['=', 'context', 'formie'],
+            ])
+            ->count();
+
+        // Get per-category counts for site translations
+        $categoryCounts = (new \craft\db\Query())
+            ->select(['category', 'COUNT(*) as count'])
+            ->from('{{%translationmanager_translations}}')
+            ->where(['not', ['or',
+                ['like', 'context', 'formie.%', false],
+                ['=', 'context', 'formie'],
+            ]])
+            ->groupBy(['category'])
+            ->all();
+
+        $result = [
+            'formie' => (int) $formieCount,
+        ];
+
+        $siteTotal = 0;
+        foreach ($categoryCounts as $row) {
+            $category = $row['category'] ?? 'messages';
+            $count = (int) $row['count'];
+            $result[$category] = $count;
+            $siteTotal += $count;
+        }
+
+        $result['site'] = $siteTotal;
+        $result['total'] = $siteTotal + (int) $formieCount;
+
+        return $result;
+    }
+
     /**
      * Get the configured Formie plugin name
      */

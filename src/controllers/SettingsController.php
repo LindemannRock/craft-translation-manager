@@ -283,10 +283,56 @@ class SettingsController extends Controller
             : Craft::t('translation-manager', 'No translations found to delete.');
         
         Craft::$app->getSession()->setNotice($message);
-        
+
         return $this->redirectToPostedUrl();
     }
-    
+
+    /**
+     * Clear translations for a specific category
+     */
+    public function actionClearCategory(): Response
+    {
+        $this->requirePostRequest();
+
+        $request = Craft::$app->getRequest();
+        $category = $request->getRequiredBodyParam('category');
+
+        $this->logInfo("User requested clear category translations", ['category' => $category]);
+
+        // Validate category is enabled
+        $settings = TranslationManager::getInstance()->getSettings();
+        $enabledCategories = $settings->getEnabledCategories();
+
+        if (!in_array($category, $enabledCategories, true)) {
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', "Category '{category}' is not enabled.", ['category' => $category]));
+            return $this->redirectToPostedUrl();
+        }
+
+        // Create backup if enabled
+        if ($settings->backupEnabled) {
+            try {
+                $backupService = TranslationManager::getInstance()->backup;
+                $backupPath = $backupService->createBackup("before_clear_{$category}");
+                if ($backupPath) {
+                    $this->logInfo("Created backup before clearing category translations", ['category' => $category, 'backupPath' => $backupPath]);
+                }
+            } catch (\Exception $e) {
+                $this->logError("Failed to create backup before clearing category translations", ['error' => $e->getMessage()]);
+                // Continue with the operation even if backup fails
+            }
+        }
+
+        $count = TranslationManager::getInstance()->translations->clearCategoryTranslations($category);
+
+        $message = $count > 0
+            ? Craft::t('translation-manager', '{count} {category} translations and corresponding files have been deleted.', ['count' => $count, 'category' => $category])
+            : Craft::t('translation-manager', 'No {category} translations found to delete.', ['category' => $category]);
+
+        Craft::$app->getSession()->setNotice($message);
+
+        return $this->redirectToPostedUrl();
+    }
+
     /**
      * Apply skip patterns to existing translations
      */

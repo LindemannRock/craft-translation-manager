@@ -86,42 +86,57 @@ class TranslationsController extends Controller
         $status = $request->getParam('status', 'all');
         $search = $request->getParam('search', '');
         $sort = $request->getParam('sort', 'translationKey');
-        
-        // NEW: Multi-site support - get site selection
-        $siteId = $request->getParam('siteId');
-        if (!$siteId) {
-            // Default to current site
-            $siteId = Craft::$app->getSites()->getCurrentSite()->id;
+
+        // Get language selection (or fall back to siteId for backwards compatibility)
+        $language = $request->getParam('language');
+        $siteId = $request->getParam('siteId'); // Legacy support
+
+        if (!$language && $siteId) {
+            // Convert legacy siteId to language
+            $site = Craft::$app->getSites()->getSiteById($siteId);
+            $language = $site?->language;
         }
-        $currentSite = Craft::$app->getSites()->getSiteById($siteId);
+
+        if (!$language) {
+            // Default to current site's language
+            $language = Craft::$app->getSites()->getCurrentSite()->language;
+        }
+
+        // Get unique languages for the selector
+        $uniqueLanguages = TranslationManager::getInstance()->getUniqueLanguages();
         $dir = $request->getParam('dir', 'asc');
         $type = $request->getParam('type', 'all');
-        
+        $category = $request->getParam('category', 'all');
+
         $limit = $settings->itemsPerPage;
         $offset = ($page - 1) * $limit;
 
         // Get translations with filters
         $criteria = [
-            'siteId' => $siteId,  // NEW: Site filtering
+            'language' => $language,
             'status' => $status,
             'search' => $search,
             'sort' => $sort,
             'dir' => $dir,
             'type' => $type,
+            'category' => $category,
             'includeUsageCheck' => true,
         ];
 
         $allTranslations = TranslationManager::getInstance()->translations->getTranslations($criteria);
-        
+
         // Calculate pagination
         $totalCount = count($allTranslations);
         $totalPages = ceil($totalCount / $limit);
-        
+
         // Slice for current page
         $translations = array_slice($allTranslations, $offset, $limit);
-        
+
         // Get statistics
         $stats = TranslationManager::getInstance()->translations->getStatistics();
+
+        // Get all available categories for the filter dropdown
+        $allCategories = $settings->getAllCategories();
 
         return $this->renderTemplate('translation-manager/translations/index', [
             'translations' => $translations,
@@ -136,10 +151,13 @@ class TranslationsController extends Controller
             'sort' => $sort,
             'dir' => $dir,
             'type' => $type,
+            'category' => $category,
+            'allCategories' => $allCategories,
             'settings' => $settings,
-            // NEW: Multi-site variables
-            'currentSite' => $currentSite,
-            'currentSiteId' => $siteId,
+            // Language-based variables
+            'currentLanguage' => $language,
+            'uniqueLanguages' => $uniqueLanguages,
+            // Legacy support (keeping for backwards compatibility)
             'allSites' => TranslationManager::getInstance()->getAllowedSites(),
         ]);
     }

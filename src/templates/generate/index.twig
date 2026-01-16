@@ -37,7 +37,11 @@
                         {% set generateOptions = generateOptions|merge([{value: 'formie', label: ('Generate ' ~ craft.translationManager.getFormiePluginName() ~ ' Files Only')|t('translation-manager')}]) %}
                     {% endif %}
                     {% if settings.enableSiteTranslations and currentUser.can('translationManager:generateSiteTranslations') %}
-                        {% set generateOptions = generateOptions|merge([{value: 'site', label: ('Generate ' ~ (settings.translationCategory|title) ~ ' Files Only')|t('translation-manager')}]) %}
+                        {# Show each enabled category as a separate option #}
+                        {% set enabledCategories = settings.getEnabledCategories() %}
+                        {% for category in enabledCategories %}
+                            {% set generateOptions = generateOptions|merge([{value: 'category:' ~ category, label: ('Generate ' ~ category|title ~ ' Files Only')|t('translation-manager')}]) %}
+                        {% endfor %}
                     {% endif %}
                     {{ forms.selectField({
                         label: "Type to Generate"|t('translation-manager'),
@@ -56,11 +60,11 @@
     </div>
 
     {% set generationPath = settings.getExportPath() %}
-    {% include 'translation-manager/_components/info-box' with {
+    {% include 'lindemannrock-base/_components/info-box' with {
 		message: '<strong>' ~ "Generation Location:"|t('translation-manager') ~ '</strong> <code>' ~ generationPath ~ '</code>'
 	} %}
 
-    {% include 'translation-manager/_components/plugin-credit.twig' %}
+    {% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}
 
 {% js %}
@@ -94,12 +98,19 @@
     function generateTranslationFiles(type) {
         console.log('Generating translation files:', type);
         let url;
+        let bodyData = {
+            '{{ craft.app.config.general.csrfTokenName }}': '{{ craft.app.request.csrfToken }}'
+        };
+
         if (type === 'all') {
             url = '{{ cpUrl('translation-manager/export/files') }}';
         } else if (type === 'formie') {
             url = '{{ cpUrl('translation-manager/export/formie-files') }}';
-        } else if (type === 'site') {
-            url = '{{ cpUrl('translation-manager/export/site-files') }}';
+        } else if (type.startsWith('category:')) {
+            // Handle per-category generation
+            const category = type.substring(9); // Remove 'category:' prefix
+            url = '{{ cpUrl('translation-manager/export/category-files') }}';
+            bodyData.category = category;
         }
 
         console.log('URL:', url);
@@ -112,9 +123,7 @@
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                '{{ craft.app.config.general.csrfTokenName }}': '{{ craft.app.request.csrfToken }}'
-            })
+            body: JSON.stringify(bodyData)
         })
         .then(response => {
             console.log('Response status:', response.status);

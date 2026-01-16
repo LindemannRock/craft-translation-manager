@@ -23,7 +23,7 @@
     {% if currentUser.can('translationManager:cleanUnused') %}
     {# Enhanced unused translations cleanup with dropdown #}
     {% set unusedCounts = craft.translationManager.getUnusedTranslationCounts() %}
-    {% set totalUnused = unusedCounts.site + unusedCounts.formie %}
+    {% set totalUnused = unusedCounts.total %}
 
     <div class="field">
         <div class="heading">
@@ -47,16 +47,24 @@
 
                 <div style="display: flex; align-items: flex-end; gap: 12px;">
                     <div class="flex-grow">
+                        {% set unusedOptions = [
+                            {value: '', label: 'Select type'|t('translation-manager')},
+                            {value: 'all', label: 'All Unused (' ~ totalUnused ~ ')'|t('translation-manager')}
+                        ] %}
+                        {# Add each enabled category as a separate option #}
+                        {% set enabledCategories = settings.getEnabledCategories() %}
+                        {% for category in enabledCategories %}
+                            {% set unusedOptions = unusedOptions|merge([{value: 'category:' ~ category, label: 'Unused ' ~ category|title ~ ' (' ~ (unusedCounts[category] ?? 0) ~ ')'}]) %}
+                        {% endfor %}
+                        {# Add Formie if enabled #}
+                        {% if settings.enableFormieIntegration %}
+                            {% set unusedOptions = unusedOptions|merge([{value: 'formie', label: 'Unused ' ~ craft.translationManager.getFormiePluginName() ~ ' (' ~ unusedCounts.formie ~ ')'}]) %}
+                        {% endif %}
                         {{ forms.selectField({
                             label: "Type to Clean"|t('translation-manager'),
                             id: 'unusedType',
                             name: 'unusedType',
-                            options: [
-                                {value: '', label: 'Select type'|t('translation-manager')},
-                                {value: 'all', label: 'All Unused (' ~ totalUnused ~ ')'|t('translation-manager')},
-                                {value: 'site', label: 'Unused ' ~ (settings.translationCategory|title) ~ ' (' ~ unusedCounts.site ~ ')'},
-                                {value: 'formie', label: ('Unused ' ~ craft.translationManager.getFormiePluginName() ~ ' (' ~ unusedCounts.formie ~ ')')}
-                            ],
+                            options: unusedOptions,
                             value: ''
                         }) }}
                     </div>
@@ -137,15 +145,20 @@
         {% endif %}
     </div>
 
+    {% set translationCounts = craft.translationManager.getTranslationCounts() %}
     {% set clearOptions = [{ value: '', label: 'Select an option'|t('translation-manager') }] %}
     {% if settings.enableFormieIntegration and currentUser.can('translationManager:clearFormie') %}
-        {% set clearOptions = clearOptions|merge([{ value: 'formie', label: (craft.translationManager.getFormiePluginName() ~ ' Only')|t('translation-manager') }]) %}
+        {% set clearOptions = clearOptions|merge([{ value: 'formie', label: craft.translationManager.getFormiePluginName() ~ ' Only (' ~ translationCounts.formie ~ ')' }]) %}
     {% endif %}
     {% if settings.enableSiteTranslations and currentUser.can('translationManager:clearSite') %}
-        {% set clearOptions = clearOptions|merge([{ value: 'site', label: ((settings.translationCategory|title) ~ ' Only')|t('translation-manager') }]) %}
+        {# Add each enabled category as a separate option #}
+        {% set enabledCategories = settings.getEnabledCategories() %}
+        {% for category in enabledCategories %}
+            {% set clearOptions = clearOptions|merge([{ value: 'category:' ~ category, label: category|title ~ ' Only (' ~ (translationCounts[category] ?? 0) ~ ')' }]) %}
+        {% endfor %}
     {% endif %}
     {% if (settings.enableFormieIntegration or settings.enableSiteTranslations) and currentUser.can('translationManager:clearAll') %}
-        {% set clearOptions = clearOptions|merge([{ value: 'all', label: 'All'|t('translation-manager') }]) %}
+        {% set clearOptions = clearOptions|merge([{ value: 'all', label: 'All (' ~ translationCounts.total ~ ')' }]) %}
     {% endif %}
 
     {% set formiePluginName = craft.translationManager.getFormiePluginName() %}
@@ -184,7 +197,7 @@
     {% endif %}
     {% endif %}
 
-    {% include 'translation-manager/_components/plugin-credit.twig' %}
+    {% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}
 
 {% js %}
@@ -197,9 +210,13 @@
     if (unusedTypeSelect) {
         const descriptions = {
             all: '{{ "This will permanently delete ALL unused translations (both site and form translations) that are no longer used anywhere."|t('translation-manager')|e('js') }}',
-            site: '{{ "This will permanently delete unused site translations that are no longer found in any template files."|t('translation-manager')|e('js') }}',
             formie: '{{ "This will permanently delete unused form translations from deleted forms or fields."|t('translation-manager')|e('js') }}'
         };
+
+        // Add dynamic descriptions for each category
+        {% for category in settings.getEnabledCategories() %}
+        descriptions['category:{{ category }}'] = '{{ "This will permanently delete unused translations for the"|t('translation-manager')|e('js') }} {{ category }} {{ "category that are no longer found in any template files."|t('translation-manager')|e('js') }}';
+        {% endfor %}
 
         unusedTypeSelect.addEventListener('change', function() {
             const value = this.value;
@@ -224,9 +241,13 @@
 
             const confirmMessages = {
                 all: '{{ "Are you sure you want to delete ALL unused translations?"|t('translation-manager')|e('js') }}',
-                site: '{{ "Are you sure you want to delete unused site translations?"|t('translation-manager')|e('js') }}',
                 formie: '{{ "Are you sure you want to delete unused form translations?"|t('translation-manager')|e('js') }}'
             };
+
+            // Add dynamic confirm messages for each category
+            {% for category in settings.getEnabledCategories() %}
+            confirmMessages['category:{{ category }}'] = '{{ "Are you sure you want to delete unused"|t('translation-manager')|e('js') }} {{ category }} {{ "translations?"|t('translation-manager')|e('js') }}';
+            {% endfor %}
 
             if (confirm(confirmMessages[type])) {
                 const btn = this;
@@ -406,21 +427,33 @@
 
         const descriptions = {
             formie: '{{ "This will permanently delete all "|t('translation-manager')|e('js') }}' + formiePluginName + '{{ " form translations from the database and remove the corresponding translation files. Your forms will not be affected, only the stored translations will be removed."|t('translation-manager')|e('js') }}',
-            site: '{{ ("This will permanently delete all site translations using |t(\'" ~ settings.translationCategory ~ "\') from the database and remove the corresponding translation files. You will need to re-translate all site content.")|t('translation-manager')|e('js') }}',
             all: allDescription
         };
 
+        // Add dynamic descriptions for each category
+        {% for category in settings.getEnabledCategories() %}
+        descriptions['category:{{ category }}'] = '{{ "This will permanently delete all translations for the"|t('translation-manager')|e('js') }} {{ category }} {{ "category from the database and remove the corresponding translation files. You will need to re-translate this content."|t('translation-manager')|e('js') }}';
+        {% endfor %}
+
         const confirmMessages = {
             formie: '{{ "Are you sure you want to delete all "|t('translation-manager')|e('js') }}' + formiePluginName + '{{ " translations and their files? This action cannot be undone."|t('translation-manager')|e('js') }}',
-            site: '{{ ("Are you sure you want to delete all site translations for the \'" ~ settings.translationCategory ~ "\' category and their files? This action cannot be undone.")|t('translation-manager')|e('js') }}',
             all: '{{ "Are you absolutely sure you want to delete ALL translations and files? This will remove both "|t('translation-manager')|e('js') }}' + formiePluginName + '{{ " and site translations. This action cannot be undone."|t('translation-manager')|e('js') }}'
         };
 
+        // Add dynamic confirm messages for each category
+        {% for category in settings.getEnabledCategories() %}
+        confirmMessages['category:{{ category }}'] = '{{ "Are you sure you want to delete all"|t('translation-manager')|e('js') }} {{ category }} {{ "translations and their files? This action cannot be undone."|t('translation-manager')|e('js') }}';
+        {% endfor %}
+
         const actions = {
             formie: 'translation-manager/settings/clear-formie',
-            site: 'translation-manager/settings/clear-site',
             all: 'translation-manager/settings/clear-all'
         };
+
+        // Add dynamic actions for each category
+        {% for category in settings.getEnabledCategories() %}
+        actions['category:{{ category }}'] = 'translation-manager/settings/clear-category';
+        {% endfor %}
 
         clearTypeSelect.addEventListener('change', function() {
             const value = this.value;
@@ -441,6 +474,7 @@
         clearButton.addEventListener('click', function() {
             const action = this.getAttribute('data-action');
             const confirmMessage = this.getAttribute('data-confirm');
+            const selectedValue = clearTypeSelect.value;
 
             if (action) {
                 {% if settings.backupEnabled %}
@@ -473,6 +507,15 @@
                 actionInput.name = 'action';
                 actionInput.value = action;
                 form.appendChild(actionInput);
+
+                // Add category input if this is a per-category clear
+                if (selectedValue.startsWith('category:')) {
+                    const categoryInput = document.createElement('input');
+                    categoryInput.type = 'hidden';
+                    categoryInput.name = 'category';
+                    categoryInput.value = selectedValue.substring(9); // Remove 'category:' prefix
+                    form.appendChild(categoryInput);
+                }
 
                 // Add redirect input with proper hash
                 const redirectInput = document.createElement('input');

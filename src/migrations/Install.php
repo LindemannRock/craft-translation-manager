@@ -30,6 +30,7 @@ class Install extends Migration
                 'source' => $this->text()->notNull(),
                 'sourceHash' => $this->string(32)->notNull(),
                 'context' => $this->string(255)->notNull(),
+                'category' => $this->string(50)->notNull()->defaultValue('messages')->comment('Translation category used in |t() - e.g., messages, formie, emails'),
                 'siteId' => $this->integer()->notNull()->defaultValue(1),
                 'translationKey' => $this->text()->notNull()->comment('The key used in code (any language)'),
                 'translation' => $this->text()->null()->comment('Site-specific translation'),
@@ -44,12 +45,14 @@ class Install extends Migration
             // Create indexes for multi-site support
             $this->createIndex(null, '{{%translationmanager_translations}}', 'sourceHash', false);
             $this->createIndex(null, '{{%translationmanager_translations}}', 'context', false);
+            $this->createIndex(null, '{{%translationmanager_translations}}', 'category', false);
             $this->createIndex(null, '{{%translationmanager_translations}}', 'status', false);
             $this->createIndex(null, '{{%translationmanager_translations}}', 'siteId', false);
             $this->createIndex(null, '{{%translationmanager_translations}}', ['siteId', 'status'], false);
             $this->createIndex(null, '{{%translationmanager_translations}}', ['siteId', 'context'], false);
-            // Unique constraint: same key can exist once per site (context used for tracking only)
-            $this->createIndex(null, '{{%translationmanager_translations}}', ['sourceHash', 'siteId'], true);
+            $this->createIndex(null, '{{%translationmanager_translations}}', ['siteId', 'category'], false);
+            // Unique constraint: same key can exist once per site per category
+            $this->createIndex(null, '{{%translationmanager_translations}}', ['sourceHash', 'siteId', 'category'], true);
         }
 
         // Create the import history table
@@ -83,7 +86,8 @@ class Install extends Migration
             $this->createTable('{{%translationmanager_settings}}', [
                 'id' => $this->primaryKey(),
                 'pluginName' => $this->string(100)->notNull()->defaultValue('Translation Manager'),
-                'translationCategory' => $this->string()->notNull()->defaultValue('messages'),
+                'translationCategory' => $this->string()->notNull()->defaultValue('messages'), // Deprecated: use translationCategories
+                'translationCategories' => $this->text()->null()->comment('JSON array of enabled categories'),
                 'sourceLanguage' => $this->string(10)->notNull()->defaultValue('en'),
                 'enableFormieIntegration' => $this->boolean()->notNull()->defaultValue(true),
                 'enableSiteTranslations' => $this->boolean()->notNull()->defaultValue(true),
