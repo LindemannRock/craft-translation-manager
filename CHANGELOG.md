@@ -1,5 +1,14 @@
 # Changelog
 
+## [5.15.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.14.0...v5.15.0) (2026-01-16)
+
+
+### Features
+
+* Enhance backup path validation with localized error messages and prevent web-accessible backups ([1b2277f](https://github.com/LindemannRock/craft-translation-manager/commit/1b2277f3c41886ff8bdcf93e8a25ffbd584969ed))
+* Switch from site-based to language-based translations ([ae74e94](https://github.com/LindemannRock/craft-translation-manager/commit/ae74e94b8e0ecbaa20c883bc0ed8dfef118466cf))
+* Update button text to 'Save Settings' for clarity in settings templates ([20ba20e](https://github.com/LindemannRock/craft-translation-manager/commit/20ba20ee104161ce341d71e1b1e942c0684049a3))
+
 ## [5.14.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.13.0...v5.14.0) (2026-01-13)
 
 
