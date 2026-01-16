@@ -400,7 +400,7 @@ class Settings extends Model
         
         // Check for directory traversal attempts
         if (strpos($path, '..') !== false) {
-            $this->addError($attribute, 'Backup path cannot contain directory traversal sequences (..)');
+            $this->addError($attribute, Craft::t('translation-manager', 'Backup path cannot contain directory traversal sequences (..)'));
             return;
         }
         
@@ -434,10 +434,28 @@ class Settings extends Model
         }
         
         if (!$isValid) {
-            $this->addError($attribute, 'Backup path must start with @root or @storage (secure locations only, never web-accessible)');
+            $this->addError($attribute, Craft::t('translation-manager', 'Backup path must start with @root or @storage (secure locations only, never web-accessible)'));
+            return;
+        }
+
+        // Resolve the alias to check actual path
+        try {
+            $resolvedPath = Craft::getAlias($path);
+            $webroot = Craft::getAlias('@webroot');
+
+            // Prevent backups in web-accessible directory
+            if (str_starts_with($resolvedPath, $webroot)) {
+                $this->addError(
+                    $attribute,
+                    Craft::t('translation-manager', 'Backup path cannot be in a web-accessible directory (@webroot)')
+                );
+                return;
+            }
+        } catch (\Exception $e) {
+            $this->addError($attribute, Craft::t('translation-manager', 'Invalid backup path: {error}', ['error' => $e->getMessage()]));
         }
     }
-    
+
     /**
      * Returns the full export path
      */
