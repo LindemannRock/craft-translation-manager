@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.15.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.15.0...v5.15.1) (2026-01-16)
+
+
+### Bug Fixes
+
+* Update translation display to use currentLanguage for improved localization ([ada6819](https://github.com/LindemannRock/craft-translation-manager/commit/ada6819388679c22eb64e3b63fabfc4189696434))
+
 ## [5.15.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.14.0...v5.15.0) (2026-01-16)
 
 
