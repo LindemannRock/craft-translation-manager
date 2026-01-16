@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.16.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.15.1...v5.16.0) (2026-01-16)
+
+
+### Features
+
+* simplify import preview to show Language only ([fc1d859](https://github.com/LindemannRock/craft-translation-manager/commit/fc1d8595c19ede5bbff3b40f274344543268bd22))
+
 ## [5.15.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.15.0...v5.15.1) (2026-01-16)
 
 
