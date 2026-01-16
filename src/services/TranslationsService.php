@@ -16,6 +16,7 @@ use craft\db\Query;
 use craft\helpers\Db;
 use craft\helpers\StringHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\helpers\TemplateHelper;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\TranslationManager;
 
@@ -619,6 +620,8 @@ class TranslationsService extends Component
 
     /**
      * Scan template directory for ALL enabled categories at once
+     * Uses AST-based parsing for accurate translation detection
+     *
      * Returns: ['category' => ['key' => ['file' => 'path']], ...]
      */
     public function scanTemplateDirectoryAllCategories(string $path, array $categories): array
@@ -634,66 +637,40 @@ class TranslationsService extends Component
             return $foundKeysByCategory;
         }
 
-        $this->_scannedFileCount = 0;
+        $this->logInfo('Starting AST-based template scan', ['categories' => $categories]);
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($path, \RecursiveDirectoryIterator::SKIP_DOTS)
-        );
+        // Use AST-based scanner for accurate detection
+        $scanResult = TemplateHelper::scanTemplates($categories);
 
-        // Build regex pattern that captures the text AND category
-        // Pattern: 'Text'|t('category') or "Text"|t("category")
-        $pattern = '/([\'"`])((?:\\\\.|(?!\1).)*)\1\s*\|\s*t\s*\(\s*[\'"`]([a-zA-Z][a-zA-Z0-9_-]*)[\'"`]/s';
+        $this->_scannedFileCount = $scanResult['scannedFiles'];
 
-        // Also capture dynamic category: 'Text'|t(_globals.primaryTranslationCategory)
-        $dynamicPattern = '/([\'"`])((?:\\\\.|(?!\1).)*)\1\s*\|\s*t\s*\(\s*_globals\.primaryTranslationCategory/s';
+        // Log any parsing errors (non-fatal)
+        foreach ($scanResult['errors'] as $error) {
+            $this->logWarning('Template parse warning', ['error' => $error]);
+        }
 
-        $settings = TranslationManager::getInstance()->getSettings();
-        $primaryCategory = $settings->getPrimaryCategory();
-
-        foreach ($iterator as $file) {
-            if ($file->getExtension() === 'twig') {
-                $this->_scannedFileCount++;
-                $filePath = $file->getPathname();
-                $content = file_get_contents($filePath);
-
-                // Find all |t('category') calls with literal category
-                if (preg_match_all($pattern, $content, $matches, PREG_SET_ORDER)) {
-                    foreach ($matches as $match) {
-                        $key = stripslashes($match[2]); // The translation key
-                        $category = $match[3]; // The category name
-
-                        // Only track if this category is in our enabled list
-                        if (in_array($category, $categories, true)) {
-                            $foundKeysByCategory[$category][$key] = [
-                                'file' => str_replace($path . '/', '', $filePath),
-                            ];
-                        }
-                    }
-                }
-
-                // Find dynamic category usage - assign to primary category
-                if (preg_match_all($dynamicPattern, $content, $matches, PREG_SET_ORDER)) {
-                    foreach ($matches as $match) {
-                        $key = stripslashes($match[2]);
-                        $foundKeysByCategory[$primaryCategory][$key] = [
-                            'file' => str_replace($path . '/', '', $filePath),
-                            'dynamic' => true,
-                        ];
-
-                        $this->logDebug("Template scanner: Found dynamic translation", [
-                            'key' => $key,
-                            'assignedCategory' => $primaryCategory,
-                        ]);
-                    }
-                }
+        // Convert result format to match expected output
+        foreach ($scanResult['found'] as $category => $keys) {
+            foreach ($keys as $key => $data) {
+                $foundKeysByCategory[$category][$key] = [
+                    'file' => $data['file'],
+                ];
             }
         }
+
+        $this->logInfo('AST template scan complete', [
+            'scannedFiles' => $this->_scannedFileCount,
+            'foundKeys' => array_sum(array_map('count', $foundKeysByCategory)),
+            'errors' => count($scanResult['errors']),
+        ]);
 
         return $foundKeysByCategory;
     }
 
     /**
      * Recursively scan template directory for translation usage (single category - legacy)
+     * Uses AST-based parsing for accurate translation detection
+     *
      * @deprecated Use scanTemplateDirectoryAllCategories instead
      */
     public function scanTemplateDirectory(string $path, string $category): array
@@ -704,50 +681,13 @@ class TranslationsService extends Component
             return $foundKeys;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($path, \RecursiveDirectoryIterator::SKIP_DOTS)
-        );
+        // Use the multi-category method and extract single category
+        $result = $this->scanTemplateDirectoryAllCategories($path, [$category]);
 
-        foreach ($iterator as $file) {
-            if ($file->getExtension() === 'twig') {
-                $this->_scannedFileCount++;
-                $content = file_get_contents($file->getPathname());
-
-                // Find all |t('category') usage - handle escaped quotes and multi-line
-                $literalPattern = '/([\'"`])((?:\\\\.|(?!\1).)*)\1\s*\|\s*t\s*\(\s*[\'"`]' . preg_quote($category, '/') . '[\'"`][\s\S]*?\)/s';
-
-                // Also find |t(_globals.primaryTranslationCategory) usage - multi-line support
-                $dynamicPattern = '/([\'"`])((?:\\\\.|(?!\1).)*)\1\s*\|\s*t\s*\(\s*_globals\.primaryTranslationCategory[\s\S]*?\)/s';
-
-                // Check for literal category usage: 'Text'|t('category')
-                if (preg_match_all($literalPattern, $content, $matches)) {
-                    foreach ($matches[2] as $key) { // matches[2] now contains the quoted content
-                        // Unescape quotes and other escaped characters
-                        $unescapedKey = stripslashes($key);
-                        $foundKeys[$unescapedKey] = true;
-
-                        // Also store original escaped version for debugging
-                        if ($key !== $unescapedKey) {
-                            $this->logWarning("Template scanner: Unescaped", [
-                                'from' => $key,
-                                'to' => $unescapedKey,
-                            ]);
-                        }
-                    }
-                }
-
-                // Check for dynamic category usage: 'Text'|t(_globals.primaryTranslationCategory)
-                if (preg_match_all($dynamicPattern, $content, $matches)) {
-                    foreach ($matches[2] as $key) { // matches[2] now contains the quoted content
-                        // Unescape quotes and other escaped characters
-                        $unescapedKey = stripslashes($key);
-                        $foundKeys[$unescapedKey] = true;
-
-                        $this->logWarning("Template scanner: Found dynamic translation using _globals.primaryTranslationCategory", [
-                            'key' => $unescapedKey,
-                        ]);
-                    }
-                }
+        // Convert to simple key => true format
+        if (isset($result[$category])) {
+            foreach ($result[$category] as $key => $data) {
+                $foundKeys[$key] = true;
             }
         }
 
