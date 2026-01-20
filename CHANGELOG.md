@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.17.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.17.0...v5.17.1) (2026-01-20)
+
+
+### Bug Fixes
+
+* category selection in import/export template and update context handling in PHP import controller ([03d815f](https://github.com/LindemannRock/craft-translation-manager/commit/03d815f136b5e7f7262300d170f8bca275060227))
+
 ## [5.17.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.16.0...v5.17.0) (2026-01-20)
 
 
