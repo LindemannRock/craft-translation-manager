@@ -371,6 +371,7 @@ class BackupController extends Controller
         return match ($reason) {
             'manual' => Craft::t('translation-manager', 'Manual'),
             'before_import' => Craft::t('translation-manager', 'Before Import'),
+            'before_php_import' => Craft::t('translation-manager', 'Before PHP Import'),
             'before_restore' => Craft::t('translation-manager', 'Before Restore'),
             'scheduled' => Craft::t('translation-manager', 'Scheduled'),
             'before_clear_all' => Craft::t('translation-manager', 'Before Clear All'),

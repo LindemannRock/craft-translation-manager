@@ -835,12 +835,19 @@ class ImportController extends Controller
             '/<base[^>]*href/i' => 'Base tag',
         ];
         
-        // Check for formula injection patterns but exclude phone numbers
+        // Check for formula injection patterns but exclude safe patterns
         // Phone numbers like '+9665XXXXXXXX' should not be flagged
-        if (!preg_match('/^\+?\d+[X\d]*$/', trim($content))) {
+        // Text like '-- Select an option --' should not be flagged
+        $trimmed = trim($content);
+        if (!preg_match('/^\+?\d+[X\d]*$/', $trimmed)) {
             // Only check for formula injection if it's not a phone number pattern
-            if (preg_match('/^[=\-@\|]/', trim($content))) {
-                // Exclude + from formula injection since it's used in phone numbers
+            // = and @ are always dangerous at start
+            // - is only dangerous if followed by digit or formula char (not -- or - text)
+            // | is dangerous (pipe can be command separator)
+            if (preg_match('/^[=@\|]/', $trimmed)) {
+                $threats[] = 'Formula injection';
+            } elseif (preg_match('/^-[0-9=@+\-\|]/', $trimmed) && !preg_match('/^--\s/', $trimmed)) {
+                // Flag -1, -=, -@, etc. but not "-- text" (common placeholder)
                 $threats[] = 'Formula injection';
             }
         }

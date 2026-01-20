@@ -132,7 +132,7 @@ class BackupService extends Component
             // Determine the subfolder based on reason
             $subfolder = match ($reason) {
                 'scheduled' => 'scheduled',
-                'before_import' => 'imports',
+                'before_import', 'before_php_import' => 'imports',
                 'before_cleanup' => 'maintenance',
                 'before_clear' => 'maintenance',
                 'manual' => 'manual',
@@ -1251,6 +1251,7 @@ class BackupService extends Component
         return match ($reason) {
             'manual' => Craft::t('translation-manager', 'Manual'),
             'before_import' => Craft::t('translation-manager', 'Before Import'),
+            'before_php_import' => Craft::t('translation-manager', 'Before PHP Import'),
             'before_restore' => Craft::t('translation-manager', 'Before Restore'),
             'scheduled' => Craft::t('translation-manager', 'Scheduled'),
             'before_clear_all' => Craft::t('translation-manager', 'Before Clear All'),

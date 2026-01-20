@@ -108,6 +108,11 @@ class PhpImportController extends Controller
         $settings = TranslationManager::getInstance()->getSettings();
         $sourceLanguage = $settings->sourceLanguage;
 
+        // Create backup before import if enabled
+        if ($settings->backupEnabled && $settings->backupOnImport) {
+            TranslationManager::getInstance()->backup->createBackup('before_php_import');
+        }
+
         // Get ALL unique site languages (like scan does)
         $allLanguages = TranslationManager::getInstance()->getUniqueLanguages();
 
