@@ -5,7 +5,7 @@
  * Event listener for capturing missing translations at runtime
  *
  * @link      https://lindemannrock.com
- * @copyright Copyright (c) 2025 LindemannRock
+ * @copyright Copyright (c) 2026 LindemannRock
  */
 
 namespace lindemannrock\translationmanager\listeners;

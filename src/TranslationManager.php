@@ -619,8 +619,6 @@ class TranslationManager extends Plugin
             MessageSource::EVENT_MISSING_TRANSLATION,
             [MissingTranslationListener::class, 'handle']
         );
-
-        Craft::info('Missing translation listener registered', 'translation-manager');
     }
 
     /**

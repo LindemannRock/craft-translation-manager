@@ -1038,39 +1038,40 @@ class TranslationsService extends Component
     {
         $settings = TranslationManager::getInstance()->getSettings();
         $basePath = $settings->getExportPath();
-        
+
         // Get actual site languages dynamically
         $sites = TranslationManager::getInstance()->getAllowedSites();
         foreach ($sites as $site) {
             $file = $basePath . '/' . $site->language . '/formie.php';
             if (file_exists($file)) {
                 @unlink($file);
-                $this->logInfo("Deleted stale Formie file", ['file' => $file]);
+                $this->logInfo("Deleted Formie translation file", ['file' => $file]);
             }
         }
     }
-    
+
     /**
-     * Delete site translation files
+     * Delete site translation files for all enabled categories and all site languages
      */
     private function deleteSiteTranslationFiles(): void
     {
         $settings = TranslationManager::getInstance()->getSettings();
         $basePath = $settings->getExportPath();
-        $category = $settings->translationCategory;
-        $filename = $category . '.php';
-        
-        $enFile = $basePath . '/en/' . $filename;
-        $arFile = $basePath . '/ar/' . $filename;
-        
-        if (file_exists($enFile)) {
-            @unlink($enFile);
-            $this->logInfo("Deleted site English translation file", ['file' => $enFile]);
-        }
-        
-        if (file_exists($arFile)) {
-            @unlink($arFile);
-            $this->logInfo("Deleted site Arabic translation file", ['file' => $arFile]);
+
+        // Get all enabled categories
+        $categories = $settings->getEnabledCategories();
+
+        // Get actual site languages dynamically
+        $sites = TranslationManager::getInstance()->getAllowedSites();
+
+        foreach ($sites as $site) {
+            foreach ($categories as $category) {
+                $file = $basePath . '/' . $site->language . '/' . $category . '.php';
+                if (file_exists($file)) {
+                    @unlink($file);
+                    $this->logInfo("Deleted site translation file", ['file' => $file, 'category' => $category]);
+                }
+            }
         }
     }
 

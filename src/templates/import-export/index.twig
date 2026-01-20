@@ -165,6 +165,77 @@
             </form>
         </div>
     </div>
+
+    {% if craft.app.config.general.devMode %}
+    <hr>
+
+    <div class="field">
+        <div class="heading">
+            <label>{{ "Import from PHP Files"|t('translation-manager') }}</label>
+            <span class="info">{{ "Only available in devMode"|t('translation-manager') }}</span>
+            <div class="instructions">
+                <p>{{ "Import existing translations from PHP files in your translations folder"|t('translation-manager') }}</p>
+            </div>
+        </div>
+        <div class="input">
+            <div id="php-file-input-section">
+                <div class="flex" style="gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+                    <div>
+                        {{ forms.selectField({
+                            label: "PHP File"|t('translation-manager'),
+                            id: 'phpFile',
+                            name: 'phpFile',
+                            options: [{value: '', label: 'Loading...'|t('translation-manager')}],
+                            value: ''
+                        }) }}
+                    </div>
+                    <div>
+                        {{ forms.selectField({
+                            label: "Import as Language"|t('translation-manager'),
+                            id: 'phpLanguage',
+                            name: 'phpLanguage',
+                            options: [{value: '', label: 'Select file first'|t('translation-manager')}],
+                            value: ''
+                        }) }}
+                    </div>
+                    <div>
+                        {{ forms.selectField({
+                            label: "Import as Category"|t('translation-manager'),
+                            id: 'phpCategory',
+                            name: 'phpCategory',
+                            options: [{value: '', label: 'Select file first'|t('translation-manager')}],
+                            value: ''
+                        }) }}
+                    </div>
+                    <div style="padding-bottom: 14px;">
+                        <button type="button" class="btn secondary" id="php-preview-btn" disabled>
+                            {{ "Preview"|t('translation-manager') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="php-preview-section" style="margin-top: 20px; display: none;">
+                <h3>{{ "Import Preview"|t('translation-manager') }}</h3>
+                <div id="php-preview-summary" style="margin-bottom: 12px; padding: 12px; background: #f3f4f6; border-radius: 4px;"></div>
+                <div id="php-preview-content" style="max-height: 400px; overflow-y: auto;"></div>
+                <div style="margin-top: 12px;">
+                    <button type="button" class="btn submit" id="php-confirm-import-btn">
+                        {{ "Confirm and Import"|t('translation-manager') }}
+                    </button>
+                    <button type="button" class="btn" id="php-cancel-btn">
+                        {{ "Cancel"|t('translation-manager') }}
+                    </button>
+                </div>
+            </div>
+
+            <div id="php-import-results" style="margin-top: 20px; display: none;">
+                <div id="php-import-success" class="success" style="display: none;"></div>
+                <div id="php-import-error" class="error" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
     {% endif %}
 </div>
 
@@ -1247,4 +1318,327 @@
             window.importData = null;
         }
     });
+
+    // ========================================
+    // PHP FILE IMPORT FUNCTIONALITY
+    // ========================================
+
+    let phpFiles = {};
+    let phpPreviewData = null;
+    window.phpImportData = []; // Store all items for import
+
+    // Load available PHP files on page load
+    async function loadPhpFiles() {
+        try {
+            const response = await fetch('{{ actionUrl('translation-manager/php-import/get-files') }}', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                phpFiles = data.files;
+                updatePhpFileDropdown();
+            } else {
+                console.error('Failed to load PHP files');
+            }
+        } catch (error) {
+            console.error('Error loading PHP files:', error);
+        }
+    }
+
+    function updatePhpFileDropdown() {
+        const select = document.getElementById('phpFile');
+        if (!select) return;
+
+        let html = '<option value="">{{ "Select a file"|t('translation-manager') }}</option>';
+
+        for (const [language, files] of Object.entries(phpFiles)) {
+            html += `<optgroup label="${language}">`;
+            for (const [filePath, fileInfo] of Object.entries(files)) {
+                html += `<option value="${filePath}" data-language="${fileInfo.language}" data-category="${fileInfo.category}">${fileInfo.label}</option>`;
+            }
+            html += '</optgroup>';
+        }
+
+        if (Object.keys(phpFiles).length === 0) {
+            html = '<option value="">{{ "No PHP files found in translations folder"|t('translation-manager') }}</option>';
+        }
+
+        select.innerHTML = html;
+    }
+
+    // Handle PHP file selection
+    document.getElementById('phpFile')?.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const languageSelect = document.getElementById('phpLanguage');
+        const categorySelect = document.getElementById('phpCategory');
+        const previewBtn = document.getElementById('php-preview-btn');
+
+        if (this.value && selectedOption) {
+            const language = selectedOption.dataset.language || '';
+            const category = selectedOption.dataset.category || '';
+
+            // Update language dropdown with all site languages
+            let languageHtml = '';
+            const allSiteLanguages = {{ craft.app.sites.allSites|map(s => s.language)|unique|json_encode|raw }};
+            allSiteLanguages.forEach(lang => {
+                const selected = lang === language ? 'selected' : '';
+                languageHtml += `<option value="${lang}" ${selected}>${lang}</option>`;
+            });
+            languageSelect.innerHTML = languageHtml;
+
+            // Update category dropdown
+            const enabledCategories = {{ settings.getEnabledCategories()|json_encode|raw }};
+            let categoryHtml = '';
+            enabledCategories.forEach(cat => {
+                const selected = cat === category ? 'selected' : '';
+                categoryHtml += `<option value="${cat}" ${selected}>${cat}</option>`;
+            });
+            categorySelect.innerHTML = categoryHtml;
+
+            previewBtn.disabled = false;
+        } else {
+            languageSelect.innerHTML = '<option value="">{{ "Select file first"|t('translation-manager') }}</option>';
+            categorySelect.innerHTML = '<option value="">{{ "Select file first"|t('translation-manager') }}</option>';
+            previewBtn.disabled = true;
+        }
+
+        // Hide preview section when file changes
+        document.getElementById('php-preview-section').style.display = 'none';
+        phpPreviewData = null;
+    });
+
+    // Handle PHP preview button
+    document.getElementById('php-preview-btn')?.addEventListener('click', async function() {
+        const file = document.getElementById('phpFile').value;
+        const language = document.getElementById('phpLanguage').value;
+        const category = document.getElementById('phpCategory').value;
+
+        if (!file || !language || !category) {
+            Craft.cp.displayError('Please select a file, language, and category');
+            return;
+        }
+
+        this.classList.add('loading');
+        this.disabled = true;
+
+        try {
+            const response = await fetch('{{ actionUrl('translation-manager/php-import/preview') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    file,
+                    language,
+                    category,
+                    '{{ craft.app.config.general.csrfTokenName }}': '{{ craft.app.request.csrfToken }}'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                phpPreviewData = { ...data, language, category };
+                showPhpPreview(data);
+            } else {
+                Craft.cp.displayError(data.error || 'Failed to preview file');
+            }
+        } catch (error) {
+            Craft.cp.displayError('Error previewing file: ' + error.message);
+        } finally {
+            this.classList.remove('loading');
+            this.disabled = false;
+        }
+    });
+
+    function showPhpPreview(data) {
+        const previewSection = document.getElementById('php-preview-section');
+        const summaryDiv = document.getElementById('php-preview-summary');
+        const contentDiv = document.getElementById('php-preview-content');
+
+        // Clear and rebuild items array
+        window.phpImportData = [];
+        let index = 0;
+
+        // Summary
+        let summaryHtml = `<p><strong>{{ "Total entries:"|t('translation-manager') }}</strong> ${data.counts.new + data.counts.existing + data.counts.unchanged}</p>`;
+        if (data.counts.new > 0) {
+            summaryHtml += `<p><span class="success">{{ "New translations:"|t('translation-manager') }}</span> ${data.counts.new}</p>`;
+        }
+        if (data.counts.existing > 0) {
+            summaryHtml += `<p><span style="color: #E67E22;">{{ "Will update:"|t('translation-manager') }}</span> ${data.counts.existing}</p>`;
+        }
+        if (data.counts.unchanged > 0) {
+            summaryHtml += `<p><span class="light">{{ "Unchanged (will skip):"|t('translation-manager') }}</span> ${data.counts.unchanged}</p>`;
+        }
+        summaryDiv.innerHTML = summaryHtml;
+
+        // Table
+        let tableHtml = `
+            <table class="data fullwidth">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;"><input type="checkbox" id="php-select-all" checked></th>
+                        <th>{{ "Translation Key"|t('translation-manager') }}</th>
+                        <th>{{ "Value"|t('translation-manager') }}</th>
+                        <th>{{ "Current Value"|t('translation-manager') }}</th>
+                        <th>{{ "Action"|t('translation-manager') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        // New translations
+        for (const [key, item] of Object.entries(data.new)) {
+            window.phpImportData.push({ key: key, value: item.value, isNew: true });
+            tableHtml += `
+                <tr>
+                    <td><input type="checkbox" class="php-import-checkbox" data-index="${index}" checked></td>
+                    <td>${escapeHtml(key)}</td>
+                    <td>${escapeHtml(item.value)}</td>
+                    <td><span class="light">—</span></td>
+                    <td><span class="success">{{ "New"|t('translation-manager') }}</span></td>
+                </tr>
+            `;
+            index++;
+        }
+
+        // Existing (will update)
+        for (const [key, item] of Object.entries(data.existing)) {
+            window.phpImportData.push({ key: key, value: item.newValue, isNew: false });
+            tableHtml += `
+                <tr style="background-color: #FEF3E2;">
+                    <td><input type="checkbox" class="php-import-checkbox" data-index="${index}" checked></td>
+                    <td>${escapeHtml(key)}</td>
+                    <td>${escapeHtml(item.newValue)}</td>
+                    <td>${escapeHtml(item.oldValue) || '<span class="light">{{ "Empty"|t('translation-manager') }}</span>'}</td>
+                    <td><span style="color: #E67E22;">{{ "Update"|t('translation-manager') }}</span></td>
+                </tr>
+            `;
+            index++;
+        }
+
+        // Unchanged (not added to window.phpImportData - they can't be selected)
+        for (const [key, item] of Object.entries(data.unchanged)) {
+            tableHtml += `
+                <tr class="light">
+                    <td><input type="checkbox" class="php-import-checkbox" disabled></td>
+                    <td>${escapeHtml(key)}</td>
+                    <td>${escapeHtml(item.value)}</td>
+                    <td>${escapeHtml(item.value)}</td>
+                    <td><span class="light">{{ "Skip"|t('translation-manager') }}</span></td>
+                </tr>
+            `;
+        }
+
+        tableHtml += '</tbody></table>';
+        contentDiv.innerHTML = tableHtml;
+
+        // Select all checkbox handler
+        document.getElementById('php-select-all')?.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.php-import-checkbox:not(:disabled)');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+
+        previewSection.style.display = 'block';
+    }
+
+    // Handle PHP import button
+    document.getElementById('php-confirm-import-btn')?.addEventListener('click', async function() {
+        if (!phpPreviewData) {
+            Craft.cp.displayError('No preview data available');
+            return;
+        }
+
+        const checkboxes = document.querySelectorAll('.php-import-checkbox:checked:not(:disabled)');
+        if (checkboxes.length === 0) {
+            Craft.cp.displayError('{{ "No translations selected"|t('translation-manager') }}');
+            return;
+        }
+
+        // Collect selected items from the stored array using indices
+        const translations = [];
+        checkboxes.forEach(cb => {
+            const idx = parseInt(cb.dataset.index, 10);
+            if (!isNaN(idx) && window.phpImportData[idx]) {
+                translations.push(window.phpImportData[idx]);
+            }
+        });
+
+        this.classList.add('loading');
+        this.disabled = true;
+
+        try {
+            const response = await fetch('{{ actionUrl('translation-manager/php-import/import') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    translations: translations,
+                    language: phpPreviewData.language,
+                    category: phpPreviewData.category,
+                    '{{ craft.app.config.general.csrfTokenName }}': '{{ craft.app.request.csrfToken }}'
+                })
+            });
+
+            const data = await response.json();
+
+            const resultsDiv = document.getElementById('php-import-results');
+            const successDiv = document.getElementById('php-import-success');
+            const errorDiv = document.getElementById('php-import-error');
+
+            resultsDiv.style.display = 'block';
+
+            if (data.success) {
+                successDiv.textContent = data.message;
+                successDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+
+                // Hide preview
+                document.getElementById('php-preview-section').style.display = 'none';
+                phpPreviewData = null;
+                window.phpImportData = [];
+
+                // Reset file selection
+                document.getElementById('phpFile').value = '';
+                document.getElementById('phpLanguage').innerHTML = '<option value="">{{ "Select file first"|t('translation-manager') }}</option>';
+                document.getElementById('phpCategory').innerHTML = '<option value="">{{ "Select file first"|t('translation-manager') }}</option>';
+                document.getElementById('php-preview-btn').disabled = true;
+
+                Craft.cp.displayNotice(data.message);
+            } else {
+                errorDiv.textContent = data.error || 'Import failed';
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+            }
+        } catch (error) {
+            Craft.cp.displayError('Error importing: ' + error.message);
+        } finally {
+            this.classList.remove('loading');
+            this.disabled = false;
+        }
+    });
+
+    // Handle PHP cancel button
+    document.getElementById('php-cancel-btn')?.addEventListener('click', function() {
+        document.getElementById('php-preview-section').style.display = 'none';
+        phpPreviewData = null;
+        window.phpImportData = [];
+    });
+
+    // Load PHP files on page load
+    loadPhpFiles();
 {% endjs %}

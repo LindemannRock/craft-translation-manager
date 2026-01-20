@@ -72,6 +72,7 @@ Translation Manager was created to solve critical gaps in Craft CMS multi-langua
 - **Import/Export Functionality**:
   - CSV export with current filters and Type column
   - CSV import with preview and malicious content detection
+  - PHP file import for client onboarding (devMode only)
   - PHP translation file generation for production use
   - Protection against CSV injection attacks
   - Import history tracking with backup links
@@ -540,6 +541,50 @@ Translation Key,Translation,Category,Type,Context,Status,Language
 - Shows detailed results with counts
 - Processes large imports in batches (50 per batch) to prevent timeouts
 - Compatible with Servd's temporary filesystem for file uploads
+
+### PHP File Import (devMode Only)
+
+Import existing PHP translation files directly into the database. This feature is designed for **client onboarding scenarios** where you need to migrate existing static translation files to Translation Manager.
+
+**When to Use**:
+- Onboarding a client with existing PHP translation files
+- Migrating from static file-based translations to database-managed translations
+- Importing translations from another Craft site
+
+**Access**: Navigate to **Translation Manager → Import/Export** (only visible in devMode)
+
+**Workflow**:
+
+1. **Select PHP File**: Choose from files in your configured translations folder
+2. **Choose Language**: Select which language to import as (all site languages shown)
+3. **Choose Category**: Select the translation category
+4. **Preview**: Review new vs existing translations
+5. **Import**: Selected translations are imported
+
+**Multi-Language Behavior**:
+
+When importing translations for one language (e.g., Arabic), the plugin automatically:
+
+- Creates records for **ALL site languages** (like the template scanner)
+- Source language records get the key as translation (status: translated)
+- Target language records get the imported value
+- Other languages get empty translation (status: pending)
+
+This ensures consistency - when you later import English translations, they update existing records rather than creating duplicates.
+
+**Example**:
+
+Importing `ar/lr.php` with Arabic translations:
+- `ar`: Gets Arabic translation values from file
+- `en`: Key = translation (auto-filled as source language)
+- `en-US`: Key = translation (auto-filled as source language variant)
+- `fr`: Empty translation, pending status
+
+**Security**:
+- Only available in devMode (not on production/staging)
+- Files must be within configured export path
+- Requires `importTranslations` permission
+- Path traversal protection
 
 ### PHP File Export
 
