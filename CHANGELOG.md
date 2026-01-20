@@ -1,5 +1,21 @@
 # Changelog
 
+## [5.17.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.16.0...v5.17.0) (2026-01-20)
+
+
+### Features
+
+* add PHP file import with multi-language record creation ([a6757fc](https://github.com/LindemannRock/craft-translation-manager/commit/a6757fcf5a33cef5549898b1ca1138ad1de1bff8))
+* add runtime auto-capture for missing translations ([412edaa](https://github.com/LindemannRock/craft-translation-manager/commit/412edaaebb6c7cbf4209cc440d0e17a5b042b61d))
+* implement AST-based template scanning for translation detection ([59d153f](https://github.com/LindemannRock/craft-translation-manager/commit/59d153f48887ad026722c9531835bef482b53cd8))
+* implement locale mapping for translations to reduce duplication and enhance export functionality ([b42edef](https://github.com/LindemannRock/craft-translation-manager/commit/b42edef65a279f432996b66cd195a60ba0865a10))
+* update export form and PHP import handling for improved language and category selection ([37a95d1](https://github.com/LindemannRock/craft-translation-manager/commit/37a95d18ad43548f1eb24f0d268e4f86ff7f0025))
+
+
+### Bug Fixes
+
+* update translation category in example CSV for consistency ([dad1673](https://github.com/LindemannRock/craft-translation-manager/commit/dad167386d3c7f4eb66bef5be1c0a0d3348d3bf4))
+
 ## [5.16.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.15.1...v5.16.0) (2026-01-16)
 
 
