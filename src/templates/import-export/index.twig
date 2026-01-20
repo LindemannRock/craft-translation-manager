@@ -1404,10 +1404,25 @@
             });
             languageSelect.innerHTML = languageHtml;
 
-            // Update category dropdown
+            // Update category dropdown - include enabled categories + formie + detected category
             const enabledCategories = {{ settings.getEnabledCategories()|json_encode|raw }};
+            const formieEnabled = {{ settings.enableFormieIntegration ? 'true' : 'false' }};
+
+            // Build list of all available categories
+            let allCategories = [...enabledCategories];
+
+            // Add 'formie' if Formie integration is enabled and not already in list
+            if (formieEnabled && !allCategories.includes('formie')) {
+                allCategories.push('formie');
+            }
+
+            // Add the detected category from filename if not already in list
+            if (category && !allCategories.includes(category)) {
+                allCategories.push(category);
+            }
+
             let categoryHtml = '';
-            enabledCategories.forEach(cat => {
+            allCategories.forEach(cat => {
                 const selected = cat === category ? 'selected' : '';
                 categoryHtml += `<option value="${cat}" ${selected}>${cat}</option>`;
             });

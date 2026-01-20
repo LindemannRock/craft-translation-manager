@@ -163,7 +163,7 @@ class PhpImportController extends Controller
                         $record->translationKey = $key;
                         $record->language = $language;
                         $record->category = $category;
-                        $record->context = 'site.php-import';
+                        $record->context = ($category === 'formie') ? 'formie.php-import' : 'site.php-import';
                         $record->siteId = $this->getSiteIdForLanguage($language);
                         $record->usageCount = 1;
                         $record->dateCreated = Db::prepareDateForDb(new \DateTime());
