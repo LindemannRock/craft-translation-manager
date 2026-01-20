@@ -54,7 +54,7 @@ class PhpTranslationsHelper
                 $groupKey = $language;
                 $result[$groupKey][$file] = [
                     'value' => $file,
-                    'label' => "{$category}.php",
+                    'label' => "{$language}/{$category}.php",
                     'language' => $language,
                     'category' => $category,
                 ];

@@ -39,52 +39,54 @@
     <h2>{{ "Export Translations"|t('translation-manager') }}</h2>
     <p class="light" style="margin-bottom: 16px;">{{ "Download translations as a CSV file"|t('translation-manager') }}</p>
 
-    <form method="post" action="{{ actionUrl('translation-manager/export') }}" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+    <form method="post" action="{{ actionUrl('translation-manager/export') }}">
         {{ csrfInput() }}
 
-        {% set languageOptions = [{value: '', label: 'All Languages'|t('translation-manager')}] %}
-        {% for lang in uniqueLanguages %}
-            {% set languageOptions = languageOptions|merge([{value: lang, label: lang|upper}]) %}
-        {% endfor %}
-        {{ forms.select({
-            id: 'exportLanguage',
-            name: 'language',
-            options: languageOptions,
-            value: ''
-        }) }}
-
-        {% set categoryOptions = [{value: '', label: 'All Categories'|t('translation-manager')}] %}
-        {% if settings.enableFormieIntegration %}
-            {% set categoryOptions = categoryOptions|merge([{value: 'formie', label: craft.translationManager.getFormiePluginName()}]) %}
-        {% endif %}
-        {% if settings.enableSiteTranslations %}
-            {% for category in settings.getEnabledCategories() %}
-                {% set categoryOptions = categoryOptions|merge([{value: category, label: category|title}]) %}
+        <div class="flex" style="gap: 12px; align-items: center; flex-wrap: wrap;">
+            {% set languageOptions = [{value: '', label: 'All Languages'|t('translation-manager')}] %}
+            {% for lang in uniqueLanguages %}
+                {% set languageOptions = languageOptions|merge([{value: lang, label: lang|upper}]) %}
             {% endfor %}
-        {% endif %}
-        {{ forms.select({
-            id: 'exportCategory',
-            name: 'category',
-            options: categoryOptions,
-            value: ''
-        }) }}
+            {{ forms.select({
+                id: 'exportLanguage',
+                name: 'language',
+                options: languageOptions,
+                value: ''
+            }) }}
 
-        {% set statusOptions = [
-            {value: '', label: 'All Statuses'|t('translation-manager')},
-            {value: 'pending', label: 'Pending'|t('translation-manager')},
-            {value: 'translated', label: 'Translated'|t('translation-manager')},
-            {value: 'unused', label: 'Unused'|t('translation-manager')},
-        ] %}
-        {{ forms.select({
-            id: 'exportStatus',
-            name: 'status',
-            options: statusOptions,
-            value: ''
-        }) }}
+            {% set categoryOptions = [{value: '', label: 'All Categories'|t('translation-manager')}] %}
+            {% if settings.enableFormieIntegration %}
+                {% set categoryOptions = categoryOptions|merge([{value: 'formie', label: craft.translationManager.getFormiePluginName()}]) %}
+            {% endif %}
+            {% if settings.enableSiteTranslations %}
+                {% for category in settings.getEnabledCategories() %}
+                    {% set categoryOptions = categoryOptions|merge([{value: category, label: category|title}]) %}
+                {% endfor %}
+            {% endif %}
+            {{ forms.select({
+                id: 'exportCategory',
+                name: 'category',
+                options: categoryOptions,
+                value: ''
+            }) }}
 
-        <button type="submit" class="btn secondary">
-            {{ "Export CSV"|t('translation-manager') }}
-        </button>
+            {% set statusOptions = [
+                {value: '', label: 'All Statuses'|t('translation-manager')},
+                {value: 'pending', label: 'Pending'|t('translation-manager')},
+                {value: 'translated', label: 'Translated'|t('translation-manager')},
+                {value: 'unused', label: 'Unused'|t('translation-manager')},
+            ] %}
+            {{ forms.select({
+                id: 'exportStatus',
+                name: 'status',
+                options: statusOptions,
+                value: ''
+            }) }}
+
+            <button type="submit" class="btn secondary">
+                {{ "Export CSV"|t('translation-manager') }}
+            </button>
+        </div>
     </form>
 
     <hr>
@@ -97,18 +99,21 @@
         <h4>{{ "CSV Format"|t('translation-manager') }}</h4>
         <p><strong>{{ "Required columns:"|t('translation-manager') }}</strong></p>
         <ul>
-            <li>{{ "English column"|t('translation-manager') }} - {{ "Accepts: English, En, EN, English Text"|t('translation-manager') }}</li>
+            <li><strong>Translation Key</strong> - {{ "The source text (accepts: Translation Key, English, Source)"|t('translation-manager') }}</li>
         </ul>
         <p><strong>{{ "Optional columns:"|t('translation-manager') }}</strong></p>
         <ul>
-            <li>{{ "Arabic column"|t('translation-manager') }} - {{ "Accepts: Arabic, Ar, AR, Arabic Translation"|t('translation-manager') }}</li>
-            <li>{{ "Context"|t('translation-manager') }} - {{ "Translation context (defaults to 'site')"|t('translation-manager') }}</li>
+            <li><strong>Translation</strong> - {{ "The translated text"|t('translation-manager') }}</li>
+            <li><strong>Language</strong> - {{ "Target language code (e.g., ar, fr, en-US)"|t('translation-manager') }}</li>
+            <li><strong>Category</strong> - {{ "Translation category (e.g., lindemannrock, formie)"|t('translation-manager') }}</li>
+            <li><strong>Context</strong> - {{ "Translation context (defaults to 'site')"|t('translation-manager') }}</li>
+            <li><strong>Status</strong> - {{ "pending, translated, or unused"|t('translation-manager') }}</li>
         </ul>
         <p><strong>{{ "Example:"|t('translation-manager') }}</strong></p>
-        <pre style="background: #f3f4f6; padding: 8px; border-radius: 4px; font-size: 12px;">EN,AR,Context
-"Welcome","مرحباً","site"
-"Contact Us","اتصل بنا","site"
-"Submit","","formie"</pre>
+        <pre style="background: #f3f4f6; padding: 8px; border-radius: 4px; font-size: 12px;">Translation Key,Translation,Language,Category
+"Welcome","مرحباً","ar","lindemannrock"
+"Contact Us","اتصل بنا","ar","lindemannrock"
+"Submit","Soumettre","fr","lindemannrock"</pre>
     {% endset %}
 
     <div class="field">
@@ -116,7 +121,7 @@
             <label>{{ "Import from CSV"|t('translation-manager') }}</label>
             <span class="info">{{ csvFormatTip|raw }}</span>
             <div class="instructions">
-                <p>{{ "Import translations from a CSV file"|t('translation-manager') }}</p>
+                <p style="margin-bottom: 12px;">{{ "Import translations from a CSV file"|t('translation-manager') }}</p>
             </div>
         </div>
         <div class="input">
@@ -125,19 +130,15 @@
                 <input type="hidden" name="action" value="translation-manager/import">
 
                 <div id="file-input-section">
-                    <div class="flex" style="gap: 12px; align-items: flex-start;">
-                        <div class="flex-grow">
-                            <input type="file" name="csvFile" id="csv-file-input" accept=".csv,.txt" />
-                        </div>
-                        <div>
-                            <button type="button" class="btn secondary" id="preview-btn">
-                                {{ "Preview"|t('translation-manager') }}
-                            </button>
-                            <button type="submit" class="btn submit" id="import-btn" style="display: none;">
-                                {{ "Import"|t('translation-manager') }}
-                            </button>
-                        </div>
+                    <div style="margin-bottom: 12px;">
+                        <input type="file" name="csvFile" id="csv-file-input" accept=".csv,.txt" />
                     </div>
+                    <button type="button" class="btn secondary" id="preview-btn">
+                        {{ "Preview"|t('translation-manager') }}
+                    </button>
+                    <button type="submit" class="btn secondary" id="import-btn" style="display: none;">
+                        {{ "Import"|t('translation-manager') }}
+                    </button>
                 </div>
 
                 <div id="preview-section" style="margin-top: 20px; display: none;">
@@ -169,49 +170,60 @@
     {% if craft.app.config.general.devMode %}
     <hr>
 
+    {% set phpFormatTip %}
+        <h4>{{ "PHP File Import"|t('translation-manager') }}</h4>
+        <p><strong>{{ "For client onboarding:"|t('translation-manager') }}</strong></p>
+        <ul>
+            <li>{{ "Import existing PHP translation files into the database"|t('translation-manager') }}</li>
+            <li>{{ "Files must be in your configured translations folder"|t('translation-manager') }}</li>
+        </ul>
+        <p><strong>{{ "Expected file structure:"|t('translation-manager') }}</strong></p>
+        <pre style="background: #f3f4f6; padding: 8px; border-radius: 4px; font-size: 12px;">translations/
+├── en/
+│   └── lindemannrock.php
+└── ar/
+    └── lindemannrock.php</pre>
+        <p><strong>{{ "Multi-language behavior:"|t('translation-manager') }}</strong></p>
+        <ul>
+            <li>{{ "Creates records for ALL site languages"|t('translation-manager') }}</li>
+            <li>{{ "Source language auto-filled with key as translation"|t('translation-manager') }}</li>
+            <li>{{ "Other languages set to pending"|t('translation-manager') }}</li>
+        </ul>
+        <p class="light" style="margin-top: 8px;">{{ "Only available in devMode"|t('translation-manager') }}</p>
+    {% endset %}
+
     <div class="field">
         <div class="heading">
             <label>{{ "Import from PHP Files"|t('translation-manager') }}</label>
-            <span class="info">{{ "Only available in devMode"|t('translation-manager') }}</span>
+            <span class="info">{{ phpFormatTip|raw }}</span>
             <div class="instructions">
-                <p>{{ "Import existing translations from PHP files in your translations folder"|t('translation-manager') }}</p>
+                <p style="margin-bottom: 12px;">{{ "Import existing translations from PHP files in your translations folder"|t('translation-manager') }}</p>
             </div>
         </div>
         <div class="input">
             <div id="php-file-input-section">
-                <div class="flex" style="gap: 12px; align-items: flex-end; flex-wrap: wrap;">
-                    <div>
-                        {{ forms.selectField({
-                            label: "PHP File"|t('translation-manager'),
-                            id: 'phpFile',
-                            name: 'phpFile',
-                            options: [{value: '', label: 'Loading...'|t('translation-manager')}],
-                            value: ''
-                        }) }}
-                    </div>
-                    <div>
-                        {{ forms.selectField({
-                            label: "Import as Language"|t('translation-manager'),
-                            id: 'phpLanguage',
-                            name: 'phpLanguage',
-                            options: [{value: '', label: 'Select file first'|t('translation-manager')}],
-                            value: ''
-                        }) }}
-                    </div>
-                    <div>
-                        {{ forms.selectField({
-                            label: "Import as Category"|t('translation-manager'),
-                            id: 'phpCategory',
-                            name: 'phpCategory',
-                            options: [{value: '', label: 'Select file first'|t('translation-manager')}],
-                            value: ''
-                        }) }}
-                    </div>
-                    <div style="padding-bottom: 14px;">
-                        <button type="button" class="btn secondary" id="php-preview-btn" disabled>
-                            {{ "Preview"|t('translation-manager') }}
-                        </button>
-                    </div>
+                <div class="flex" style="gap: 12px; align-items: center; flex-wrap: wrap;">
+                    {{ forms.select({
+                        id: 'phpFile',
+                        name: 'phpFile',
+                        options: [{value: '', label: 'Select a file'|t('translation-manager')}],
+                        value: ''
+                    }) }}
+                    {{ forms.select({
+                        id: 'phpLanguage',
+                        name: 'phpLanguage',
+                        options: [{value: '', label: 'Select file first'|t('translation-manager')}],
+                        value: ''
+                    }) }}
+                    {{ forms.select({
+                        id: 'phpCategory',
+                        name: 'phpCategory',
+                        options: [{value: '', label: 'Select file first'|t('translation-manager')}],
+                        value: ''
+                    }) }}
+                    <button type="button" class="btn secondary" id="php-preview-btn" disabled>
+                        {{ "Preview"|t('translation-manager') }}
+                    </button>
                 </div>
             </div>
 
@@ -219,7 +231,7 @@
                 <h3>{{ "Import Preview"|t('translation-manager') }}</h3>
                 <div id="php-preview-summary" style="margin-bottom: 12px; padding: 12px; background: #f3f4f6; border-radius: 4px;"></div>
                 <div id="php-preview-content" style="max-height: 400px; overflow-y: auto;"></div>
-                <div style="margin-top: 12px;">
+                <div id="php-preview-buttons" style="margin-top: 12px;">
                     <button type="button" class="btn submit" id="php-confirm-import-btn">
                         {{ "Confirm and Import"|t('translation-manager') }}
                     </button>
@@ -1464,10 +1476,14 @@
         const previewSection = document.getElementById('php-preview-section');
         const summaryDiv = document.getElementById('php-preview-summary');
         const contentDiv = document.getElementById('php-preview-content');
+        const buttonsDiv = document.getElementById('php-preview-buttons');
 
         // Clear and rebuild items array
         window.phpImportData = [];
         let index = 0;
+
+        // Calculate how many will be processed
+        const willProcess = data.counts.new + data.counts.existing;
 
         // Summary
         let summaryHtml = `<p><strong>{{ "Total entries:"|t('translation-manager') }}</strong> ${data.counts.new + data.counts.existing + data.counts.unchanged}</p>`;
@@ -1479,6 +1495,9 @@
         }
         if (data.counts.unchanged > 0) {
             summaryHtml += `<p><span class="light">{{ "Unchanged (will skip):"|t('translation-manager') }}</span> ${data.counts.unchanged}</p>`;
+        }
+        if (willProcess === 0) {
+            summaryHtml += `<p class="warning" style="margin-top: 8px;">{{ "No changes to import. All translations are already up to date."|t('translation-manager') }}</p>`;
         }
         summaryDiv.innerHTML = summaryHtml;
 
@@ -1549,11 +1568,53 @@
             checkboxes.forEach(cb => cb.checked = this.checked);
         });
 
+        // Update buttons based on whether there are changes
+        if (willProcess === 0) {
+            // No changes - show "Select a Different File" button
+            buttonsDiv.innerHTML = `
+                <button type="button" class="btn submit" id="php-select-different-btn">
+                    {{ "Select a Different File"|t('translation-manager') }}
+                </button>
+            `;
+            // Add handler for select different file button
+            document.getElementById('php-select-different-btn')?.addEventListener('click', function() {
+                document.getElementById('php-preview-section').style.display = 'none';
+                document.getElementById('phpFile').value = '';
+                document.getElementById('phpLanguage').innerHTML = '<option value="">{{ "Select file first"|t('translation-manager') }}</option>';
+                document.getElementById('phpCategory').innerHTML = '<option value="">{{ "Select file first"|t('translation-manager') }}</option>';
+                document.getElementById('php-preview-btn').disabled = true;
+                phpPreviewData = null;
+                window.phpImportData = [];
+            });
+        } else {
+            // Has changes - show normal buttons
+            buttonsDiv.innerHTML = `
+                <button type="button" class="btn submit" id="php-confirm-import-btn">
+                    {{ "Confirm and Import"|t('translation-manager') }}
+                </button>
+                <button type="button" class="btn" id="php-cancel-btn">
+                    {{ "Cancel"|t('translation-manager') }}
+                </button>
+            `;
+            // Re-attach event handlers
+            attachPhpImportHandlers();
+        }
+
         previewSection.style.display = 'block';
     }
 
-    // Handle PHP import button
-    document.getElementById('php-confirm-import-btn')?.addEventListener('click', async function() {
+    // Attach PHP import button handlers (called after dynamic button creation)
+    function attachPhpImportHandlers() {
+        document.getElementById('php-confirm-import-btn')?.addEventListener('click', handlePhpConfirmImport);
+        document.getElementById('php-cancel-btn')?.addEventListener('click', function() {
+            document.getElementById('php-preview-section').style.display = 'none';
+            phpPreviewData = null;
+            window.phpImportData = [];
+        });
+    }
+
+    // Handle PHP import - reusable function
+    async function handlePhpConfirmImport() {
         if (!phpPreviewData) {
             Craft.cp.displayError('No preview data available');
             return;
@@ -1574,8 +1635,11 @@
             }
         });
 
-        this.classList.add('loading');
-        this.disabled = true;
+        const btn = document.getElementById('php-confirm-import-btn');
+        if (btn) {
+            btn.classList.add('loading');
+            btn.disabled = true;
+        }
 
         try {
             const response = await fetch('{{ actionUrl('translation-manager/php-import/import') }}', {
@@ -1627,17 +1691,15 @@
         } catch (error) {
             Craft.cp.displayError('Error importing: ' + error.message);
         } finally {
-            this.classList.remove('loading');
-            this.disabled = false;
+            if (btn) {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
         }
-    });
+    }
 
-    // Handle PHP cancel button
-    document.getElementById('php-cancel-btn')?.addEventListener('click', function() {
-        document.getElementById('php-preview-section').style.display = 'none';
-        phpPreviewData = null;
-        window.phpImportData = [];
-    });
+    // Initial attachment for static buttons (will be re-attached dynamically)
+    attachPhpImportHandlers();
 
     // Load PHP files on page load
     loadPhpFiles();
