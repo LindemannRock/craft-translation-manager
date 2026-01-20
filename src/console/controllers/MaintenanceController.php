@@ -123,9 +123,14 @@ class MaintenanceController extends Controller
             }
             
             // Check what would be marked unused
+            // Include both 'site' context and 'runtime' context (from auto-capture)
             $siteTranslations = (new \craft\db\Query())
                 ->from('{{%translationmanager_translations}}')
-                ->where(['like', 'context', 'site%', false])
+                ->where([
+                    'or',
+                    ['like', 'context', 'site%', false],
+                    ['context' => 'runtime'],
+                ])
                 ->andWhere(['!=', 'status', 'unused'])
                 ->all();
                 
@@ -166,7 +171,12 @@ class MaintenanceController extends Controller
         
         switch ($type) {
             case 'site':
-                $query->andWhere(['like', 'context', 'site%', false]);
+                // Include both 'site' context and 'runtime' context (from auto-capture)
+                $query->andWhere([
+                    'or',
+                    ['like', 'context', 'site%', false],
+                    ['context' => 'runtime'],
+                ]);
                 $this->stdout('Cleaning unused site translations...' . PHP_EOL, Console::FG_BLUE);
                 break;
             case 'formie':

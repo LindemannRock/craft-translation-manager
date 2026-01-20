@@ -92,6 +92,11 @@ Translation Manager was created to solve critical gaps in Craft CMS multi-langua
 - **Keyboard Shortcuts**: Ctrl/Cmd+S to save all changes
 - **Debug Tools**: Built-in search debugger for troubleshooting
 - **Twig Code Filtering**: Automatically excludes text containing Twig syntax
+- **Auto-Capture (Runtime)**: Automatically capture missing translations at runtime
+  - Captures translations when `|t()` or `Craft::t()` is called but translation doesn't exist
+  - Works for both template and PHP translations
+  - Optional devMode restriction to avoid production overhead
+  - Complements the template scanner by catching dynamic keys and PHP translations
 
 ## Requirements
 
@@ -201,6 +206,10 @@ return [
     'logLevel' => 'error', // Options: 'debug', 'info', 'warning', 'error'
     // 'backupVolumeUid' => 'abc123-your-volume-uid', // Optional: Set backup volume
 
+    // Auto-Capture (Runtime) - capture missing translations automatically
+    'captureMissingTranslations' => false,     // Enable runtime capture
+    'captureMissingOnlyDevMode' => true,       // Only capture in devMode (recommended)
+
     // Form Exclusion Patterns (for sites with language-specific form duplicates)
     // Patterns are checked against both form HANDLE and TITLE
     'excludeFormHandlePatterns' => [
@@ -209,6 +218,9 @@ return [
     ],
 
     // Multi-environment support
+    'dev' => [
+        // 'captureMissingTranslations' => true, // Uncomment to auto-capture in dev
+    ],
     'production' => [
         'autoExport' => true,
         'backupSchedule' => 'daily',
@@ -245,6 +257,9 @@ Navigate to **Settings → Translation Manager** in the Control Panel to configu
     - Text with Arabic/Chinese/Cyrillic/etc. characters is skipped when source is Latin
     - Supports 50+ languages and 19 script families
 - **Enable Site Translations**: Capture translations using your configured category
+- **Auto-Capture (Runtime)**: Automatically add translations when they're used but don't exist
+  - **Capture Missing Translations**: Enable/disable runtime capture
+  - **Only in devMode**: Restrict capture to devMode only (recommended for performance)
 - **Auto Save**: Enable/disable automatic saving with configurable delay (1-10 seconds)
 - **Enable Translation Suggestions**: Show translation suggestions based on similar existing translations
 

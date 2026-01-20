@@ -46,6 +46,11 @@ return [
             // 'Status',
         ],
 
+        // Auto-Capture (Runtime)
+        // Automatically add translations when they're used but don't exist
+        'captureMissingTranslations' => false,  // Enable runtime capture of missing translations
+        'captureMissingOnlyDevMode' => true,    // Only capture when Craft is in devMode (recommended)
+
         // Formie Integration
         'enableFormieIntegration' => true,
 
@@ -101,6 +106,7 @@ return [
         'logLevel' => 'debug',         // More detailed logging in development
         'autoExport' => false,         // Manual export in dev
         'backupSchedule' => 'manual',  // Manual backups in dev
+        // 'captureMissingTranslations' => true, // Uncomment to auto-capture in dev
     ],
 
     // Staging environment settings

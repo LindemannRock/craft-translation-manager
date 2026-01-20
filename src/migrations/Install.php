@@ -93,6 +93,8 @@ class Install extends Migration
                 'sourceLanguage' => $this->string(10)->notNull()->defaultValue('en'),
                 'enableFormieIntegration' => $this->boolean()->notNull()->defaultValue(true),
                 'enableSiteTranslations' => $this->boolean()->notNull()->defaultValue(true),
+                'captureMissingTranslations' => $this->boolean()->notNull()->defaultValue(false),
+                'captureMissingOnlyDevMode' => $this->boolean()->notNull()->defaultValue(true),
                 'autoExport' => $this->boolean()->notNull()->defaultValue(true),
                 'exportPath' => $this->string()->notNull()->defaultValue('@root/translations'),
                 'itemsPerPage' => $this->integer()->notNull()->defaultValue(100),

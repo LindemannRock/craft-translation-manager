@@ -536,27 +536,37 @@ class TranslationsService extends Component
             ]);
 
             // Get all site translations (not formie) - filter by enabled categories
+            // Include both 'site' context and 'runtime' context (from auto-capture)
             $siteTranslations = (new Query())
                 ->from(TranslationRecord::tableName())
-                ->where(['like', 'context', 'site%', false])
+                ->where([
+                    'or',
+                    ['like', 'context', 'site%', false],
+                    ['context' => 'runtime'],
+                ])
                 ->andWhere(['category' => $categories])
                 ->all();
 
             // Create a map of existing translation keys by category for quick lookup
+            // Group by category -> key -> array of translations (to handle multiple languages)
             $existingKeysByCategory = [];
             foreach ($siteTranslations as $translation) {
                 $cat = $translation['category'];
+                $key = $translation['translationKey'];
                 if (!isset($existingKeysByCategory[$cat])) {
                     $existingKeysByCategory[$cat] = [];
                 }
-                $existingKeysByCategory[$cat][$translation['translationKey']] = $translation;
+                if (!isset($existingKeysByCategory[$cat][$key])) {
+                    $existingKeysByCategory[$cat][$key] = [];
+                }
+                $existingKeysByCategory[$cat][$key][] = $translation;
             }
 
             // First pass: Create new translations found in templates but not in database
             foreach ($foundKeysByCategory as $category => $keys) {
                 foreach ($keys as $key => $data) {
-                    $existing = $existingKeysByCategory[$category][$key] ?? null;
-                    if (!$existing) {
+                    $existingList = $existingKeysByCategory[$category][$key] ?? [];
+                    if (empty($existingList)) {
                         // New translation key found in templates - create database entry with correct category
                         $this->createOrUpdateTranslation($key, 'site', $category);
                         $results['created']++;
@@ -569,6 +579,7 @@ class TranslationsService extends Component
             }
 
             // Second pass: Manage existing translations - check if still used
+            // Process all translations (including all language variants)
             foreach ($siteTranslations as $translation) {
                 $key = $translation['translationKey'];
                 $category = $translation['category'];
@@ -586,22 +597,40 @@ class TranslationsService extends Component
                         $this->logInfo("Template scanner: Marked as unused", [
                             'key' => $key,
                             'category' => $category,
+                            'language' => $translation['language'] ?? 'unknown',
                         ]);
                     }
                 } else {
                     // Translation key found in templates
+                    $updates = [];
+
+                    // Reactivate if unused
                     if ($translation['status'] === 'unused') {
-                        // Reactivate unused translation
-                        $newStatus = $translation['translation'] ? 'translated' : 'pending';
-                        Db::update(TranslationRecord::tableName(),
-                            ['status' => $newStatus],
-                            ['id' => $translation['id']]
-                        );
+                        $updates['status'] = $translation['translation'] ? 'translated' : 'pending';
                         $results['reactivated']++;
                         $this->logWarning("Template scanner: Reactivated", [
                             'key' => $key,
                             'category' => $category,
+                            'language' => $translation['language'] ?? 'unknown',
                         ]);
+                    }
+
+                    // Update context from 'runtime' to actual file path
+                    if ($translation['context'] === 'runtime') {
+                        $fileInfo = $foundKeysByCategory[$category][$key] ?? null;
+                        if ($fileInfo && isset($fileInfo['file'])) {
+                            $updates['context'] = 'site.' . $fileInfo['file'];
+                            $this->logInfo("Template scanner: Updated runtime context", [
+                                'key' => $key,
+                                'language' => $translation['language'] ?? 'unknown',
+                                'newContext' => $updates['context'],
+                            ]);
+                        }
+                    }
+
+                    // Apply updates if any
+                    if (!empty($updates)) {
+                        Db::update(TranslationRecord::tableName(), $updates, ['id' => $translation['id']]);
                     }
                 }
             }

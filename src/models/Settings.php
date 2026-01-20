@@ -74,6 +74,18 @@ class Settings extends Model
     public bool $enableSiteTranslations = true;
 
     /**
+     * @var bool Whether to capture missing translations at runtime
+     * When enabled, translations that don't exist will be automatically added when used
+     */
+    public bool $captureMissingTranslations = false;
+
+    /**
+     * @var bool Whether to only capture missing translations in devMode
+     * Recommended to leave enabled to avoid performance overhead in production
+     */
+    public bool $captureMissingOnlyDevMode = true;
+
+    /**
      * @var bool Whether to automatically export translations when saved
      */
     public bool $autoExport = true;
@@ -717,6 +729,8 @@ class Settings extends Model
             'autoSaveEnabled',
             'backupEnabled',
             'backupOnImport',
+            'captureMissingTranslations',
+            'captureMissingOnlyDevMode',
         ];
     }
 

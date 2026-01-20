@@ -183,6 +183,46 @@
 			</div>
 		</div>
 
+		<hr>
+
+		<h2>{{ "Auto-Capture (Runtime)"|t('translation-manager') }}</h2>
+
+		{{ forms.lightswitchField({
+			label: "Capture Missing Translations"|t('translation-manager'),
+			instructions: "Automatically add translations to the database when they're used but don't exist. Works for both template and PHP translations."|t('translation-manager'),
+			id: 'captureMissingTranslations',
+			name: 'settings[captureMissingTranslations]',
+			on: settings.captureMissingTranslations,
+			toggle: 'capture-missing-settings',
+			disabled: settings.isOverriddenByConfig('captureMissingTranslations'),
+			warning: settings.isOverriddenByConfig('captureMissingTranslations') ?
+				"This is being overridden by the <code>captureMissingTranslations</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+		}) }}
+
+		<div id="capture-missing-settings" class="{{ not settings.captureMissingTranslations ? 'hidden' }}">
+			{{ forms.lightswitchField({
+				label: "Only in devMode"|t('translation-manager'),
+				instructions: "Only capture missing translations when Craft is in devMode. Recommended to avoid performance overhead in production."|t('translation-manager'),
+				id: 'captureMissingOnlyDevMode',
+				name: 'settings[captureMissingOnlyDevMode]',
+				on: settings.captureMissingOnlyDevMode,
+				disabled: settings.isOverriddenByConfig('captureMissingOnlyDevMode'),
+				warning: settings.isOverriddenByConfig('captureMissingOnlyDevMode') ?
+					"This is being overridden by the <code>captureMissingOnlyDevMode</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+			}) }}
+
+			<div class="field">
+				<p class="light">
+					<strong>{{ "How it works:"|t('translation-manager') }}</strong>
+					{{ "When a translation is requested via"|t('translation-manager') }} <code>|t('category')</code> {{ "or"|t('translation-manager') }} <code>Craft::t()</code>{{ ", and it doesn't exist in the database, it will be automatically added as a pending translation."|t('translation-manager') }}
+				</p>
+				<p class="light" style="margin-top: 8px;">
+					<strong>{{ "Note:"|t('translation-manager') }}</strong>
+					{{ "Only translations for your enabled categories will be captured. System categories (app, craft, yii, site) are ignored."|t('translation-manager') }}
+				</p>
+			</div>
+		</div>
+
 		<div class="buttons">
 			<button type="submit" class="btn submit">{{ "Save Settings"|t('translation-manager') }}</button>
 		</div>

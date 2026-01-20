@@ -27,6 +27,7 @@ use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\logginglibrary\LoggingLibrary;
 
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\listeners\MissingTranslationListener;
 use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\translationmanager\services\BackupService;
 use lindemannrock\translationmanager\services\ExportService;
@@ -36,6 +37,7 @@ use lindemannrock\translationmanager\services\TranslationsService;
 use lindemannrock\translationmanager\utilities\TranslationStatsUtility;
 use lindemannrock\translationmanager\variables\TranslationManagerVariable;
 use yii\base\Event;
+use yii\i18n\MessageSource;
 
 /**
  * Translation Manager plugin
@@ -258,6 +260,11 @@ class TranslationManager extends Plugin
         // Register message source for translation category
         if ($this->getSettings()->enableSiteTranslations) {
             $this->registerFileMessageSource(); // Use file-based translations
+        }
+
+        // Register missing translation capture (runtime auto-capture)
+        if ($this->getSettings()->captureMissingTranslations) {
+            $this->registerMissingTranslationListener();
         }
 
         // Trigger integration service initialization (lightweight event handler registration)
@@ -602,6 +609,19 @@ class TranslationManager extends Plugin
         }
     }
 
+    /**
+     * Register listener for missing translations (runtime auto-capture)
+     */
+    private function registerMissingTranslationListener(): void
+    {
+        Event::on(
+            MessageSource::class,
+            MessageSource::EVENT_MISSING_TRANSLATION,
+            [MissingTranslationListener::class, 'handle']
+        );
+
+        Craft::info('Missing translation listener registered', 'translation-manager');
+    }
 
     /**
      * Schedule backup job if enabled
