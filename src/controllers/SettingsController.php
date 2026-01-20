@@ -129,6 +129,42 @@ class SettingsController extends Controller
     }
 
     /**
+     * Locale mapping settings page
+     */
+    public function actionLocaleMapping(): Response
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+
+        return $this->renderTemplate('translation-manager/settings/locale-mapping', [
+            'settings' => $settings,
+        ]);
+    }
+
+    /**
+     * Integrations settings page
+     */
+    public function actionIntegrations(): Response
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+
+        return $this->renderTemplate('translation-manager/settings/integrations', [
+            'settings' => $settings,
+        ]);
+    }
+
+    /**
+     * Auto-capture settings page
+     */
+    public function actionCapture(): Response
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+
+        return $this->renderTemplate('translation-manager/settings/capture', [
+            'settings' => $settings,
+        ]);
+    }
+
+    /**
      * Save settings
      */
     public function actionSave(): ?Response

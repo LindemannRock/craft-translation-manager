@@ -573,7 +573,7 @@ class TranslationManager extends Plugin
 
             // Settings routes
             'translation-manager/settings' => 'translation-manager/settings/index',
-            'translation-manager/settings/<section:\w+>' => 'translation-manager/settings/<section>',
+            'translation-manager/settings/<section:[\w-]+>' => 'translation-manager/settings/<section>',
 
             // Logging routes
             'translation-manager/logs' => 'logging-library/logs/index',

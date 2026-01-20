@@ -24,6 +24,21 @@
                 </a>
             </li>
             <li>
+                <a href="{{ url('translation-manager/settings/locale-mapping') }}" {% if selectedSettingsItem == 'locale-mapping' %}class="sel"{% endif %} data-nav-item="locale-mapping">
+                    {{ 'Locale Mapping'|t('translation-manager') }}
+                </a>
+            </li>
+            <li>
+                <a href="{{ url('translation-manager/settings/integrations') }}" {% if selectedSettingsItem == 'integrations' %}class="sel"{% endif %} data-nav-item="integrations">
+                    {{ 'Integrations'|t('translation-manager') }}
+                </a>
+            </li>
+            <li>
+                <a href="{{ url('translation-manager/settings/capture') }}" {% if selectedSettingsItem == 'capture' %}class="sel"{% endif %} data-nav-item="capture">
+                    {{ 'Auto-Capture'|t('translation-manager') }}
+                </a>
+            </li>
+            <li>
                 <a href="{{ url('translation-manager/settings/generation') }}" {% if selectedSettingsItem == 'generation' %}class="sel"{% endif %} data-nav-item="generation">
                     {{ 'File Generation'|t('translation-manager') }}
                 </a>

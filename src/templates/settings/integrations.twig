@@ -1,0 +1,83 @@
+{% extends "translation-manager/_layouts/settings" %}
+{% set title = "Integrations"|t('translation-manager') %}
+{% set fullPageForm = true %}
+{% set selectedSettingsItem = 'integrations' %}
+
+{% set crumbs = [
+    {
+        label: translationHelper.fullName|t('translation-manager'),
+        url: url('translation-manager'),
+    },
+    {
+        label: 'Settings'|t('translation-manager'),
+        url: url('translation-manager/settings'),
+    },
+    {
+        label: 'Integrations'|t('translation-manager'),
+        url: url('translation-manager/settings/integrations'),
+    },
+] %}
+
+{% import "_includes/forms" as forms %}
+
+{% block content %}
+    {% set formiePluginName = craft.translationManager.getFormiePluginName() %}
+
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        {{ actionInput('translation-manager/settings/save') }}
+        {{ redirectInput('translation-manager/settings/integrations') }}
+        {{ hiddenInput('section', 'integrations') }}
+
+        <h2 style="margin-top: 0;">{{ "Plugin Integrations"|t('translation-manager') }}</h2>
+
+        <p class="light" style="margin-bottom: 24px;">
+            {{ "Configure integrations with other Craft plugins."|t('translation-manager') }}
+        </p>
+
+        <hr>
+
+        <h3>{{ formiePluginName }}</h3>
+
+        {{ forms.lightswitchField({
+            label: ("Enable " ~ formiePluginName ~ " Integration")|t('translation-manager'),
+            instructions: ("Automatically capture translations from " ~ formiePluginName ~ " forms.")|t('translation-manager'),
+            id: 'enableFormieIntegration',
+            name: 'settings[enableFormieIntegration]',
+            on: settings.enableFormieIntegration,
+            toggle: 'formie-integration-settings',
+            disabled: not craft.app.plugins.isPluginEnabled('formie') or settings.isOverriddenByConfig('enableFormieIntegration'),
+            warning: settings.isOverriddenByConfig('enableFormieIntegration') ?
+                "This is being overridden by the <code>enableFormieIntegration</code> setting in <code>config/translation-manager.php</code>."|raw :
+                (not craft.app.plugins.isPluginEnabled('formie') ? (formiePluginName ~ " plugin is not installed")|t('translation-manager') : null),
+        }) }}
+
+        <div id="formie-integration-settings" class="{{ not settings.enableFormieIntegration ? 'hidden' }}">
+            {{ forms.textareaField({
+                label: "Exclude Form Patterns"|t('translation-manager'),
+                instructions: "Forms with handles OR titles containing these patterns will be skipped (one per line, case-insensitive). Use this to exclude language-specific duplicates like 'booking-ar' or forms named 'Contact Form (Ar)'."|t('translation-manager'),
+                id: 'excludeFormHandlePatterns',
+                name: 'settings[excludeFormHandlePatterns]',
+                value: settings.excludeFormHandlePatterns|join("\n"),
+                rows: 4,
+                placeholder: "Example:\n(Ar)\n(ar)\nAr1\n-ar"|t('translation-manager'),
+                disabled: settings.isOverriddenByConfig('excludeFormHandlePatterns'),
+                warning: settings.isOverriddenByConfig('excludeFormHandlePatterns') ?
+                    "This is being overridden by the <code>excludeFormHandlePatterns</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+            }) }}
+
+            <div class="field">
+                <p class="light">
+                    {{ "Note: Text containing non-source-language characters (based on Source Language setting) will also be automatically skipped."|t('translation-manager') }}
+                </p>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">{{ "Save Settings"|t('translation-manager') }}</button>
+        </div>
+
+    </form>
+
+    {% include 'lindemannrock-base/_components/plugin-credit' %}
+{% endblock %}
