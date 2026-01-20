@@ -511,8 +511,8 @@ Example CSV:
 
 ```csv
 Translation Key,Translation,Category,Type,Context,Status,Language
-"Welcome to our website","مرحباً بكم في موقعنا","alhatab","Site","site","translated","ar"
-"Contact Us","اتصل بنا","alhatab","Site","site","translated","ar"
+"Welcome to our website","مرحباً بكم في موقعنا","lindemannrock","Site","site","translated","ar"
+"Contact Us","اتصل بنا","lindemannrock","Site","site","translated","ar"
 "Submit","إرسال","formie","Forms","formie.contactForm","translated","ar"
 ```
 
