@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.18.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.17.1...v5.18.0) (2026-01-20)
+
+
+### Features
+
+* Add backup support for PHP import and fix formula injection false positive ([41a685d](https://github.com/LindemannRock/craft-translation-manager/commit/41a685d1c8ae22a38bb2dbd156b73f9cdc273b20))
+
 ## [5.17.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.17.0...v5.17.1) (2026-01-20)
 
 
