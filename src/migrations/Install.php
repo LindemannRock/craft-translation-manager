@@ -91,6 +91,7 @@ class Install extends Migration
                 'translationCategory' => $this->string()->notNull()->defaultValue('messages'), // Deprecated: use translationCategories
                 'translationCategories' => $this->text()->null()->comment('JSON array of enabled categories'),
                 'sourceLanguage' => $this->string(10)->notNull()->defaultValue('en'),
+                'localeMapping' => $this->text()->null()->comment('JSON array of locale mappings'),
                 'enableFormieIntegration' => $this->boolean()->notNull()->defaultValue(true),
                 'enableSiteTranslations' => $this->boolean()->notNull()->defaultValue(true),
                 'captureMissingTranslations' => $this->boolean()->notNull()->defaultValue(false),

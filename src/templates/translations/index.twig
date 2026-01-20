@@ -7,10 +7,26 @@
 {% set crumbs = [] %}
 
 {# Language switcher (first item) - shows unique languages across all sites #}
-{% if uniqueLanguages|length > 1 %}
+{# Filter out mapped source locales (e.g., if en-US → en, don't show en-US) #}
+{% set activeLocaleMapping = settings.getActiveLocaleMapping() %}
+{% set mappedSourceLocales = activeLocaleMapping|keys %}
+
+{# Map currentLanguage to destination if it's a mapped source #}
+{% if currentLanguage in mappedSourceLocales %}
+    {% set currentLanguage = activeLocaleMapping[currentLanguage] %}
+{% endif %}
+
+{% set filteredLanguages = [] %}
+{% for lang in uniqueLanguages %}
+    {% if lang not in mappedSourceLocales %}
+        {% set filteredLanguages = filteredLanguages|merge([lang]) %}
+    {% endif %}
+{% endfor %}
+
+{% if filteredLanguages|length > 1 %}
     {# Get language menu items #}
     {% set languageMenuItems = [] %}
-    {% for lang in uniqueLanguages %}
+    {% for lang in filteredLanguages %}
         {% set languageMenuItems = languageMenuItems|merge([{
             label: lang|upper,
             url: url('translation-manager/translations', {language: lang, status: status, type: type, category: category, search: search, sort: sort, dir: dir}),

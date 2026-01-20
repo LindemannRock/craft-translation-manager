@@ -24,6 +24,15 @@ use lindemannrock\translationmanager\TranslationManager;
 class ExportService extends Component
 {
     use LoggingTrait;
+
+    /**
+     * Get the export language for a site (applies locale mapping)
+     */
+    private function getExportLanguage(\craft\models\Site $site): string
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        return $settings->mapLanguage($site->language);
+    }
     /**
      * Export all translations
      */
@@ -72,7 +81,8 @@ class ExportService extends Component
             // Get actual site languages dynamically
             $sites = TranslationManager::getInstance()->getAllowedSites();
             foreach ($sites as $site) {
-                $file = $basePath . '/' . $site->language . '/formie.php';
+                $exportLanguage = $this->getExportLanguage($site);
+                $file = $basePath . '/' . $exportLanguage . '/formie.php';
                 if (file_exists($file)) {
                     @unlink($file);
                     $this->logInfo("Deleted stale Formie file", ['file' => $file]);
@@ -103,15 +113,16 @@ class ExportService extends Component
         foreach ($translationsBySite as $siteId => $siteTranslations) {
             $site = Craft::$app->getSites()->getSiteById($siteId);
             if ($site) {
-                $sitePath = $basePath . '/' . $site->language;
+                $exportLanguage = $this->getExportLanguage($site);
+                $sitePath = $basePath . '/' . $exportLanguage;
                 FileHelper::createDirectory($sitePath);
-                
+
                 // Write translation file for this site
                 $this->writeTranslationFile($sitePath . '/formie.php', $siteTranslations, $site->name);
                 $this->logInfo("Exported Formie translations", [
                     'count' => count($siteTranslations),
                     'site' => $site->name,
-                    'language' => $site->language,
+                    'language' => $exportLanguage,
                 ]);
             }
         }
@@ -151,7 +162,8 @@ class ExportService extends Component
             foreach ($categories as $category) {
                 $filename = $category . '.php';
                 foreach ($sites as $site) {
-                    $file = $basePath . '/' . $site->language . '/' . $filename;
+                    $exportLanguage = $this->getExportLanguage($site);
+                    $file = $basePath . '/' . $exportLanguage . '/' . $filename;
                     if (file_exists($file)) {
                         @unlink($file);
                         $this->logInfo("Deleted stale file", ['file' => $file, 'category' => $category]);
@@ -162,54 +174,54 @@ class ExportService extends Component
             return true;
         }
 
-        // Group translations by category, then by site
-        $translationsByCategoryAndSite = [];
+        // Group translations by category, then by MAPPED language (not siteId)
+        // This ensures translations saved under mapped language (e.g., 'en') are exported correctly
+        $translationsByCategoryAndLanguage = [];
 
         foreach ($translations as $translation) {
             $category = $translation['category'] ?? $settings->getPrimaryCategory();
-            $siteId = $translation['siteId'];
+            // Use the translation's language field, then apply mapping
+            $language = $translation['language'] ?? 'en';
+            $mappedLanguage = $settings->mapLanguage($language);
 
-            if (!isset($translationsByCategoryAndSite[$category])) {
-                $translationsByCategoryAndSite[$category] = [];
+            if (!isset($translationsByCategoryAndLanguage[$category])) {
+                $translationsByCategoryAndLanguage[$category] = [];
             }
-            if (!isset($translationsByCategoryAndSite[$category][$siteId])) {
-                $translationsByCategoryAndSite[$category][$siteId] = [];
+            if (!isset($translationsByCategoryAndLanguage[$category][$mappedLanguage])) {
+                $translationsByCategoryAndLanguage[$category][$mappedLanguage] = [];
             }
 
             // Only include if there's a translation (not empty)
             if (!empty($translation['translation'])) {
-                $translationsByCategoryAndSite[$category][$siteId][$translation['translationKey']] = $translation['translation'];
+                $translationsByCategoryAndLanguage[$category][$mappedLanguage][$translation['translationKey']] = $translation['translation'];
             }
         }
 
-        // Create translation files for each category and site
-        foreach ($translationsByCategoryAndSite as $category => $translationsBySite) {
+        // Create translation files for each category and language
+        foreach ($translationsByCategoryAndLanguage as $category => $translationsByLanguage) {
             $filename = $category . '.php';
 
-            foreach ($translationsBySite as $siteId => $siteTranslations) {
-                $site = Craft::$app->getSites()->getSiteById($siteId);
-                if ($site) {
-                    $sitePath = $basePath . '/' . $site->language;
-                    FileHelper::createDirectory($sitePath);
+            foreach ($translationsByLanguage as $exportLanguage => $langTranslations) {
+                $sitePath = $basePath . '/' . $exportLanguage;
+                FileHelper::createDirectory($sitePath);
 
-                    // Write translation file for this site and category
-                    $this->writeTranslationFile($sitePath . '/' . $filename, $siteTranslations, $site->name);
-                    $this->logInfo("Exported site translations", [
-                        'count' => count($siteTranslations),
-                        'site' => $site->name,
-                        'language' => $site->language,
-                        'category' => $category,
-                    ]);
-                }
+                // Write translation file for this language and category
+                $this->writeTranslationFile($sitePath . '/' . $filename, $langTranslations, $exportLanguage);
+                $this->logInfo("Exported site translations", [
+                    'count' => count($langTranslations),
+                    'language' => $exportLanguage,
+                    'category' => $category,
+                ]);
             }
         }
 
         // Clean up stale files for categories that have no translations
         foreach ($categories as $category) {
-            if (!isset($translationsByCategoryAndSite[$category])) {
+            if (!isset($translationsByCategoryAndLanguage[$category])) {
                 $filename = $category . '.php';
                 foreach ($sites as $site) {
-                    $file = $basePath . '/' . $site->language . '/' . $filename;
+                    $exportLanguage = $this->getExportLanguage($site);
+                    $file = $basePath . '/' . $exportLanguage . '/' . $filename;
                     if (file_exists($file)) {
                         @unlink($file);
                         $this->logInfo("Deleted stale file (no translations)", ['file' => $file, 'category' => $category]);
@@ -250,7 +262,8 @@ class ExportService extends Component
 
             // Delete existing files for this category to prevent stale translations
             foreach ($sites as $site) {
-                $file = $basePath . '/' . $site->language . '/' . $filename;
+                $exportLanguage = $this->getExportLanguage($site);
+                $file = $basePath . '/' . $exportLanguage . '/' . $filename;
                 if (file_exists($file)) {
                     @unlink($file);
                     $this->logInfo("Deleted stale file", ['file' => $file, 'category' => $category]);
@@ -280,7 +293,8 @@ class ExportService extends Component
         foreach ($translationsBySite as $siteId => $siteTranslations) {
             $site = Craft::$app->getSites()->getSiteById($siteId);
             if ($site) {
-                $sitePath = $basePath . '/' . $site->language;
+                $exportLanguage = $this->getExportLanguage($site);
+                $sitePath = $basePath . '/' . $exportLanguage;
                 FileHelper::createDirectory($sitePath);
 
                 // Write translation file for this site and category
@@ -288,7 +302,7 @@ class ExportService extends Component
                 $this->logInfo("Exported category translations", [
                     'count' => count($siteTranslations),
                     'site' => $site->name,
-                    'language' => $site->language,
+                    'language' => $exportLanguage,
                     'category' => $category,
                 ]);
             }

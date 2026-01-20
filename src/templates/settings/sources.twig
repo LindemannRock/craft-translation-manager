@@ -124,6 +124,96 @@
                     "This is being overridden by the <code>sourceLanguage</code> setting in <code>config/translation-manager.php</code>."|raw : null,
             }) }}
 
+			<hr>
+			<h3>{{ "Locale Mapping"|t('translation-manager') }}</h3>
+
+			{# Build separate options for source (regional variants) and destination (base locales) #}
+			{% set regionalLocales = [] %}
+			{% set baseLocales = [] %}
+			{% set seenRegional = [] %}
+			{% set seenBase = [] %}
+
+			{% for site in craft.app.sites.allSites %}
+				{% set lang = site.language %}
+				{% if '-' in lang %}
+					{# Regional variant (e.g., en-US, ar-KW) - for source dropdown #}
+					{% if lang not in seenRegional %}
+						{% set seenRegional = seenRegional|merge([lang]) %}
+						{% set regionalLocales = regionalLocales|merge([{
+							value: lang,
+							label: lang
+						}]) %}
+					{% endif %}
+				{% else %}
+					{# Base locale (e.g., en, ar, fr) - for destination dropdown #}
+					{% if lang not in seenBase %}
+						{% set seenBase = seenBase|merge([lang]) %}
+						{% set baseLocales = baseLocales|merge([{
+							value: lang,
+							label: lang
+						}]) %}
+					{% endif %}
+				{% endif %}
+			{% endfor %}
+
+			{% set localeMappingData = settings.localeMapping|default([]) %}
+
+			{% if regionalLocales|length > 0 and baseLocales|length > 0 %}
+				{{ forms.editableTableField({
+					label: "Locale Mapping"|t('translation-manager'),
+					instructions: "Map regional locale variants to base locales to reduce translation duplication. For example, map 'en-US' to 'en' so that en-US uses the same translation files as en."|t('translation-manager'),
+					id: 'localeMapping',
+					name: 'settings[localeMapping]',
+					cols: {
+						source: {
+							heading: "Source Locale"|t('translation-manager'),
+							type: 'select',
+							options: regionalLocales,
+							info: "The regional locale to map from (e.g., en-US)"|t('translation-manager'),
+						},
+						destination: {
+							heading: "Maps To"|t('translation-manager'),
+							type: 'select',
+							options: baseLocales,
+							info: "The base locale to use instead (e.g., en)"|t('translation-manager'),
+						},
+						enabled: {
+							heading: "Enabled"|t('translation-manager'),
+							type: 'lightswitch',
+							thin: true,
+						}
+					},
+					rows: localeMappingData,
+					errors: settings.getErrors('localeMapping'),
+					addRowLabel: "Add mapping"|t('translation-manager'),
+					allowAdd: true,
+					allowDelete: true,
+					allowReorder: true,
+					disabled: settings.isOverriddenByConfig('localeMapping'),
+					warning: settings.isOverriddenByConfig('localeMapping') ?
+						"This is being overridden by the <code>localeMapping</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+				}) }}
+			{% else %}
+				<div class="field">
+					<p class="light">
+						{{ "Locale mapping is not available because your sites need both regional locales (e.g., en-US, fr-CA) and base locales (e.g., en, fr) to create mappings."|t('translation-manager') }}
+					</p>
+				</div>
+			{% endif %}
+
+			<div class="field">
+				<p class="light">
+					<strong>{{ "How it works:"|t('translation-manager') }}</strong>
+					{{ "When loading translations and capturing missing translations, the source locale will be treated as the destination locale. This means:"|t('translation-manager') }}
+				</p>
+				<ul class="light" style="margin-top: 8px; margin-left: 20px;">
+					<li>{{ "Translation files will be loaded from the destination locale's folder"|t('translation-manager') }}</li>
+					<li>{{ "Captured translations will be saved under the destination locale"|t('translation-manager') }}</li>
+				</ul>
+			</div>
+
+			<hr>
+
 			{{ forms.textareaField({
                 label: "Site Translations Skip Patterns"|t('translation-manager'),
                 instructions: ("Text patterns to skip when capturing site translations (one per line). Does not affect " ~ formiePluginName ~ " fields.")|t('translation-manager'),
@@ -293,5 +383,101 @@
                 form.submit();
             }
         });
+    }
+
+    // Validate locale mapping for duplicate sources
+    function validateLocaleMappingDuplicates() {
+        const table = document.getElementById('localeMapping');
+        if (!table) return;
+
+        const rows = table.querySelectorAll('tbody tr');
+        const sourceValues = {};
+
+        // First pass: collect all source values and their rows
+        rows.forEach((row, index) => {
+            const sourceSelect = row.querySelector('select[name*="[source]"]');
+            if (!sourceSelect) return;
+
+            const value = sourceSelect.value;
+            if (!sourceValues[value]) {
+                sourceValues[value] = [];
+            }
+            sourceValues[value].push({ row, select: sourceSelect, index });
+        });
+
+        // Second pass: mark duplicates
+        rows.forEach((row) => {
+            const sourceSelect = row.querySelector('select[name*="[source]"]');
+            if (!sourceSelect) return;
+
+            const value = sourceSelect.value;
+            const existingError = row.querySelector('.locale-mapping-error');
+
+            if (sourceValues[value] && sourceValues[value].length > 1) {
+                sourceSelect.classList.add('error');
+                if (!existingError) {
+                    const errorSpan = document.createElement('span');
+                    errorSpan.className = 'locale-mapping-error';
+                    errorSpan.style.cssText = 'color: #cf1124; font-size: 12px; display: block;';
+                    errorSpan.textContent = '{{ "Duplicate source locale - each locale can only be mapped once"|t('translation-manager')|e('js') }}';
+                    sourceSelect.parentNode.appendChild(errorSpan);
+                }
+            } else {
+                sourceSelect.classList.remove('error');
+                if (existingError) {
+                    existingError.remove();
+                }
+            }
+        });
+    }
+
+    // Auto-select destination based on source locale
+    function autoSelectDestination(sourceSelect) {
+        const sourceValue = sourceSelect.value;
+        if (sourceValue && sourceValue.includes('-')) {
+            const baseLocale = sourceValue.split('-')[0]; // e.g., 'en' from 'en-US'
+            const row = sourceSelect.closest('tr');
+            const destSelect = row.querySelector('select[name*="[destination]"]');
+            if (destSelect) {
+                // Check if the base locale exists in the destination options
+                const option = destSelect.querySelector(`option[value="${baseLocale}"]`);
+                if (option) {
+                    destSelect.value = baseLocale;
+                }
+            }
+        }
+    }
+
+    // Listen for changes in the locale mapping table
+    document.addEventListener('change', function(e) {
+        if (e.target.matches('#localeMapping select[name*="[source]"]')) {
+            autoSelectDestination(e.target);
+            validateLocaleMappingDuplicates();
+        }
+    });
+
+    // Also validate when rows are added/removed (using MutationObserver)
+    const localeMappingTable = document.getElementById('localeMapping');
+    if (localeMappingTable) {
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1 && node.tagName === 'TR') {
+                        // New row added - auto-select destination for it
+                        const sourceSelect = node.querySelector('select[name*="[source]"]');
+                        if (sourceSelect) {
+                            autoSelectDestination(sourceSelect);
+                        }
+                    }
+                });
+            });
+            validateLocaleMappingDuplicates();
+        });
+        observer.observe(localeMappingTable.querySelector('tbody'), {
+            childList: true
+        });
+
+        // Initial validation and auto-select on page load
+        validateLocaleMappingDuplicates();
     }
 {% endjs %}

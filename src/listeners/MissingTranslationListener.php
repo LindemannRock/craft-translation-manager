@@ -66,6 +66,10 @@ class MissingTranslationListener
         $message = $event->message;
         $language = $event->language;
 
+        // Apply locale mapping to use the mapped language for saving
+        // This ensures translations are stored under the base locale (e.g., en instead of en-US)
+        $language = $settings->mapLanguage($language);
+
         // Skip empty messages
         if (empty($message) || trim($message) === '') {
             return;

@@ -144,6 +144,13 @@ class Settings extends Model
     public array $integrationSettings = [];
 
     /**
+     * @var array Locale mapping configuration
+     * Maps regional locale variants to base locales (e.g., en-US -> en, fr-CA -> fr)
+     * Format: [['source' => 'en-US', 'destination' => 'en', 'enabled' => true], ...]
+     */
+    public array $localeMapping = [];
+
+    /**
      * @var bool Whether to enable automatic translation suggestions (future feature)
      */
     public bool $enableSuggestions = false;
@@ -208,7 +215,8 @@ class Settings extends Model
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
             [['enableFormieIntegration', 'enableSiteTranslations', 'autoExport',
               'showContext', 'enableSuggestions', 'autoSaveEnabled', 'backupEnabled', 'backupOnImport', ], 'boolean'],
-            [['skipPatterns', 'excludeFormHandlePatterns', 'translationCategories'], 'safe'],
+            [['skipPatterns', 'excludeFormHandlePatterns', 'translationCategories', 'localeMapping'], 'safe'],
+            [['localeMapping'], 'validateLocaleMapping'],
             [['backupRetentionDays'], 'integer', 'min' => 0, 'max' => 365],
             [['backupSchedule'], 'in', 'range' => ['manual', 'daily', 'weekly']],
             [['logLevel'], 'in', 'range' => ['debug', 'info', 'warning', 'error']],
@@ -241,6 +249,7 @@ class Settings extends Model
             'backupPath' => 'Backup Path',
             'backupVolumeUid' => 'Backup Volume',
             'logLevel' => 'Log Level',
+            'localeMapping' => 'Locale Mapping',
         ];
     }
 
@@ -347,6 +356,60 @@ class Settings extends Model
     }
 
     /**
+     * Validates the locale mapping configuration array
+     */
+    public function validateLocaleMapping($attribute, $params, $validator): void
+    {
+        $mappings = $this->$attribute;
+
+        if (!is_array($mappings)) {
+            return;
+        }
+
+        $seenSources = [];
+
+        foreach ($mappings as $index => $mapping) {
+            // Check required fields
+            if (!isset($mapping['source']) || empty($mapping['source'])) {
+                $this->addError($attribute, "Locale mapping at row " . ($index + 1) . " must have a source locale.");
+                continue;
+            }
+
+            if (!isset($mapping['destination']) || empty($mapping['destination'])) {
+                $this->addError($attribute, "Locale mapping at row " . ($index + 1) . " must have a destination locale.");
+                continue;
+            }
+
+            $source = $mapping['source'];
+            $destination = $mapping['destination'];
+
+            // Validate locale format (e.g., en, en-US, fr-CA)
+            if (!preg_match('/^[a-z]{2}(-[A-Z]{2})?$/', $source)) {
+                $this->addError($attribute, "Source locale \"{$source}\" at row " . ($index + 1) . " must be a valid locale code (e.g., en, en-US, fr-CA).");
+                continue;
+            }
+
+            if (!preg_match('/^[a-z]{2}(-[A-Z]{2})?$/', $destination)) {
+                $this->addError($attribute, "Destination locale \"{$destination}\" at row " . ($index + 1) . " must be a valid locale code (e.g., en, en-US, fr-CA).");
+                continue;
+            }
+
+            // Prevent mapping to self
+            if ($source === $destination) {
+                $this->addError($attribute, "Locale mapping at row " . ($index + 1) . " cannot map \"{$source}\" to itself.");
+                continue;
+            }
+
+            // Check for duplicate source mappings
+            if (in_array($source, $seenSources, true)) {
+                $this->addError($attribute, "Duplicate source locale \"{$source}\" found in locale mappings.");
+                continue;
+            }
+            $seenSources[] = $source;
+        }
+    }
+
+    /**
      * Gets all enabled translation category keys
      * Falls back to deprecated translationCategory if translationCategories is empty
      *
@@ -422,6 +485,48 @@ class Settings extends Model
         }
 
         return $categories;
+    }
+
+    /**
+     * Gets active locale mappings as a lookup array
+     *
+     * Returns only enabled mappings in the format used by LocaleMappingPhpMessageSource:
+     * ['en-US' => 'en', 'fr-CA' => 'fr']
+     *
+     * @return array<string, string> Lookup array of source => destination
+     */
+    public function getActiveLocaleMapping(): array
+    {
+        $lookup = [];
+
+        foreach ($this->localeMapping as $mapping) {
+            // Skip if not enabled
+            $enabled = $mapping['enabled'] ?? true;
+            if (!$enabled) {
+                continue;
+            }
+
+            // Skip if missing required fields
+            if (empty($mapping['source']) || empty($mapping['destination'])) {
+                continue;
+            }
+
+            $lookup[$mapping['source']] = $mapping['destination'];
+        }
+
+        return $lookup;
+    }
+
+    /**
+     * Maps a language code using the active locale mapping.
+     *
+     * @param string $language The original language code
+     * @return string The mapped language code (or original if no mapping exists)
+     */
+    public function mapLanguage(string $language): string
+    {
+        $mapping = $this->getActiveLocaleMapping();
+        return $mapping[$language] ?? $language;
     }
 
     /**
@@ -755,6 +860,7 @@ class Settings extends Model
             'skipPatterns',
             'excludeFormHandlePatterns',
             'translationCategories',
+            'localeMapping',
         ];
     }
 

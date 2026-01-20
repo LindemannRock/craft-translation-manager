@@ -27,6 +27,7 @@ use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\logginglibrary\LoggingLibrary;
 
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\i18n\LocaleMappingPhpMessageSource;
 use lindemannrock\translationmanager\listeners\MissingTranslationListener;
 use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\translationmanager\services\BackupService;
@@ -595,16 +596,20 @@ class TranslationManager extends Plugin
         // e.g., if your templates have {{ 'Copyright'|t('category') }}, sourceLanguage should be 'en'
         $sourceLanguage = explode('-', $settings->sourceLanguage)[0]; // e.g., 'en' from 'en-US'
 
+        // Get active locale mappings for the custom message source
+        $localeMapping = $settings->getActiveLocaleMapping();
+
         // Register message source for each enabled category
         foreach ($categories as $category) {
             $i18n->translations[$category] = [
-                'class' => 'yii\i18n\PhpMessageSource',
+                'class' => LocaleMappingPhpMessageSource::class,
                 'sourceLanguage' => $sourceLanguage, // Based on configured setting, not primary site
                 'basePath' => $basePath,
                 'forceTranslation' => true, // Force translation even for same language
                 'fileMap' => [
                     $category => $category . '.php',
                 ],
+                'localeMapping' => $localeMapping, // Pass the locale mapping configuration
             ];
         }
     }
