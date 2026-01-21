@@ -29,11 +29,6 @@
                 </a>
             </li>
             <li>
-                <a href="{{ url('translation-manager/settings/integrations') }}" {% if selectedSettingsItem == 'integrations' %}class="sel"{% endif %} data-nav-item="integrations">
-                    {{ 'Integrations'|t('translation-manager') }}
-                </a>
-            </li>
-            <li>
                 <a href="{{ url('translation-manager/settings/capture') }}" {% if selectedSettingsItem == 'capture' %}class="sel"{% endif %} data-nav-item="capture">
                     {{ 'Auto-Capture'|t('translation-manager') }}
                 </a>
@@ -44,13 +39,18 @@
                 </a>
             </li>
             <li>
+                <a href="{{ url('translation-manager/settings/interface') }}" {% if selectedSettingsItem == 'interface' %}class="sel"{% endif %} data-nav-item="interface">
+                    {{ 'Interface'|t('translation-manager') }}
+                </a>
+            </li>
+            <li>
                 <a href="{{ url('translation-manager/settings/backup') }}" {% if selectedSettingsItem == 'backup' %}class="sel"{% endif %} data-nav-item="backup">
                     {{ 'Backup'|t('translation-manager') }}
                 </a>
             </li>
-             <li>
-                <a href="{{ url('translation-manager/settings/interface') }}" {% if selectedSettingsItem == 'interface' %}class="sel"{% endif %} data-nav-item="interface">
-                    {{ 'Interface'|t('translation-manager') }}
+            <li>
+                <a href="{{ url('translation-manager/settings/integrations') }}" {% if selectedSettingsItem == 'integrations' %}class="sel"{% endif %} data-nav-item="integrations">
+                    {{ 'Integrations'|t('translation-manager') }}
                 </a>
             </li>
         </ul>
