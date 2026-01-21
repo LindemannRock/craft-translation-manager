@@ -586,6 +586,45 @@ Importing `ar/lr.php` with Arabic translations:
 - Requires `importTranslations` permission
 - Path traversal protection
 
+#### Importing Plugin Translations
+
+If you want to manage translations for a third-party plugin that provides frontend content:
+
+1. **Add the category** in Settings → Translation Sources → Translation Categories
+   - Add the plugin's handle (e.g., `commerce`, `events`, `pluginX`)
+
+2. **Copy or locate the translation file**
+   ```
+   translations/
+   └── ar/
+       └── pluginX.php    ← Plugin translation file
+   ```
+
+3. **Import via PHP Import**
+   - Navigate to **Translation Manager → Import/Export**
+   - Scroll to "Import from PHP Files"
+   - Select the file (e.g., `ar/pluginX.php`)
+   - Category auto-detects from filename
+   - Preview and import
+
+**Example Workflow**:
+
+```bash
+# 1. Plugin provides translations at:
+plugins/my-plugin/src/translations/ar/my-plugin.php
+
+# 2. Copy to site translations folder:
+cp plugins/my-plugin/src/translations/ar/my-plugin.php translations/ar/
+
+# 3. Add 'my-plugin' category in Translation Manager settings
+
+# 4. Use PHP Import to import the file
+
+# 5. Manage translations in Translation Manager
+
+# 6. Export updates back to translations/ar/my-plugin.php
+```
+
 ### PHP File Export
 
 Translation files are exported to:
