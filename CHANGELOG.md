@@ -1,5 +1,18 @@
 # Changelog
 
+## [5.19.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.18.0...v5.19.0) (2026-01-21)
+
+
+### Features
+
+* Add instructions for importing translations from third-party plugins in README ([199c830](https://github.com/LindemannRock/craft-translation-manager/commit/199c8303de01bc56b74dca02afdccd431587658a))
+* Add locale mapping, integrations, and auto-capture settings pages; update routes and templates ([90f3c89](https://github.com/LindemannRock/craft-translation-manager/commit/90f3c899c064ebe24eb5fe0947fbb50a686a1255))
+
+
+### Bug Fixes
+
+* **security:** address multiple security vulnerabilities ([5fc8093](https://github.com/LindemannRock/craft-translation-manager/commit/5fc8093a49022e5e5e97a242b7d8fa9150c23296))
+
 ## [5.18.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.17.1...v5.18.0) (2026-01-20)
 
 
