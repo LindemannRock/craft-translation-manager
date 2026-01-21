@@ -401,12 +401,18 @@ class ExportService extends Component
     /**
      * Sanitize value for CSV
      *
-     * Since all values are wrapped in double quotes in the CSV output,
-     * we only need to escape double quotes. The apostrophe prefix for
-     * formula injection is NOT needed when values are quoted.
+     * Protects against CSV formula injection and escapes special characters.
+     * Excel/Sheets can evaluate formulas starting with =, +, -, @ even when quoted.
      */
     private function sanitizeForCsv(string $value): string
     {
+        // Protect against CSV formula injection
+        // Prefix with apostrophe to prevent formula execution in spreadsheets
+        $trimmed = ltrim($value);
+        if ($trimmed !== '' && preg_match('/^[=+\-@]/', $trimmed)) {
+            $value = "'" . $value;
+        }
+
         // Escape double quotes by doubling them (CSV standard)
         return str_replace('"', '""', $value);
     }

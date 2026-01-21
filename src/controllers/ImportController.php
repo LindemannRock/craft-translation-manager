@@ -157,7 +157,12 @@ class ImportController extends Controller
             $keyText = $translation['english'];
             $translationText = isset($translation['arabic']) ? $translation['arabic'] : '';
             $context = isset($translation['context']) ? StringHelper::stripHtml($translation['context']) : 'site';
-            
+
+            // Strip CSV formula-escape prefix (apostrophe followed by formula character)
+            $keyText = $this->stripFormulaEscapePrefix($keyText);
+            $translationText = $this->stripFormulaEscapePrefix($translationText);
+            $context = $this->stripFormulaEscapePrefix($context);
+
             // Apply same dangerous pattern removal
             $dangerousPatterns = [
                 '/<script[^>]*>.*?<\/script>/si',
@@ -182,6 +187,7 @@ class ImportController extends Controller
 
             // Extract category from CSV or determine from context/type
             $category = isset($translation['category']) ? StringHelper::stripHtml($translation['category']) : '';
+            $category = $this->stripFormulaEscapePrefix($category);
             $type = isset($translation['type']) ? strtolower(trim($translation['type'])) : '';
 
             if (empty($category)) {
@@ -464,7 +470,27 @@ class ImportController extends Controller
                 $context = ($contextIndex !== false && isset($row[$contextIndex])) ? $row[$contextIndex] : 'site';
                 $category = ($categoryIndex !== false && isset($row[$categoryIndex])) ? $row[$categoryIndex] : '';
                 $type = ($typeIndex !== false && isset($row[$typeIndex])) ? strtolower(trim($row[$typeIndex])) : '';
-                
+
+                // Strip CSV formula-escape prefix (apostrophe followed by formula character)
+                // This restores original values that were escaped during export
+                $keyText = $this->stripFormulaEscapePrefix($keyText);
+                $translationText = $this->stripFormulaEscapePrefix($translationText);
+                $context = $this->stripFormulaEscapePrefix($context);
+                $category = $this->stripFormulaEscapePrefix($category);
+
+                // Check for malicious content (same checks as preview)
+                $threats = [];
+                if ($this->containsMaliciousContent($keyText, $threats)
+                    || $this->containsMaliciousContent($translationText, $threats)
+                    || $this->containsMaliciousContent($context, $threats)) {
+                    $errors[] = Craft::t('translation-manager', 'Row {row}: Malicious content blocked ({threats})', [
+                        'row' => $rowNumber,
+                        'threats' => implode(', ', $threats),
+                    ]);
+                    $skipped++;
+                    continue;
+                }
+
                 // Only skip truly empty keys
                 if ($keyText === '') {
                     $skipped++;
@@ -950,5 +976,30 @@ class ImportController extends Controller
 
         // Fallback to primary site
         return Craft::$app->getSites()->getPrimarySite()->id;
+    }
+
+    /**
+     * Strip CSV formula-escape prefix from imported values
+     *
+     * During export, values starting with =, +, -, @ (including with leading whitespace)
+     * are prefixed with apostrophe to prevent formula injection in spreadsheets.
+     * This method restores the original value by removing only the leading apostrophe
+     * when followed by optional whitespace and a formula character.
+     *
+     * Examples:
+     *   "'=SUM(A1)" -> "=SUM(A1)"
+     *   "'+1234" -> "+1234"
+     *   "'  =1" -> "  =1" (preserves internal whitespace)
+     *   "'test" -> "'test" (no change - 't' is not a formula char)
+     */
+    private function stripFormulaEscapePrefix(string $value): string
+    {
+        // Only strip apostrophe if followed by optional whitespace and formula character
+        // This preserves legitimate values like 'test' or 'Hello
+        if (preg_match("/^'(\\s*[=+\\-@])/", $value)) {
+            return substr($value, 1);
+        }
+
+        return $value;
     }
 }

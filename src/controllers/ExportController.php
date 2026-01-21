@@ -161,29 +161,29 @@ class ExportController extends Controller
             $filenamePart = strtolower(str_replace(' ', '-', $settings->getPluralLowerDisplayName()));
             $filename = $filenamePart . '-export';
 
-            // Add language info to filename
+            // Add language info to filename (sanitized to prevent header injection)
             if ($exportAll) {
                 $filename .= '-all-languages';
             } elseif (!empty($languageParam)) {
-                $filename .= '-' . strtolower($languageParam);
+                $filename .= '-' . $this->sanitizeFilenamePart($languageParam);
             } elseif (!empty($siteParam)) {
                 // Legacy: use site's language
                 $site = Craft::$app->getSites()->getSiteById($siteParam);
                 if ($site) {
-                    $filename .= '-' . strtolower($site->language);
+                    $filename .= '-' . $this->sanitizeFilenamePart($site->language);
                 }
             }
 
-            // Add category to filename
+            // Add category to filename (sanitized)
             if ($categoryParam && $categoryParam !== 'all') {
-                $filename .= '-' . strtolower($categoryParam);
+                $filename .= '-' . $this->sanitizeFilenamePart($categoryParam);
             }
 
             if ($typeParam && $typeParam !== 'all') {
-                $filename .= '-' . $typeParam;
+                $filename .= '-' . $this->sanitizeFilenamePart($typeParam);
             }
             if ($statusParam && $statusParam !== 'all') {
-                $filename .= '-' . $statusParam;
+                $filename .= '-' . $this->sanitizeFilenamePart($statusParam);
             }
             $filename .= '-' . date('Y-m-d') . '.csv';
             
@@ -254,16 +254,16 @@ class ExportController extends Controller
         $languages = array_unique($languages);
         $types = array_unique($types);
 
-        // Add language info to filename
+        // Add language info to filename (sanitized)
         if (count($languages) === 1 && !empty($languages[0])) {
-            $filename .= '-' . strtolower($languages[0]);
+            $filename .= '-' . $this->sanitizeFilenamePart($languages[0]);
         } else {
             $filename .= '-multi-language';
         }
-        
-        // Add type info if all selected are same type
+
+        // Add type info if all selected are same type (sanitized)
         if (count($types) === 1) {
-            $filename .= '-' . $types[0];
+            $filename .= '-' . $this->sanitizeFilenamePart($types[0]);
         }
         
         $filename .= '-' . date('Y-m-d') . '.csv';
@@ -519,5 +519,19 @@ class ExportController extends Controller
             Craft::$app->getSession()->setError('Failed to generate category translation files: ' . $e->getMessage());
             return $this->redirect('translation-manager');
         }
+    }
+
+    /**
+     * Sanitize a string for use in filename
+     *
+     * Prevents header injection and ensures valid filename characters.
+     * Only allows alphanumeric, dots, underscores, and hyphens.
+     */
+    private function sanitizeFilenamePart(string $part): string
+    {
+        // Replace any non-alphanumeric characters (except ._-) with hyphen
+        $sanitized = preg_replace('/[^a-z0-9._-]+/i', '-', $part);
+        // Remove leading/trailing hyphens and convert to lowercase
+        return strtolower(trim($sanitized, '-'));
     }
 }

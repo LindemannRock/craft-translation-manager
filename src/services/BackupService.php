@@ -1023,7 +1023,24 @@ class BackupService extends Component
                     // Handle both old and new field names for backward compatibility
                     $translation->translationKey = $data['translationKey'] ?? $data['englishText'] ?? '';
                     $translation->translation = $data['translation'] ?? $data['arabicText'] ?? '';
-                    $translation->siteId = $data['siteId'] ?? 1; // Default to primary site for old backups
+
+                    // Restore language with fallbacks for backward compatibility
+                    $language = $data['language']
+                        ?? $data['siteLanguage']
+                        ?? Craft::$app->getSites()->getPrimarySite()->language;
+                    $translation->language = $language;
+
+                    // Derive siteId from language if missing, to maintain consistency
+                    if (isset($data['siteId'])) {
+                        $translation->siteId = $data['siteId'];
+                    } else {
+                        $translation->siteId = $this->getSiteIdForLanguage($language);
+                    }
+
+                    // Restore category with fallbacks for backward compatibility
+                    $context = $data['context'] ?? '';
+                    $translation->category = $data['category']
+                        ?? (str_starts_with($context, 'formie.') ? 'formie' : TranslationManager::getInstance()->getSettings()->getPrimaryCategory());
 
                     $translation->status = $data['status'];
                     $translation->usageCount = $data['usageCount'] ?? 1;
@@ -1264,5 +1281,30 @@ class BackupService extends Component
             'before_clear' => Craft::t('translation-manager', 'Before Clear'),
             default => Craft::t('translation-manager', ucfirst(str_replace('_', ' ', $reason)))
         };
+    }
+
+    /**
+     * Get a site ID for a given language
+     *
+     * Used to derive siteId from language when restoring backups that have
+     * language but no siteId (maintains consistency between language and siteId).
+     */
+    private function getSiteIdForLanguage(string $language): int
+    {
+        $sites = Craft::$app->getSites()->getAllSites();
+
+        foreach ($sites as $site) {
+            // Exact match
+            if ($site->language === $language) {
+                return $site->id;
+            }
+            // Case insensitive match
+            if (strcasecmp($site->language, $language) === 0) {
+                return $site->id;
+            }
+        }
+
+        // Fallback to primary site
+        return Craft::$app->getSites()->getPrimarySite()->id;
     }
 }
