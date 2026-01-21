@@ -66,11 +66,9 @@
                     "This is being overridden by the <code>excludeFormHandlePatterns</code> setting in <code>config/translation-manager.php</code>."|raw : null,
             }) }}
 
-            <div class="field">
-                <p class="light">
-                    {{ "Note: Text containing non-source-language characters (based on Source Language setting) will also be automatically skipped."|t('translation-manager') }}
-                </p>
-            </div>
+            {% include 'lindemannrock-base/_components/info-box' with {
+                message: '<strong>' ~ "Note:"|t('translation-manager') ~ '</strong> ' ~ "Text containing non-source-language characters (based on Source Language setting) will also be automatically skipped."|t('translation-manager')
+            } %}
         </div>
 
         <div class="buttons">

@@ -80,14 +80,6 @@
                     "This is being overridden by the <code>translationCategories</code> setting in <code>config/translation-manager.php</code>."|raw : null,
             }) }}
 
-            <div class="field">
-                <p class="light">
-                    <strong>{{ "Tip:"|t('translation-manager') }}</strong>
-                    {{ "The first enabled category is your primary category. Use it in templates like:"|t('translation-manager') }}
-                    <code>|t('{{ settings.getPrimaryCategory() }}')</code>
-                </p>
-            </div>
-
             {# Keep deprecated field as hidden for backward compatibility #}
             {{ hiddenInput('settings[translationCategory]', settings.translationCategory) }}
 

@@ -57,16 +57,11 @@
                     "This is being overridden by the <code>captureMissingOnlyDevMode</code> setting in <code>config/translation-manager.php</code>."|raw : null,
             }) }}
 
-            <div class="field" style="margin-top: 24px;">
-                <p class="light">
-                    <strong>{{ "How it works:"|t('translation-manager') }}</strong>
-                    {{ "When a translation is requested via"|t('translation-manager') }} <code>|t('category')</code> {{ "or"|t('translation-manager') }} <code>Craft::t()</code>{{ ", and it doesn't exist in the database, it will be automatically added as a pending translation."|t('translation-manager') }}
-                </p>
-                <p class="light" style="margin-top: 8px;">
-                    <strong>{{ "Note:"|t('translation-manager') }}</strong>
-                    {{ "Only translations for your enabled categories will be captured. System categories (app, craft, yii, site) are ignored."|t('translation-manager') }}
-                </p>
-            </div>
+            {% include 'lindemannrock-base/_components/info-box' with {
+                message: '<strong>' ~ "How it works:"|t('translation-manager') ~ '</strong><br>
+• ' ~ "When a translation is requested via"|t('translation-manager') ~ ' <code>|t(\'category\')</code> ' ~ "or"|t('translation-manager') ~ ' <code>Craft::t()</code>' ~ ", and it doesn't exist in the database, it will be automatically added as a pending translation."|t('translation-manager') ~ '<br>
+• ' ~ "Only translations for your enabled categories will be captured. System categories (app, craft, yii, site) are ignored."|t('translation-manager')
+            } %}
         </div>
 
         <div class="buttons">

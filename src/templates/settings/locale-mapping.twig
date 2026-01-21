@@ -107,16 +107,12 @@
             </div>
         {% endif %}
 
-        <div class="field" style="margin-top: 24px;">
-            <p class="light">
-                <strong>{{ "How it works:"|t('translation-manager') }}</strong>
-                {{ "When loading translations and capturing missing translations, the source locale will be treated as the destination locale. This means:"|t('translation-manager') }}
-            </p>
-            <ul class="light" style="margin-top: 8px; margin-left: 20px;">
-                <li>{{ "Translation files will be loaded from the destination locale's folder"|t('translation-manager') }}</li>
-                <li>{{ "Captured translations will be saved under the destination locale"|t('translation-manager') }}</li>
-            </ul>
-        </div>
+        {% include 'lindemannrock-base/_components/info-box' with {
+            message: '<strong>' ~ "How it works:"|t('translation-manager') ~ '</strong><br>
+• ' ~ "When loading translations and capturing missing translations, the source locale will be treated as the destination locale"|t('translation-manager') ~ '<br>
+• ' ~ "Translation files will be loaded from the destination locale's folder"|t('translation-manager') ~ '<br>
+• ' ~ "Captured translations will be saved under the destination locale"|t('translation-manager')
+        } %}
 
         <div class="buttons">
             <button type="submit" class="btn submit">{{ "Save Settings"|t('translation-manager') }}</button>
