@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.19.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.19.0...v5.19.1) (2026-01-22)
+
+
+### Bug Fixes
+
+* remove unnecessary menu header and separator from status list ([e336656](https://github.com/LindemannRock/craft-translation-manager/commit/e33665612cdb79df8dcfff7274371f58a36265fc))
+
 ## [5.19.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.18.0...v5.19.0) (2026-01-21)
 
 
