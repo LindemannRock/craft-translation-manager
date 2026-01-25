@@ -38,8 +38,8 @@ class DebugController extends Controller
         /** @var TranslationRecord[] $results */
         $results = $query->where([
             'or',
-            ['like', 'englishText', $search],
-            ['like', 'arabicText', $search],
+            ['like', 'translationKey', $search],
+            ['like', 'translation', $search],
             ['like', 'context', $search],
         ])->all();
         
@@ -53,14 +53,14 @@ class DebugController extends Controller
                 if (strlen($word) > 3) { // Skip short words
                     /** @var TranslationRecord[] $partial */
                     $partial = TranslationRecord::find()
-                        ->where(['like', 'englishText', $word])
+                        ->where(['like', 'translationKey', $word])
                         ->limit(5)
                         ->all();
-                    
+
                     if (!empty($partial)) {
                         $this->stdout("\nFound with '{$word}':\n", Console::FG_GREEN);
                         foreach ($partial as $result) {
-                            $this->stdout("- {$result->englishText}\n");
+                            $this->stdout("- {$result->translationKey}\n");
                         }
                     }
                 }
@@ -70,8 +70,8 @@ class DebugController extends Controller
             
             foreach ($results as $result) {
                 $this->stdout("\n--- Translation #{$result->id} ---\n", Console::FG_CYAN);
-                $this->stdout("English: {$result->englishText}\n");
-                $this->stdout("Arabic: {$result->arabicText}\n");
+                $this->stdout("Key: {$result->translationKey}\n");
+                $this->stdout("Translation: {$result->translation}\n");
                 $this->stdout("Context: {$result->context}\n");
                 $this->stdout("Status: {$result->status}\n");
             }
@@ -99,7 +99,7 @@ class DebugController extends Controller
         
         foreach ($results as $result) {
             $this->stdout("\n--- Translation #{$result->id} ---\n", Console::FG_CYAN);
-            $this->stdout("English: {$result->englishText}\n");
+            $this->stdout("Key: {$result->translationKey}\n");
             $this->stdout("Context: {$result->context}\n");
             $this->stdout("Created: {$result->dateCreated}\n");
         }

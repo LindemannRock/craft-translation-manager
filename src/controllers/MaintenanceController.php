@@ -190,43 +190,43 @@ class MaintenanceController extends Controller
         // 1. Exact match
         /** @var \lindemannrock\translationmanager\records\TranslationRecord|null $exactMatch */
         $exactMatch = \lindemannrock\translationmanager\records\TranslationRecord::find()
-            ->where(['englishText' => $searchTerm])
+            ->where(['translationKey' => $searchTerm])
             ->one();
-        
+
         if ($exactMatch) {
             $results['exactMatch'] = [
                 'id' => $exactMatch->id,
-                'text' => $exactMatch->englishText,
+                'text' => $exactMatch->translationKey,
                 'context' => $exactMatch->context,
                 'status' => $exactMatch->status,
             ];
         }
-        
+
         // 2. Case-insensitive exact match
         /** @var \lindemannrock\translationmanager\records\TranslationRecord[] $caseInsensitive */
         $caseInsensitive = \lindemannrock\translationmanager\records\TranslationRecord::find()
-            ->where(['LOWER([[englishText]])' => strtolower($searchTerm)])
+            ->where(['LOWER([[translationKey]])' => strtolower($searchTerm)])
             ->all();
-        
+
         $results['caseInsensitive'] = array_map(function($t) {
             return [
                 'id' => $t->id,
-                'text' => $t->englishText,
+                'text' => $t->translationKey,
                 'context' => $t->context,
             ];
         }, $caseInsensitive);
-        
+
         // 3. Partial matches
         /** @var \lindemannrock\translationmanager\records\TranslationRecord[] $partialMatches */
         $partialMatches = \lindemannrock\translationmanager\records\TranslationRecord::find()
-            ->where(['like', 'englishText', '%' . $searchTerm . '%', false])
+            ->where(['like', 'translationKey', '%' . $searchTerm . '%', false])
             ->limit(10)
             ->all();
-        
+
         $results['partialMatches'] = array_map(function($t) {
             return [
                 'id' => $t->id,
-                'text' => $t->englishText,
+                'text' => $t->translationKey,
                 'context' => $t->context,
             ];
         }, $partialMatches);
@@ -249,31 +249,31 @@ class MaintenanceController extends Controller
         if ($cleanSearch !== $searchTerm) {
             /** @var \lindemannrock\translationmanager\records\TranslationRecord[] $similarMatches */
             $similarMatches = \lindemannrock\translationmanager\records\TranslationRecord::find()
-                ->where(['like', 'englishText', '%' . $cleanSearch . '%', false])
+                ->where(['like', 'translationKey', '%' . $cleanSearch . '%', false])
                 ->limit(5)
                 ->all();
-            
+
             $results['withoutPunctuation'] = array_map(function($t) {
                 return [
                     'id' => $t->id,
-                    'text' => $t->englishText,
+                    'text' => $t->translationKey,
                     'context' => $t->context,
                 ];
             }, $similarMatches);
         }
-        
+
         // 7. Search in context
         /** @var \lindemannrock\translationmanager\records\TranslationRecord[] $contextMatches */
         $contextMatches = \lindemannrock\translationmanager\records\TranslationRecord::find()
             ->where(['like', 'context', '%' . $searchTerm . '%', false])
             ->limit(5)
             ->all();
-        
+
         if (!empty($contextMatches)) {
             $results['contextMatches'] = array_map(function($t) {
                 return [
                     'id' => $t->id,
-                    'text' => $t->englishText,
+                    'text' => $t->translationKey,
                     'context' => $t->context,
                 ];
             }, $contextMatches);

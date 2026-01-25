@@ -239,17 +239,17 @@ class TranslationsController extends Controller
             if (!isset($data['id']) || !is_numeric($data['id'])) {
                 continue;
             }
-            
+
             $translation = TranslationRecord::findOne($data['id']);
             if ($translation) {
-                $arabicText = $data['arabicText'] ?? '';
-                
+                $translationText = $data['translation'] ?? '';
+
                 // Validate input length to prevent DoS
-                if (strlen($arabicText) > 5000) {
+                if (strlen($translationText) > 5000) {
                     continue;
                 }
-                
-                $translation->arabicText = $arabicText;
+
+                $translation->translation = $translationText;
                 if (TranslationManager::getInstance()->translations->saveTranslation($translation)) {
                     $saved++;
                     

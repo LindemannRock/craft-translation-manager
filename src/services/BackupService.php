@@ -1020,9 +1020,8 @@ class BackupService extends Component
                     $translation->sourceHash = $data['sourceHash'];
                     $translation->context = $data['context'];
 
-                    // Handle both old and new field names for backward compatibility
-                    $translation->translationKey = $data['translationKey'] ?? $data['englishText'] ?? '';
-                    $translation->translation = $data['translation'] ?? $data['arabicText'] ?? '';
+                    $translation->translationKey = $data['translationKey'] ?? '';
+                    $translation->translation = $data['translation'] ?? '';
 
                     // Restore language with fallbacks for backward compatibility
                     $language = $data['language']
@@ -1052,7 +1051,7 @@ class BackupService extends Component
                     if ($translation->save()) {
                         $imported++;
                     } else {
-                        $errors[] = 'Failed to import: ' . ($data['translationKey'] ?? $data['englishText'] ?? 'Unknown');
+                        $errors[] = 'Failed to import: ' . ($data['translationKey'] ?? 'Unknown');
                     }
                 } catch (\Exception $e) {
                     $errors[] = 'Import error: ' . $e->getMessage();

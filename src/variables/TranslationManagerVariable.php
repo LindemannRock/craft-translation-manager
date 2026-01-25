@@ -40,16 +40,18 @@ class TranslationManagerVariable
         
         // Create or update the translation
         $translation = TranslationManager::getInstance()->translations->createOrUpdateTranslation($text, $context);
-        
+
         // Get current site language
         $currentSite = \Craft::$app->getSites()->getCurrentSite();
-        
-        // Return translated text if available and we're on Arabic site
-        if (($currentSite->language === 'ar' || str_starts_with($currentSite->language, 'ar-')) &&
-            !empty($translation->arabicText)) {
-            return $translation->arabicText;
+        $sourceLanguage = $settings->sourceLanguage ?? 'en';
+
+        // Return translated text if available and we're not on the source language
+        if ($currentSite->language !== $sourceLanguage &&
+            !str_starts_with($currentSite->language, $sourceLanguage . '-') &&
+            !empty($translation->translation)) {
+            return $translation->translation;
         }
-        
+
         return $text;
     }
     
@@ -80,7 +82,7 @@ class TranslationManagerVariable
             'context' => $context ?: 'site',
         ]);
         
-        return $record !== null && !empty($record->arabicText);
+        return $record !== null && !empty($record->translation);
     }
     
     /**
