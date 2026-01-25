@@ -62,6 +62,9 @@ class SettingsController extends Controller
 
     /**
      * Settings index page (redirects to general)
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionIndex(): Response
     {
@@ -70,6 +73,9 @@ class SettingsController extends Controller
 
     /**
      * General settings page
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionGeneral(): Response
     {
@@ -82,6 +88,9 @@ class SettingsController extends Controller
 
     /**
      * Generation settings page
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionGeneration(): Response
     {
@@ -94,6 +103,9 @@ class SettingsController extends Controller
 
     /**
      * Backup settings page
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionBackup(): Response
     {
@@ -106,6 +118,9 @@ class SettingsController extends Controller
 
     /**
      * Translation sources settings page
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionSources(): Response
     {
@@ -118,6 +133,9 @@ class SettingsController extends Controller
 
     /**
      * Interface settings page
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionInterface(): Response
     {
@@ -130,6 +148,9 @@ class SettingsController extends Controller
 
     /**
      * Locale mapping settings page
+     *
+     * @return Response
+     * @since 5.17.0
      */
     public function actionLocaleMapping(): Response
     {
@@ -142,6 +163,9 @@ class SettingsController extends Controller
 
     /**
      * Integrations settings page
+     *
+     * @return Response
+     * @since 5.19.0
      */
     public function actionIntegrations(): Response
     {
@@ -154,6 +178,9 @@ class SettingsController extends Controller
 
     /**
      * Auto-capture settings page
+     *
+     * @return Response
+     * @since 5.19.0
      */
     public function actionCapture(): Response
     {
@@ -166,6 +193,9 @@ class SettingsController extends Controller
 
     /**
      * Save settings
+     *
+     * @return Response|null
+     * @since 1.0.0
      */
     public function actionSave(): ?Response
     {
@@ -221,6 +251,9 @@ class SettingsController extends Controller
     
     /**
      * Clear Formie translations
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionClearFormie(): Response
     {
@@ -257,6 +290,9 @@ class SettingsController extends Controller
     
     /**
      * Clear site translations
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionClearSite(): Response
     {
@@ -291,6 +327,9 @@ class SettingsController extends Controller
     
     /**
      * Clear all translations
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionClearAll(): Response
     {
@@ -325,6 +364,9 @@ class SettingsController extends Controller
 
     /**
      * Clear translations for a specific category
+     *
+     * @return Response
+     * @since 5.0.0
      */
     public function actionClearCategory(): Response
     {
@@ -371,6 +413,9 @@ class SettingsController extends Controller
 
     /**
      * Apply skip patterns to existing translations
+     *
+     * @return Response
+     * @since 5.14.0
      */
     public function actionApplySkipPatterns(): Response
     {

@@ -24,7 +24,7 @@ use yii\web\Response;
 /**
  * PHP Import Controller
  *
- * @since 1.0.0
+ * @since 5.17.0
  */
 class PhpImportController extends Controller
 {
@@ -54,6 +54,9 @@ class PhpImportController extends Controller
 
     /**
      * Get available PHP files for import (AJAX)
+     *
+     * @return Response
+     * @since 5.17.0
      */
     public function actionGetFiles(): Response
     {
@@ -67,6 +70,9 @@ class PhpImportController extends Controller
 
     /**
      * Preview PHP file contents before import (AJAX)
+     *
+     * @return Response
+     * @since 5.17.0
      */
     public function actionPreview(): Response
     {
@@ -95,6 +101,9 @@ class PhpImportController extends Controller
     /**
      * Import selected translations from PHP file
      * Creates records for ALL site languages (like scan does)
+     *
+     * @return Response
+     * @since 5.17.0
      */
     public function actionImport(): Response
     {

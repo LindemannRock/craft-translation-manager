@@ -26,6 +26,7 @@ class DebugController extends Controller
      * Search for translations in the database
      *
      * @param string $search The search term
+     * @since 1.0.0
      */
     public function actionSearch(string $search): int
     {
@@ -86,6 +87,8 @@ class DebugController extends Controller
     
     /**
      * List recent translations
+     *
+     * @since 1.0.0
      */
     public function actionRecent(int $limit = 10): int
     {

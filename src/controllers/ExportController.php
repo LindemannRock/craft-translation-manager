@@ -82,6 +82,9 @@ class ExportController extends Controller
      * Export translations as CSV download
      * Respects filters when called from translations page
      * Exports all when called from settings page
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionIndex(): Response
     {
@@ -206,6 +209,9 @@ class ExportController extends Controller
 
     /**
      * Export download action - works with regular CP URLs instead of action URLs
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionDownload(): Response
     {
@@ -214,23 +220,34 @@ class ExportController extends Controller
     
     /**
      * Export selected translations as CSV
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionSelected(): Response
     {
         $this->requirePostRequest();
-        
+
         $request = Craft::$app->getRequest();
         $ids = $request->getRequiredBodyParam('ids');
-        
+
         if (!is_string($ids)) {
             throw new \Exception('Invalid IDs provided');
         }
-        
+
         $ids = json_decode($ids, true);
         if (!is_array($ids)) {
             throw new \Exception('Invalid IDs format');
         }
-        
+
+        // Filter to valid integer IDs only
+        $ids = array_filter($ids, fn($id) => is_numeric($id) && (int) $id > 0);
+        $ids = array_map('intval', $ids);
+
+        if (empty($ids)) {
+            throw new \Exception('No valid IDs provided');
+        }
+
         $csv = TranslationManager::getInstance()->export->exportSelected($ids);
         
         // Determine filename based on selected translations
@@ -285,6 +302,9 @@ class ExportController extends Controller
 
     /**
      * Export all translations to files (for auto-export)
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionFiles(): Response
     {
@@ -371,6 +391,9 @@ class ExportController extends Controller
 
     /**
      * Export Formie translations to files
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionFormieFiles(): Response
     {
@@ -417,6 +440,9 @@ class ExportController extends Controller
 
     /**
      * Export site translations to files
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionSiteFiles(): Response
     {
@@ -463,6 +489,9 @@ class ExportController extends Controller
 
     /**
      * Export a specific category's translations to files
+     *
+     * @return Response
+     * @since 5.0.0
      */
     public function actionCategoryFiles(): Response
     {

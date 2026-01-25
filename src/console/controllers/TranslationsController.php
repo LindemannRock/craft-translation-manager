@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\console\controllers;
 
 use craft\console\Controller;
 use craft\helpers\Console;
+use lindemannrock\translationmanager\helpers\PhpTranslationsHelper;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\console\ExitCode;
 
@@ -29,6 +30,8 @@ class TranslationsController extends Controller
 
     /**
      * Capture all existing Formie form translations
+     *
+     * @since 1.0.0
      */
     public function actionCaptureFormie(): int
     {
@@ -90,18 +93,31 @@ class TranslationsController extends Controller
 
     /**
      * Export Formie translations to PHP files
+     *
+     * @since 1.0.0
      */
     public function actionExportFormie(): int
     {
         $this->stdout("Exporting Formie translations...\n", Console::FG_YELLOW);
-        
+
         try {
             $exportService = TranslationManager::getInstance()->export;
-            $count = $exportService->exportFormieTranslations();
-            
-            $this->stdout("Exported {$count} translations to Formie translation files\n", Console::FG_GREEN);
-            
-            return ExitCode::OK;
+            $success = $exportService->exportFormieTranslations();
+
+            if ($success) {
+                // Get count matching actual export criteria (translated only, all sites)
+                $translations = TranslationManager::getInstance()->translations->getTranslations([
+                    'type' => 'forms',
+                    'status' => 'translated',
+                    'allSites' => true,
+                ]);
+                $count = count($translations);
+                $this->stdout("Exported {$count} translated entries to Formie translation files\n", Console::FG_GREEN);
+                return ExitCode::OK;
+            } else {
+                $this->stderr("Export failed\n", Console::FG_RED);
+                return ExitCode::UNSPECIFIED_ERROR;
+            }
         } catch (\Exception $e) {
             $this->stderr("Error exporting Formie translations: {$e->getMessage()}\n", Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;
@@ -110,6 +126,8 @@ class TranslationsController extends Controller
 
     /**
      * Export site translations to PHP files
+     *
+     * @since 1.0.0
      */
     public function actionExportSite(): int
     {
@@ -131,6 +149,8 @@ class TranslationsController extends Controller
 
     /**
      * Export all translations (Formie + site)
+     *
+     * @since 1.0.0
      */
     public function actionExportAll(): int
     {
@@ -161,6 +181,8 @@ class TranslationsController extends Controller
 
     /**
      * Import existing Formie translation files to database
+     *
+     * @since 1.0.0
      */
     public function actionImportFormie(): int
     {
@@ -196,11 +218,12 @@ class TranslationsController extends Controller
             
             foreach ($files as $language => $filePath) {
                 $this->stdout("Importing {$language} translations from {$filePath}...\n", Console::FG_CYAN);
-                
-                $translations = require $filePath;
-                
-                if (!is_array($translations)) {
-                    $this->stderr("  Invalid translation file format.\n", Console::FG_RED);
+
+                // Use safe parser (no code execution) - console method skips path validation
+                $translations = PhpTranslationsHelper::safeParseFileForConsole($filePath);
+
+                if ($translations === null) {
+                    $this->stderr("  Could not parse translation file (may contain unsafe code).\n", Console::FG_RED);
                     continue;
                 }
                 

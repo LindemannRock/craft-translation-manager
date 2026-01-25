@@ -85,6 +85,10 @@ class TranslationManager extends Plugin
     public bool $hasCpSection = true;
 
 
+    /**
+     * @inheritdoc
+     * @since 1.0.0
+     */
     public static function config(): array
     {
         return [
@@ -98,6 +102,10 @@ class TranslationManager extends Plugin
         ];
     }
 
+    /**
+     * @inheritdoc
+     * @since 1.0.0
+     */
     public function init(): void
     {
         parent::init();
@@ -285,6 +293,10 @@ class TranslationManager extends Plugin
         $this->scheduleBackupJob();
     }
 
+    /**
+     * @inheritdoc
+     * @since 1.0.0
+     */
     public function getCpNavItem(): ?array
     {
         $item = parent::getCpNavItem();
@@ -370,6 +382,10 @@ class TranslationManager extends Plugin
         return $item;
     }
 
+    /**
+     * @inheritdoc
+     * @since 1.0.0
+     */
     public function getSettingsResponse(): mixed
     {
         return Craft::$app->getResponse()->redirect(
@@ -377,6 +393,9 @@ class TranslationManager extends Plugin
         );
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function createSettingsModel(): ?\craft\base\Model
     {
         return new Settings();
@@ -454,6 +473,7 @@ class TranslationManager extends Plugin
      * Get the backup service
      *
      * @return BackupService
+     * @since 1.0.0
      */
     public function getBackup(): BackupService
     {
@@ -462,6 +482,9 @@ class TranslationManager extends Plugin
 
     /**
      * Get all allowed sites
+     *
+     * @return array
+     * @since 1.0.0
      */
     public function getAllowedSites(): array
     {
@@ -470,6 +493,10 @@ class TranslationManager extends Plugin
 
     /**
      * Check if site is allowed
+     *
+     * @param int $siteId
+     * @return bool
+     * @since 1.0.0
      */
     public function isSiteAllowed(int $siteId): bool
     {
@@ -480,6 +507,7 @@ class TranslationManager extends Plugin
      * Get unique language codes from all sites
      *
      * @return array<string> Array of unique language codes (e.g., ['en-US', 'ar', 'fr'])
+     * @since 5.15.0
      */
     public function getUniqueLanguages(): array
     {
@@ -497,6 +525,10 @@ class TranslationManager extends Plugin
 
     /**
      * Get site language by site ID
+     *
+     * @param int $siteId
+     * @return string|null
+     * @since 1.0.0
      */
     public function getSiteLanguage(int $siteId): ?string
     {
@@ -508,6 +540,7 @@ class TranslationManager extends Plugin
      * Get the configured name of the Formie plugin
      *
      * @return string
+     * @since 1.0.0
      */
     public static function getFormiePluginName(): string
     {

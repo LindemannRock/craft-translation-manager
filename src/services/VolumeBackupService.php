@@ -83,6 +83,8 @@ class VolumeBackupService extends Component
 
     /**
      * Get the backup base path
+     *
+     * @since 1.12.0
      */
     public function getBackupPath(): string
     {
@@ -100,6 +102,7 @@ class VolumeBackupService extends Component
      *
      * @param string|null $reason Optional reason for the backup
      * @return string|null The backup directory path on success, null on failure
+     * @since 1.12.0
      */
     public function createBackup(?string $reason = null): ?string
     {
@@ -240,6 +243,8 @@ class VolumeBackupService extends Component
 
     /**
      * Get list of all backups
+     *
+     * @since 1.12.0
      */
     public function getBackups(): array
     {
@@ -375,6 +380,8 @@ class VolumeBackupService extends Component
 
     /**
      * Restore a backup
+     *
+     * @since 1.12.0
      */
     public function restoreBackup(string $backupName): bool
     {
@@ -478,6 +485,8 @@ class VolumeBackupService extends Component
 
     /**
      * Delete a backup
+     *
+     * @since 1.12.0
      */
     public function deleteBackup(string $backupName): bool
     {
@@ -534,6 +543,8 @@ class VolumeBackupService extends Component
 
     /**
      * Format bytes to human readable
+     *
+     * @since 1.12.0
      */
     public function formatBytes($bytes, $precision = 2): string
     {

@@ -225,6 +225,10 @@
                         {{ "Preview"|t('translation-manager') }}
                     </button>
                 </div>
+                {% include 'lindemannrock-base/_components/info-box' with {
+                    message: 'Only import PHP files from trusted sources. Files are parsed safely without code execution, but only standard return array syntax is supported.'|t('translation-manager'),
+                    type: 'warning',
+                } %}
             </div>
 
             <div id="php-preview-section" style="margin-top: 20px; display: none;">

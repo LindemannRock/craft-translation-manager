@@ -257,6 +257,7 @@ class Settings extends Model
      * Set skip patterns from string (for form submission)
      *
      * @param string|array $value
+     * @since 1.0.0
      */
     public function setSkipPatterns($value): void
     {
@@ -278,6 +279,7 @@ class Settings extends Model
      * Set exclude form handle patterns from string (for form submission)
      *
      * @param string|array $value
+     * @since 5.14.0
      */
     public function setExcludeFormHandlePatterns($value): void
     {
@@ -301,6 +303,8 @@ class Settings extends Model
 
     /**
      * Validates the translation category (deprecated single category)
+     *
+     * @since 1.0.0
      */
     public function validateTranslationCategory($attribute, $params, $validator)
     {
@@ -325,6 +329,8 @@ class Settings extends Model
 
     /**
      * Validates the translation categories array
+     *
+     * @since 5.0.0
      */
     public function validateTranslationCategories($attribute, $params, $validator): void
     {
@@ -357,6 +363,8 @@ class Settings extends Model
 
     /**
      * Validates the locale mapping configuration array
+     *
+     * @since 5.17.0
      */
     public function validateLocaleMapping($attribute, $params, $validator): void
     {
@@ -414,6 +422,7 @@ class Settings extends Model
      * Falls back to deprecated translationCategory if translationCategories is empty
      *
      * @return string[]
+     * @since 5.0.0
      */
     public function getEnabledCategories(): array
     {
@@ -447,6 +456,7 @@ class Settings extends Model
      * Gets the primary (first enabled) translation category
      *
      * @return string
+     * @since 5.0.0
      */
     public function getPrimaryCategory(): string
     {
@@ -459,6 +469,7 @@ class Settings extends Model
      *
      * @param string $category
      * @return bool
+     * @since 5.0.0
      */
     public function isCategoryEnabled(string $category): bool
     {
@@ -474,6 +485,7 @@ class Settings extends Model
      * Gets all categories including formie (if enabled)
      *
      * @return string[]
+     * @since 5.0.0
      */
     public function getAllCategories(): array
     {
@@ -494,6 +506,7 @@ class Settings extends Model
      * ['en-US' => 'en', 'fr-CA' => 'fr']
      *
      * @return array<string, string> Lookup array of source => destination
+     * @since 5.17.0
      */
     public function getActiveLocaleMapping(): array
     {
@@ -522,6 +535,7 @@ class Settings extends Model
      *
      * @param string $language The original language code
      * @return string The mapped language code (or original if no mapping exists)
+     * @since 5.17.0
      */
     public function mapLanguage(string $language): string
     {
@@ -531,6 +545,8 @@ class Settings extends Model
 
     /**
      * Validates the log level
+     *
+     * @since 1.0.0
      */
     public function validateLogLevel($attribute, $params, $validator)
     {
@@ -571,6 +587,8 @@ class Settings extends Model
 
     /**
      * Validates the export path to prevent directory traversal attacks
+     *
+     * @since 1.0.0
      */
     public function validateExportPath($attribute, $params, $validator)
     {
@@ -633,6 +651,8 @@ class Settings extends Model
 
     /**
      * Validates the backup path to prevent directory traversal attacks
+     *
+     * @since 1.0.0
      */
     public function validateBackupPath($attribute, $params, $validator)
     {
@@ -703,6 +723,9 @@ class Settings extends Model
 
     /**
      * Returns the full export path
+     *
+     * @return string
+     * @since 1.0.0
      */
     public function getExportPath(): string
     {
@@ -751,6 +774,9 @@ class Settings extends Model
     
     /**
      * Returns the full backup path
+     *
+     * @return string
+     * @since 1.0.0
      */
     public function getBackupPath(): string
     {

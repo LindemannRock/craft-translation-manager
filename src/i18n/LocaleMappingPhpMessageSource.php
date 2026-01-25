@@ -19,7 +19,7 @@ use yii\i18n\PhpMessageSource;
  * Maps regional locale variants to base locales (e.g., en-GB -> en, fr-CA -> fr)
  * to reduce translation duplication.
  *
- * @since 1.0.0
+ * @since 5.17.0
  */
 class LocaleMappingPhpMessageSource extends PhpMessageSource
 {
@@ -51,6 +51,7 @@ class LocaleMappingPhpMessageSource extends PhpMessageSource
      *
      * @param string $language The original language code
      * @return string The mapped language code (or original if no mapping exists)
+     * @since 5.17.0
      */
     public function mapLanguage(string $language): string
     {

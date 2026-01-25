@@ -53,6 +53,7 @@ class BackupController extends Controller
      * Creates a backup of all translations
      *
      * @return int
+     * @since 1.0.0
      */
     public function actionCreate(): int
     {
@@ -101,6 +102,7 @@ class BackupController extends Controller
      * Runs scheduled backup based on settings
      *
      * @return int
+     * @since 1.0.0
      */
     public function actionScheduled(): int
     {
@@ -143,6 +145,7 @@ class BackupController extends Controller
      * Lists all backups
      *
      * @return int
+     * @since 1.0.0
      */
     public function actionList(): int
     {
@@ -159,8 +162,11 @@ class BackupController extends Controller
         $this->stdout(str_repeat("-", 60) . "\n");
         
         foreach ($backups as $backup) {
+            $timestamp = is_int($backup['timestamp'])
+                ? date('Y-m-d H:i:s', $backup['timestamp'])
+                : (string) $backup['timestamp'];
             $this->stdout(
-                str_pad($backup['timestamp']->format('Y-m-d H:i:s'), 20) .
+                str_pad($timestamp, 20) .
                 str_pad($backup['reason'], 15) .
                 str_pad(TranslationManager::getInstance()->backup->formatBytes($backup['size']), 12) .
                 $backup['translationCount'] . "\n"
@@ -174,6 +180,7 @@ class BackupController extends Controller
      * Cleans old backups based on retention settings
      *
      * @return int
+     * @since 1.0.0
      */
     public function actionClean(): int
     {
@@ -213,7 +220,7 @@ class BackupController extends Controller
         
         foreach ($backups as $backup) {
             if ($backup['reason'] === 'scheduled') {
-                return $backup['timestamp']->getTimestamp();
+                return is_int($backup['timestamp']) ? $backup['timestamp'] : 0;
             }
         }
         

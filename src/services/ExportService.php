@@ -35,6 +35,8 @@ class ExportService extends Component
     }
     /**
      * Export all translations
+     *
+     * @since 1.0.0
      */
     public function exportAll(): array
     {
@@ -55,6 +57,8 @@ class ExportService extends Component
 
     /**
      * Export Formie translations to translation files
+     *
+     * @since 1.0.0
      */
     public function exportFormieTranslations(): bool
     {
@@ -134,6 +138,8 @@ class ExportService extends Component
 
     /**
      * Export site translations to translation files (per category)
+     *
+     * @since 1.0.0
      */
     public function exportSiteTranslations(): bool
     {
@@ -235,6 +241,8 @@ class ExportService extends Component
 
     /**
      * Export a single category's translations to translation files
+     *
+     * @since 5.0.0
      */
     public function exportCategoryTranslations(string $category): bool
     {
@@ -313,6 +321,8 @@ class ExportService extends Component
 
     /**
      * Export selected translations
+     *
+     * @since 1.0.0
      */
     public function exportSelected(array $ids): string
     {

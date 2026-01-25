@@ -90,6 +90,8 @@ class BackupService extends Component
 
     /**
      * Get the backup base path
+     *
+     * @since 1.0.0
      */
     public function getBackupPath(): string
     {
@@ -118,6 +120,7 @@ class BackupService extends Component
      *
      * @param string|null $reason Optional reason for the backup (e.g., "before_import", "manual", "scheduled")
      * @return string|null The backup directory path on success, null on failure
+     * @since 1.0.0
      */
     public function createBackup(?string $reason = null): ?string
     {
@@ -395,6 +398,7 @@ class BackupService extends Component
      * Get all available backups
      *
      * @return array Array of backup info sorted by date (newest first)
+     * @since 1.0.0
      */
     public function getBackups(): array
     {
@@ -706,6 +710,7 @@ class BackupService extends Component
      *
      * @param string $backupName The backup directory name (e.g., "2024-01-05_14-30-00")
      * @return array Result with success status and message
+     * @since 1.0.0
      */
     public function restoreBackup(string $backupName): array
     {
@@ -1069,6 +1074,8 @@ class BackupService extends Component
 
     /**
      * Delete a backup
+     *
+     * @since 1.0.0
      */
     public function deleteBackup(string $backupName): bool
     {
@@ -1150,6 +1157,8 @@ class BackupService extends Component
     /**
      * Clean up old backups based on retention policy
      * Manual backups are never deleted automatically
+     *
+     * @since 1.0.0
      */
     public function cleanupOldBackups(): int
     {
@@ -1247,6 +1256,8 @@ class BackupService extends Component
 
     /**
      * Format bytes into human readable format
+     *
+     * @since 1.0.0
      */
     public function formatBytes(int $bytes, int $precision = 2): string
     {

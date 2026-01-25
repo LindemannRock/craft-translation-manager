@@ -26,6 +26,8 @@ use Twig\Source;
  *
  * Uses Twig's AST parser to accurately find translation usage in templates.
  * More reliable than regex - handles comments, variables, and edge cases correctly.
+ *
+ * @since 5.17.0
  */
 class TemplateHelper
 {
@@ -38,6 +40,7 @@ class TemplateHelper
      *     errors: array<string>,
      *     scannedFiles: int
      * }
+     * @since 5.17.0
      */
     public static function scanTemplates(array $enabledCategories): array
     {
@@ -52,44 +55,50 @@ class TemplateHelper
             $result['found'][$category] = [];
         }
 
-        $twig = self::getTwigEnvironment();
+        $originalMode = null;
+        $twig = self::getTwigEnvironment($originalMode);
         if ($twig === null) {
             $result['errors'][] = 'Could not initialize Twig environment';
             return $result;
         }
 
-        $settings = TranslationManager::getInstance()->getSettings();
-        $primaryCategory = $settings->getPrimaryCategory();
+        try {
+            $settings = TranslationManager::getInstance()->getSettings();
+            $primaryCategory = $settings->getPrimaryCategory();
 
-        $templateFiles = self::getTemplateFiles();
+            $templateFiles = self::getTemplateFiles();
 
-        foreach ($templateFiles as $filePath) {
-            $result['scannedFiles']++;
+            foreach ($templateFiles as $filePath) {
+                $result['scannedFiles']++;
 
-            try {
-                $messages = self::parseTemplateFile($twig, $filePath, $primaryCategory);
+                try {
+                    $messages = self::parseTemplateFile($twig, $filePath, $primaryCategory);
 
-                foreach ($messages as $message) {
-                    $category = $message['category'];
+                    foreach ($messages as $message) {
+                        $category = $message['category'];
 
-                    // Only track if category is enabled
-                    if (!in_array($category, $enabledCategories, true)) {
-                        continue;
+                        // Only track if category is enabled
+                        if (!in_array($category, $enabledCategories, true)) {
+                            continue;
+                        }
+
+                        $key = $message['key'];
+                        $relativePath = self::getRelativePath($filePath);
+
+                        $result['found'][$category][$key] = [
+                            'file' => $relativePath,
+                            'category' => $category,
+                        ];
                     }
-
-                    $key = $message['key'];
+                } catch (\Throwable $e) {
+                    // Log but continue - one broken template shouldn't stop the scan
                     $relativePath = self::getRelativePath($filePath);
-
-                    $result['found'][$category][$key] = [
-                        'file' => $relativePath,
-                        'category' => $category,
-                    ];
+                    $result['errors'][] = "{$relativePath}: {$e->getMessage()}";
                 }
-            } catch (\Throwable $e) {
-                // Log but continue - one broken template shouldn't stop the scan
-                $relativePath = self::getRelativePath($filePath);
-                $result['errors'][] = "{$relativePath}: {$e->getMessage()}";
             }
+        } finally {
+            // Always restore the original template mode
+            self::restoreTemplateMode($originalMode);
         }
 
         return $result;
@@ -99,6 +108,7 @@ class TemplateHelper
      * Parse a single template file for translation keys
      *
      * @return array<array{key: string, category: string}>
+     * @since 5.17.0
      */
     public static function parseTemplateFile(\Twig\Environment $twig, string $filePath, string $defaultCategory = 'site'): array
     {
@@ -306,15 +316,32 @@ class TemplateHelper
 
     /**
      * Get Twig environment configured for site templates
+     *
+     * @param string|null &$originalMode Pass a variable to receive the original mode for later restoration
      */
-    private static function getTwigEnvironment(): ?\Twig\Environment
+    private static function getTwigEnvironment(?string &$originalMode = null): ?\Twig\Environment
     {
         try {
             $view = Craft::$app->getView();
+            $originalMode = $view->getTemplateMode();
             $view->setTemplateMode('site');
             return $view->getTwig();
         } catch (\Throwable) {
             return null;
+        }
+    }
+
+    /**
+     * Restore the original template mode
+     */
+    private static function restoreTemplateMode(?string $originalMode): void
+    {
+        if ($originalMode !== null) {
+            try {
+                Craft::$app->getView()->setTemplateMode($originalMode);
+            } catch (\Throwable) {
+                // Ignore errors restoring mode
+            }
         }
     }
 

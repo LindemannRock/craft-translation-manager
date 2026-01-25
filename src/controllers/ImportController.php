@@ -50,6 +50,9 @@ class ImportController extends Controller
 
     /**
      * Check which translations already exist
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionCheckExisting(): Response
     {
@@ -269,6 +272,9 @@ class ImportController extends Controller
     
     /**
      * Import CSV file
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionIndex(): Response
     {
@@ -769,6 +775,9 @@ class ImportController extends Controller
     
     /**
      * Import history page
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionHistory(): Response
     {
@@ -810,6 +819,9 @@ class ImportController extends Controller
     
     /**
      * Log malicious content attempts (for audit trail)
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionLogMalicious(): Response
     {
@@ -900,6 +912,9 @@ class ImportController extends Controller
     
     /**
      * Clear import logs
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionClearLogs(): Response
     {

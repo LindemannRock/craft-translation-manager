@@ -30,8 +30,6 @@ use craft\db\ActiveRecord;
  * @property string|null $dateCreated
  * @property string|null $dateUpdated
  * @property string $uid
- * @property string|null $englishText @deprecated Legacy - use translationKey
- * @property string|null $arabicText @deprecated Legacy - use translation
  * @since 1.0.0
  */
 class TranslationRecord extends ActiveRecord

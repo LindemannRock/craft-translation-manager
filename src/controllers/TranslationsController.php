@@ -75,6 +75,9 @@ class TranslationsController extends Controller
 
     /**
      * Translation index page
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionIndex(): Response
     {
@@ -164,6 +167,9 @@ class TranslationsController extends Controller
 
     /**
      * Save a single translation
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionSave(): Response
     {
@@ -216,6 +222,9 @@ class TranslationsController extends Controller
 
     /**
      * Save all translations
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionSaveAll(): Response
     {
@@ -283,6 +292,9 @@ class TranslationsController extends Controller
 
     /**
      * Delete translations
+     *
+     * @return Response
+     * @since 1.0.0
      */
     public function actionDelete(): Response
     {
