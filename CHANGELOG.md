@@ -1,5 +1,18 @@
 # Changelog
 
+## [5.20.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.19.1...v5.20.0) (2026-01-26)
+
+
+### Features
+
+* streamline Formie plugin checks using PluginHelper ([ca325b5](https://github.com/LindemannRock/craft-translation-manager/commit/ca325b5c89ecabe9c6d6a487465cf1bd7881068a))
+
+
+### Bug Fixes
+
+* **jobs:** prevent duplicate scheduling of backup jobs ([2862051](https://github.com/LindemannRock/craft-translation-manager/commit/2862051e370b49809d8a6012213464b65cd3acb1))
+* **security:** token-based PHP parser and legacy field cleanup ([a7b049b](https://github.com/LindemannRock/craft-translation-manager/commit/a7b049b568a8f871b04c6406ceb481fc2fcfdaf1))
+
 ## [5.19.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.19.0...v5.19.1) (2026-01-22)
 
 
