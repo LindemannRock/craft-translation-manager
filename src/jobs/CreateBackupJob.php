@@ -120,6 +120,19 @@ class CreateBackupJob extends BaseJob
             return;
         }
 
+        // Prevent duplicate scheduling - check if another backup job already exists
+        // This prevents fan-out if multiple jobs end up in the queue (manual runs, retries, etc.)
+        $existingJob = (new \craft\db\Query())
+            ->from('{{%queue}}')
+            ->where(['like', 'job', 'translationmanager'])
+            ->andWhere(['like', 'job', 'CreateBackupJob'])
+            ->exists();
+
+        if ($existingJob) {
+            $this->logDebug('Skipping reschedule - backup job already exists');
+            return;
+        }
+
         $delay = $this->calculateNextRunDelay($settings->backupSchedule);
 
         if ($delay > 0) {
