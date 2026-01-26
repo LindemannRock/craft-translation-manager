@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\services;
 
 use craft\base\Component;
 use craft\helpers\StringHelper;
+use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\base\Event;
@@ -497,7 +498,7 @@ class FormieService extends Component
      */
     public function getActiveFormHandles(): array
     {
-        if (!class_exists('verbb\\formie\\Formie')) {
+        if (!PluginHelper::isPluginEnabled('formie')) {
             return [];
         }
 

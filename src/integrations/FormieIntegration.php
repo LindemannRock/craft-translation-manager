@@ -10,8 +10,8 @@
 
 namespace lindemannrock\translationmanager\integrations;
 
-use Craft;
 use craft\helpers\StringHelper;
+use lindemannrock\base\helpers\PluginHelper;
 use yii\base\Event;
 
 /**
@@ -44,9 +44,7 @@ class FormieIntegration extends BaseIntegration
      */
     public function isAvailable(): bool
     {
-        return class_exists('verbb\formie\Formie') &&
-               Craft::$app->getPlugins()->isPluginInstalled('formie') &&
-               Craft::$app->getPlugins()->isPluginEnabled('formie');
+        return PluginHelper::isPluginEnabled('formie');
     }
 
     /**

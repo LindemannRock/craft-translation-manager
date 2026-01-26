@@ -15,6 +15,7 @@ use craft\base\Component;
 use craft\db\Query;
 use craft\helpers\Db;
 use craft\helpers\StringHelper;
+use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\helpers\TemplateHelper;
 use lindemannrock\translationmanager\records\TranslationRecord;
@@ -757,7 +758,7 @@ class TranslationsService extends Component
         // For generic contexts, we need to check if the text is used anywhere
         $activeTexts = [];
         
-        if (class_exists('verbb\\formie\\Formie')) {
+        if (PluginHelper::isPluginEnabled('formie')) {
             $forms = \verbb\formie\Formie::getInstance()->getForms()->getAllForms();
             
             foreach ($forms as $form) {

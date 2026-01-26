@@ -11,6 +11,7 @@
 namespace lindemannrock\translationmanager\services;
 
 use craft\base\Component;
+use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\interfaces\TranslationIntegrationInterface;
 
@@ -81,7 +82,7 @@ class IntegrationService extends Component
     private function registerEventHandlers(): void
     {
         // Register FormieIntegration event handlers directly
-        if (class_exists('verbb\formie\elements\Form')) {
+        if (PluginHelper::isPluginEnabled('formie')) {
             $formieIntegration = new \lindemannrock\translationmanager\integrations\FormieIntegration();
             $formieIntegration->registerHooks();
         }

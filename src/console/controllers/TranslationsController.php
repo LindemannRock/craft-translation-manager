@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\console\controllers;
 
 use craft\console\Controller;
 use craft\helpers\Console;
+use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\translationmanager\helpers\PhpTranslationsHelper;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\console\ExitCode;
@@ -37,9 +38,9 @@ class TranslationsController extends Controller
     {
         $this->stdout("Capturing Formie form translations...\n", Console::FG_YELLOW);
         
-        // Check if Formie is installed
-        if (!class_exists('verbb\\formie\\Formie')) {
-            $this->stderr("Formie plugin is not installed.\n", Console::FG_RED);
+        // Check if Formie is installed and enabled
+        if (!PluginHelper::isPluginEnabled('formie')) {
+            $this->stderr("Formie plugin is not installed or enabled.\n", Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;
         }
 

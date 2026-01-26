@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
 use craft\web\Controller;
+use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\Response;
@@ -313,7 +314,7 @@ class MaintenanceController extends Controller
             $count = 0;
             $pluginName = TranslationManager::getFormiePluginName();
 
-            if (class_exists('verbb\\formie\\Formie')) {
+            if (PluginHelper::isPluginEnabled('formie')) {
                 $forms = \verbb\formie\Formie::getInstance()->getForms()->getAllForms();
 
                 foreach ($forms as $form) {

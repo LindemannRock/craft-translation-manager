@@ -544,18 +544,7 @@ class TranslationManager extends Plugin
      */
     public static function getFormiePluginName(): string
     {
-        if (class_exists('verbb\formie\Formie')) {
-            $formie = Craft::$app->getPlugins()->getPlugin('formie');
-            if ($formie && method_exists($formie, 'getSettings')) {
-                $settings = $formie->getSettings();
-                if ($settings && property_exists($settings, 'pluginName') && $settings->pluginName) {
-                    return $settings->pluginName;
-                }
-            }
-        }
-
-        // Default fallback
-        return 'Formie';
+        return PluginHelper::getPluginName('formie', 'Formie');
     }
 
 
