@@ -949,14 +949,5 @@
             });
         }
         {% endif %}
-
-        // Warn before leaving with unsaved changes
-        window.addEventListener('beforeunload', function(e) {
-            if (tracker.hasUnsavedChanges()) {
-                e.preventDefault();
-                e.returnValue = 'You have unsaved translations. Are you sure you want to leave?';
-                return e.returnValue;
-            }
-        });
     </script>
 {% endblock %}

@@ -669,18 +669,25 @@ class TranslationManager extends Plugin
             ->exists();
 
         if (!$existingJob) {
+            // Calculate delay based on schedule setting
+            $delay = match ($settings->backupSchedule) {
+                'daily' => 86400, // 24 hours
+                'weekly' => 604800, // 7 days
+                'monthly' => 2592000, // 30 days
+                default => 86400,
+            };
+
             // Create backup job
             $job = new \lindemannrock\translationmanager\jobs\CreateBackupJob([
                 'reason' => 'scheduled',
                 'reschedule' => true,
             ]);
 
-            // Add to queue with a small initial delay
-            // The job will re-queue itself to run at the scheduled interval
-            Craft::$app->getQueue()->delay(5 * 60)->push($job); // 5 minute initial delay
+            // Add to queue with the proper schedule delay
+            Craft::$app->getQueue()->delay($delay)->push($job);
 
             $this->logInfo('Scheduled initial backup job', [
-                'delay' => '5 minutes',
+                'delay_seconds' => $delay,
                 'schedule' => $settings->backupSchedule,
             ]);
         }
