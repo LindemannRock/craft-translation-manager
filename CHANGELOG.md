@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.20.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.20.0...v5.20.1) (2026-01-27)
+
+
+### Bug Fixes
+
+* **backup:** adjust backup job scheduling delay based on user settings ([d5b8664](https://github.com/LindemannRock/craft-translation-manager/commit/d5b86644c5a742643d579b398c376f5a2b844381))
+
 ## [5.20.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.19.1...v5.20.0) (2026-01-26)
 
 
