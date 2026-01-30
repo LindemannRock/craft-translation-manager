@@ -15,19 +15,39 @@
     },
 ] %}
 
-{% set tabs = {
-    importExport: {
-        label: 'Import/Export'|t('translation-manager'),
-        url: '#import-export',
-    },
-    history: {
-        label: 'Import History'|t('translation-manager'),
-        url: '#history',
-    },
-} %}
+{% set canImportExport = currentUser.can('translationManager:manageImportExport')
+    or currentUser.can('translationManager:importTranslations')
+    or currentUser.can('translationManager:exportTranslations') %}
+{% set canViewHistory = currentUser.can('translationManager:manageImportExport')
+    or currentUser.can('translationManager:viewImportHistory') %}
+{% set canClearHistory = currentUser.can('translationManager:manageImportExport')
+    or currentUser.can('translationManager:clearImportHistory') %}
+
+{% set tabs = {} %}
+
+{% if canImportExport %}
+    {% set tabs = tabs|merge({
+        importExport: {
+            label: 'Import/Export'|t('translation-manager'),
+            url: '#import-export',
+        },
+    }) %}
+{% endif %}
+
+{% if canViewHistory %}
+    {% set tabs = tabs|merge({
+        history: {
+            label: 'Import History'|t('translation-manager'),
+            url: '#history',
+        },
+    }) %}
+{% endif %}
 
 {# Check if we should select the history tab #}
 {% if craft.app.request.getSegment(3) == 'import-export' and '#history' in craft.app.request.url %}
+    {% set selectedTab = 'history' %}
+{% endif %}
+{% if not canImportExport and canViewHistory %}
     {% set selectedTab = 'history' %}
 {% endif %}
 
@@ -35,9 +55,9 @@
 
 {% block content %}
 <div id="import-export">
-    {% if currentUser.can('translationManager:exportTranslations') %}
+    {% if currentUser.can('translationManager:manageImportExport') or currentUser.can('translationManager:exportTranslations') %}
     <h2>{{ "Export Translations"|t('translation-manager') }}</h2>
-    <p class="light" style="margin-bottom: 16px;">{{ "Download translations as a CSV file"|t('translation-manager') }}</p>
+    <p class="light" style="margin-bottom: 16px;">{{ "Download translations for backup or migration."|t('translation-manager') }}</p>
 
     <form method="post" action="{{ actionUrl('translation-manager/export') }}">
         {{ csrfInput() }}
@@ -92,7 +112,7 @@
     <hr>
     {% endif %}
 
-    {% if currentUser.can('translationManager:importTranslations') %}
+    {% if currentUser.can('translationManager:manageImportExport') or currentUser.can('translationManager:importTranslations') %}
     <h2>{{ "Import Translations"|t('translation-manager') }}</h2>
 
     {% set csvFormatTip %}
@@ -116,267 +136,231 @@
 "Submit","Soumettre","fr","lindemannrock"</pre>
     {% endset %}
 
-    <div class="field">
-        <div class="heading">
-            <label>{{ "Import from CSV"|t('translation-manager') }}</label>
-            <span class="info">{{ csvFormatTip|raw }}</span>
-            <div class="instructions">
-                <p style="margin-bottom: 12px;">{{ "Import translations from a CSV file"|t('translation-manager') }}</p>
-            </div>
-        </div>
-        <div class="input">
-            <form id="import-form" method="post" enctype="multipart/form-data">
-                {{ csrfInput() }}
-                <input type="hidden" name="action" value="translation-manager/import">
+    {% set maxRows = importLimits.maxRows ?? 4000 %}
+    {% set maxBytes = importLimits.maxBytes ?? 5242880 %}
+    {% set maxSize = craft.app.formatter.asShortSize(maxBytes, 2) %}
 
-                <div id="file-input-section">
-                    <div style="margin-bottom: 12px;">
-                        <input type="file" name="csvFile" id="csv-file-input" accept=".csv,.txt" />
-                    </div>
-                    <button type="button" class="btn secondary" id="preview-btn">
-                        {{ "Preview"|t('translation-manager') }}
-                    </button>
-                    <button type="submit" class="btn secondary" id="import-btn" style="display: none;">
-                        {{ "Import"|t('translation-manager') }}
-                    </button>
-                </div>
-
-                <div id="preview-section" style="margin-top: 20px; display: none;">
-                    <h3>{{ "Import Preview"|t('translation-manager') }}</h3>
-                    <div id="preview-summary" style="margin-bottom: 12px; padding: 12px; background: #f3f4f6; border-radius: 4px;"></div>
-                    <div id="preview-content"></div>
-                    <div style="margin-top: 12px;">
-                        <button type="submit" class="btn submit" id="confirm-import-btn">
-                            {{ "Confirm and Import"|t('translation-manager') }}
-                        </button>
-                        <button type="button" class="btn" id="cancel-preview-btn">
-                            {{ "Cancel"|t('translation-manager') }}
-                        </button>
-                    </div>
-                </div>
-
-                <div id="import-results" style="margin-top: 20px; display: none;">
-                    <div id="import-success" class="success" style="display: none;"></div>
-                    <div id="import-error" class="error" style="display: none;"></div>
-                    <div id="import-details" style="display: none; margin-top: 12px;">
-                        <h4>{{ "Import Details"|t('translation-manager') }}</h4>
-                        <div id="details-content"></div>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
+    {% set phpImportHtml = null %}
     {% if craft.app.config.general.devMode %}
-    <hr>
-
-    {% set phpFormatTip %}
-        <h4>{{ "PHP File Import"|t('translation-manager') }}</h4>
-        <p><strong>{{ "For client onboarding:"|t('translation-manager') }}</strong></p>
-        <ul>
-            <li>{{ "Import existing PHP translation files into the database"|t('translation-manager') }}</li>
-            <li>{{ "Files must be in your configured translations folder"|t('translation-manager') }}</li>
-        </ul>
-        <p><strong>{{ "Expected file structure:"|t('translation-manager') }}</strong></p>
-        <pre style="background: #f3f4f6; padding: 8px; border-radius: 4px; font-size: 12px;">translations/
+        {% set phpFormatTip %}
+            <h4>{{ "PHP File Import"|t('translation-manager') }}</h4>
+            <p><strong>{{ "For client onboarding:"|t('translation-manager') }}</strong></p>
+            <ul>
+                <li>{{ "Import existing PHP translation files into the database"|t('translation-manager') }}</li>
+                <li>{{ "Files must be in your configured translations folder"|t('translation-manager') }}</li>
+            </ul>
+            <p><strong>{{ "Expected file structure:"|t('translation-manager') }}</strong></p>
+            <pre style="background: #f3f4f6; padding: 8px; border-radius: 4px; font-size: 12px;">translations/
 ├── en/
 │   └── lindemannrock.php
 └── ar/
     └── lindemannrock.php</pre>
-        <p><strong>{{ "Multi-language behavior:"|t('translation-manager') }}</strong></p>
-        <ul>
-            <li>{{ "Creates records for ALL site languages"|t('translation-manager') }}</li>
-            <li>{{ "Source language auto-filled with key as translation"|t('translation-manager') }}</li>
-            <li>{{ "Other languages set to pending"|t('translation-manager') }}</li>
-        </ul>
-        <p class="light" style="margin-top: 8px;">{{ "Only available in devMode"|t('translation-manager') }}</p>
-    {% endset %}
+            <p><strong>{{ "Multi-language behavior:"|t('translation-manager') }}</strong></p>
+            <ul>
+                <li>{{ "Creates records for ALL site languages"|t('translation-manager') }}</li>
+                <li>{{ "Source language auto-filled with key as translation"|t('translation-manager') }}</li>
+                <li>{{ "Other languages set to pending"|t('translation-manager') }}</li>
+            </ul>
+            <p class="light" style="margin-top: 8px;">{{ "Only available in devMode"|t('translation-manager') }}</p>
+        {% endset %}
 
-    <div class="field">
-        <div class="heading">
-            <label>{{ "Import from PHP Files"|t('translation-manager') }}</label>
-            <span class="info">{{ phpFormatTip|raw }}</span>
-            <div class="instructions">
-                <p style="margin-bottom: 12px;">{{ "Import existing translations from PHP files in your translations folder"|t('translation-manager') }}</p>
-            </div>
-        </div>
-        <div class="input">
-            <div id="php-file-input-section">
-                <div class="flex" style="gap: 12px; align-items: center; flex-wrap: wrap;">
-                    {{ forms.select({
-                        id: 'phpFile',
-                        name: 'phpFile',
-                        options: [{value: '', label: 'Select a file'|t('translation-manager')}],
-                        value: ''
-                    }) }}
-                    {{ forms.select({
-                        id: 'phpLanguage',
-                        name: 'phpLanguage',
-                        options: [{value: '', label: 'Select file first'|t('translation-manager')}],
-                        value: ''
-                    }) }}
-                    {{ forms.select({
-                        id: 'phpCategory',
-                        name: 'phpCategory',
-                        options: [{value: '', label: 'Select file first'|t('translation-manager')}],
-                        value: ''
-                    }) }}
-                    <button type="button" class="btn secondary" id="php-preview-btn" disabled>
-                        {{ "Preview"|t('translation-manager') }}
-                    </button>
+        {% set phpBackupEnabled = settings.backupEnabled %}
+        {% set phpBackupOnImport = settings.backupOnImport %}
+
+        {% set phpImportHtml %}
+            <div class="field">
+                <div class="heading">
+                    <label>{{ "Import from PHP Files"|t('translation-manager') }}</label>
+                    <span class="info">{{ phpFormatTip|raw }}</span>
+                    <div class="instructions">
+                        <p style="margin-bottom: 12px;">{{ "Import existing translations from PHP files in your translations folder"|t('translation-manager') }}</p>
+                    </div>
                 </div>
-                {% include 'lindemannrock-base/_components/info-box' with {
-                    message: 'Only import PHP files from trusted sources. Files are parsed safely without code execution, but only standard return array syntax is supported.'|t('translation-manager'),
-                    type: 'warning',
-                } %}
-            </div>
+                    <div class="input">
+                    <div id="php-file-input-section">
+                        <div class="flex" style="gap: 12px; align-items: center; flex-wrap: wrap;">
+                            {{ forms.select({
+                                id: 'phpFile',
+                                name: 'phpFile',
+                                options: [{value: '', label: 'Select a file'|t('translation-manager')}],
+                                value: ''
+                            }) }}
+                            {{ forms.select({
+                                id: 'phpLanguage',
+                                name: 'phpLanguage',
+                                options: [{value: '', label: 'Select file first'|t('translation-manager')}],
+                                value: ''
+                            }) }}
+                            {{ forms.select({
+                                id: 'phpCategory',
+                                name: 'phpCategory',
+                                options: [{value: '', label: 'Select file first'|t('translation-manager')}],
+                                value: ''
+                            }) }}
+                        </div>
+                        {{ forms.lightswitchField({
+                            label: 'Create Backup Before Import'|t('translation-manager'),
+                            instructions: 'Automatically backup existing translations before importing (recommended)'|t('translation-manager'),
+                            id: 'phpCreateBackup',
+                            name: 'phpCreateBackup',
+                            on: phpBackupEnabled and phpBackupOnImport,
+                            disabled: not phpBackupEnabled,
+                            warning: not phpBackupEnabled ? 'Backups are disabled in settings.'|t('translation-manager') : null,
+                        }) }}
+                        {% include 'lindemannrock-base/_components/info-box' with {
+                            message: 'Only import PHP files from trusted sources. Files are parsed safely without code execution, but only standard return array syntax is supported.'|t('translation-manager'),
+                            type: 'warning',
+                        } %}
+                        <div class="buttons">
+                            <button type="button" class="btn submit" id="php-preview-btn" disabled>
+                                {{ "Preview"|t('translation-manager') }}
+                            </button>
+                        </div>
+                    </div>
 
-            <div id="php-preview-section" style="margin-top: 20px; display: none;">
-                <h3>{{ "Import Preview"|t('translation-manager') }}</h3>
-                <div id="php-preview-summary" style="margin-bottom: 12px; padding: 12px; background: #f3f4f6; border-radius: 4px;"></div>
-                <div id="php-preview-content" style="max-height: 400px; overflow-y: auto;"></div>
-                <div id="php-preview-buttons" style="margin-top: 12px;">
-                    <button type="button" class="btn submit" id="php-confirm-import-btn">
-                        {{ "Confirm and Import"|t('translation-manager') }}
-                    </button>
-                    <button type="button" class="btn" id="php-cancel-btn">
-                        {{ "Cancel"|t('translation-manager') }}
-                    </button>
+                    <div id="php-preview-section" style="margin-top: 20px; display: none;">
+                        <h3>{{ "Import Preview"|t('translation-manager') }}</h3>
+                        {% include 'lindemannrock-base/_components/info-box' with {
+                            message: '<strong>' ~ "Backup will be created automatically before importing to protect existing translations."|t('translation-manager') ~ '</strong>',
+                            type: 'success',
+                            variant: 'colored',
+                            margin: 'bottom',
+                            boxId: 'php-backup-notice',
+                            hidden: true
+                        } %}
+                        <div id="php-preview-summary" style="margin-bottom: 12px; padding: 12px; background: #f3f4f6; border-radius: 4px;"></div>
+                        <div id="php-preview-content" style="max-height: 400px; overflow-y: auto;"></div>
+                        <div id="php-preview-buttons" style="margin-top: 12px;">
+                            <button type="button" class="btn submit" id="php-confirm-import-btn">
+                                {{ "Confirm and Import"|t('translation-manager') }}
+                            </button>
+                            <button type="button" class="btn" id="php-cancel-btn">
+                                {{ "Cancel"|t('translation-manager') }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="php-import-results" style="margin-top: 20px; display: none;">
+                        <div id="php-import-success" class="success" style="display: none;"></div>
+                        <div id="php-import-error" class="error" style="display: none;"></div>
+                    </div>
                 </div>
             </div>
-
-            <div id="php-import-results" style="margin-top: 20px; display: none;">
-                <div id="php-import-success" class="success" style="display: none;"></div>
-                <div id="php-import-error" class="error" style="display: none;"></div>
-            </div>
-        </div>
-    </div>
+        {% endset %}
     {% endif %}
+
+    {% include 'lindemannrock-base/_partials/import-csv' with {
+        action: actionUrl('translation-manager/import/upload'),
+        formId: 'translation-import-form',
+        title: 'Import CSV'|t('translation-manager'),
+        description: '',
+        csvDescription: 'Import translations from a CSV file.'|t('translation-manager'),
+        csvFormatTip: csvFormatTip,
+        fileLabel: 'CSV File'|t('translation-manager'),
+        fileInstructions: 'Select a CSV file to import translations'|t('translation-manager'),
+        delimiterLabel: 'CSV Delimiter'|t('translation-manager'),
+        delimiterInstructions: 'Character used to separate values in your CSV (auto-detect is default)'|t('translation-manager'),
+        delimiterValue: 'auto',
+        delimiterOptions: {
+            'auto': 'Auto (detect)'|t('translation-manager'),
+            ',': 'Comma (,)'|t('translation-manager'),
+            ';': 'Semicolon (;)'|t('translation-manager'),
+            "\t": 'Tab'|t('translation-manager'),
+            '|': 'Pipe (|)'|t('translation-manager'),
+        },
+        showBackupToggle: true,
+        backupLabel: 'Create Backup Before Import'|t('translation-manager'),
+        backupInstructions: 'Automatically backup existing translations before importing (recommended)'|t('translation-manager'),
+        backupEnabled: settings.backupEnabled,
+        backupOnImport: settings.backupOnImport,
+        backupWarning: 'Backups are disabled in settings.'|t('translation-manager'),
+        infoBoxMessage: 'The maximum file size is {size} and the import is limited to {rows} rows per file.'|t('translation-manager', {
+            size: maxSize,
+            rows: maxRows|number_format
+        }),
+        submitLabel: 'Upload & Map Columns'|t('translation-manager'),
+        showModeSwitch: phpImportHtml ? true : false,
+        primaryLabel: 'CSV Import'|t('translation-manager'),
+        secondaryLabel: 'PHP Import'|t('translation-manager'),
+        secondaryHtml: phpImportHtml,
+        modeDefault: 'csv',
+        renderTitleInSection: true,
+    } %}
     {% endif %}
 </div>
 
+{% if canViewHistory %}
 <div id="history" class="hidden">
-    <div class="flex" style="align-items: center; margin-bottom: 24px;">
+    <div class="flex" style="align-items: center; margin-bottom: 1rem;">
         <h2 style="margin: 0;">{{ "Import History"|t('translation-manager') }}</h2>
-        {% if importHistory|length and currentUser.can('translationManager:importTranslations') %}
+        {% if importHistory|length and canClearHistory %}
             <div style="margin-left: auto;">
                 <button type="button" class="btn" id="clear-logs-btn">
-                    {{ "Clear logs"|t('translation-manager') }}
+                    {{ "Clear history"|t('translation-manager') }}
                 </button>
             </div>
         {% endif %}
     </div>
+    <p>{{ "Recent CSV imports and their results."|t('translation-manager') }}</p>
 
     {% if importHistory|length %}
-        <div class="data">
-            <table class="data fullwidth">
-                <thead>
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th scope="col">{{ "Date"|t('translation-manager') }}</th>
+                    <th scope="col">{{ "Created By"|t('translation-manager') }}</th>
+                    <th scope="col">{{ "Filename"|t('translation-manager') }}</th>
+                    <th scope="col">{{ "Size"|t('translation-manager') }}</th>
+                    <th scope="col">{{ "Imported"|t('translation-manager') }}</th>
+                    <th scope="col">{{ "Failed"|t('translation-manager') }}</th>
+                    <th scope="col" class="rightalign">{{ "Backup"|t('translation-manager') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for import in importHistory %}
                     <tr>
-                        <th scope="col">{{ "Date"|t('translation-manager') }}</th>
-                        <th scope="col">{{ "File"|t('translation-manager') }}</th>
-                        <th scope="col">{{ "Results"|t('translation-manager') }}</th>
-                        <th scope="col">{{ "User"|t('translation-manager') }}</th>
-                        <th scope="col">{{ "Backup"|t('translation-manager') }}</th>
+                        <td class="thin">{{ import.formattedDate }}</td>
+                        <td>{{ import.user }}</td>
+                        <td>{{ import.filename ?? '-' }}</td>
+                        <td><code style="font-size: 11px;">{{ import.formattedSize }}</code></td>
+                        <td>
+                            {% if import.imported > 0 %}
+                                <span class="success">{{ "{count} new"|t('translation-manager', { count: import.imported|number_format }) }}</span>
+                            {% endif %}
+                            {% if import.updated > 0 %}
+                                {% if import.imported > 0 %}<br>{% endif %}
+                                <span style="color: #E67E22;">{{ "{count} updated"|t('translation-manager', { count: import.updated|number_format }) }}</span>
+                            {% endif %}
+                            {% if import.skipped > 0 %}
+                                {% if import.imported > 0 or import.updated > 0 %}<br>{% endif %}
+                                <span class="light">{{ "{count} skipped"|t('translation-manager', { count: import.skipped|number_format }) }}</span>
+                            {% endif %}
+                            {% if import.imported == 0 and import.updated == 0 and import.skipped == 0 %}
+                                <span class="light">{{ "No changes"|t('translation-manager') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ import.failed|number_format }}</td>
+                        <td class="rightalign">
+                            {% if import.backupPath %}
+                                <a href="{{ url('translation-manager/backups') }}" class="go" title="{{ 'View backup'|t('translation-manager') }}">{{ "View"|t('translation-manager') }}</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    {% for import in importHistory %}
-                        <tr>
-                            <td class="thin">{{ import.formattedDate }}</td>
-                            <td>{{ import.filename }}</td>
-                            <td>
-                                {% if import.hasErrors %}
-                                    <span class="error">{{ "Failed"|t('translation-manager') }}</span>
-                                {% elseif import.imported > 0 or import.updated > 0 %}
-                                    {% if import.imported > 0 %}
-                                        <span class="success">{{ "{count} new"|t('translation-manager', { count: import.imported }) }}</span>
-                                    {% endif %}
-                                    {% if import.updated > 0 %}
-                                        {% if import.imported > 0 %}<br>{% endif %}
-                                        <span style="color: #E67E22;">{{ "{count} updated"|t('translation-manager', { count: import.updated }) }}</span>
-                                    {% endif %}
-                                    {% if import.skipped > 0 %}
-                                        <br><span class="light">{{ "{count} skipped"|t('translation-manager', { count: import.skipped }) }}</span>
-                                    {% endif %}
-                                {% else %}
-                                    <span class="light">{{ "No changes"|t('translation-manager') }}</span>
-                                    {% if import.skipped > 0 %}
-                                        <br><span class="light">{{ "{count} skipped"|t('translation-manager', { count: import.skipped }) }}</span>
-                                    {% endif %}
-                                {% endif %}
-                            </td>
-                            <td>
-                                <span class="light">{{ import.user }}</span>
-                            </td>
-                            <td>
-                                {% if import.backupPath %}
-                                    <a href="{{ url('translation-manager/backups') }}" class="go" title="{{ 'View backup'|t('translation-manager') }}">{{ "View"|t('translation-manager') }}</a>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                {% endfor %}
+            </tbody>
+        </table>
     {% else %}
         <p class="light">{{ "No imports found yet."|t('translation-manager') }}</p>
     {% endif %}
 </div>
+{% endif %}
 
 {% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}
 
-{% css %}
-    /* Preview table styling */
-    #preview-content {
-        position: relative;
-        max-height: 400px;
-        overflow-y: auto;
-    }
 
-    #preview-content table {
-        position: relative;
-    }
-
-    #preview-content thead {
-        position: sticky;
-        top: 0;
-        background-color: #f7f7f8;
-        z-index: 10;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    #preview-content thead th {
-        background-color: #f7f7f8;
-        position: relative;
-    }
-
-    #preview-content tr.warning {
-        background-color: #FEF3E2;
-    }
-
-    #preview-content tr.light td {
-        opacity: 0.6;
-    }
-
-    #preview-content .success {
-        color: #27AE60;
-        font-weight: 500;
-    }
-
-    #preview-content .warning {
-        color: #E67E22;
-        font-weight: 500;
-    }
-
-    #preview-summary .success {
-        color: #27AE60;
-    }
-
-    #preview-summary .warning {
-        color: #E67E22;
-    }
-{% endcss %}
 
 {% js %}
     // Check if we should show the history tab after reload
@@ -389,953 +373,30 @@
         }
     }
 
-    // Preview functionality
-    let csvData = null;
-
-    document.getElementById('preview-btn')?.addEventListener('click', function(e) {
-        e.preventDefault();
-
-        const fileInput = document.getElementById('csv-file-input');
-        const file = fileInput.files[0];
-
-        if (!file) {
-            Craft.cp.displayError('Please select a CSV file');
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const text = e.target.result;
-            parseAndPreviewCSV(text);
-        };
-        reader.readAsText(file);
-    });
-
-    // Proper CSV parser that handles multiline quoted values
-    function parseCSV(text) {
-        const rows = [];
-        let currentRow = [];
-        let currentField = '';
-        let inQuotes = false;
-        let i = 0;
-
-        while (i < text.length) {
-            const char = text[i];
-            const nextChar = text[i + 1];
-
-            if (inQuotes) {
-                if (char === '"') {
-                    if (nextChar === '"') {
-                        // Escaped quote - add one quote to field
-                        currentField += '"';
-                        i += 2;
-                        continue;
-                    } else {
-                        // End of quoted field
-                        inQuotes = false;
-                        i++;
-                        continue;
-                    }
-                } else {
-                    // Regular character inside quotes (including newlines)
-                    currentField += char;
-                    i++;
-                }
-            } else {
-                if (char === '"') {
-                    // Start of quoted field
-                    inQuotes = true;
-                    i++;
-                } else if (char === ',') {
-                    // End of field
-                    currentRow.push(currentField);
-                    currentField = '';
-                    i++;
-                } else if (char === '\n' || (char === '\r' && nextChar === '\n')) {
-                    // End of row
-                    currentRow.push(currentField);
-                    if (currentRow.some(field => field.trim() !== '')) {
-                        rows.push(currentRow);
-                    }
-                    currentRow = [];
-                    currentField = '';
-                    i += (char === '\r' ? 2 : 1);
-                } else if (char === '\r') {
-                    // Mac-style line ending
-                    currentRow.push(currentField);
-                    if (currentRow.some(field => field.trim() !== '')) {
-                        rows.push(currentRow);
-                    }
-                    currentRow = [];
-                    currentField = '';
-                    i++;
-                } else {
-                    // Regular character
-                    currentField += char;
-                    i++;
-                }
-            }
-        }
-
-        // Handle last field and row
-        if (currentField !== '' || currentRow.length > 0) {
-            currentRow.push(currentField);
-            if (currentRow.some(field => field.trim() !== '')) {
-                rows.push(currentRow);
-            }
-        }
-
-        // Remove BOM from first field if present
-        if (rows.length > 0 && rows[0].length > 0) {
-            rows[0][0] = rows[0][0].replace(/^\uFEFF/, '');
-        }
-
-        return rows;
-    }
-
-    function parseAndPreviewCSV(text) {
-        // Parse CSV properly respecting quoted multiline values
-        const rows = parseCSV(text);
-
-        if (rows.length < 2) {
-            Craft.cp.displayError('CSV file appears to be empty');
-            return;
-        }
-
-        const headers = rows[0];
-        const keyIdx = findColumnIndex(headers, ['Translation Key']);
-
-        if (keyIdx === -1) {
-            Craft.cp.displayError('Could not find Translation Key column');
-            return;
-        }
-
-        const translationIdx = findColumnIndex(headers, ['Translation', 'Arabic Translation', 'Arabic', 'Ar', 'AR', 'ar', 'Translated']);
-        const typeIdx = findColumnIndex(headers, ['Type']);
-        const contextIdx = findColumnIndex(headers, ['Context']);
-        const categoryIdx = findColumnIndex(headers, ['Category']);
-        const statusIdx = findColumnIndex(headers, ['Status']);
-        const siteLanguageIdx = findColumnIndex(headers, ['Language', 'Site Language', 'Site_Language']);
-
-
-        const toCheck = [];
-
-        // Parse rows (skip header)
-        for (let i = 1; i < rows.length; i++) {
-            try {
-                const row = rows[i];
-                if (row.length === 0) continue;
-
-
-                const translationKey = row[keyIdx] || '';
-                const translation = translationIdx !== -1 ? (row[translationIdx] || '') : '';
-                const context = contextIdx !== -1 ? (row[contextIdx] || 'site') : 'site';
-                const category = categoryIdx !== -1 ? (row[categoryIdx] || '') : '';
-                const type = typeIdx !== -1 ? (row[typeIdx] || '') : '';
-                let siteLanguage = siteLanguageIdx !== -1 ? (row[siteLanguageIdx] || '') : '';
-
-                // Default to primary site's language if no language in CSV
-                if (!siteLanguage) {
-                    siteLanguage = '{{ craft.app.sites.primarySite.language }}';
-                }
-
-                if (translationKey) {
-                    toCheck.push({
-                        english: translationKey,
-                        arabic: translation,
-                        context: context,
-                        category: category,
-                        type: type,
-                        siteLanguage: siteLanguage
-                    });
-                }
-            } catch (error) {
-                console.error(`Error processing row ${i}:`, error);
-                break; // Stop on error
-            }
-        }
-
-
-        // Check for malicious content client-side first
-        const maliciousRows = [];
-        const cleanRows = [];
-
-        for (const translation of toCheck) {
-            const isMalicious = containsMaliciousContent(translation);
-
-            if (isMalicious) {
-                maliciousRows.push(translation);
-            } else {
-                cleanRows.push(translation);
-            }
-        }
-
-        if (maliciousRows.length > 0) {
-            // Log malicious content on server for audit trail
-            logMaliciousContent(maliciousRows);
-
-            // Show malicious content warning without server check
-            showMaliciousContentWarning(maliciousRows.map(row => ({
-                english: row.english,
-                arabic: row.arabic,
-                context: row.context,
-                threats: detectThreats(row)
-            })));
-        } else {
-            // Check which translations already exist (only clean content)
-            checkExistingTranslations(cleanRows);
-        }
-    }
-
-    async function logMaliciousContent(maliciousRows) {
-        try {
-            // Send malicious content to server just for logging
-            await fetch('{{ actionUrl('translation-manager/import/log-malicious') }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    maliciousRows: maliciousRows.map(row => ({
-                        english: row.english,
-                        arabic: row.arabic,
-                        context: row.context,
-                        threats: detectThreats(row)
-                    }))
-                })
-            });
-        } catch (error) {
-            // Fail silently - logging is not critical
-            console.warn('Failed to log malicious content:', error);
-        }
-    }
-
-    async function checkExistingTranslations(translations) {
-
-        // Show loading state
-        const previewSection = document.getElementById('preview-section');
-        const previewContent = document.getElementById('preview-content');
-        previewContent.innerHTML = '<div class="spinner"></div><p>Checking existing translations...</p>';
-        previewSection.style.display = 'block';
-
-        // Batch translations to avoid Cloudflare blocking large payloads
-        const batchSize = 50; // Send 50 at a time
-        const batches = [];
-        for (let i = 0; i < translations.length; i += batchSize) {
-            batches.push(translations.slice(i, i + batchSize));
-        }
-
-
-        // Process batches
-        let allResults = {
-            toImport: [],
-            toUpdate: [],
-            unchanged: [],
-            malicious: [],
-            errors: []
-        };
-
-        try {
-            for (let i = 0; i < batches.length; i++) {
-                const batch = batches[i];
-                previewContent.innerHTML = `<div class="spinner"></div><p>Checking existing translations... (${i + 1}/${batches.length})</p>`;
-
-                const response = await fetch('{{ actionUrl('translation-manager/import/check-existing') }}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ translations: batch })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // Merge results
-                    allResults.toImport.push(...(data.toImport || []));
-                    allResults.toUpdate.push(...(data.toUpdate || []));
-                    allResults.unchanged.push(...(data.unchanged || []));
-                    allResults.malicious.push(...(data.malicious || []));
-                    allResults.errors = allResults.errors || [];
-                    allResults.errors.push(...(data.errors || []));
-                }
-            }
-
-            // Process combined results
-            window.importData = allResults;
-
-            if (allResults.malicious.length > 0) {
-                showMaliciousContentWarning(allResults.malicious);
-            } else {
-                showPreview(allResults.toImport, allResults.toUpdate, allResults.unchanged, allResults.errors);
-            }
-        } catch (error) {
-            console.error('Error checking translations:', error);
-            // Fallback: treat all as new
-            window.importData = {
-                toImport: translations,
-                toUpdate: [],
-                unchanged: []
-            };
-            showPreview(translations, [], []);
-        }
-    }
-
-    // Original function continues as async
-    async function checkExistingTranslationsSingle(translations) {
-        // Show loading state
-        const previewSection = document.getElementById('preview-section');
-        const previewContent = document.getElementById('preview-content');
-        previewContent.innerHTML = '<div class="spinner"></div><p>Checking existing translations...</p>';
-        previewSection.style.display = 'block';
-
-        // Send to server to check which exist
-        fetch('{{ actionUrl('translation-manager/import/check-existing') }}', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ translations })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Store the import data for later use
-                window.importData = {
-                    toImport: data.toImport || [],
-                    toUpdate: data.toUpdate || [],
-                    unchanged: data.unchanged || []
-                };
-
-                // Check if malicious content was detected
-                if (data.malicious && data.malicious.length > 0) {
-                    showMaliciousContentWarning(data.malicious);
-                } else {
-                    showPreview(data.toImport || [], data.toUpdate || [], data.unchanged || []);
-                }
-            } else {
-                // Fallback: treat all as new
-                window.importData = {
-                    toImport: translations,
-                    toUpdate: [],
-                    unchanged: []
-                };
-                showPreview(translations, [], []);
-            }
-        })
-        .catch(error => {
-            // Fallback: treat all as new
-            window.importData = {
-                toImport: translations,
-                toUpdate: [],
-                unchanged: []
-            };
-            showPreview(translations, [], []);
-        });
-    }
-
-    function parseCSVLine(line) {
-        const result = [];
-        let current = '';
-        let inQuotes = false;
-
-        for (let i = 0; i < line.length; i++) {
-            const char = line[i];
-
-            if (char === '"') {
-                if (inQuotes && line[i + 1] === '"') {
-                    current += '"';
-                    i++;
-                } else {
-                    inQuotes = !inQuotes;
-                }
-            } else if (char === ',' && !inQuotes) {
-                result.push(current);
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-
-        result.push(current);
-        return result;
-    }
-
-    function findColumnIndex(headers, possibleNames) {
-        for (const name of possibleNames) {
-            const index = headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
-            if (index !== -1) return index;
-        }
-        return -1;
-    }
-
-    function showPreview(toImport, toUpdate, unchanged = [], errors = []) {
-        const previewSection = document.getElementById('preview-section');
-        const previewSummary = document.getElementById('preview-summary');
-        const previewContent = document.getElementById('preview-content');
-        const previewBtn = document.getElementById('preview-btn');
-        const importBtn = document.getElementById('import-btn');
-
-        const totalEntries = toImport.length + toUpdate.length + unchanged.length + errors.length;
-        const willProcess = toImport.length + toUpdate.length;
-
-        // Summary
-        let summaryHtml = `<p><strong>Total entries in CSV:</strong> ${totalEntries}</p>`;
-        if (toImport.length > 0) {
-            summaryHtml += `<p><span class="success">New translations to create:</span> ${toImport.length}</p>`;
-        }
-        if (toUpdate.length > 0) {
-            summaryHtml += `<p><span class="warning">Existing translations to update:</span> ${toUpdate.length}</p>`;
-        }
-        if (unchanged.length > 0) {
-            summaryHtml += `<p><span class="light">Unchanged (will skip):</span> ${unchanged.length}</p>`;
-        }
-        if (errors && errors.length > 0) {
-            summaryHtml += `<p><span class="error">Errors (will not import):</span> ${errors.length}</p>`;
-        }
-        if (willProcess === 0) {
-            summaryHtml += `<p class="warning" style="margin-top: 8px;">No changes to import. All translations are already up to date.</p>`;
-        }
-        previewSummary.innerHTML = summaryHtml;
-
-        // Content table
-        let tableHtml = `
-            <table class="data fullwidth">
-                <thead>
-                    <tr>
-                        <th>Translation Key</th>
-                        <th>Current Translation</th>
-                        <th>New Translation</th>
-                        <th>Context</th>
-                        <th>Language</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        // Show updates first (more important)
-        toUpdate.forEach((item) => {
-            tableHtml += `
-                <tr class="warning">
-                    <td>${escapeHtml(item.english)}</td>
-                    <td>${escapeHtml(item.currentTranslation) || '<span class="light">Empty</span>'}</td>
-                    <td>${escapeHtml(item.arabic) || '<span class="light">Empty</span>'}</td>
-                    <td>${escapeHtml(item.context)}</td>
-                    <td>${item.language || item.siteLanguage || '<span class="light">Auto</span>'}</td>
-                    <td><span class="warning">Will update</span></td>
-                </tr>
-            `;
-        });
-
-        // Then show new imports
-        toImport.forEach((item) => {
-            tableHtml += `
-                <tr>
-                    <td>${escapeHtml(item.english)}</td>
-                    <td><span class="light">—</span></td>
-                    <td>${item.arabic ? escapeHtml(item.arabic) : '<span class="light">Empty</span>'}</td>
-                    <td>${escapeHtml(item.context)}</td>
-                    <td>${item.language || item.siteLanguage || '<span class="light">Auto</span>'}</td>
-                    <td><span class="success">Will create</span></td>
-                </tr>
-            `;
-        });
-
-        // Show unchanged at the end (less important)
-        unchanged.forEach((item) => {
-            tableHtml += `
-                <tr class="light">
-                    <td>${escapeHtml(item.english)}</td>
-                    <td>${item.currentTranslation ? escapeHtml(item.currentTranslation) : '<span class="light">Empty</span>'}</td>
-                    <td>${item.arabic ? escapeHtml(item.arabic) : '<span class="light">Empty</span>'}</td>
-                    <td>${escapeHtml(item.context)}</td>
-                    <td>${item.language || item.siteLanguage || '<span class="light">Auto</span>'}</td>
-                    <td><span class="light">Skip (no change)</span></td>
-                </tr>
-            `;
-        });
-
-        // Show errors with red highlighting
-        if (errors && errors.length > 0) {
-            errors.forEach((item) => {
-                tableHtml += `
-                    <tr class="error" style="background-color: #fee;">
-                        <td>${escapeHtml(item.english)}</td>
-                        <td><span class="light">—</span></td>
-                        <td>${item.arabic ? escapeHtml(item.arabic) : '<span class="light">Empty</span>'}</td>
-                        <td>${escapeHtml(item.context)}</td>
-                        <td>${item.language || item.siteLanguage || '<span class="light">—</span>'}</td>
-                        <td><span class="error">Error: ${item.error}</span></td>
-                    </tr>
-                `;
-            });
-        }
-
-        tableHtml += '</tbody></table>';
-        previewContent.innerHTML = tableHtml;
-
-        // Show preview section and hide file input
-        previewSection.style.display = 'block';
-        document.getElementById('file-input-section').style.display = 'none';
-
-        // Show different buttons based on whether there are changes
-        const buttonsArea = document.querySelector('#preview-section > div:last-child');
-        if (buttonsArea) {
-            if (willProcess === 0) {
-                // No changes, show "Select a Different File" button
-                buttonsArea.innerHTML = `
-                    <button type="button" class="btn submit" id="select-different-file-btn">
-                        {{ "Select a Different File"|t('translation-manager') }}
-                    </button>
-                `;
-
-                // Re-attach event handler
-                document.getElementById('select-different-file-btn')?.addEventListener('click', function() {
-                    document.getElementById('preview-section').style.display = 'none';
-                    document.getElementById('file-input-section').style.display = 'block';
-                    document.getElementById('csv-file-input').value = '';
-                    window.importData = null;
-                });
-            } else {
-                // Has changes, show normal buttons
-                buttonsArea.innerHTML = `
-                    <button type="submit" class="btn submit" id="confirm-import-btn">
-                        {{ "Confirm and Import"|t('translation-manager') }}
-                    </button>
-                    <button type="button" class="btn" id="cancel-preview-btn">
-                        {{ "Cancel"|t('translation-manager') }}
-                    </button>
-                `;
-
-                // Re-attach event handlers
-                document.getElementById('confirm-import-btn')?.addEventListener('click', function(e) {
-                    e.preventDefault();
-
-                    const fileInput = document.getElementById('csv-file-input');
-                    const file = fileInput.files[0];
-
-                    if (!file) {
-                        Craft.cp.displayError('No file selected');
-                        return;
-                    }
-
-                    // Perform the import directly
-                    performImport(file);
-                });
-
-                document.getElementById('cancel-preview-btn')?.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    document.getElementById('preview-section').style.display = 'none';
-                    document.getElementById('file-input-section').style.display = 'block';
-                    document.getElementById('csv-file-input').value = '';
-                    window.importData = null;
-                });
-            }
-        }
-    }
-
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    function containsMaliciousContent(translation) {
-        const patterns = [
-            /<script[^>]*>/i,
-            /<svg[^>]*>/i,
-            /<iframe[^>]*>/i,
-            /<object[^>]*>/i,
-            /<embed[^>]*>/i,
-            /<form[^>]*>/i,
-            /javascript:/i,
-            /vbscript:/i,
-            /data:text\/html/i,
-            /on\w+\s*=/i,
-            /<meta[^>]*http-equiv/i,
-            /<base[^>]*href/i
-        ];
-
-        const checkText = (text) => {
-            if (!text) return false;
-            // Check both raw and decoded versions
-            const decoded = decodeHTMLEntities(text);
-            return patterns.some(pattern => pattern.test(text) || pattern.test(decoded));
-        };
-
-        return checkText(translation.english) ||
-               checkText(translation.arabic) ||
-               checkText(translation.context);
-    }
-
-    function decodeHTMLEntities(text) {
-        const textarea = document.createElement('textarea');
-        textarea.innerHTML = text;
-        return textarea.value;
-    }
-
-    function detectThreats(translation) {
-        const threats = {};
-        const patterns = {
-            'Script tag': /<script[^>]*>/i,
-            'SVG tag': /<svg[^>]*>/i,
-            'Iframe tag': /<iframe[^>]*>/i,
-            'Object tag': /<object[^>]*>/i,
-            'Embed tag': /<embed[^>]*>/i,
-            'Form tag': /<form[^>]*>/i,
-            'JavaScript protocol': /javascript:/i,
-            'VBScript protocol': /vbscript:/i,
-            'Data URL': /data:text\/html/i,
-            'Event handler': /on\w+\s*=/i,
-            'Meta refresh': /<meta[^>]*http-equiv/i,
-            'Base tag': /<base[^>]*href/i
-        };
-
-        const checkField = (fieldName, text) => {
-            if (!text) return;
-            const fieldThreats = [];
-            const decoded = decodeHTMLEntities(text);
-
-            for (const [threat, pattern] of Object.entries(patterns)) {
-                if (pattern.test(text) || pattern.test(decoded)) {
-                    fieldThreats.push(threat);
-                }
-            }
-
-            if (fieldThreats.length > 0) {
-                threats[fieldName] = fieldThreats;
-            }
-        };
-
-        checkField('English', translation.english);
-        checkField('Arabic', translation.arabic);
-        checkField('Context', translation.context);
-
-        return threats;
-    }
-
-    function showMaliciousContentWarning(maliciousRows) {
-        const previewSection = document.getElementById('preview-section');
-        const previewSummary = document.getElementById('preview-summary');
-        const previewContent = document.getElementById('preview-content');
-
-        // Show preview section and hide file input
-        previewSection.style.display = 'block';
-        document.getElementById('file-input-section').style.display = 'none';
-
-        // Warning summary
-        let summaryHtml = `
-            <div style="padding: 16px; background: #FEE2E2; border: 2px solid #DC2626; border-radius: 4px;">
-                <h3 style="color: #DC2626; margin: 0 0 8px 0;">
-                    <span class="icon" aria-hidden="true" style="margin-right: 8px;">⚠️</span>
-                    Security Warning: Malicious Content Detected
-                </h3>
-                <p style="margin: 8px 0; color: #991B1B;">
-                    <strong>${maliciousRows.length} row${maliciousRows.length > 1 ? 's' : ''} contain${maliciousRows.length > 1 ? '' : 's'} potentially malicious content and cannot be imported.</strong>
-                </p>
-                <p style="margin: 8px 0; color: #991B1B;">
-                    For security reasons, these rows will be rejected. Please clean your CSV file and try again.
-                </p>
-            </div>
-        `;
-        previewSummary.innerHTML = summaryHtml;
-
-        // Show detected threats
-        let tableHtml = `
-            <table class="data fullwidth">
-                <thead>
-                    <tr style="background-color: #FEE2E2;">
-                        <th>Row Content</th>
-                        <th>Detected Threats</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        maliciousRows.forEach((row) => {
-            const threatList = [];
-            for (const [field, threats] of Object.entries(row.threats)) {
-                threatList.push(`<strong>${field}:</strong> ${threats.join(', ')}`);
-            }
-
-            tableHtml += `
-                <tr style="background-color: #FEF5F5;">
-                    <td>
-                        <div><strong>English:</strong> ${escapeHtml(row.english.substring(0, 100))}${row.english.length > 100 ? '...' : ''}</div>
-                        ${row.arabic ? `<div><strong>Arabic:</strong> ${escapeHtml(row.arabic.substring(0, 100))}${row.arabic.length > 100 ? '...' : ''}</div>` : ''}
-                        <div><strong>Context:</strong> ${escapeHtml(row.context)}</div>
-                    </td>
-                    <td style="color: #DC2626;">
-                        ${threatList.join('<br>')}
-                    </td>
-                </tr>
-            `;
-        });
-
-        tableHtml += `
-                </tbody>
-            </table>
-        `;
-
-        previewContent.innerHTML = tableHtml;
-
-        // Replace the buttons area completely for malicious content
-        const buttonsArea = document.querySelector('#preview-section > div:last-child');
-        if (buttonsArea) {
-            buttonsArea.innerHTML = `
-                <button type="button" class="btn submit" id="select-different-file-btn">
-                    {{ "Select a Different File"|t('translation-manager') }}
-                </button>
-            `;
-        }
-
-        // Add handler for select different file button
-        setTimeout(() => {
-            document.getElementById('select-different-file-btn')?.addEventListener('click', function() {
-                document.getElementById('preview-section').style.display = 'none';
-                document.getElementById('file-input-section').style.display = 'block';
-                document.getElementById('csv-file-input').value = '';
-            });
-        }, 100);
-    }
-
-    document.getElementById('cancel-preview-btn')?.addEventListener('click', function() {
-        document.getElementById('preview-section').style.display = 'none';
-        document.getElementById('file-input-section').style.display = 'block';
-        document.getElementById('csv-file-input').value = ''; // Clear the file input
-    });
-
-    // Function to perform the import
-    function performImport(file) {
-        const resultsDiv = document.getElementById('import-results');
-        const successDiv = document.getElementById('import-success');
-        const errorDiv = document.getElementById('import-error');
-        const detailsDiv = document.getElementById('import-details');
-        const detailsContent = document.getElementById('details-content');
-
-        // Hide previous results
-        resultsDiv.style.display = 'none';
-        successDiv.style.display = 'none';
-        errorDiv.style.display = 'none';
-        detailsDiv.style.display = 'none';
-
-        if (!file) {
-            errorDiv.textContent = 'Please select a CSV file';
-            errorDiv.style.display = 'block';
-            resultsDiv.style.display = 'block';
-            return;
-        }
-
-        // Show loading indicator
-        const confirmBtn = document.getElementById('confirm-import-btn');
-        if (confirmBtn) {
-            confirmBtn.classList.add('loading');
-            confirmBtn.disabled = true;
-        }
-
-        // Create form data
-        const formData = new FormData();
-        formData.append('csvFile', file);
-        formData.append('{{ craft.app.config.general.csrfTokenName }}', '{{ craft.app.request.csrfToken }}');
-        formData.append('includeDetails', '1'); // Request detailed results
-
-        // Submit
-        fetch('{{ actionUrl('translation-manager/import') }}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Remove loading state
-            if (confirmBtn) {
-                confirmBtn.classList.remove('loading');
-                confirmBtn.disabled = false;
-            }
-            resultsDiv.style.display = 'block';
-
-            // Hide preview and show file input
-            document.getElementById('preview-section').style.display = 'none';
-            document.getElementById('file-input-section').style.display = 'block';
-
-            if (data.success) {
-                let message = `Successfully imported ${data.imported} new translation${data.imported !== 1 ? 's' : ''}`;
-                if (data.updated > 0) {
-                    message += ` and updated ${data.updated} existing translation${data.updated !== 1 ? 's' : ''}`;
-                }
-                if (data.skipped > 0) {
-                    message += ` (${data.skipped} skipped)`;
-                }
-
-                successDiv.textContent = message;
-                successDiv.style.display = 'block';
-
-                // Show details if available
-                if (data.details) {
-                    let detailsHtml = '';
-
-                    if (data.details.imported && data.details.imported.length > 0) {
-                        detailsHtml += '<h5>New Translations:</h5><ul>';
-                        data.details.imported.forEach(item => {
-                            detailsHtml += `<li><strong>${escapeHtml(item.english)}</strong> → ${item.arabic ? escapeHtml(item.arabic) : '<em>Pending</em>'} <span class="light">(${item.context})</span></li>`;
-                        });
-                        detailsHtml += '</ul>';
-                    }
-
-                    if (data.details.updated && data.details.updated.length > 0) {
-                        detailsHtml += '<h5>Updated Translations:</h5><ul>';
-                        data.details.updated.forEach(item => {
-                            detailsHtml += `<li><strong>${escapeHtml(item.english)}</strong> → ${item.arabic ? escapeHtml(item.arabic) : '<em>Pending</em>'} <span class="light">(${item.context})</span></li>`;
-                        });
-                        detailsHtml += '</ul>';
-                    }
-
-                    if (detailsHtml) {
-                        detailsContent.innerHTML = detailsHtml;
-                        detailsDiv.style.display = 'block';
-                    }
-                }
-
-                // Show errors if any
-                if (data.errors && data.errors.length > 0) {
-                    const errorHtml = '<p>Some rows had errors:</p><ul>' +
-                        data.errors.map(err => '<li>' + err + '</li>').join('') + '</ul>';
-                    errorDiv.innerHTML = errorHtml;
-                    errorDiv.style.display = 'block';
-                }
-
-                // Clear file input for next import
-                const fileInput = document.getElementById('csv-file-input');
-                if (fileInput) {
-                    fileInput.value = '';
-                }
-
-                // Refresh the page to update import history
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } else {
-                errorDiv.textContent = data.error || 'Import failed';
-                errorDiv.style.display = 'block';
-            }
-        })
-        .catch(error => {
-            if (confirmBtn) {
-                confirmBtn.classList.remove('loading');
-                confirmBtn.disabled = false;
-            }
-            resultsDiv.style.display = 'block';
-            errorDiv.textContent = 'Import failed: ' + error.message;
-            errorDiv.style.display = 'block';
-        });
-    }
-
-    // Import form handling - for direct submit button
-    document.getElementById('import-form')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const fileInput = document.getElementById('csv-file-input');
-        const file = fileInput.files[0];
-
-        if (file) {
-            performImport(file);
-        }
-    });
-
-    // Handle confirm import button
-    document.getElementById('confirm-import-btn')?.addEventListener('click', function(e) {
-        e.preventDefault();
-
-        const fileInput = document.getElementById('csv-file-input');
-        const file = fileInput.files[0];
-
-        if (!file) {
-            Craft.cp.displayError('No file selected');
-            return;
-        }
-
-        // Perform the import
-        performImport(file);
-    });
-
-    // Handle cancel preview button
-    document.getElementById('cancel-preview-btn')?.addEventListener('click', function(e) {
-        e.preventDefault();
-        document.getElementById('preview-section').style.display = 'none';
-        document.getElementById('file-input-section').style.display = 'block';
-        document.getElementById('csv-file-input').value = '';
-        window.importData = null;
-    });
-
-    // Handle clear logs button
+    // Clear history button
     document.getElementById('clear-logs-btn')?.addEventListener('click', function(e) {
         e.preventDefault();
 
-        // Show confirmation alert
         if (!confirm('{{ "Are you sure you want to clear all import logs? This action cannot be undone."|t('translation-manager')|e('js') }}')) {
             return;
         }
 
-        const clearUrl = '{{ actionUrl('translation-manager/import/clear-logs') }}';
-        const button = e.target;
-
-        // Disable button and show loading state
+        const button = this;
         button.classList.add('loading');
         button.disabled = true;
 
-        fetch(clearUrl, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({})
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Store that we want to show the history tab after reload
+        Craft.sendActionRequest('POST', 'translation-manager/import/clear-logs')
+            .then(() => {
                 sessionStorage.setItem('showHistoryTab', 'true');
-                // Force a full page reload to show the notice and updated content
                 window.location.reload(true);
-            } else {
+            })
+            .catch(error => {
                 button.classList.remove('loading');
                 button.disabled = false;
-                Craft.cp.displayError(data.error || 'Failed to clear logs');
-            }
-        })
-        .catch(error => {
-            button.classList.remove('loading');
-            button.disabled = false;
-            Craft.cp.displayError('Failed to clear logs: ' + error.message);
-        });
+                Craft.cp.displayError(error.response?.data?.error || '{{ "Failed to clear history."|t('translation-manager')|e('js') }}');
+            });
     });
 
-    // Clear preview when file is removed
-    document.getElementById('csv-file-input').addEventListener('change', function() {
-        if (!this.files || this.files.length === 0) {
-            // Hide preview if file removed
-            document.getElementById('preview-section').style.display = 'none';
-            window.importData = null;
-        }
-    });
-
-    // ========================================
     // PHP FILE IMPORT FUNCTIONALITY
     // ========================================
 
@@ -1471,6 +532,7 @@
                     file,
                     language,
                     category,
+                    createBackup: document.querySelector('input[name="phpCreateBackup"]')?.value === '1',
                     '{{ craft.app.config.general.csrfTokenName }}': '{{ craft.app.request.csrfToken }}'
                 })
             });
@@ -1496,6 +558,9 @@
         const summaryDiv = document.getElementById('php-preview-summary');
         const contentDiv = document.getElementById('php-preview-content');
         const buttonsDiv = document.getElementById('php-preview-buttons');
+        const backupNotice = document.getElementById('php-backup-notice');
+        const backupToggle = document.querySelector('input[name="phpCreateBackup"]');
+        const backupEnabled = {{ (settings.backupEnabled and settings.backupOnImport) ? 'true' : 'false' }};
 
         // Clear and rebuild items array
         window.phpImportData = [];
@@ -1620,6 +685,17 @@
         }
 
         previewSection.style.display = 'block';
+
+        if (backupNotice) {
+            const shouldShow = backupEnabled && (backupToggle?.value === '1');
+            backupNotice.style.display = shouldShow ? 'block' : 'none';
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text ?? '';
+        return div.innerHTML;
     }
 
     // Attach PHP import button handlers (called after dynamic button creation)
@@ -1673,6 +749,7 @@
                     translations: translations,
                     language: phpPreviewData.language,
                     category: phpPreviewData.category,
+                    createBackup: document.querySelector('input[name="phpCreateBackup"]')?.value === '1',
                     '{{ craft.app.config.general.csrfTokenName }}': '{{ craft.app.request.csrfToken }}'
                 })
             });

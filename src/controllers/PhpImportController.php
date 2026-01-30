@@ -45,7 +45,8 @@ class PhpImportController extends Controller
             throw new ForbiddenHttpException('PHP import is only available in devMode');
         }
 
-        if (!Craft::$app->getUser()->checkPermission('translationManager:importTranslations')) {
+        if (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
+            !Craft::$app->getUser()->checkPermission('translationManager:importTranslations')) {
             throw new ForbiddenHttpException('User does not have permission to import translations');
         }
 
@@ -117,8 +118,9 @@ class PhpImportController extends Controller
         $settings = TranslationManager::getInstance()->getSettings();
         $sourceLanguage = $settings->sourceLanguage;
 
+        $createBackup = (bool)$request->getBodyParam('createBackup', true);
         // Create backup before import if enabled
-        if ($settings->backupEnabled && $settings->backupOnImport) {
+        if ($settings->backupEnabled && $settings->backupOnImport && $createBackup) {
             TranslationManager::getInstance()->backup->createBackup('before_php_import');
         }
 

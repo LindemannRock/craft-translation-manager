@@ -15,6 +15,8 @@ use craft\helpers\Db;
 use craft\helpers\StringHelper;
 use craft\web\Controller;
 use craft\web\UploadedFile;
+use lindemannrock\base\helpers\CsvImportHelper;
+use lindemannrock\base\helpers\DateTimeHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\records\ImportHistoryRecord;
 use lindemannrock\translationmanager\records\TranslationRecord;
@@ -60,7 +62,8 @@ class ImportController extends Controller
         $this->requireAcceptsJson();
         
         // Check permission
-        if (!Craft::$app->getUser()->checkPermission('translationManager:importTranslations')) {
+        if (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
+            !Craft::$app->getUser()->checkPermission('translationManager:importTranslations')) {
             throw new ForbiddenHttpException('User is not authorized to check translations.');
         }
         
@@ -73,35 +76,467 @@ class ImportController extends Controller
             ]);
         }
         
+        $analysis = $this->analyzeTranslations($translations);
+
+        return $this->asJson([
+            'success' => true,
+            'toImport' => $analysis['toImport'],
+            'toUpdate' => $analysis['toUpdate'],
+            'unchanged' => $analysis['unchanged'],
+            'malicious' => $analysis['malicious'],
+            'errors' => $analysis['errors'],
+        ]);
+    }
+
+    /**
+     * Upload and parse CSV file for mapping.
+     *
+     * @return Response
+     * @since 5.21.0
+     */
+    public function actionUpload(): Response
+    {
+        $this->requirePostRequest();
+
+        $currentUser = Craft::$app->getUser()->getIdentity();
+        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
+            !Craft::$app->getUser()->checkPermission('translationManager:importTranslations'))) {
+            throw new ForbiddenHttpException('User is not authorized to import translations.');
+        }
+
+        $uploadedFile = UploadedFile::getInstanceByName('csvFile');
+
+        if (!$uploadedFile) {
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Please select a CSV file to upload.'));
+            return $this->redirect('translation-manager/import-export');
+        }
+
+        $delimiter = Craft::$app->getRequest()->getBodyParam('delimiter', 'auto');
+        $detectDelimiter = true;
+        if ($delimiter !== 'auto') {
+            if ($delimiter === "\t") {
+                $delimiter = "\t";
+            }
+            $detectDelimiter = false;
+        } else {
+            $delimiter = null;
+        }
+
+        try {
+            $parsed = CsvImportHelper::parseUpload($uploadedFile, [
+                'maxRows' => CsvImportHelper::DEFAULT_MAX_ROWS,
+                'maxBytes' => CsvImportHelper::DEFAULT_MAX_BYTES,
+                'delimiter' => $delimiter,
+                'detectDelimiter' => $detectDelimiter,
+            ]);
+
+            $settings = TranslationManager::getInstance()->getSettings();
+            $defaultCreateBackup = $settings->backupEnabled && $settings->backupOnImport;
+            $createBackup = (bool)Craft::$app->getRequest()->getBodyParam('createBackup', $defaultCreateBackup);
+
+            if (!$settings->backupEnabled || !$settings->backupOnImport) {
+                $createBackup = false;
+            }
+
+            Craft::$app->getSession()->set('translation-import', [
+                'headers' => $parsed['headers'],
+                'allRows' => $parsed['allRows'],
+                'rowCount' => $parsed['rowCount'],
+                'delimiter' => $parsed['delimiter'],
+                'filename' => $uploadedFile->name,
+                'filesize' => $uploadedFile->size,
+                'createBackup' => $createBackup,
+            ]);
+
+            return $this->redirect('translation-manager/import/map');
+        } catch (\Exception $e) {
+            $this->logError('Failed to parse CSV', ['error' => $e->getMessage()]);
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Failed to parse CSV: {error}', ['error' => $e->getMessage()]));
+            return $this->redirect('translation-manager/import-export');
+        }
+    }
+
+    /**
+     * Map CSV columns to translation fields.
+     *
+     * @return Response
+     * @since 5.21.0
+     */
+    public function actionMap(): Response
+    {
+        $currentUser = Craft::$app->getUser()->getIdentity();
+        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
+            !Craft::$app->getUser()->checkPermission('translationManager:importTranslations'))) {
+            throw new ForbiddenHttpException('User is not authorized to import translations.');
+        }
+
+        $importData = Craft::$app->getSession()->get('translation-import');
+
+        if (!$importData || !isset($importData['allRows'])) {
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'No import data found. Please upload a CSV file.'));
+            return $this->redirect('translation-manager/import-export');
+        }
+
+        $previewRows = array_slice($importData['allRows'], 0, 5);
+
+        return $this->renderTemplate('translation-manager/import-export/map', [
+            'headers' => $importData['headers'],
+            'previewRows' => $previewRows,
+            'rowCount' => $importData['rowCount'],
+            'createBackup' => $importData['createBackup'] ?? false,
+        ]);
+    }
+
+    /**
+     * Preview import results using mapped columns.
+     *
+     * @return Response
+     * @since 5.21.0
+     */
+    public function actionPreview(): Response
+    {
+        $currentUser = Craft::$app->getUser()->getIdentity();
+        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
+            !Craft::$app->getUser()->checkPermission('translationManager:importTranslations'))) {
+            throw new ForbiddenHttpException('User is not authorized to import translations.');
+        }
+
+        if (!Craft::$app->getRequest()->getIsPost()) {
+            $previewData = Craft::$app->getSession()->get('translation-preview');
+
+            if (!$previewData) {
+                Craft::$app->getSession()->setError(Craft::t('translation-manager', 'No preview data found. Please map columns first.'));
+                return $this->redirect('translation-manager/import-export');
+            }
+
+            return $this->renderTemplate('translation-manager/import-export/preview', $previewData);
+        }
+
+        $importData = Craft::$app->getSession()->get('translation-import');
+
+        if (!$importData || !isset($importData['allRows'])) {
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Import session expired. Please upload the file again.'));
+            return $this->redirect('translation-manager/import-export');
+        }
+
+        $mapping = Craft::$app->getRequest()->getBodyParam('mapping', []);
+        $columnMap = [];
+        foreach ($mapping as $colIndex => $fieldName) {
+            if (!empty($fieldName)) {
+                $columnMap[(int)$colIndex] = $fieldName;
+            }
+        }
+
+        $mappedFields = array_values($columnMap);
+        if (!in_array('translationKey', $mappedFields, true)) {
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Translation Key must be mapped.'));
+            return $this->redirect('translation-manager/import/map');
+        }
+
+        $nonEmptyMappings = array_filter($mappedFields, fn($value) => $value !== '');
+        if (count($nonEmptyMappings) !== count(array_unique($nonEmptyMappings))) {
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'You cannot map multiple CSV columns to the same field.'));
+            return $this->redirect('translation-manager/import/map');
+        }
+
+        $translations = $this->buildTranslationsFromRows($importData['allRows'], $columnMap);
+        $analysis = $this->analyzeTranslations($translations);
+
+        $summary = [
+            'totalRows' => count($translations),
+            'toImport' => count($analysis['toImport']),
+            'toUpdate' => count($analysis['toUpdate']),
+            'unchanged' => count($analysis['unchanged']),
+            'malicious' => count($analysis['malicious']),
+            'errors' => count($analysis['errors']),
+        ];
+
+        Craft::$app->getSession()->set('translation-preview', [
+            'summary' => $summary,
+            'toImport' => $analysis['toImport'],
+            'toUpdate' => $analysis['toUpdate'],
+            'unchanged' => $analysis['unchanged'],
+            'malicious' => $analysis['malicious'],
+            'errors' => $analysis['errors'],
+            'createBackup' => $importData['createBackup'] ?? false,
+        ]);
+
+        $importData['columnMap'] = $columnMap;
+        Craft::$app->getSession()->set('translation-import', $importData);
+
+        return $this->redirect('translation-manager/import/preview');
+    }
+    
+    /**
+     * Import mapped translations from the preview flow.
+     *
+     * @return Response
+     * @since 5.21.0
+     */
+    public function actionIndex(): Response
+    {
+        $this->requirePostRequest();
+        $currentUser = Craft::$app->getUser()->getIdentity();
         
+        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
+            !Craft::$app->getUser()->checkPermission('translationManager:importTranslations'))) {
+            throw new ForbiddenHttpException('User is not authorized to import translations.');
+        }
+        
+        $importData = Craft::$app->getSession()->get('translation-import');
+        $previewData = Craft::$app->getSession()->get('translation-preview');
+
+        if (!$importData || !isset($importData['allRows'])) {
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Import session expired. Please upload the file again.'));
+            return $this->redirect('translation-manager/import-export');
+        }
+
+        if (!$previewData) {
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'No preview data found. Please preview your import first.'));
+            return $this->redirect('translation-manager/import-export');
+        }
+
+        $translations = array_merge($previewData['toImport'] ?? [], $previewData['toUpdate'] ?? []);
+        if (empty($translations)) {
+            Craft::$app->getSession()->setNotice(Craft::t('translation-manager', 'No valid translations found to import.'));
+            return $this->redirect('translation-manager/import-export');
+        }
+
+        try {
+            $settings = TranslationManager::getInstance()->getSettings();
+            $backupPath = null;
+            $createBackup = (bool)($importData['createBackup'] ?? false);
+            if ($settings->backupEnabled && $settings->backupOnImport && $createBackup) {
+                $backupPath = TranslationManager::getInstance()->backup->createBackup('before_import');
+            }
+
+            $tempCsvPath = $this->writeTranslationsCsv($translations);
+            $results = $this->processCsv($tempCsvPath, false);
+            @unlink($tempCsvPath);
+
+            if ($settings->autoExport) {
+                TranslationManager::getInstance()->export->exportAll();
+            }
+            
+            // Save import history
+            $history = new ImportHistoryRecord();
+            $history->userId = $currentUser->id;
+            $history->filename = $importData['filename'] ?? null;
+            $history->filesize = $importData['filesize'] ?? null;
+            $history->imported = $results['imported'];
+            $history->updated = $results['updated'];
+            $history->skipped = $results['skipped'];
+            $history->errors = !empty($results['errors']) ? json_encode($results['errors']) : null;
+            $history->backupPath = $backupPath ? basename($backupPath) : null;
+            $history->save();
+            
+            // Log the import results
+            $this->logInfo('Import completed', [
+                'userId' => $currentUser->id,
+                'imported' => $results['imported'],
+                'updated' => $results['updated'],
+                'skipped' => $results['skipped'],
+                'filename' => $importData['filename'] ?? null,
+            ]);
+
+            Craft::$app->getSession()->remove('translation-import');
+            Craft::$app->getSession()->remove('translation-preview');
+
+            $message = Craft::t('translation-manager', 'Successfully imported {imported} translations.', [
+                'imported' => $results['imported'],
+            ]);
+            if ($results['updated'] > 0) {
+                $message .= ' ' . Craft::t('translation-manager', '{updated} updated.', [
+                    'updated' => $results['updated'],
+                ]);
+            }
+            if ($results['skipped'] > 0) {
+                $message .= ' ' . Craft::t('translation-manager', '{skipped} skipped.', [
+                    'skipped' => $results['skipped'],
+                ]);
+            }
+
+            Craft::$app->getSession()->setNotice($message);
+            return $this->redirect('translation-manager/import-export');
+        } catch (\Exception $e) {
+            $this->logError('CSV import failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Import failed: {error}', [
+                'error' => $e->getMessage(),
+            ]));
+            return $this->redirect('translation-manager/import-export');
+        }
+    }
+
+    /**
+     * Build translation rows from CSV data using the selected column mapping.
+     *
+     * @param array $rows
+     * @param array $columnMap
+     * @return array
+     * @since 5.21.0
+     */
+    private function buildTranslationsFromRows(array $rows, array $columnMap): array
+    {
+        $translations = [];
+        $rowNumber = 1;
+
+        foreach ($rows as $row) {
+            $rowNumber++;
+
+            if (empty(array_filter($row))) {
+                continue;
+            }
+
+            $translation = [
+                'english' => '',
+                'arabic' => '',
+                'context' => '',
+                'category' => '',
+                'siteId' => '',
+                'siteLanguage' => '',
+                'type' => '',
+                'status' => '',
+                '_rowNumber' => $rowNumber,
+            ];
+
+            foreach ($columnMap as $colIndex => $fieldName) {
+                if (!array_key_exists($colIndex, $row)) {
+                    continue;
+                }
+
+                $value = (string)$row[$colIndex];
+
+                switch ($fieldName) {
+                    case 'translationKey':
+                        $translation['english'] = $value;
+                        break;
+                    case 'translation':
+                        $translation['arabic'] = $value;
+                        break;
+                    case 'language':
+                        $translation['siteLanguage'] = $value;
+                        break;
+                    case 'siteId':
+                        $translation['siteId'] = $value;
+                        break;
+                    case 'context':
+                        $translation['context'] = $value;
+                        break;
+                    case 'category':
+                        $translation['category'] = $value;
+                        break;
+                    case 'type':
+                        $translation['type'] = $value;
+                        break;
+                    case 'status':
+                        $translation['status'] = $value;
+                        break;
+                }
+            }
+
+            $translations[] = $translation;
+        }
+
+        return $translations;
+    }
+
+    /**
+     * Write mapped translations to a temporary CSV file for import.
+     *
+     * @param array $translations
+     * @return string
+     * @since 5.21.0
+     */
+    private function writeTranslationsCsv(array $translations): string
+    {
+        $tempPath = Craft::$app->getPath()->getTempPath() . '/translation-import-' . uniqid() . '.csv';
+        $handle = fopen($tempPath, 'w');
+
+        if ($handle === false) {
+            throw new \RuntimeException('Failed to create temporary CSV file.');
+        }
+
+        $headers = [
+            'Translation Key',
+            'Translation',
+            'Language',
+            'Category',
+            'Context',
+            'Type',
+            'Site ID',
+        ];
+
+        fputcsv($handle, $headers);
+
+        foreach ($translations as $translation) {
+            $key = $translation['english'] ?? '';
+            if ($key === '') {
+                continue;
+            }
+
+            $language = $translation['siteLanguage'] ?? $translation['language'] ?? '';
+
+            fputcsv($handle, [
+                $key,
+                $translation['arabic'] ?? '',
+                $language,
+                $translation['category'] ?? '',
+                $translation['context'] ?? '',
+                $translation['type'] ?? '',
+                $translation['siteId'] ?? '',
+            ]);
+        }
+
+        fclose($handle);
+
+        return $tempPath;
+    }
+
+    /**
+     * Analyze translations for preview and existing checks.
+     *
+     * @param array $translations
+     * @return array
+     * @since 5.21.0
+     */
+    private function analyzeTranslations(array $translations): array
+    {
         $toImport = [];
         $toUpdate = [];
         $unchanged = [];
         $maliciousRows = [];
         $errors = [];
-        
+
         foreach ($translations as $translation) {
-            if (!isset($translation['english']) || empty($translation['english'])) {
-                $this->logWarning("Skipping translation with empty or missing English text");
+            if (!isset($translation['english']) || $translation['english'] === '') {
+                $errors[] = [
+                    'rowNumber' => $translation['_rowNumber'] ?? null,
+                    'english' => '',
+                    'arabic' => $translation['arabic'] ?? '',
+                    'context' => $translation['context'] ?? 'site',
+                    'error' => 'Missing Translation Key',
+                ];
                 continue;
             }
-            
-            // Extract language from CSV data (preferred) or fall back to siteId
+
             $targetLanguage = null;
-            if (isset($translation['siteLanguage']) && !empty($translation['siteLanguage'])) {
-                // Direct language from CSV
+            if (!empty($translation['siteLanguage'])) {
                 $targetLanguage = $translation['siteLanguage'];
-            } elseif (isset($translation['siteId']) && !empty($translation['siteId'])) {
-                // Legacy: get language from siteId
-                $siteId = (int) $translation['siteId'];
+            } elseif (!empty($translation['siteId'])) {
+                $siteId = (int)$translation['siteId'];
                 $site = Craft::$app->getSites()->getSiteById($siteId);
                 if ($site) {
                     $targetLanguage = $site->language;
                 } else {
                     $errors[] = [
+                        'rowNumber' => $translation['_rowNumber'] ?? null,
                         'english' => $translation['english'],
-                        'arabic' => isset($translation['arabic']) ? $translation['arabic'] : '',
-                        'context' => isset($translation['context']) ? $translation['context'] : 'site',
+                        'arabic' => $translation['arabic'] ?? '',
+                        'context' => $translation['context'] ?? 'site',
                         'siteId' => $siteId,
                         'siteLanguage' => 'unknown',
                         'error' => "Invalid site ID: {$siteId} does not exist",
@@ -114,38 +549,34 @@ class ImportController extends Controller
                 }
             }
 
-            // Default to primary site's language if no language info provided
             if (!$targetLanguage) {
                 $targetLanguage = Craft::$app->getSites()->getPrimarySite()->language;
             }
-            
-            // Store original values for comparison
+
             $originalEnglish = $translation['english'];
-            $originalArabic = isset($translation['arabic']) ? $translation['arabic'] : '';
-            $originalContext = isset($translation['context']) ? $translation['context'] : 'site';
-            
-            // Check for malicious content before sanitization
+            $originalTranslation = $translation['arabic'] ?? '';
+            $originalContext = $translation['context'] ?? 'site';
+
             $isMalicious = false;
             $detectedThreats = [];
-            
-            // Check all fields for dangerous patterns
             $fieldsToCheck = [
                 'English' => $originalEnglish,
-                'Arabic' => $originalArabic,
+                'Translation' => $originalTranslation,
                 'Context' => $originalContext,
             ];
-            
+
             foreach ($fieldsToCheck as $fieldName => $fieldValue) {
                 if ($this->containsMaliciousContent($fieldValue, $threats)) {
                     $isMalicious = true;
                     $detectedThreats[$fieldName] = $threats;
                 }
             }
-            
+
             if ($isMalicious) {
                 $maliciousRows[] = [
+                    'rowNumber' => $translation['_rowNumber'] ?? null,
                     'english' => $originalEnglish,
-                    'arabic' => $originalArabic,
+                    'arabic' => $originalTranslation,
                     'context' => $originalContext,
                     'threats' => $detectedThreats,
                 ];
@@ -153,20 +584,17 @@ class ImportController extends Controller
                     'english' => $originalEnglish,
                     'threats' => array_keys($detectedThreats),
                 ]);
-                continue; // Skip this row
+                continue;
             }
-            
-            // Same minimal sanitization as import
+
             $keyText = $translation['english'];
-            $translationText = isset($translation['arabic']) ? $translation['arabic'] : '';
+            $translationText = $translation['arabic'] ?? '';
             $context = isset($translation['context']) ? StringHelper::stripHtml($translation['context']) : 'site';
 
-            // Strip CSV formula-escape prefix (apostrophe followed by formula character)
             $keyText = $this->stripFormulaEscapePrefix($keyText);
             $translationText = $this->stripFormulaEscapePrefix($translationText);
             $context = $this->stripFormulaEscapePrefix($context);
 
-            // Apply same dangerous pattern removal
             $dangerousPatterns = [
                 '/<script[^>]*>.*?<\/script>/si',
                 '/javascript:/i',
@@ -177,18 +605,16 @@ class ImportController extends Controller
                 '/data:text\/html/i',
                 '/vbscript:/i',
             ];
-            
+
             foreach ($dangerousPatterns as $pattern) {
                 $keyText = preg_replace($pattern, '', $keyText);
                 $translationText = preg_replace($pattern, '', $translationText);
             }
-            
-            // Use context exactly as provided in CSV (don't normalize for re-import)
+
             if (empty($context)) {
                 $context = 'site';
             }
 
-            // Extract category from CSV or determine from context/type
             $category = isset($translation['category']) ? StringHelper::stripHtml($translation['category']) : '';
             $category = $this->stripFormulaEscapePrefix($category);
             $type = isset($translation['type']) ? strtolower(trim($translation['type'])) : '';
@@ -197,37 +623,27 @@ class ImportController extends Controller
                 $category = 'messages';
             }
 
-            // Protection: if type is 'forms' or context indicates formie, category must be 'formie'
             if ($type === 'forms' || $context === 'formie' || str_starts_with($context, 'formie.')) {
                 $category = 'formie';
             }
 
-            // Find existing by hash - match unique constraint (sourceHash + language + category)
             $sourceHash = md5($keyText);
             $existing = TranslationRecord::findOne([
                 'sourceHash' => $sourceHash,
                 'language' => $targetLanguage,
                 'category' => $category,
             ]);
-            
-            
-            
+
             if ($existing) {
-                // Text already exists (possibly with different context)
-                // Check if it's actually changing
-                // Handle NULL vs empty string - treat both as equivalent
                 $dbValue = $existing->translation;
                 $csvValue = $translationText;
-                
-                // Normalize NULL to empty string for comparison
+
                 $dbNormalized = $dbValue === null ? '' : $dbValue;
                 $csvNormalized = $csvValue === null ? '' : $csvValue;
-                
-                $isIdentical = $dbNormalized === $csvNormalized;
-                
-                
-                if ($isIdentical) {
+
+                if ($dbNormalized === $csvNormalized) {
                     $unchanged[] = [
+                        'rowNumber' => $translation['_rowNumber'] ?? null,
                         'english' => $keyText,
                         'arabic' => $translationText,
                         'context' => $context,
@@ -239,6 +655,7 @@ class ImportController extends Controller
                     ];
                 } else {
                     $toUpdate[] = [
+                        'rowNumber' => $translation['_rowNumber'] ?? null,
                         'english' => $keyText,
                         'arabic' => $translationText,
                         'currentTranslation' => $existing->translation ?? '',
@@ -251,6 +668,7 @@ class ImportController extends Controller
                 }
             } else {
                 $toImport[] = [
+                    'rowNumber' => $translation['_rowNumber'] ?? null,
                     'english' => $keyText,
                     'arabic' => $translationText,
                     'context' => $context,
@@ -259,141 +677,14 @@ class ImportController extends Controller
                 ];
             }
         }
-        
-        return $this->asJson([
-            'success' => true,
+
+        return [
             'toImport' => $toImport,
             'toUpdate' => $toUpdate,
             'unchanged' => $unchanged,
             'malicious' => $maliciousRows,
             'errors' => $errors,
-        ]);
-    }
-    
-    /**
-     * Import CSV file
-     *
-     * @return Response
-     * @since 1.0.0
-     */
-    public function actionIndex(): Response
-    {
-        $this->requirePostRequest();
-        $currentUser = Craft::$app->getUser()->getIdentity();
-        
-        if (!$currentUser || !Craft::$app->getUser()->checkPermission('translationManager:importTranslations')) {
-            throw new ForbiddenHttpException('User is not authorized to import translations.');
-        }
-        
-        $uploadedFile = UploadedFile::getInstanceByName('csvFile');
-        
-        // Validate file upload
-        if (!$uploadedFile) {
-            $this->logWarning('Import failed: No file uploaded');
-            return $this->asJson([
-                'success' => false,
-                'error' => 'No file uploaded',
-            ]);
-        }
-
-        $this->logInfo("Import started", [
-            'filename' => $uploadedFile->name,
-            'size' => $uploadedFile->size,
-        ]);
-        
-        // Validate file type
-        $extension = strtolower($uploadedFile->getExtension());
-        if (!in_array($extension, ['csv', 'txt'])) {
-            return $this->asJson([
-                'success' => false,
-                'error' => 'Only CSV files are allowed',
-            ]);
-        }
-        
-        // Validate file size (5MB limit)
-        if ($uploadedFile->size > 5242880) {
-            return $this->asJson([
-                'success' => false,
-                'error' => 'File size exceeds 5MB limit',
-            ]);
-        }
-        
-        // Validate MIME type
-        $mimeType = $uploadedFile->getMimeType();
-        $allowedMimeTypes = ['text/csv', 'text/plain', 'application/csv', 'application/vnd.ms-excel'];
-        if (!in_array($mimeType, $allowedMimeTypes)) {
-            return $this->asJson([
-                'success' => false,
-                'error' => 'Invalid file type',
-            ]);
-        }
-        
-        // Check if detailed results are requested
-        $includeDetails = (bool) Craft::$app->getRequest()->getBodyParam('includeDetails', false);
-        
-        // Process CSV
-        try {
-            // Create backup before import if enabled
-            $settings = TranslationManager::getInstance()->getSettings();
-            $backupPath = null;
-            if ($settings->backupEnabled && $settings->backupOnImport) {
-                $backupPath = TranslationManager::getInstance()->backup->createBackup('before_import');
-            }
-            
-            $results = $this->processCsv($uploadedFile->tempName, $includeDetails);
-            
-            // Delete temp file
-            @unlink($uploadedFile->tempName);
-            if ($settings->autoExport) {
-                TranslationManager::getInstance()->export->exportAll();
-            }
-            
-            // Save import history
-            $history = new ImportHistoryRecord();
-            $history->userId = $currentUser->id;
-            $history->filename = $uploadedFile->name;
-            $history->filesize = $uploadedFile->size;
-            $history->imported = $results['imported'];
-            $history->updated = $results['updated'];
-            $history->skipped = $results['skipped'];
-            $history->errors = !empty($results['errors']) ? json_encode($results['errors']) : null;
-            $history->backupPath = $backupPath ? basename($backupPath) : null;
-            $history->details = $includeDetails && isset($results['details']) ? json_encode($results['details']) : null;
-            $history->save();
-            
-            // Log the import results
-            $this->logInfo('Import completed', [
-                'userId' => $currentUser->id,
-                'imported' => $results['imported'],
-                'updated' => $results['updated'],
-                'skipped' => $results['skipped'],
-                'filename' => $uploadedFile->name,
-            ]);
-            
-            $response = [
-                'success' => true,
-                'imported' => $results['imported'],
-                'updated' => $results['updated'],
-                'skipped' => $results['skipped'],
-                'errors' => $results['errors'],
-            ];
-            
-            if ($includeDetails && isset($results['details'])) {
-                $response['details'] = $results['details'];
-            }
-            
-            return $this->asJson($response);
-        } catch (\Exception $e) {
-            $this->logError('CSV import failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            
-            return $this->asJson([
-                'success' => false,
-                'error' => 'Import failed: ' . $e->getMessage(),
-            ]);
-        }
+        ];
     }
     
     /**
@@ -782,7 +1073,8 @@ class ImportController extends Controller
     public function actionHistory(): Response
     {
         $currentUser = Craft::$app->getUser()->getIdentity();
-        if (!$currentUser || !Craft::$app->getUser()->checkPermission('translationManager:viewTranslations')) {
+        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
+            !Craft::$app->getUser()->checkPermission('translationManager:viewImportHistory'))) {
             throw new ForbiddenHttpException('User is not authorized to view import history.');
         }
         
@@ -808,7 +1100,7 @@ class ImportController extends Controller
                 'backupPath' => $record->backupPath,
                 'user' => $record->user->username ?? 'Unknown',
                 'dateCreated' => $record->dateCreated,
-                'formattedDate' => Craft::$app->getFormatter()->asDatetime($record->dateCreated, 'short'),
+                'formattedDate' => DateTimeHelper::formatDatetime($record->dateCreated),
             ];
         }
         
@@ -826,7 +1118,8 @@ class ImportController extends Controller
     public function actionLogMalicious(): Response
     {
         // Require permission to import translations
-        if (!Craft::$app->getUser()->checkPermission('translationManager:importTranslations')) {
+        if (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
+            !Craft::$app->getUser()->checkPermission('translationManager:importTranslations')) {
             throw new ForbiddenHttpException('User is not authorized to import translations.');
         }
         
@@ -921,7 +1214,8 @@ class ImportController extends Controller
         $this->requirePostRequest();
         
         $currentUser = Craft::$app->getUser()->getIdentity();
-        if (!$currentUser || !Craft::$app->getUser()->checkPermission('translationManager:importTranslations')) {
+        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
+            !Craft::$app->getUser()->checkPermission('translationManager:clearImportHistory'))) {
             if ($this->request->getAcceptsJson()) {
                 return $this->asJson(['success' => false, 'error' => 'User is not authorized to clear import logs.']);
             }

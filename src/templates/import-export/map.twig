@@ -1,0 +1,194 @@
+{% extends "translation-manager/_layouts/cp" %}
+{% set title = "Map CSV Columns"|t('translation-manager') %}
+{% set fullPageForm = false %}
+{% set selectedSubnavItem = 'import-export' %}
+
+{% set plugin = craft.app.plugins.getPlugin('translation-manager') %}
+{% set crumbs = [
+    {
+        label: translationHelper.fullName|t('translation-manager'),
+        url: url('translation-manager'),
+    },
+    {
+        label: 'Import/Export'|t('translation-manager'),
+        url: url('translation-manager/import-export'),
+    },
+    {
+        label: 'Map Columns'|t('translation-manager'),
+    },
+] %}
+
+{% import "_includes/forms" as forms %}
+
+{% block content %}
+    <h2 style="margin-top: 0px;">{{ "Map CSV Columns"|t('translation-manager') }}</h2>
+
+    <p>{{ "Your CSV has {count} rows. Map each CSV column to a translation field."|t('translation-manager', {count: rowCount}) }}</p>
+
+    {% if createBackup %}
+        {% include 'lindemannrock-base/_components/info-box' with {
+            message: '<strong>' ~ "Backup will be created automatically before importing to protect existing translations."|t('translation-manager') ~ '</strong>',
+            type: 'success',
+            variant: 'colored',
+            margin: 'bottom'
+        } only %}
+    {% endif %}
+
+    <h3>{{ "Preview of CSV Data"|t('translation-manager') }}</h3>
+    <div style="overflow-x: auto; margin-bottom: 30px;">
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    {% for header in headers %}
+                        <th>{{ header }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in previewRows %}
+                    <tr>
+                        {% for cell in row %}
+                            <td><code>{{ cell }}</code></td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if rowCount > 5 %}
+            <p class="light" style="margin-top: 10px;">{{ "Showing first 5 rows. {total} total rows will be imported."|t('translation-manager', {total: rowCount}) }}</p>
+        {% endif %}
+    </div>
+
+    <hr>
+
+    <h3>{{ "Column Mapping"|t('translation-manager') }}</h3>
+    <p>{{ "Map your CSV columns to translation fields. Translation Key is required."|t('translation-manager') }}</p>
+
+    <form method="post" action="{{ actionUrl('translation-manager/import/preview') }}">
+        {{ csrfInput() }}
+
+        {% set fieldOptions = [
+            {value: '', label: '-- Do not import --'|t('translation-manager')},
+            {value: 'translationKey', label: 'Translation Key (required)'|t('translation-manager')},
+            {value: 'translation', label: 'Translation'|t('translation-manager')},
+            {value: 'language', label: 'Language'|t('translation-manager')},
+            {value: 'category', label: 'Category'|t('translation-manager')},
+            {value: 'context', label: 'Context'|t('translation-manager')},
+            {value: 'type', label: 'Type'|t('translation-manager')},
+            {value: 'siteId', label: 'Site ID'|t('translation-manager')},
+            {value: 'status', label: 'Status'|t('translation-manager')},
+        ] %}
+
+        <div class="field">
+            <div class="input">
+                <table class="editable fullwidth">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">{{ "CSV Column"|t('translation-manager') }}</th>
+                            <th style="width: 40%;">{{ "Maps to Field"|t('translation-manager') }}</th>
+                            <th style="width: 30%;">{{ "Sample Data"|t('translation-manager') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i, header in headers %}
+                            <tr>
+                                <td><strong>{{ header }}</strong></td>
+                                <td>
+                                    <div class="select fullwidth">
+                                        <select name="mapping[{{ i }}]" class="column-mapping">
+                                            {% for option in fieldOptions %}
+                                                {% set isMatch = false %}
+                                                {% set lowerHeader = header|lower %}
+
+                                                {% if option.value == 'translationKey' and (lowerHeader in ['translation key', 'translationkey', 'english', 'english text', 'englishtext', 'source', 'original', 'key', 'translation_key']) %}
+                                                    {% set isMatch = true %}
+                                                {% elseif option.value == 'translation' and (lowerHeader in ['translation', 'arabic', 'arabic translation', 'translated', 'value', 'translation_text']) %}
+                                                    {% set isMatch = true %}
+                                                {% elseif option.value == 'language' and (lowerHeader in ['language', 'site language', 'site_language', 'site language code', 'site']) %}
+                                                    {% set isMatch = true %}
+                                                {% elseif option.value == 'category' and (lowerHeader in ['category', 'group']) %}
+                                                    {% set isMatch = true %}
+                                                {% elseif option.value == 'context' and (lowerHeader in ['context']) %}
+                                                    {% set isMatch = true %}
+                                                {% elseif option.value == 'type' and (lowerHeader in ['type']) %}
+                                                    {% set isMatch = true %}
+                                                {% elseif option.value == 'siteId' and (lowerHeader in ['site id', 'siteid', 'site_id']) %}
+                                                    {% set isMatch = true %}
+                                                {% elseif option.value == 'status' and (lowerHeader in ['status']) %}
+                                                    {% set isMatch = true %}
+                                                {% endif %}
+
+                                                <option value="{{ option.value }}" {% if isMatch %}selected{% endif %}>{{ option.label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </td>
+                                <td>
+                                    <code class="light">{{ previewRows[0][i] ?? '-' }}</code>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% include 'lindemannrock-base/_components/info-box' with {
+            message: '',
+            type: 'error',
+            variant: 'colored',
+            margin: 'both',
+            boxId: 'mappingErrors',
+            messageId: 'mappingErrorText',
+            hidden: true
+        } only %}
+
+        <div class="buttons">
+            <a href="{{ url('translation-manager/import-export') }}" class="btn">{{ "Cancel"|t('translation-manager') }}</a>
+            <button type="submit" class="btn submit" id="previewBtn">{{ "Preview Import"|t('translation-manager') }}</button>
+        </div>
+    </form>
+
+    {% include 'lindemannrock-base/_components/plugin-credit' %}
+{% endblock %}
+
+{% js %}
+    const previewBtn = document.getElementById('previewBtn');
+    const mappingErrorDiv = document.getElementById('mappingErrors');
+    const mappingErrorText = document.getElementById('mappingErrorText');
+    const form = document.querySelector('form');
+
+    form.addEventListener('submit', function(e) {
+        const mappings = document.querySelectorAll('.column-mapping');
+        const selectedValues = Array.from(mappings).map(m => m.value);
+
+        const hasTranslationKey = selectedValues.includes('translationKey');
+
+        if (!hasTranslationKey) {
+            e.preventDefault();
+            mappingErrorDiv.style.display = 'block';
+            mappingErrorText.innerHTML = '<strong>Required field not mapped: Translation Key</strong>';
+            mappingErrorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return false;
+        }
+
+        const nonEmptyMappings = selectedValues.filter(v => v !== '');
+        const uniqueMappings = new Set(nonEmptyMappings);
+
+        if (nonEmptyMappings.length !== uniqueMappings.size) {
+            e.preventDefault();
+            mappingErrorDiv.style.display = 'block';
+            mappingErrorText.innerHTML = '<strong>Error: You cannot map multiple CSV columns to the same field</strong>';
+            mappingErrorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return false;
+        }
+
+        mappingErrorDiv.style.display = 'none';
+    });
+
+    document.querySelectorAll('.column-mapping').forEach(select => {
+        select.addEventListener('change', function() {
+            mappingErrorDiv.style.display = 'none';
+        });
+    });
+{% endjs %}

@@ -16,7 +16,7 @@
 ] %}
 
 {% block content %}
-    <div class="flex" style="align-items: center; margin-bottom: 24px;">
+    <div class="flex" style="align-items: center; margin-bottom: 1rem;">
         <h2 style="margin: 0;">{{ "Backup History"|t('translation-manager') }}</h2>
         {% if currentUser.can('translationManager:createBackups') %}
         <div style="margin-left: auto;">
@@ -29,37 +29,24 @@
         {% endif %}
     </div>
 
-    <div id="backup-list-loading" class="centeralign">
-        <div class="spinner"></div>
-        <p>{{ "Loading backup history..."|t('translation-manager') }}</p>
+    <p>{{ "Backups are automatically created when you import translations (if enabled). You can restore or download any backup."|t('translation-manager') }}</p>
+
+    <div style="margin-top: 1rem;">
+        {% include 'lindemannrock-base/_partials/backup-list' with {
+            idPrefix: 'backup',
+            emptyMessage: 'No backup history yet. Backups are created automatically when you import translations.'|t('translation-manager')
+        } %}
     </div>
 
-    <div id="backup-list-content" class="hidden">
-        {# Backups will be loaded via AJAX to prevent blocking on slow remote volumes #}
-        <div id="backups-table-container"></div>
-
-        <div id="no-backups-message" class="hidden">
-            <p class="light">{{ "No backups found. Create your first backup using the button above."|t('translation-manager') }}</p>
-        </div>
-
-        <div id="backup-error-message" class="hidden error"></div>
-
-        {% set backupPath = craft.translationManager.backup.getBackupPath() %}
-
-        {% include 'lindemannrock-base/_components/info-box' with {
-		    message: '<strong>' ~ "Backup Location:"|t('translation-manager') ~ '</strong> <code>' ~ backupPath ~ '</code>'
-	    } %}
-    </div>
+    {% set backupPath = craft.translationManager.backup.getBackupPath() %}
+    {% include 'lindemannrock-base/_components/info-box' with {
+        message: '<strong>' ~ "Backup Location:"|t('translation-manager') ~ '</strong> <code>' ~ backupPath ~ '</code>'
+    } %}
 
 {% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}
 
 {% js %}
-    // Permission flags for conditional rendering
-    const canDownloadBackups = {{ currentUser.can('translationManager:downloadBackups') ? 'true' : 'false' }};
-    const canRestoreBackups = {{ currentUser.can('translationManager:restoreBackups') ? 'true' : 'false' }};
-    const canDeleteBackups = {{ currentUser.can('translationManager:deleteBackups') ? 'true' : 'false' }};
-
     // Load backups asynchronously to prevent page blocking on slow remote volumes
     function loadBackups() {
         fetch('{{ actionUrl('translation-manager/backup/get-backups') }}', {
@@ -73,8 +60,8 @@
         .then(data => {
             const loadingDiv = document.getElementById('backup-list-loading');
             const contentDiv = document.getElementById('backup-list-content');
-            const tableContainer = document.getElementById('backups-table-container');
-            const noBackupsMsg = document.getElementById('no-backups-message');
+            const tableContainer = document.getElementById('backup-table-container');
+            const noBackupsMsg = document.getElementById('backup-empty-message');
             const errorMsg = document.getElementById('backup-error-message');
 
             // Hide loading, show content
@@ -88,13 +75,13 @@
                 errorMsg.classList.add('hidden');
 
                 // Initialize menu buttons after rendering
-                setTimeout(() => {
-                    document.querySelectorAll('.menubtn').forEach(btn => {
-                        if (typeof Garnish !== 'undefined' && Garnish.MenuBtn) {
-                            new Garnish.MenuBtn(btn);
-                        }
-                    });
-                }, 100);
+                tableContainer.querySelectorAll('.menubtn').forEach(btn => {
+                    if (typeof Craft !== 'undefined' && Craft.MenuBtn) {
+                        new Craft.MenuBtn(btn);
+                    } else if (typeof Garnish !== 'undefined' && Garnish.MenuBtn) {
+                        new Garnish.MenuBtn(btn);
+                    }
+                });
 
             } else if (data.success && (!data.backups || data.backups.length === 0)) {
                 // No backups found
@@ -122,81 +109,47 @@
         });
     }
 
-    // Check if any action permissions exist
-    const hasAnyActionPermission = canDownloadBackups || canRestoreBackups || canDeleteBackups;
+    function renderReasonBadge(badgeHtml) {
+        return badgeHtml || '';
+    }
+
+    function renderRowActions(actionsHtml) {
+        return actionsHtml || '<td class="thin"></td>';
+    }
 
     function renderBackupsTable(backups) {
-        const actionHeader = hasAnyActionPermission ? '<th class="thin"></th>' : '';
-        let html = `
-        <table class="data fullwidth">
-            <thead>
-                <tr>
-                    <th>{{ "Date"|t('translation-manager') }}</th>
-                    <th>{{ "Reason"|t('translation-manager') }}</th>
-                    <th>{{ "Created By"|t('translation-manager') }}</th>
-                    <th>{{ "Translations"|t('translation-manager') }}</th>
-                    <th>{{ "Size"|t('translation-manager') }}</th>
-                    ${actionHeader}
-                </tr>
-            </thead>
-            <tbody>
-        `;
-
+        let rows = '';
         backups.forEach(backup => {
-            let menuItems = '';
+            const date = escapeHtml((backup.formattedDate || '').toString());
+            const user = escapeHtml(backup.user || '');
+            const count = new Intl.NumberFormat().format(backup.translationCount ?? 0);
+            const size = escapeHtml(backup.formattedSize || '-');
+            const typeBadge = renderReasonBadge(backup.typeBadgeHtml);
+            const rowActions = renderRowActions(backup.rowActionsHtml);
 
-            // Restore action (requires restoreBackups permission)
-            if (canRestoreBackups) {
-                menuItems += `<li><a href="#" class="restore-backup" data-backup="${escapeHtml(backup.name)}">
-                    <span class="icon" aria-hidden="true">${'{{ svg("@appicons/share.svg")|e("js") }}'}</span>
-                    {{ "Restore"|t('translation-manager') }}
-                </a></li>`;
-            }
-
-            // Download action (requires downloadBackups permission)
-            if (canDownloadBackups) {
-                menuItems += `<li><a href="{{ actionUrl('translation-manager/backup/download') }}&backup=${encodeURIComponent(backup.name)}">
-                    <span class="icon" aria-hidden="true">${'{{ svg("@appicons/download.svg")|e("js") }}'}</span>
-                    {{ "Download"|t('translation-manager') }}
-                </a></li>`;
-            }
-
-            // Delete action (requires deleteBackups permission)
-            if (canDeleteBackups) {
-                menuItems += `<li><hr></li>
-                <li><a href="#" class="delete-backup error" data-backup="${escapeHtml(backup.name)}">
-                    <span class="icon" aria-hidden="true">${'{{ svg("@appicons/trash.svg")|e("js") }}'}</span>
-                    {{ "Delete"|t('translation-manager') }}
-                </a></li>`;
-            }
-
-            // Only show action button if there are menu items
-            const actionCell = menuItems ? `
-                    <td class="thin">
-                        <button type="button" class="btn menubtn" data-icon="settings" title="{{ 'Actions'|t('translation-manager') }}"></button>
-                        <div class="menu" data-align="right">
-                            <ul>${menuItems}</ul>
-                        </div>
-                    </td>` : '';
-
-            html += `
-                <tr>
-                    <td class="thin">${escapeHtml(backup.formattedDate)}</td>
-                    <td>${escapeHtml(backup.formattedReason)}</td>
-                    <td>${escapeHtml(backup.user)}</td>
-                    <td>${backup.translationCount}</td>
-                    <td>${escapeHtml(backup.formattedSize)}</td>
-                    ${actionCell}
-                </tr>
-            `;
+            rows += `<tr>
+                <td>${date}</td>
+                <td>${typeBadge}</td>
+                <td>${user}</td>
+                <td style="color: #28a745;"><strong>${count}</strong></td>
+                <td><code style="font-size: 11px;">${size}</code></td>
+                ${rowActions}
+            </tr>`;
         });
 
-        html += `
-            </tbody>
-        </table>
-        `;
-
-        return html;
+        return `<table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ "Date"|t('translation-manager')|e('js') }}</th>
+                    <th>{{ "Type"|t('translation-manager')|e('js') }}</th>
+                    <th>{{ "Created By"|t('translation-manager')|e('js') }}</th>
+                    <th>{{ "Translations"|t('translation-manager')|e('js') }}</th>
+                    <th>{{ "Size"|t('translation-manager')|e('js') }}</th>
+                    <th class="thin">{{ "Actions"|t('translation-manager')|e('js') }}</th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>`;
     }
 
     function escapeHtml(text) {

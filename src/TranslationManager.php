@@ -164,11 +164,22 @@ class TranslationManager extends Plugin
                                 'translationManager:deleteTranslations' => [
                                     'label' => Craft::t('translation-manager', 'Delete unused {plural}', ['plural' => $plural]),
                                 ],
+                            ],
+                        ],
+                        'translationManager:manageImportExport' => [
+                            'label' => Craft::t('translation-manager', 'Manage import/export'),
+                            'nested' => [
                                 'translationManager:importTranslations' => [
                                     'label' => Craft::t('translation-manager', 'Import {plural}', ['plural' => $plural]),
                                 ],
                                 'translationManager:exportTranslations' => [
                                     'label' => Craft::t('translation-manager', 'Export {plural}', ['plural' => $plural]),
+                                ],
+                                'translationManager:viewImportHistory' => [
+                                    'label' => Craft::t('translation-manager', 'View import history'),
+                                ],
+                                'translationManager:clearImportHistory' => [
+                                    'label' => Craft::t('translation-manager', 'Clear import history'),
                                 ],
                             ],
                         ],
@@ -313,8 +324,11 @@ class TranslationManager extends Plugin
             // Check view access to each section
             $hasTranslationsAccess = $user->checkPermission('translationManager:viewTranslations');
             $hasGenerateAccess = $user->checkPermission('translationManager:generateTranslations');
-            $hasImportExportAccess = $user->checkPermission('translationManager:importTranslations') ||
-                $user->checkPermission('translationManager:exportTranslations');
+            $hasImportExportAccess = $user->checkPermission('translationManager:manageImportExport') ||
+                $user->checkPermission('translationManager:importTranslations') ||
+                $user->checkPermission('translationManager:exportTranslations') ||
+                $user->checkPermission('translationManager:viewImportHistory') ||
+                $user->checkPermission('translationManager:clearImportHistory');
             $hasMaintenanceAccess = $user->checkPermission('translationManager:maintenance') ||
                 $user->checkPermission('translationManager:clearTranslations');
             $hasBackupAccess = $user->checkPermission('translationManager:manageBackups');
@@ -567,6 +581,9 @@ class TranslationManager extends Plugin
             // Import/Export routes
             'translation-manager/import-export' => 'translation-manager/import-export/index',
             'translation-manager/import' => 'translation-manager/import/index',
+            'translation-manager/import/upload' => 'translation-manager/import/upload',
+            'translation-manager/import/map' => 'translation-manager/import/map',
+            'translation-manager/import/preview' => 'translation-manager/import/preview',
             'translation-manager/import/check-existing' => 'translation-manager/import/check-existing',
             'translation-manager/import/history' => 'translation-manager/import/history',
             'translation-manager/import/clear-logs' => 'translation-manager/import/clear-logs',

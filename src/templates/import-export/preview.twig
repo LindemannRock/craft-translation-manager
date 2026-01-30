@@ -1,0 +1,289 @@
+{% extends "translation-manager/_layouts/cp" %}
+{% set title = "Preview Import"|t('translation-manager') %}
+{% set fullPageForm = false %}
+{% set selectedSubnavItem = 'import-export' %}
+
+{% set plugin = craft.app.plugins.getPlugin('translation-manager') %}
+{% set crumbs = [
+    {
+        label: translationHelper.fullName|t('translation-manager'),
+        url: url('translation-manager'),
+    },
+    {
+        label: 'Import/Export'|t('translation-manager'),
+        url: url('translation-manager/import-export'),
+    },
+    {
+        label: 'Preview'|t('translation-manager'),
+    },
+] %}
+
+{% import "_includes/forms" as forms %}
+
+{% block content %}
+    <style>
+        .lr-analytics-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .lr-analytics-stats.compact {
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+        }
+        .lr-stat-box {
+            background: #f3f7fc;
+            padding: 24px;
+            border-radius: 4px;
+            text-align: center;
+            border: 1px solid var(--hairline-color, #e3e5e8);
+        }
+        .lr-stat-box-colored {
+            background: transparent;
+            border-style: solid;
+            border-width: 1px;
+        }
+        .lr-stat-value {
+            font-size: 32px;
+            font-weight: 600;
+            color: #0d78f2;
+            margin-bottom: 8px;
+        }
+        .lr-stat-label {
+            font-size: 14px;
+            color: #596673;
+        }
+    </style>
+
+    <h2 style="margin-top: 0px;">{{ "Import Preview"|t('translation-manager') }}</h2>
+
+    <div class="lr-analytics-stats compact" style="margin: 30px 0;">
+        {% include 'lindemannrock-base/_components/stat-box' with {
+            value: summary.totalRows,
+            label: 'Total Rows'|t('translation-manager'),
+        } only %}
+        {% include 'lindemannrock-base/_components/stat-box' with {
+            value: summary.toImport,
+            label: 'New'|t('translation-manager'),
+            palette: 'green',
+        } only %}
+        {% include 'lindemannrock-base/_components/stat-box' with {
+            value: summary.toUpdate,
+            label: 'Updates'|t('translation-manager'),
+            palette: 'amber',
+        } only %}
+        {% include 'lindemannrock-base/_components/stat-box' with {
+            value: summary.unchanged,
+            label: 'Unchanged'|t('translation-manager'),
+            palette: 'gray',
+        } only %}
+        {% include 'lindemannrock-base/_components/stat-box' with {
+            value: summary.errors + summary.malicious,
+            label: 'Blocked'|t('translation-manager'),
+            palette: 'red',
+        } only %}
+    </div>
+
+    {% if createBackup %}
+        {% include 'lindemannrock-base/_components/info-box' with {
+            message: '<strong>' ~ "Backup will be created automatically before importing to protect existing translations."|t('translation-manager') ~ '</strong>',
+            type: 'success',
+            variant: 'colored',
+            margin: 'bottom'
+        } %}
+    {% endif %}
+
+    {% if toImport|length > 0 %}
+        <hr>
+        <h3>{{ "New Translations to Import"|t('translation-manager') }} ({{ toImport|length }})</h3>
+        <div style="max-height: 500px; overflow: auto; border: 1px solid #e0e0e0; border-radius: 4px;">
+            <table class="data fullwidth" style="margin: 0;">
+                <thead style="position: sticky; top: 0; background: #f7f7f7; z-index: 1;">
+                    <tr>
+                        <th>{{ "Key"|t('translation-manager') }}</th>
+                        <th>{{ "Translation"|t('translation-manager') }}</th>
+                        <th>{{ "Language"|t('translation-manager') }}</th>
+                        <th>{{ "Category"|t('translation-manager') }}</th>
+                        <th>{{ "Context"|t('translation-manager') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in toImport %}
+                        <tr>
+                            <td><code style="font-size: 11px;">{{ row.english }}</code></td>
+                            <td><code style="font-size: 11px;">{{ row.arabic }}</code></td>
+                            <td>{{ row.language }}</td>
+                            <td>{{ row.category }}</td>
+                            <td><span class="light">{{ row.context }}</span></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {% if toUpdate|length > 0 %}
+        <hr>
+        <h3>{{ "Translations to Update"|t('translation-manager') }} ({{ toUpdate|length }})</h3>
+        <div style="max-height: 500px; overflow: auto; border: 1px solid #e0e0e0; border-radius: 4px;">
+            <table class="data fullwidth" style="margin: 0;">
+                <thead style="position: sticky; top: 0; background: #fffbf0; z-index: 1;">
+                    <tr>
+                        <th>{{ "Key"|t('translation-manager') }}</th>
+                        <th>{{ "New Translation"|t('translation-manager') }}</th>
+                        <th>{{ "Current Translation"|t('translation-manager') }}</th>
+                        <th>{{ "Language"|t('translation-manager') }}</th>
+                        <th>{{ "Category"|t('translation-manager') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in toUpdate %}
+                        <tr>
+                            <td><code style="font-size: 11px;">{{ row.english }}</code></td>
+                            <td><code style="font-size: 11px;">{{ row.arabic }}</code></td>
+                            <td><code style="font-size: 11px;">{{ row.currentTranslation }}</code></td>
+                            <td>{{ row.language }}</td>
+                            <td>{{ row.category }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {% if unchanged|length > 0 %}
+        <hr>
+        <h3>{{ "Unchanged Translations (will be skipped)"|t('translation-manager') }} ({{ unchanged|length }})</h3>
+        <div style="max-height: 300px; overflow: auto; border: 1px solid #e0e0e0; border-radius: 4px;">
+            <table class="data fullwidth" style="margin: 0;">
+                <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 1;">
+                    <tr>
+                        <th>{{ "Key"|t('translation-manager') }}</th>
+                        <th>{{ "Translation"|t('translation-manager') }}</th>
+                        <th>{{ "Language"|t('translation-manager') }}</th>
+                        <th>{{ "Category"|t('translation-manager') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in unchanged %}
+                        <tr>
+                            <td><code style="font-size: 11px;">{{ row.english }}</code></td>
+                            <td><code style="font-size: 11px;">{{ row.arabic }}</code></td>
+                            <td>{{ row.language }}</td>
+                            <td>{{ row.category }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {% if malicious|length > 0 %}
+        <hr>
+        <h3>{{ "Blocked Rows (malicious content)"|t('translation-manager') }} ({{ malicious|length }})</h3>
+        <div style="max-height: 300px; overflow: auto; border: 1px solid #e0e0e0; border-radius: 4px;">
+            <table class="data fullwidth" style="margin: 0;">
+                <thead style="position: sticky; top: 0; background: #fef2f2; z-index: 1;">
+                    <tr>
+                        <th style="width: 60px;">{{ "Row"|t('translation-manager') }}</th>
+                        <th>{{ "Key"|t('translation-manager') }}</th>
+                        <th>{{ "Context"|t('translation-manager') }}</th>
+                        <th>{{ "Threats"|t('translation-manager') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in malicious %}
+                        <tr>
+                            <td>{{ row.rowNumber ?? '-' }}</td>
+                            <td><code style="font-size: 11px;">{{ row.english }}</code></td>
+                            <td><span class="light">{{ row.context }}</span></td>
+                            <td style="color: #dc3545;">
+                                {% if row.threats %}
+                                    {{ row.threats|keys|join(', ') }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {% if errors|length > 0 %}
+        <hr>
+        <h3>{{ "Invalid Rows (will be skipped)"|t('translation-manager') }} ({{ errors|length }})</h3>
+        <div style="max-height: 300px; overflow: auto; border: 1px solid #e0e0e0; border-radius: 4px;">
+            <table class="data fullwidth" style="margin: 0;">
+                <thead style="position: sticky; top: 0; background: #fef2f2; z-index: 1;">
+                    <tr>
+                        <th style="width: 60px;">{{ "Row"|t('translation-manager') }}</th>
+                        <th>{{ "Key"|t('translation-manager') }}</th>
+                        <th>{{ "Error"|t('translation-manager') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in errors %}
+                        <tr>
+                            <td>{{ row.rowNumber ?? '-' }}</td>
+                            <td><code style="font-size: 11px;">{{ row.english ?? '' }}</code></td>
+                            <td style="color: #dc3545;">{{ row.error }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    <hr>
+
+    <form method="post" action="{{ actionUrl('translation-manager/import') }}" id="importForm">
+        {{ csrfInput() }}
+
+        <div style="background: #f7f7f7; padding: 20px; border-radius: 4px; margin: 20px 0;">
+            <h3 style="margin-top: 0;">{{ "Ready to Import"|t('translation-manager') }}</h3>
+            <p>
+                {% if summary.toImport + summary.toUpdate > 0 %}
+                    {{ "Click the button below to import {count} translation(s)."|t('translation-manager', {count: summary.toImport + summary.toUpdate}) }}
+                    {% if summary.unchanged > 0 %}
+                        {{ "{skipped} unchanged row(s) will be skipped."|t('translation-manager', {skipped: summary.unchanged}) }}
+                    {% endif %}
+                    {% if summary.errors + summary.malicious > 0 %}
+                        {{ "{blocked} row(s) will be blocked."|t('translation-manager', {blocked: summary.errors + summary.malicious}) }}
+                    {% endif %}
+                {% else %}
+                    {{ "No valid translations found to import."|t('translation-manager') }}
+                {% endif %}
+            </p>
+
+            <div class="buttons" style="margin-top: 15px;">
+                <a href="{{ url('translation-manager/import-export') }}" class="btn secondary">{{ "Cancel"|t('translation-manager') }}</a>
+                {% if summary.toImport + summary.toUpdate > 0 %}
+                    <button type="submit" class="btn submit">
+                        {{ "Import {count} Translations"|t('translation-manager', {count: summary.toImport + summary.toUpdate}) }}
+                    </button>
+                {% else %}
+                    <button type="button" class="btn disabled" disabled>
+                        {{ "No Valid Translations to Import"|t('translation-manager') }}
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+
+    {% include 'lindemannrock-base/_components/plugin-credit' %}
+{% endblock %}
+
+{% js %}
+    const importForm = document.getElementById('importForm');
+    if (importForm) {
+        importForm.addEventListener('submit', function(e) {
+            const count = {{ summary.toImport + summary.toUpdate }};
+            if (!confirm('Import ' + count + ' translation(s)? {% if createBackup %}A backup will be created first.{% endif %}')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
+{% endjs %}

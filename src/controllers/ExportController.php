@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
 use craft\web\Controller;
+use lindemannrock\base\helpers\ExportHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
@@ -40,7 +41,8 @@ class ExportController extends Controller
         switch ($action->id) {
             case 'index':
                 // CSV export
-                if (!$user->checkPermission('translationManager:exportTranslations')) {
+                if (!$user->checkPermission('translationManager:manageImportExport') &&
+                    !$user->checkPermission('translationManager:exportTranslations')) {
                     throw new ForbiddenHttpException('User does not have permission to export translations');
                 }
                 break;
@@ -70,7 +72,8 @@ class ExportController extends Controller
                 break;
             default:
                 // For any other actions, require export permission
-                if (!$user->checkPermission('translationManager:exportTranslations')) {
+                if (!$user->checkPermission('translationManager:manageImportExport') &&
+                    !$user->checkPermission('translationManager:exportTranslations')) {
                     throw new ForbiddenHttpException('User does not have permission to export translations');
                 }
         }
@@ -91,7 +94,8 @@ class ExportController extends Controller
         try {
             $request = Craft::$app->getRequest();
             $translationsService = TranslationManager::getInstance()->translations;
-            
+            $settings = TranslationManager::$plugin->getSettings();
+
             // Check if we have filters from the translations page
             $criteria = [];
 
@@ -141,66 +145,63 @@ class ExportController extends Controller
             $translations = $translationsService->getTranslations($criteria);
             
             // If no translations found, still export empty CSV with headers
-            if (empty($translations)) {
-                $settings = TranslationManager::getInstance()->getSettings();
-                $csv = "\xEF\xBB\xBF"; // UTF-8 BOM
+            $headers = $settings->showContext
+                ? ['Translation Key', 'Translation', 'Category', 'Type', 'Context', 'Status', 'Language']
+                : ['Translation Key', 'Translation', 'Category', 'Type', 'Status', 'Language'];
+
+            $rows = [];
+            foreach ($translations as $translation) {
+                $context = $translation['context'] ?? '';
+                $isFormie = str_starts_with($context, 'formie.') || $context === 'formie';
+                $typeLabel = $isFormie ? TranslationManager::getFormiePluginName() : 'Site';
+
+                $row = [
+                    'translationKey' => $translation['translationKey'] ?? '',
+                    'translation' => $translation['translation'] ?? '',
+                    'category' => $translation['category'] ?? 'messages',
+                    'type' => $typeLabel,
+                ];
+
                 if ($settings->showContext) {
-                    $csv .= "Translation Key,Translation,Category,Type,Context,Status,Language\n";
-                } else {
-                    $csv .= "Translation Key,Translation,Category,Type,Status,Language\n";
+                    $row['context'] = $context;
                 }
-            } else {
-                // Convert to array of IDs
-                $ids = array_map(function($translation) {
-                    return $translation['id'];
-                }, $translations);
-                
-                // Use the same CSV export logic
-                $csv = TranslationManager::getInstance()->export->exportSelected($ids);
+
+                $row['status'] = $translation['status'] ?? '';
+                $row['language'] = $translation['language'] ?? '';
+
+                $rows[] = $row;
             }
-            
-            // Determine filename based on filters
-            $settings = TranslationManager::$plugin->getSettings();
-            $filenamePart = strtolower(str_replace(' ', '-', $settings->getPluralLowerDisplayName()));
-            $filename = $filenamePart . '-export';
+
+            $filenameParts = ['export'];
 
             // Add language info to filename (sanitized to prevent header injection)
             if ($exportAll) {
-                $filename .= '-all-languages';
+                $filenameParts[] = 'all-languages';
             } elseif (!empty($languageParam)) {
-                $filename .= '-' . $this->sanitizeFilenamePart($languageParam);
+                $filenameParts[] = $this->sanitizeFilenamePart($languageParam);
             } elseif (!empty($siteParam)) {
                 // Legacy: use site's language
                 $site = Craft::$app->getSites()->getSiteById($siteParam);
                 if ($site) {
-                    $filename .= '-' . $this->sanitizeFilenamePart($site->language);
+                    $filenameParts[] = $this->sanitizeFilenamePart($site->language);
                 }
             }
 
             // Add category to filename (sanitized)
             if ($categoryParam && $categoryParam !== 'all') {
-                $filename .= '-' . $this->sanitizeFilenamePart($categoryParam);
+                $filenameParts[] = $this->sanitizeFilenamePart($categoryParam);
             }
 
             if ($typeParam && $typeParam !== 'all') {
-                $filename .= '-' . $this->sanitizeFilenamePart($typeParam);
+                $filenameParts[] = $this->sanitizeFilenamePart($typeParam);
             }
             if ($statusParam && $statusParam !== 'all') {
-                $filename .= '-' . $this->sanitizeFilenamePart($statusParam);
+                $filenameParts[] = $this->sanitizeFilenamePart($statusParam);
             }
-            $filename .= '-' . date('Y-m-d') . '.csv';
-            
-            // Create response with CSV data
-            $response = Craft::$app->getResponse();
-            $response->format = Response::FORMAT_RAW;
-            $response->headers->set('Content-Type', 'text/csv; charset=utf-8');
-            $response->headers->set('Content-Disposition', 'attachment; filename="' . $filename . '"');
-            $response->headers->set('Cache-Control', 'no-cache, must-revalidate');
-            $response->headers->set('Pragma', 'no-cache');
-            $response->headers->set('Expires', '0');
-            $response->data = $csv;
-            
-            return $response;
+
+            $filename = ExportHelper::filename($settings, $filenameParts, 'csv');
+
+            return ExportHelper::toCsv($rows, $headers, $filename);
         } catch (\Exception $e) {
             $this->logError('Export failed', ['error' => $e->getMessage()]);
             throw $e;
@@ -248,56 +249,65 @@ class ExportController extends Controller
             throw new \Exception('No valid IDs provided');
         }
 
-        $csv = TranslationManager::getInstance()->export->exportSelected($ids);
-        
-        // Determine filename based on selected translations
         $settings = TranslationManager::$plugin->getSettings();
-        $filenamePart = strtolower(str_replace(' ', '-', $settings->getPluralLowerDisplayName()));
-        $filename = $filenamePart . '-export-selected';
-        
-        // Get language info from first few translations to determine if single-language or multi-language
+        $headers = $settings->showContext
+            ? ['Translation Key', 'Translation', 'Category', 'Type', 'Context', 'Status', 'Language']
+            : ['Translation Key', 'Translation', 'Category', 'Type', 'Status', 'Language'];
+
         $translationsService = TranslationManager::getInstance()->translations;
+        $rows = [];
         $languages = [];
         $types = [];
 
-        foreach (array_slice($ids, 0, 5) as $id) { // Check first 5 to determine pattern
+        foreach ($ids as $id) {
             $translation = $translationsService->getTranslationById($id);
-            if ($translation) {
-                $languages[] = $translation->language;
-                $types[] = strpos($translation->context, 'formie.') === 0 ? 'formie' : 'site';
+            if (!$translation) {
+                continue;
             }
+
+            $context = $translation->context ?? '';
+            $isFormie = str_starts_with($context, 'formie.') || $context === 'formie';
+            $typeLabel = $isFormie ? TranslationManager::getFormiePluginName() : 'Site';
+
+            $row = [
+                'translationKey' => $translation->translationKey ?? '',
+                'translation' => $translation->translation ?? '',
+                'category' => $translation->category ?? 'messages',
+                'type' => $typeLabel,
+            ];
+
+            if ($settings->showContext) {
+                $row['context'] = $context;
+            }
+
+            $row['status'] = $translation->status ?? '';
+            $row['language'] = $translation->language ?? '';
+
+            $rows[] = $row;
+            if (!empty($translation->language)) {
+                $languages[] = $translation->language;
+            }
+            $types[] = $isFormie ? 'formie' : 'site';
         }
 
         $languages = array_unique($languages);
         $types = array_unique($types);
 
-        // Add language info to filename (sanitized)
+        $filenameParts = ['export-selected'];
+
         if (count($languages) === 1 && !empty($languages[0])) {
-            $filename .= '-' . $this->sanitizeFilenamePart($languages[0]);
+            $filenameParts[] = $this->sanitizeFilenamePart($languages[0]);
         } else {
-            $filename .= '-multi-language';
+            $filenameParts[] = 'multi-language';
         }
 
-        // Add type info if all selected are same type (sanitized)
         if (count($types) === 1) {
-            $filename .= '-' . $this->sanitizeFilenamePart($types[0]);
+            $filenameParts[] = $this->sanitizeFilenamePart($types[0]);
         }
-        
-        $filename .= '-' . date('Y-m-d') . '.csv';
-        
-        // Set headers for CSV download
-        $response = Craft::$app->getResponse();
-        $response->format = Response::FORMAT_RAW;
-        $response->getHeaders()
-            ->set('Content-Type', 'text/csv; charset=utf-8')
-            ->set('Content-Disposition', 'attachment; filename="' . $filename . '"')
-            ->set('Cache-Control', 'no-cache, no-store, must-revalidate')
-            ->set('Pragma', 'no-cache')
-            ->set('Expires', '0');
-        
-        $response->data = $csv;
-        
-        return $response;
+
+        $filename = ExportHelper::filename($settings, $filenameParts, 'csv');
+
+        return ExportHelper::toCsv($rows, $headers, $filename);
     }
 
     /**

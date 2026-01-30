@@ -38,7 +38,8 @@ class TranslationsController extends Controller
                 Craft::$app->getResponse()->redirect('translation-manager/generate')->send();
                 return false;
             }
-            if ($user->checkPermission('translationManager:importTranslations') ||
+            if ($user->checkPermission('translationManager:manageImportExport') ||
+                $user->checkPermission('translationManager:importTranslations') ||
                 $user->checkPermission('translationManager:exportTranslations')) {
                 Craft::$app->getResponse()->redirect('translation-manager/import-export')->send();
                 return false;

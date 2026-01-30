@@ -12,7 +12,9 @@ namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
 use craft\helpers\FileHelper;
+use craft\helpers\UrlHelper;
 use craft\web\Controller;
+use lindemannrock\base\helpers\DateTimeHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
@@ -106,6 +108,7 @@ class BackupController extends Controller
         try {
             $backupService = TranslationManager::getInstance()->backup;
             $backups = $backupService->getBackups();
+            $view = Craft::$app->getView();
 
             // Format file sizes and dates for display
             $craftTimezone = Craft::$app->getTimeZone();
@@ -117,11 +120,55 @@ class BackupController extends Controller
                 $dateTime = new \DateTime('@' . $backup['timestamp']);
                 $dateTime->setTimezone(new \DateTimeZone($craftTimezone));
 
-                // Format date for display
-                $backup['formattedDate'] = $dateTime->format('n/j/Y, g:i A');
+                // Format date for display (base helper)
+                $backup['formattedDate'] = DateTimeHelper::formatDatetime($dateTime);
 
-                // Format reason for display
-                $backup['formattedReason'] = $this->_formatBackupReason($backup['reason'] ?? 'manual');
+                $typeInfo = $this->_formatBackupType($backup['reason'] ?? 'manual');
+                $backup['typeLabel'] = $typeInfo['label'];
+
+                $backup['typeBadgeHtml'] = $view->renderTemplate('lindemannrock-base/_components/badge', [
+                    'label' => $typeInfo['label'],
+                    'value' => $typeInfo['value'],
+                    'colorSet' => 'backupReason',
+                ]);
+
+                $downloadUrl = UrlHelper::actionUrl('translation-manager/backup/download', [
+                    'backup' => $backup['name'] ?? '',
+                ]);
+
+                $backup['rowActionsHtml'] = $view->renderTemplate('lindemannrock-base/_components/row-actions', [
+                    'item' => $backup,
+                    'actions' => [
+                        'type' => 'menu',
+                        'icon' => 'settings',
+                        'items' => [
+                            [
+                                'label' => Craft::t('translation-manager', 'Restore'),
+                                'class' => 'restore-backup',
+                                'jsAction' => 'restore',
+                                'permission' => 'translationManager:restoreBackups',
+                                'data' => [
+                                    'backup' => $backup['name'] ?? '',
+                                ],
+                            ],
+                            [
+                                'label' => Craft::t('translation-manager', 'Download ZIP'),
+                                'url' => $downloadUrl,
+                                'permission' => 'translationManager:downloadBackups',
+                            ],
+                            ['type' => 'divider'],
+                            [
+                                'label' => Craft::t('translation-manager', 'Delete'),
+                                'class' => 'delete-backup error',
+                                'jsAction' => 'delete',
+                                'permission' => 'translationManager:deleteBackups',
+                                'data' => [
+                                    'backup' => $backup['name'] ?? '',
+                                ],
+                            ],
+                        ],
+                    ],
+                ]);
             }
 
             return $this->asJson([
@@ -384,23 +431,43 @@ class BackupController extends Controller
     /**
      * Format backup reason for display
      */
-    private function _formatBackupReason(string $reason): string
+    private function _formatBackupType(string $reason): array
     {
         return match ($reason) {
-            'manual' => Craft::t('translation-manager', 'Manual'),
-            'before_import' => Craft::t('translation-manager', 'Before Import'),
-            'before_php_import' => Craft::t('translation-manager', 'Before PHP Import'),
-            'before_restore' => Craft::t('translation-manager', 'Before Restore'),
-            'scheduled' => Craft::t('translation-manager', 'Scheduled'),
-            'before_clear_all' => Craft::t('translation-manager', 'Before Clear All'),
-            'before_clear_formie' => Craft::t('translation-manager', 'Before Clear Formie'),
-            'before_clear_site' => Craft::t('translation-manager', 'Before Clear Site'),
-            'before_cleanup' => Craft::t('translation-manager', 'Before Cleanup'),
-            'before_cleanup_all' => Craft::t('translation-manager', 'Before Cleanup All'),
-            'before_cleanup_formie' => Craft::t('translation-manager', 'Before Cleanup Formie'),
-            'before_cleanup_site' => Craft::t('translation-manager', 'Before Cleanup Site'),
-            'before_clear' => Craft::t('translation-manager', 'Before Clear'),
-            default => Craft::t('translation-manager', ucfirst(str_replace('_', ' ', $reason)))
+            'before_import', 'before_php_import' => [
+                'label' => Craft::t('translation-manager', 'Import'),
+                'value' => 'import',
+            ],
+            'before_restore' => [
+                'label' => Craft::t('translation-manager', 'Restore'),
+                'value' => 'restore',
+            ],
+            'scheduled' => [
+                'label' => Craft::t('translation-manager', 'Scheduled'),
+                'value' => 'scheduled',
+            ],
+            'manual' => [
+                'label' => Craft::t('translation-manager', 'Manual'),
+                'value' => 'manual',
+            ],
+            'before_clear_all',
+            'before_clear_formie',
+            'before_clear_site',
+            'before_clear' => [
+                'label' => Craft::t('translation-manager', 'Clear'),
+                'value' => 'clear',
+            ],
+            'before_cleanup',
+            'before_cleanup_all',
+            'before_cleanup_formie',
+            'before_cleanup_site' => [
+                'label' => Craft::t('translation-manager', 'Maintenance'),
+                'value' => 'maintenance',
+            ],
+            default => [
+                'label' => Craft::t('translation-manager', 'Other'),
+                'value' => 'other',
+            ],
         };
     }
 }

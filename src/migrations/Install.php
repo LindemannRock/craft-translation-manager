@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\migrations;
 
 use craft\db\Migration;
 use craft\helpers\Db;
+use craft\helpers\Json;
 use craft\helpers\StringHelper;
 
 /**
@@ -119,6 +120,9 @@ class Install extends Migration
 
             // Insert default settings row
             $this->insert('{{%translationmanager_settings}}', [
+                'translationCategories' => Json::encode([
+                    ['key' => 'messages', 'enabled' => true],
+                ]),
                 'dateCreated' => Db::prepareDateForDb(new \DateTime()),
                 'dateUpdated' => Db::prepareDateForDb(new \DateTime()),
                 'uid' => StringHelper::UUID(),

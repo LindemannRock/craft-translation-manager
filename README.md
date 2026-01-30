@@ -481,12 +481,18 @@ Exports respect current filters (including language) and are protected against C
 
 ### CSV Import
 
-The plugin provides a secure built-in CSV import feature with preview:
+The plugin provides a secure multi-step CSV import feature with column mapping and preview:
 
-1. **Access Import**: Navigate to **Translation Manager → Import/Export**
-2. **Upload CSV**: Select your CSV file (max 5MB)
-3. **Preview Changes**: Review what will be imported, updated, or skipped
-4. **Confirm Import**: Import with automatic backup (if enabled)
+1. **Upload**: Navigate to **Translation Manager → Import/Export** and upload your CSV file
+2. **Map Columns**: Map your CSV columns to translation fields (Translation Key required)
+   - Auto-detection for common column names (English, Arabic, Translation, etc.)
+   - Preview of first 5 rows to verify mapping
+3. **Preview**: Review summary of what will be imported
+   - New translations to create
+   - Existing translations to update
+   - Unchanged rows (skipped)
+   - Blocked rows (malicious content detected)
+4. **Import**: Confirm and import with automatic backup (if enabled)
 5. **View History**: Check import history with results and backup links
 
 **CSV Format Requirements**:
@@ -649,16 +655,20 @@ The plugin provides granular permissions that can be assigned to user groups via
 
 | Permission | Description |
 |------------|-------------|
-| **View translations** | Access the translations interface and view all translations |
-| **Edit translations** | Modify and save translation values |
+| **Manage translations** | Access the Translations page (parent permission) |
+| └─ View translations | Access the translations interface and view all translations |
+| └─ Edit translations | Modify and save translation values |
 | └─ Delete unused translations | Delete selected unused translations from the translations page |
 
 ### Import/Export Permissions
 
 | Permission | Description |
 |------------|-------------|
-| **Import translations** | Import translations from CSV files |
-| **Export translations** | Export translations as CSV files |
+| **Manage import/export** | Access the Import/Export page (parent permission) |
+| └─ Import translations | Import translations from CSV files |
+| └─ Export translations | Export translations as CSV files |
+| └─ View import history | View the import history log |
+| └─ Clear import history | Clear the import history log |
 
 ### Generate Permissions
 

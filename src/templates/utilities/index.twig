@@ -135,7 +135,7 @@
 
 <!-- Quick Actions -->
 {% set canViewTranslations = currentUser.can('translationManager:viewTranslations') %}
-{% set canExportTranslations = currentUser.can('translationManager:exportTranslations') %}
+{% set canExportTranslations = currentUser.can('translationManager:manageImportExport') or currentUser.can('translationManager:exportTranslations') %}
 {% set hasAnyQuickAction = canViewTranslations or canExportTranslations %}
 
 {% if hasAnyQuickAction %}
@@ -181,4 +181,3 @@
         </span>
     </div>
 {% endif %}
-

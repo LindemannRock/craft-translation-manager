@@ -50,6 +50,9 @@
                 {# Migrate from old single category format #}
                 {% set categoriesTableData = [{'key': settings.translationCategory, 'enabled': true}] %}
             {% endif %}
+            {% if categoriesTableData is empty %}
+                {% set categoriesTableData = [{'key': 'messages', 'enabled': true}] %}
+            {% endif %}
 
             {{ forms.editableTableField({
                 label: "Translation Categories"|t('translation-manager'),
