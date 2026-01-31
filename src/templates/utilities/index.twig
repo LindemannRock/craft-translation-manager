@@ -134,42 +134,43 @@
 </div>
 
 <!-- Quick Actions -->
-{% set canViewTranslations = currentUser.can('translationManager:viewTranslations') %}
-{% set canExportTranslations = currentUser.can('translationManager:manageImportExport') or currentUser.can('translationManager:exportTranslations') %}
-{% set hasAnyQuickAction = canViewTranslations or canExportTranslations %}
+{% set canViewTranslations = currentUser.can('translationManager:manageTranslations') or currentUser.can('translationManager:viewTranslations') %}
+{% set canImportExport = currentUser.can('translationManager:manageImportExport') or currentUser.can('translationManager:importTranslations') or currentUser.can('translationManager:exportTranslations') %}
+{% set canBackups = currentUser.can('translationManager:manageBackups') %}
+{% set canMaintenance = currentUser.can('translationManager:maintenance') or currentUser.can('translationManager:cleanUnused') or currentUser.can('translationManager:scanTemplates') %}
+{% set hasNavigation = canViewTranslations or canImportExport or canBackups or canMaintenance %}
 
-{% if hasAnyQuickAction %}
+{% if hasNavigation %}
 <div>
     <h2>{{ 'Quick Actions'|t('translation-manager') }}</h2>
 
     <div class="pane">
-        {% if canViewTranslations %}
-        <div style="margin-bottom: 24px;">
+        <div>
             <h3 style="margin-bottom: 8px;">{{ "Navigation"|t('translation-manager') }}</h3>
-            <p class="light" style="margin-bottom: 16px;">{{ "Access main translation management sections"|t('translation-manager') }}</p>
+            <p class="light" style="margin-bottom: 16px;">{{ "Access main plugin sections"|t('translation-manager') }}</p>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <a href="{{ url('translation-manager', {siteId: currentSiteId}) }}" class="btn">
-                    {{ "Manage Translations"|t('translation-manager') }}
-                </a>
+                {% if canViewTranslations %}
+                    <a href="{{ url('translation-manager', {siteId: currentSiteId}) }}" class="btn">
+                        {{ "Manage Translations"|t('translation-manager') }}
+                    </a>
+                {% endif %}
+                {% if canImportExport %}
+                    <a href="{{ url('translation-manager/import-export') }}" class="btn">
+                        {{ "Manage Import/Export"|t('translation-manager') }}
+                    </a>
+                {% endif %}
+                {% if canBackups %}
+                    <a href="{{ url('translation-manager/backups') }}" class="btn">
+                        {{ "Manage Backups"|t('translation-manager') }}
+                    </a>
+                {% endif %}
+                {% if canMaintenance %}
+                    <a href="{{ url('translation-manager/maintenance') }}" class="btn">
+                        {{ "Perform Maintenance"|t('translation-manager') }}
+                    </a>
+                {% endif %}
             </div>
         </div>
-        {% endif %}
-
-        {% if canExportTranslations %}
-            {% if canViewTranslations %}
-            <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;">
-            {% endif %}
-
-            <div>
-                <h3 style="margin-bottom: 8px;">{{ "Export"|t('translation-manager') }}</h3>
-                <p class="light" style="margin-bottom: 16px;">{{ "Export translations for the current site to work offline or share with translation services."|t('translation-manager') }}</p>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <a href="{{ actionUrl('translation-manager/export', {siteId: currentSiteId}) }}" class="btn submit">
-                        {{ "Export"|t('translation-manager') }} {{ stats.siteInfo ? stats.siteInfo.name : 'Current Site' }}
-                    </a>
-                </div>
-            </div>
-        {% endif %}
     </div>
 </div>
 {% endif %}

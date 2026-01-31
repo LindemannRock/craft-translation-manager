@@ -54,7 +54,7 @@ class TranslationsController extends Controller
                 return false;
             }
             if ($user->checkPermission('translationManager:viewLogs')) {
-                Craft::$app->getResponse()->redirect('translation-manager/logs')->send();
+                Craft::$app->getResponse()->redirect('translation-manager/logs/system')->send();
                 return false;
             }
             if ($user->checkPermission('translationManager:editSettings')) {

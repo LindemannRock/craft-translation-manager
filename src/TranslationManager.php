@@ -243,10 +243,10 @@ class TranslationManager extends Plugin
                             ],
                         ],
                         'translationManager:viewLogs' => [
-                            'label' => Craft::t('translation-manager', 'View logs'),
+                            'label' => Craft::t('translation-manager', 'View system logs'),
                             'nested' => [
                                 'translationManager:downloadLogs' => [
-                                    'label' => Craft::t('translation-manager', 'Download logs'),
+                                    'label' => Craft::t('translation-manager', 'Download system logs'),
                                 ],
                             ],
                         ],
@@ -613,10 +613,6 @@ class TranslationManager extends Plugin
             // Settings routes
             'translation-manager/settings' => 'translation-manager/settings/index',
             'translation-manager/settings/<section:[\w-]+>' => 'translation-manager/settings/<section>',
-
-            // Logging routes
-            'translation-manager/logs' => 'logging-library/logs/index',
-            'translation-manager/logs/download' => 'logging-library/logs/download',
         ];
     }
 
