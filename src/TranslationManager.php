@@ -115,8 +115,8 @@ class TranslationManager extends Plugin
         PluginHelper::bootstrap(
             $this,
             'translationHelper',
-            ['translationManager:viewLogs'],
-            ['translationManager:downloadLogs']
+            ['translationManager:viewSystemLogs'],
+            ['translationManager:downloadSystemLogs']
         );
         PluginHelper::applyPluginNameFromConfig($this);
 
@@ -243,10 +243,15 @@ class TranslationManager extends Plugin
                             ],
                         ],
                         'translationManager:viewLogs' => [
-                            'label' => Craft::t('translation-manager', 'View system logs'),
+                            'label' => Craft::t('translation-manager', 'View logs'),
                             'nested' => [
-                                'translationManager:downloadLogs' => [
-                                    'label' => Craft::t('translation-manager', 'Download system logs'),
+                                'translationManager:viewSystemLogs' => [
+                                    'label' => Craft::t('translation-manager', 'View system logs'),
+                                    'nested' => [
+                                        'translationManager:downloadSystemLogs' => [
+                                            'label' => Craft::t('translation-manager', 'Download system logs'),
+                                        ],
+                                    ],
                                 ],
                             ],
                         ],
@@ -375,12 +380,10 @@ class TranslationManager extends Plugin
                 ];
             }
 
-            // Add logs section using the logging library (only if installed)
-            if (Craft::$app->getPlugins()->isPluginInstalled('logging-library') &&
-                Craft::$app->getPlugins()->isPluginEnabled('logging-library')) {
+            // Add logs section using the logging library
+            if (PluginHelper::isPluginEnabled('logging-library')) {
                 $item = LoggingLibrary::addLogsNav($item, $this->handle, [
-                    'translationManager:viewLogs',
-                    'translationManager:downloadLogs',
+                    'translationManager:viewSystemLogs',
                 ]);
             }
 
