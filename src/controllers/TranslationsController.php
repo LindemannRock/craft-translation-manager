@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
 use craft\web\Controller;
+use lindemannrock\base\helpers\CpNavHelper;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
@@ -33,32 +34,11 @@ class TranslationsController extends Controller
 
         // For index action, redirect to first accessible section if no viewTranslations permission
         if ($action->id === 'index' && !$user->checkPermission('translationManager:viewTranslations')) {
-            // Check other permissions and redirect accordingly
-            if ($user->checkPermission('translationManager:generateTranslations')) {
-                Craft::$app->getResponse()->redirect('translation-manager/generate')->send();
-                return false;
-            }
-            if ($user->checkPermission('translationManager:manageImportExport') ||
-                $user->checkPermission('translationManager:importTranslations') ||
-                $user->checkPermission('translationManager:exportTranslations')) {
-                Craft::$app->getResponse()->redirect('translation-manager/import-export')->send();
-                return false;
-            }
-            if ($user->checkPermission('translationManager:maintenance') ||
-                $user->checkPermission('translationManager:clearTranslations')) {
-                Craft::$app->getResponse()->redirect('translation-manager/maintenance')->send();
-                return false;
-            }
-            if ($user->checkPermission('translationManager:manageBackups')) {
-                Craft::$app->getResponse()->redirect('translation-manager/backups')->send();
-                return false;
-            }
-            if ($user->checkPermission('translationManager:viewSystemLogs')) {
-                Craft::$app->getResponse()->redirect('translation-manager/logs')->send();
-                return false;
-            }
-            if ($user->checkPermission('translationManager:editSettings')) {
-                Craft::$app->getResponse()->redirect('translation-manager/settings')->send();
+            $settings = TranslationManager::getInstance()->getSettings();
+            $sections = TranslationManager::getInstance()->getCpSections($settings, false, true);
+            $route = CpNavHelper::firstAccessibleRoute($user, $settings, $sections);
+            if ($route) {
+                Craft::$app->getResponse()->redirect($route)->send();
                 return false;
             }
 

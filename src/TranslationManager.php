@@ -23,6 +23,7 @@ use craft\services\Utilities;
 use craft\web\twig\variables\Cp;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
+use lindemannrock\base\helpers\CpNavHelper;
 use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\logginglibrary\LoggingLibrary;
 
@@ -319,66 +320,15 @@ class TranslationManager extends Plugin
 
         if ($item) {
             // Use dynamic plugin name from settings
-            $item['label'] = $this->getSettings()->getFullName();
+            $settings = $this->getSettings();
+            $item['label'] = $settings->getFullName();
 
             // Use Craft's built-in language icon (same as the module used)
             $item['icon'] = '@app/icons/language.svg';
 
             $user = Craft::$app->getUser();
-
-            // Check view access to each section
-            $hasTranslationsAccess = $user->checkPermission('translationManager:viewTranslations');
-            $hasGenerateAccess = $user->checkPermission('translationManager:generateTranslations');
-            $hasImportExportAccess = $user->checkPermission('translationManager:manageImportExport') ||
-                $user->checkPermission('translationManager:importTranslations') ||
-                $user->checkPermission('translationManager:exportTranslations') ||
-                $user->checkPermission('translationManager:viewImportHistory') ||
-                $user->checkPermission('translationManager:clearImportHistory');
-            $hasMaintenanceAccess = $user->checkPermission('translationManager:maintenance') ||
-                $user->checkPermission('translationManager:clearTranslations');
-            $hasBackupAccess = $user->checkPermission('translationManager:manageBackups');
-
-            $item['subnav'] = [];
-
-            // Add Translations section (requires view permission)
-            if ($hasTranslationsAccess) {
-                $item['subnav']['translations'] = [
-                    'label' => 'Translations',
-                    'url' => 'translation-manager',
-                ];
-            }
-
-            // Add Generate section
-            if ($hasGenerateAccess) {
-                $item['subnav']['generate'] = [
-                    'label' => 'Generate',
-                    'url' => 'translation-manager/generate',
-                ];
-            }
-
-            // Add Import/Export section (requires import or export permission)
-            if ($hasImportExportAccess) {
-                $item['subnav']['import-export'] = [
-                    'label' => 'Import/Export',
-                    'url' => 'translation-manager/import-export',
-                ];
-            }
-
-            // Add Maintenance section
-            if ($hasMaintenanceAccess) {
-                $item['subnav']['maintenance'] = [
-                    'label' => 'Maintenance',
-                    'url' => 'translation-manager/maintenance',
-                ];
-            }
-
-            // Add Backups section
-            if ($hasBackupAccess) {
-                $item['subnav']['backups'] = [
-                    'label' => 'Backups',
-                    'url' => 'translation-manager/backups',
-                ];
-            }
+            $sections = $this->getCpSections($settings);
+            $item['subnav'] = CpNavHelper::buildSubnav($user, $settings, $sections);
 
             // Add logs section using the logging library
             if (PluginHelper::isPluginEnabled('logging-library')) {
@@ -394,9 +344,93 @@ class TranslationManager extends Plugin
                     'match' => 'translation-manager/settings*', // Match all settings pages
                 ];
             }
+
+            // Hide from nav if no accessible subnav items
+            if (empty($item['subnav'])) {
+                return null;
+            }
         }
 
         return $item;
+    }
+
+    /**
+     * Get CP sections for nav + default route resolution
+     *
+     * @param Settings $settings
+     * @param bool $includeTranslations
+     * @param bool $includeLogs
+     * @return array
+     * @since 5.14.0
+     */
+    public function getCpSections(Settings $settings, bool $includeTranslations = true, bool $includeLogs = false): array
+    {
+        $sections = [];
+
+        if ($includeTranslations) {
+            $sections[] = [
+                'key' => 'translations',
+                'label' => Craft::t('translation-manager', 'Translations'),
+                'url' => 'translation-manager',
+                'permissionsAll' => ['translationManager:viewTranslations'],
+            ];
+        }
+
+        $sections[] = [
+            'key' => 'generate',
+            'label' => Craft::t('translation-manager', 'Generate'),
+            'url' => 'translation-manager/generate',
+            'permissionsAll' => ['translationManager:generateTranslations'],
+        ];
+
+        $sections[] = [
+            'key' => 'import-export',
+            'label' => Craft::t('translation-manager', 'Import/Export'),
+            'url' => 'translation-manager/import-export',
+            'permissionsAny' => [
+                'translationManager:manageImportExport',
+                'translationManager:importTranslations',
+                'translationManager:exportTranslations',
+                'translationManager:viewImportHistory',
+                'translationManager:clearImportHistory',
+            ],
+        ];
+
+        $sections[] = [
+            'key' => 'maintenance',
+            'label' => Craft::t('translation-manager', 'Maintenance'),
+            'url' => 'translation-manager/maintenance',
+            'permissionsAny' => [
+                'translationManager:maintenance',
+                'translationManager:clearTranslations',
+            ],
+        ];
+
+        $sections[] = [
+            'key' => 'backups',
+            'label' => Craft::t('translation-manager', 'Backups'),
+            'url' => 'translation-manager/backups',
+            'permissionsAll' => ['translationManager:manageBackups'],
+        ];
+
+        if ($includeLogs) {
+            $sections[] = [
+                'key' => 'logs',
+                'label' => Craft::t('translation-manager', 'Logs'),
+                'url' => 'translation-manager/logs',
+                'permissionsAll' => ['translationManager:viewSystemLogs'],
+                'when' => fn() => PluginHelper::isPluginEnabled('logging-library'),
+            ];
+        }
+
+        $sections[] = [
+            'key' => 'settings',
+            'label' => Craft::t('translation-manager', 'Settings'),
+            'url' => 'translation-manager/settings',
+            'permissionsAll' => ['translationManager:editSettings'],
+        ];
+
+        return $sections;
     }
 
     /**
