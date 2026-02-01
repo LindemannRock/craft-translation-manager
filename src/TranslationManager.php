@@ -361,7 +361,7 @@ class TranslationManager extends Plugin
      * @param bool $includeTranslations
      * @param bool $includeLogs
      * @return array
-     * @since 5.14.0
+     * @since 5.21.0
      */
     public function getCpSections(Settings $settings, bool $includeTranslations = true, bool $includeLogs = false): array
     {
