@@ -29,7 +29,7 @@ class FormieService extends Component
     public function init(): void
     {
         parent::init();
-        $this->setLoggingHandle('translation-manager');
+        $this->setLoggingHandle(TranslationManager::$plugin->id);
     }
 
     /**

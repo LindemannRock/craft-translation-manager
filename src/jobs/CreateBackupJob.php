@@ -46,7 +46,7 @@ class CreateBackupJob extends BaseJob
     public function init(): void
     {
         parent::init();
-        $this->setLoggingHandle('translation-manager');
+        $this->setLoggingHandle(TranslationManager::$plugin->id);
 
         // Calculate and set next run time if not already set
         if ($this->reschedule && !$this->nextRunTime) {

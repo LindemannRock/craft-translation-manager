@@ -36,7 +36,7 @@ class Settings extends Model
     public function init(): void
     {
         parent::init();
-        $this->setLoggingHandle('translation-manager');
+        $this->setLoggingHandle(static::pluginHandle());
     }
 
     /**
