@@ -1,184 +1,113 @@
-{% import "_includes/forms" as forms %}
+{% extends 'lindemannrock-base/_layouts/cp-utilities' %}
 
-<div style="margin-bottom: 32px;">
-    <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
-        <div style="flex: 1;">
-            <h2>{{ "{pluginName} Overview"|t('translation-manager', {pluginName: translationHelper.fullName}) }}</h2>
-            <p class="light">{{ "Monitor translation coverage, track progress, and manage translations for your multi-site content."|t('translation-manager') }}</p>
-        </div>
-        <div>
-            <form method="get" style="margin: 0;">
-                <div class="select">
-                    <select name="siteId" onchange="this.form.submit()">
-                        {% for site in craft.app.sites.allSites %}
-                            <option value="{{ site.id }}" {{ currentSiteId == site.id ? 'selected' : '' }}>
-                                {{ site.name }} ({{ site.language|upper }})
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div style="margin-bottom: 40px;">
-    <h2>{{ "Translation Overview"|t('translation-manager') }}</h2>
-
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; align-items: stretch;">
-        <!-- Translation Coverage Card -->
-        {% set translatedPercentage = stats.total > 0 ? ((stats.translated / stats.total) * 100)|round : 100 %}
-        <div class="pane" style="padding: 24px; margin-block: 0; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); display: flex; flex-direction: column; height: 100%;">
-            <!-- Header -->
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                <div style="width: 12px; height: 12px; border-radius: 50%; background: {% if translatedPercentage == 100 %}#059669{% elseif translatedPercentage >= 90 %}#d97706{% elseif translatedPercentage >= 70 %}#0ea5e9{% else %}#dc2626{% endif %};"></div>
-                <h4 style="margin: 0; color: #374151; font-size: 15px; font-weight: 600;">{{ "Translation Coverage"|t('translation-manager') }}</h4>
-            </div>
-
-            <!-- Main Content -->
-            <div style="flex: 1; display: flex; flex-direction: column;">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                    <div style="font-size: 28px; font-weight: 700; color: {% if translatedPercentage == 100 %}#059669{% elseif translatedPercentage >= 90 %}#d97706{% elseif translatedPercentage >= 70 %}#0ea5e9{% else %}#dc2626{% endif %}; line-height: 1;">
-                        {{ translatedPercentage }}%
-                    </div>
-                    <div style="padding: 3px 10px; border-radius: 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: white; background: {% if translatedPercentage == 100 %}#059669{% elseif translatedPercentage >= 90 %}#d97706{% elseif translatedPercentage >= 70 %}#0ea5e9{% else %}#dc2626{% endif %};">
-                        {% if translatedPercentage == 100 %}{{ 'Complete'|t('translation-manager') }}{% elseif translatedPercentage >= 90 %}{{ 'Good'|t('translation-manager') }}{% elseif translatedPercentage >= 70 %}{{ 'In Progress'|t('translation-manager') }}{% else %}{{ 'Needs Attention'|t('translation-manager') }}{% endif %}
-                    </div>
-                </div>
-                <div style="font-size: 14px; color: #4b5563; margin-bottom: 12px;">
-                    {{ "Translations completed"|t('translation-manager') }}
-                </div>
-
-                <!-- Bottom Boxes -->
-                <div style="margin-top: auto;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <div style="padding: 12px; background: rgba(255,255,255,0.9); border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; min-height: 60px; display: flex; flex-direction: column; justify-content: center;">
-                            <div style="font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 4px;">{{ stats.total|number_format }}</div>
-                            <div style="font-size: 11px; color: #4b5563; text-transform: uppercase;">{{ 'Total'|t('translation-manager') }}</div>
-                        </div>
-                        <div style="padding: 12px; background: rgba(255,255,255,0.9); border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; min-height: 60px; display: flex; flex-direction: column; justify-content: center;">
-                            <div style="font-size: 16px; font-weight: 600; color: #059669; margin-bottom: 4px;">{{ stats.translated|number_format }}</div>
-                            <div style="font-size: 11px; color: #4b5563; text-transform: uppercase;">{{ 'Translated'|t('translation-manager') }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pending Translations Card -->
-        <div class="pane" style="padding: 24px; margin-block: 0; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); display: flex; flex-direction: column; height: 100%;">
-            <!-- Header -->
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                <div style="width: 12px; height: 12px; border-radius: 50%; background: #f59e0b;"></div>
-                <h4 style="margin: 0; color: #374151; font-size: 15px; font-weight: 600;">{{ "Work Queue"|t('translation-manager') }}</h4>
-            </div>
-
-            <!-- Main Content -->
-            <div style="flex: 1; display: flex; flex-direction: column;">
-                <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px;">
-                    <div style="font-size: 28px; font-weight: 700; color: #0f172a; line-height: 1;">
-                        {{ stats.pending|number_format }}
-                    </div>
-                </div>
-                <div style="font-size: 14px; color: #4b5563; margin-bottom: 12px;">
-                    {{ "Pending translations"|t('translation-manager') }}
-                </div>
-
-                <!-- Bottom Boxes -->
-                <div style="margin-top: auto;">
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
-                        <div style="padding: 12px; background: rgba(255,255,255,0.9); border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; min-height: 60px; display: flex; flex-direction: column; justify-content: center;">
-                            <div style="font-size: 16px; font-weight: 600; color: #6b7280; margin-bottom: 4px;">{{ stats.unused|number_format }}</div>
-                            <div style="font-size: 11px; color: #4b5563; text-transform: uppercase;">{{ 'Unused'|t('translation-manager') }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Translation Types Card -->
-        <div class="pane" style="padding: 24px; margin-block: 0; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); display: flex; flex-direction: column; height: 100%;">
-            <!-- Header -->
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                <div style="width: 12px; height: 12px; border-radius: 50%; background: #8b5cf6;"></div>
-                <h4 style="margin: 0; color: #374151; font-size: 15px; font-weight: 600;">{{ "Translation Types"|t('translation-manager') }}</h4>
-            </div>
-
-            <!-- Main Content -->
-            <div style="flex: 1; display: flex; flex-direction: column;">
-                <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px;">
-                    <div style="font-size: 28px; font-weight: 700; color: #0f172a; line-height: 1;">
-                        {{ (stats.formie + stats.site)|number_format }}
-                    </div>
-                </div>
-                <div style="font-size: 14px; color: #4b5563; margin-bottom: 12px;">
-                    {{ "Total translation sources"|t('translation-manager') }}
-                </div>
-
-                <!-- Bottom Boxes -->
-                <div style="margin-top: auto;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <div style="padding: 12px; background: rgba(255,255,255,0.9); border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; min-height: 60px; display: flex; flex-direction: column; justify-content: center;">
-                            <div style="font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 4px;">{{ stats.formie|number_format }}</div>
-                            <div style="font-size: 11px; color: #4b5563; text-transform: uppercase;">{{ craft.translationManager.getFormiePluginName() }}</div>
-                        </div>
-                        <div style="padding: 12px; background: rgba(255,255,255,0.9); border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; min-height: 60px; display: flex; flex-direction: column; justify-content: center;">
-                            <div style="font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 4px;">{{ stats.site|number_format }}</div>
-                            <div style="font-size: 11px; color: #4b5563; text-transform: uppercase;">{{ 'Site'|t('translation-manager') }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Actions -->
+{# Permission checks #}
 {% set canViewTranslations = currentUser.can('translationManager:manageTranslations') or currentUser.can('translationManager:viewTranslations') %}
 {% set canImportExport = currentUser.can('translationManager:manageImportExport') or currentUser.can('translationManager:importTranslations') or currentUser.can('translationManager:exportTranslations') %}
 {% set canBackups = currentUser.can('translationManager:manageBackups') %}
 {% set canMaintenance = currentUser.can('translationManager:maintenance') or currentUser.can('translationManager:cleanUnused') or currentUser.can('translationManager:scanTemplates') %}
 {% set hasNavigation = canViewTranslations or canImportExport or canBackups or canMaintenance %}
 
-{% if hasNavigation %}
-<div>
-    <h2>{{ 'Quick Actions'|t('translation-manager') }}</h2>
+{# Calculate coverage colors #}
+{% set translatedPercentage = stats.total > 0 ? ((stats.translated / stats.total) * 100)|round : 100 %}
+{% set coverageColor = translatedPercentage == 100 ? lrPaletteColor('emerald').color : (translatedPercentage >= 90 ? lrPaletteColor('amber').color : (translatedPercentage >= 70 ? lrPaletteColor('sky').color : lrPaletteColor('red').color)) %}
+{% set coverageBadge = translatedPercentage == 100 ? 'Complete'|t('translation-manager') : (translatedPercentage >= 90 ? 'Good'|t('translation-manager') : (translatedPercentage >= 70 ? 'In Progress'|t('translation-manager') : 'Needs Attention'|t('translation-manager'))) %}
 
-    <div class="pane">
-        <div>
-            <h3 style="margin-bottom: 8px;">{{ "Navigation"|t('translation-manager') }}</h3>
-            <p class="light" style="margin-bottom: 16px;">{{ "Access main plugin sections"|t('translation-manager') }}</p>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                {% if canViewTranslations %}
-                    <a href="{{ url('translation-manager', {siteId: currentSiteId}) }}" class="btn">
-                        {{ "Manage Translations"|t('translation-manager') }}
-                    </a>
-                {% endif %}
-                {% if canImportExport %}
-                    <a href="{{ url('translation-manager/import-export') }}" class="btn">
-                        {{ "Manage Import/Export"|t('translation-manager') }}
-                    </a>
-                {% endif %}
-                {% if canBackups %}
-                    <a href="{{ url('translation-manager/backups') }}" class="btn">
-                        {{ "Manage Backups"|t('translation-manager') }}
-                    </a>
-                {% endif %}
-                {% if canMaintenance %}
-                    <a href="{{ url('translation-manager/maintenance') }}" class="btn">
-                        {{ "Perform Maintenance"|t('translation-manager') }}
-                    </a>
-                {% endif %}
-            </div>
+{% set utilitiesConfig = {
+    plugin: {
+        handle: 'translation-manager',
+        name: translationHelper.fullName,
+    },
+    page: {
+        title: 'Overview'|t('translation-manager'),
+        description: 'Monitor translation coverage, track progress, and manage translations for your multi-site content.'|t('translation-manager'),
+        overviewTitle: 'Translation Overview'|t('translation-manager'),
+    },
+} %}
+
+{% block headerActions %}
+    <form method="get" style="margin: 0;">
+        <div class="select">
+            <select name="siteId" onchange="this.form.submit()">
+                {% for site in craft.app.sites.allSites %}
+                    <option value="{{ site.id }}" {{ currentSiteId == site.id ? 'selected' : '' }}>
+                        {{ site.name }} ({{ site.language|upper }})
+                    </option>
+                {% endfor %}
+            </select>
         </div>
-    </div>
-</div>
-{% endif %}
+    </form>
+{% endblock %}
 
-{% if stats.siteInfo %}
-    <div style="margin-top: 24px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center;">
-        <span style="color: #6b7280; font-size: 13px;">
-            <strong>{{ "Current Site:"|t('translation-manager') }}</strong> {{ stats.siteInfo.name }} ({{ stats.siteInfo.language|upper }})
-        </span>
-    </div>
-{% endif %}
+{% block overview %}
+    {# Translation Coverage Card #}
+    {% include 'lindemannrock-base/_components/cards/unified-card' with {
+        title: 'Translation Coverage'|t('translation-manager'),
+        color: coverageColor,
+        value: translatedPercentage ~ '%',
+        valueColor: coverageColor,
+        badge: coverageBadge,
+        badgeColor: coverageColor,
+        description: 'Translations completed'|t('translation-manager'),
+        subBoxes: [
+            {value: stats.total, label: 'Total'|t('translation-manager')},
+            {value: stats.translated, label: 'Translated'|t('translation-manager'), color: lrPaletteColor('emerald').color},
+        ],
+    } only %}
+
+    {# Work Queue Card #}
+    {% include 'lindemannrock-base/_components/cards/unified-card' with {
+        title: 'Work Queue'|t('translation-manager'),
+        color: lrPaletteColor('amber').color,
+        value: stats.pending,
+        description: 'Pending translations'|t('translation-manager'),
+        subBoxes: [
+            {value: stats.unused, label: 'Unused'|t('translation-manager'), color: lrPaletteColor('gray').color},
+        ],
+    } only %}
+
+    {# Translation Types Card #}
+    {% include 'lindemannrock-base/_components/cards/unified-card' with {
+        title: 'Translation Types'|t('translation-manager'),
+        color: lrPaletteColor('violet').color,
+        value: stats.formie + stats.site,
+        description: 'Total translation sources'|t('translation-manager'),
+        subBoxes: [
+            {value: stats.formie, label: craft.translationManager.getFormiePluginName()},
+            {value: stats.site, label: 'Site'|t('translation-manager')},
+        ],
+    } only %}
+{% endblock %}
+
+{% block quickActions %}
+    {% if hasNavigation %}
+        {% set navButtons = [] %}
+        {% if canViewTranslations %}
+            {% set navButtons = navButtons|merge([{type: 'link', label: 'Manage Translations'|t('translation-manager'), url: url('translation-manager', {siteId: currentSiteId})}]) %}
+        {% endif %}
+        {% if canImportExport %}
+            {% set navButtons = navButtons|merge([{type: 'link', label: 'Manage Import/Export'|t('translation-manager'), url: url('translation-manager/import-export')}]) %}
+        {% endif %}
+        {% if canBackups %}
+            {% set navButtons = navButtons|merge([{type: 'link', label: 'Manage Backups'|t('translation-manager'), url: url('translation-manager/backups')}]) %}
+        {% endif %}
+        {% if canMaintenance %}
+            {% set navButtons = navButtons|merge([{type: 'link', label: 'Perform Maintenance'|t('translation-manager'), url: url('translation-manager/maintenance')}]) %}
+        {% endif %}
+
+        {% include 'lindemannrock-base/_layouts/cp-utilities/_action-section' with {
+            title: 'Navigation'|t('translation-manager'),
+            description: 'Access main plugin sections'|t('translation-manager'),
+            buttons: navButtons,
+        } only %}
+    {% endif %}
+{% endblock %}
+
+{% block additionalContent %}
+    {% if stats.siteInfo %}
+        <div style="margin-top: 24px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center;">
+            <span style="color: #6b7280; font-size: 13px;">
+                <strong>{{ "Current Site:"|t('translation-manager') }}</strong> {{ stats.siteInfo.name }} ({{ stats.siteInfo.language|upper }})
+            </span>
+        </div>
+    {% endif %}
+{% endblock %}
