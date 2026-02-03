@@ -15,20 +15,17 @@
     },
 ] %}
 
-{% block content %}
-    <div class="flex" style="align-items: center; margin-bottom: 1rem;">
-        <h2 style="margin: 0;">{{ "Backup History"|t('translation-manager') }}</h2>
-        {% if currentUser.can('translationManager:createBackups') %}
-        <div style="margin-left: auto;">
-            <button type="button" class="btn" id="create-backup-btn">
-                <span class="icon backup-icon" aria-hidden="true">{{ svg('@appicons/database.svg') }}</span>
-                <span class="spinner backup-spinner hidden" aria-hidden="true"></span>
-                <span class="backup-text">{{ "Create Backup Now"|t('translation-manager') }}</span>
-            </button>
-        </div>
-        {% endif %}
-    </div>
+{% block actionButton %}
+    {% if currentUser.can('translationManager:createBackups') %}
+        <button type="button" class="btn submit" id="create-backup-btn" style="background-color: #dc2626; border-color: #dc2626;">
+            <span class="icon backup-icon" aria-hidden="true">{{ svg('@appicons/database.svg') }}</span>
+            <span class="spinner backup-spinner hidden" aria-hidden="true"></span>
+            <span class="backup-text">{{ "Create Backup Now"|t('translation-manager') }}</span>
+        </button>
+    {% endif %}
+{% endblock %}
 
+{% block content %}
     <p>{{ "Backups are automatically created when you import translations (if enabled). You can restore or download any backup."|t('translation-manager') }}</p>
 
     <div style="margin-top: 1rem;">
