@@ -658,6 +658,8 @@ class TranslationManager extends Plugin
      */
     private function registerFileMessageSource(): void
     {
+        // Note: Translation Manager uses a custom message source and dynamic categories.
+        // This intentionally does not use PluginHelper::registerTranslations().
         $i18n = Craft::$app->getI18n();
         $settings = $this->getSettings();
         $categories = $settings->getEnabledCategories();
