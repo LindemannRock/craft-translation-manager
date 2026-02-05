@@ -1,5 +1,19 @@
 # Changelog
 
+## [5.21.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.20.1...v5.21.0) (2026-02-05)
+
+
+### Features
+
+* **import-export:** add CSV column mapping and import preview functionality ([5a82dc7](https://github.com/LindemannRock/craft-translation-manager/commit/5a82dc766404e637f8c1796aed7c444cfcdaf3b1))
+
+
+### Bug Fixes
+
+* **logs:** update log labels and redirect paths for clarity ([c703cf9](https://github.com/LindemannRock/craft-translation-manager/commit/c703cf947693c60859812d5ff2916b8382ecb034))
+* **logs:** update permission checks and log labels for consistency ([a6c1431](https://github.com/LindemannRock/craft-translation-manager/commit/a6c1431fefa7c420861708d91263a37c88544beb))
+* **TranslationManager:** update version in docblock for getCpSections method to 5.21.0 ([5a1aa02](https://github.com/LindemannRock/craft-translation-manager/commit/5a1aa0279d1db56a41e51973de018bfb5346eef3))
+
 ## [5.20.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.20.0...v5.20.1) (2026-01-27)
 
 
