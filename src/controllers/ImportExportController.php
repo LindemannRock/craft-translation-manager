@@ -13,7 +13,7 @@ namespace lindemannrock\translationmanager\controllers;
 use Craft;
 use craft\web\Controller;
 use lindemannrock\base\helpers\CsvImportHelper;
-use lindemannrock\base\helpers\DateTimeHelper;
+use lindemannrock\base\helpers\DateFormatHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
@@ -86,7 +86,7 @@ class ImportExportController extends Controller
                     'backupPath' => $record->backupPath,
                     'user' => $record->user->username ?? 'Unknown',
                     'dateCreated' => $record->dateCreated,
-                    'formattedDate' => DateTimeHelper::formatDatetime($record->dateCreated),
+                    'formattedDate' => DateFormatHelper::formatDatetime($record->dateCreated),
                 ];
             }
         }

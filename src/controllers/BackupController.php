@@ -14,7 +14,7 @@ use Craft;
 use craft\helpers\FileHelper;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
-use lindemannrock\base\helpers\DateTimeHelper;
+use lindemannrock\base\helpers\DateFormatHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
@@ -121,7 +121,7 @@ class BackupController extends Controller
                 $dateTime->setTimezone(new \DateTimeZone($craftTimezone));
 
                 // Format date for display (base helper)
-                $backup['formattedDate'] = DateTimeHelper::formatDatetime($dateTime);
+                $backup['formattedDate'] = DateFormatHelper::formatDatetime($dateTime);
 
                 $typeInfo = $this->_formatBackupType($backup['reason'] ?? 'manual');
                 $backup['typeLabel'] = $typeInfo['label'];

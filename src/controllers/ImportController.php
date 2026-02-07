@@ -16,7 +16,7 @@ use craft\helpers\StringHelper;
 use craft\web\Controller;
 use craft\web\UploadedFile;
 use lindemannrock\base\helpers\CsvImportHelper;
-use lindemannrock\base\helpers\DateTimeHelper;
+use lindemannrock\base\helpers\DateFormatHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\records\ImportHistoryRecord;
 use lindemannrock\translationmanager\records\TranslationRecord;
@@ -1100,7 +1100,7 @@ class ImportController extends Controller
                 'backupPath' => $record->backupPath,
                 'user' => $record->user->username ?? 'Unknown',
                 'dateCreated' => $record->dateCreated,
-                'formattedDate' => DateTimeHelper::formatDatetime($record->dateCreated),
+                'formattedDate' => DateFormatHelper::formatDatetime($record->dateCreated),
             ];
         }
         
