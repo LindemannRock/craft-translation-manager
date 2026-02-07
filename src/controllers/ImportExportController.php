@@ -55,8 +55,7 @@ class ImportExportController extends Controller
     {
         $settings = TranslationManager::getInstance()->getSettings();
         $user = Craft::$app->getUser();
-        $canViewHistory = $user->checkPermission('translationManager:manageImportExport') ||
-            $user->checkPermission('translationManager:viewImportHistory');
+        $canViewHistory = $user->checkPermission('translationManager:viewImportHistory');
 
         // Get import history and format for display
         $formattedHistory = [];

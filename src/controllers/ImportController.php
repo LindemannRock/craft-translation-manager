@@ -62,8 +62,7 @@ class ImportController extends Controller
         $this->requireAcceptsJson();
         
         // Check permission
-        if (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
-            !Craft::$app->getUser()->checkPermission('translationManager:importTranslations')) {
+        if (!Craft::$app->getUser()->checkPermission('translationManager:importTranslations')) {
             throw new ForbiddenHttpException('User is not authorized to check translations.');
         }
         
@@ -99,8 +98,7 @@ class ImportController extends Controller
         $this->requirePostRequest();
 
         $currentUser = Craft::$app->getUser()->getIdentity();
-        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
-            !Craft::$app->getUser()->checkPermission('translationManager:importTranslations'))) {
+        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:importTranslations'))) {
             throw new ForbiddenHttpException('User is not authorized to import translations.');
         }
 
@@ -165,8 +163,7 @@ class ImportController extends Controller
     public function actionMap(): Response
     {
         $currentUser = Craft::$app->getUser()->getIdentity();
-        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
-            !Craft::$app->getUser()->checkPermission('translationManager:importTranslations'))) {
+        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:importTranslations'))) {
             throw new ForbiddenHttpException('User is not authorized to import translations.');
         }
 
@@ -196,8 +193,7 @@ class ImportController extends Controller
     public function actionPreview(): Response
     {
         $currentUser = Craft::$app->getUser()->getIdentity();
-        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
-            !Craft::$app->getUser()->checkPermission('translationManager:importTranslations'))) {
+        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:importTranslations'))) {
             throw new ForbiddenHttpException('User is not authorized to import translations.');
         }
 
@@ -278,8 +274,7 @@ class ImportController extends Controller
         $this->requirePostRequest();
         $currentUser = Craft::$app->getUser()->getIdentity();
         
-        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
-            !Craft::$app->getUser()->checkPermission('translationManager:importTranslations'))) {
+        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:importTranslations'))) {
             throw new ForbiddenHttpException('User is not authorized to import translations.');
         }
         
@@ -1073,8 +1068,7 @@ class ImportController extends Controller
     public function actionHistory(): Response
     {
         $currentUser = Craft::$app->getUser()->getIdentity();
-        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
-            !Craft::$app->getUser()->checkPermission('translationManager:viewImportHistory'))) {
+        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:viewImportHistory'))) {
             throw new ForbiddenHttpException('User is not authorized to view import history.');
         }
         
@@ -1118,8 +1112,7 @@ class ImportController extends Controller
     public function actionLogMalicious(): Response
     {
         // Require permission to import translations
-        if (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
-            !Craft::$app->getUser()->checkPermission('translationManager:importTranslations')) {
+        if (!Craft::$app->getUser()->checkPermission('translationManager:importTranslations')) {
             throw new ForbiddenHttpException('User is not authorized to import translations.');
         }
         
@@ -1214,8 +1207,7 @@ class ImportController extends Controller
         $this->requirePostRequest();
         
         $currentUser = Craft::$app->getUser()->getIdentity();
-        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport') &&
-            !Craft::$app->getUser()->checkPermission('translationManager:clearImportHistory'))) {
+        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:clearImportHistory'))) {
             if ($this->request->getAcceptsJson()) {
                 return $this->asJson(['success' => false, 'error' => 'User is not authorized to clear import logs.']);
             }

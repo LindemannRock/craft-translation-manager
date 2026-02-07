@@ -15,13 +15,10 @@
     },
 ] %}
 
-{% set canImportExport = currentUser.can('translationManager:manageImportExport')
-    or currentUser.can('translationManager:importTranslations')
+{% set canImportExport = currentUser.can('translationManager:importTranslations')
     or currentUser.can('translationManager:exportTranslations') %}
-{% set canViewHistory = currentUser.can('translationManager:manageImportExport')
-    or currentUser.can('translationManager:viewImportHistory') %}
-{% set canClearHistory = currentUser.can('translationManager:manageImportExport')
-    or currentUser.can('translationManager:clearImportHistory') %}
+{% set canViewHistory = currentUser.can('translationManager:viewImportHistory') %}
+{% set canClearHistory = currentUser.can('translationManager:clearImportHistory') %}
 
 {% set tabs = {} %}
 
@@ -55,7 +52,7 @@
 
 {% block content %}
 <div id="import-export">
-    {% if currentUser.can('translationManager:manageImportExport') or currentUser.can('translationManager:exportTranslations') %}
+    {% if currentUser.can('translationManager:exportTranslations') %}
     <h2>{{ "Export Translations"|t('translation-manager') }}</h2>
     <p class="light" style="margin-bottom: 16px;">{{ "Download translations for backup or migration."|t('translation-manager') }}</p>
 
@@ -112,7 +109,7 @@
     <hr>
     {% endif %}
 
-    {% if currentUser.can('translationManager:manageImportExport') or currentUser.can('translationManager:importTranslations') %}
+    {% if currentUser.can('translationManager:importTranslations') %}
     <h2>{{ "Import Translations"|t('translation-manager') }}</h2>
 
     {% set csvFormatTip %}

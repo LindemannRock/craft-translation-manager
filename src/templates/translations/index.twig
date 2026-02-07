@@ -357,7 +357,7 @@
             {% endif %}
         </div>
         <div class="flex flex-nowrap">
-            {% if currentUser.can('translationManager:manageImportExport') or currentUser.can('translationManager:exportTranslations') %}
+            {% if currentUser.can('translationManager:exportTranslations') %}
                 <button type="button" class="btn" id="export-btn" tabindex="0" aria-expanded="false" title="Export translations as CSV file">Export…</button>
             {% endif %}
             {% if status == 'unused' and currentUser.can('translationManager:deleteTranslations') %}
@@ -517,7 +517,7 @@
         }
 
         // Export button
-        {% if currentUser.can('translationManager:manageImportExport') or currentUser.can('translationManager:exportTranslations') %}
+        {% if currentUser.can('translationManager:exportTranslations') %}
         document.getElementById('export-btn')?.addEventListener('click', function(e) {
             e.preventDefault();
 
@@ -868,7 +868,7 @@
         });
 
         // Generate files functionality
-        {% if not settings.autoExport and (currentUser.can('translationManager:manageImportExport') or currentUser.can('translationManager:exportTranslations')) %}
+        {% if not settings.autoExport and (currentUser.can('translationManager:exportTranslations')) %}
         function generateTranslationFiles(type) {
             let url;
             if (type === 'all') {

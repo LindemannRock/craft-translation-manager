@@ -41,8 +41,7 @@ class ExportController extends Controller
         switch ($action->id) {
             case 'index':
                 // CSV export
-                if (!$user->checkPermission('translationManager:manageImportExport') &&
-                    !$user->checkPermission('translationManager:exportTranslations')) {
+                if (!$user->checkPermission('translationManager:exportTranslations')) {
                     throw new ForbiddenHttpException('User does not have permission to export translations');
                 }
                 break;
@@ -72,8 +71,7 @@ class ExportController extends Controller
                 break;
             default:
                 // For any other actions, require export permission
-                if (!$user->checkPermission('translationManager:manageImportExport') &&
-                    !$user->checkPermission('translationManager:exportTranslations')) {
+                if (!$user->checkPermission('translationManager:exportTranslations')) {
                     throw new ForbiddenHttpException('User does not have permission to export translations');
                 }
         }
