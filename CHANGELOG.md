@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.21.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.21.0...v5.21.1) (2026-02-07)
+
+
+### Bug Fixes
+
+* **controllers:** replace DateTimeHelper with DateFormatHelper for date formatting ([22b5878](https://github.com/LindemannRock/craft-translation-manager/commit/22b5878a699839deed006aa280eec82cac5405ee))
+
 ## [5.21.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.20.1...v5.21.0) (2026-02-05)
 
 
