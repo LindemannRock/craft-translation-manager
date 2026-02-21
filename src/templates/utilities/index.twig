@@ -1,7 +1,7 @@
 {% extends 'lindemannrock-base/_layouts/cp-utilities' %}
 
 {# Permission checks #}
-{% set canViewTranslations = currentUser.can('translationManager:manageTranslations') or currentUser.can('translationManager:viewTranslations') %}
+{% set canViewTranslations = currentUser.can('translationManager:manageTranslations') %}
 {% set canImportExport = currentUser.can('translationManager:importTranslations') or currentUser.can('translationManager:exportTranslations') %}
 {% set canBackups = currentUser.can('translationManager:manageBackups') %}
 {% set canMaintenance = currentUser.can('translationManager:maintenance') or currentUser.can('translationManager:cleanUnused') or currentUser.can('translationManager:scanTemplates') %}
