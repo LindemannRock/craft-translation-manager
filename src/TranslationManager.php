@@ -156,9 +156,6 @@ class TranslationManager extends Plugin
                         'translationManager:manageTranslations' => [
                             'label' => Craft::t('translation-manager', 'Manage {plural}', ['plural' => $plural]),
                             'nested' => [
-                                'translationManager:viewTranslations' => [
-                                    'label' => Craft::t('translation-manager', 'View {plural}', ['plural' => $plural]),
-                                ],
                                 'translationManager:editTranslations' => [
                                     'label' => Craft::t('translation-manager', 'Edit {plural}', ['plural' => $plural]),
                                 ],
@@ -372,7 +369,7 @@ class TranslationManager extends Plugin
                 'key' => 'translations',
                 'label' => Craft::t('translation-manager', 'Translations'),
                 'url' => 'translation-manager',
-                'permissionsAll' => ['translationManager:viewTranslations'],
+                'permissionsAll' => ['translationManager:manageTranslations'],
             ];
         }
 
@@ -503,21 +500,9 @@ class TranslationManager extends Plugin
      */
     public function setSettings(array|Model $settings): void
     {
-        $oldSettings = $this->getSettings();
+        // No-op: settings come from loadFromDatabase() in getSettings()
+        // Reset cached settings so next getSettings() call loads fresh from DB
         $this->_settings = null;
-        parent::setSettings($settings);
-
-        // If it's a model, save to database
-        if ($settings instanceof Settings) {
-            $settings->saveToDatabase();
-
-            // Check if backup schedule changed
-            if ($oldSettings->backupEnabled !== $settings->backupEnabled ||
-                $oldSettings->backupSchedule !== $settings->backupSchedule
-            ) {
-                $this->handleBackupScheduleChange($settings);
-            }
-        }
     }
 
     /**
@@ -748,7 +733,7 @@ class TranslationManager extends Plugin
     /**
      * Handle backup schedule changes when settings are saved
      */
-    private function handleBackupScheduleChange(Settings $settings): void
+    public function handleBackupScheduleChange(Settings $settings): void
     {
         if (!$settings->backupEnabled || $settings->backupSchedule === 'manual') {
             // Cancel any existing scheduled backup jobs

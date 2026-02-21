@@ -32,8 +32,8 @@ class TranslationsController extends Controller
     {
         $user = Craft::$app->getUser();
 
-        // For index action, redirect to first accessible section if no viewTranslations permission
-        if ($action->id === 'index' && !$user->checkPermission('translationManager:viewTranslations')) {
+        // For index action, redirect to first accessible section if no manageTranslations permission
+        if ($action->id === 'index' && !$user->checkPermission('translationManager:manageTranslations')) {
             $settings = TranslationManager::getInstance()->getSettings();
             $sections = TranslationManager::getInstance()->getCpSections($settings, false, true);
             $route = CpNavHelper::firstAccessibleRoute($user, $settings, $sections);
@@ -46,8 +46,8 @@ class TranslationsController extends Controller
             throw new ForbiddenHttpException('User does not have permission to access Translation Manager');
         }
 
-        // For other actions, require viewTranslations permission
-        if ($action->id !== 'index' && !$user->checkPermission('translationManager:viewTranslations')) {
+        // For other actions, require manageTranslations permission
+        if ($action->id !== 'index' && !$user->checkPermission('translationManager:manageTranslations')) {
             throw new ForbiddenHttpException('User does not have permission to view translations');
         }
 

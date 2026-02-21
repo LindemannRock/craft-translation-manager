@@ -206,6 +206,10 @@ class SettingsController extends Controller
         // Load current settings from database
         $settings = Settings::loadFromDatabase();
 
+        // Capture old backup settings before applying new values (for schedule change detection)
+        $oldBackupEnabled = $settings->backupEnabled;
+        $oldBackupSchedule = $settings->backupSchedule;
+
         // Get only the posted settings (fields from the current page)
         $settingsData = Craft::$app->getRequest()->getBodyParam('settings', []);
 
@@ -237,8 +241,15 @@ class SettingsController extends Controller
 
         // Save settings to database
         if ($settings->saveToDatabase()) {
-            // Update the plugin's cached settings (CRITICAL - forces Craft to refresh)
-            $plugin->setSettings($settings->getAttributes());
+            // Detect backup schedule changes and update queue jobs
+            if ($oldBackupEnabled !== $settings->backupEnabled ||
+                $oldBackupSchedule !== $settings->backupSchedule
+            ) {
+                $plugin->handleBackupScheduleChange($settings);
+            }
+
+            // Reset cached settings so next request loads fresh from DB
+            $plugin->setSettings([]);
 
             Craft::$app->getSession()->setNotice(Craft::t('translation-manager', 'Settings saved.'));
         } else {
