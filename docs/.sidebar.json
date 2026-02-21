@@ -1,0 +1,62 @@
+[
+    {
+        "title": "Get Started",
+        "collapsable": false,
+        "children": [
+            "get-started/requirements",
+            "get-started/installation",
+            "get-started/quickstart",
+            "get-started/configuration"
+        ]
+    },
+    {
+        "title": "Feature Tour",
+        "collapsable": true,
+        "open": true,
+        "children": [
+            "feature-tour/overview",
+            "feature-tour/multi-site",
+            "feature-tour/import-export",
+            "feature-tour/backups",
+            "feature-tour/security"
+        ]
+    },
+    {
+        "title": "Template Guides",
+        "collapsable": true,
+        "open": true,
+        "children": [
+            "template-guides/basic-usage",
+            "template-guides/managing-translations"
+        ]
+    },
+    {
+        "title": "Integrations",
+        "collapsable": true,
+        "open": false,
+        "children": [
+            "integrations/formie"
+        ]
+    },
+    {
+        "title": "Developers",
+        "collapsable": true,
+        "open": false,
+        "children": [
+            "developers/permissions",
+            "developers/console-commands",
+            "developers/template-variables",
+            "developers/twig-globals",
+            "developers/logging",
+            "developers/shared-features"
+        ]
+    },
+    {
+        "title": "Resources",
+        "collapsable": true,
+        "open": false,
+        "children": [
+            "resources/troubleshooting"
+        ]
+    }
+]

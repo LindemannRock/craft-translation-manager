@@ -1,0 +1,9 @@
+{
+    "name": "Translation Manager",
+    "handle": "translation-manager",
+    "description": "Comprehensive translation management system for Craft CMS with Formie integration",
+    "version": "5.12.0",
+    "developer": "LindemannRock",
+    "developerUrl": "https://lindemannrock.com",
+    "documentationUrl": "https://github.com/LindemannRock/craft-translation-manager/blob/main/README.md"
+}

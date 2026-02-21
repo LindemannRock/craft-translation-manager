@@ -4,124 +4,234 @@ Translation Manager provides console commands for automation and scripting.
 
 ## Translation Commands
 
-### Capture Formie
+### `translation-manager/translations/capture-formie`
 
-Capture all translations from existing Formie forms:
+Capture all translations from existing Formie forms and store them in the database.
 
-```bash
+```bash title="PHP"
 php craft translation-manager/translations/capture-formie
 ```
 
-### Export Commands
+```bash title="DDEV"
+ddev craft translation-manager/translations/capture-formie
+```
 
-```bash
-# Export all translations to PHP files
+### `translation-manager/translations/export-all`
+
+Export all translations (Formie + site) to PHP translation files.
+
+```bash title="PHP"
 php craft translation-manager/translations/export-all
+```
 
-# Export Formie translations only
+```bash title="DDEV"
+ddev craft translation-manager/translations/export-all
+```
+
+### `translation-manager/translations/export-formie`
+
+Export Formie translations only to PHP translation files.
+
+```bash title="PHP"
 php craft translation-manager/translations/export-formie
+```
 
-# Export site translations only
+```bash title="DDEV"
+ddev craft translation-manager/translations/export-formie
+```
+
+### `translation-manager/translations/export-site`
+
+Export site translations only to PHP translation files.
+
+```bash title="PHP"
 php craft translation-manager/translations/export-site
 ```
 
-### Import Formie
+```bash title="DDEV"
+ddev craft translation-manager/translations/export-site
+```
 
-Import existing Formie translation files to database:
+### `translation-manager/translations/import-formie`
 
-```bash
+Import existing Formie translation files from disk into the database.
+
+```bash title="PHP"
 php craft translation-manager/translations/import-formie
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/translations/import-formie
 ```
 
 ## Maintenance Commands
 
-### Template Scanner
+### `translation-manager/maintenance/scan-templates`
 
-```bash
-# Scan templates to identify unused translations
+Scan templates to identify unused translations.
+
+```bash title="PHP"
 php craft translation-manager/maintenance/scan-templates
+```
 
-# Preview what would be marked unused (no changes)
+```bash title="DDEV"
+ddev craft translation-manager/maintenance/scan-templates
+```
+
+### `translation-manager/maintenance/preview-scan`
+
+Preview what would be marked unused without making any changes.
+
+```bash title="PHP"
 php craft translation-manager/maintenance/preview-scan
 ```
 
-### Clean Unused
+```bash title="DDEV"
+ddev craft translation-manager/maintenance/preview-scan
+```
 
-```bash
-# Clean all unused translations
+### `translation-manager/maintenance/clean-unused`
+
+Clean all unused translations.
+
+```bash title="PHP"
 php craft translation-manager/maintenance/clean-unused
+```
 
-# Clean by type
+```bash title="DDEV"
+ddev craft translation-manager/maintenance/clean-unused
+```
+
+### `translation-manager/maintenance/clean-by-type`
+
+Clean unused translations by type. The `--type` option is required.
+
+| Option | Values | Description |
+|--------|--------|-------------|
+| `--type` | `all`, `site`, `formie` | Type of translations to clean |
+
+```bash title="PHP"
 php craft translation-manager/maintenance/clean-by-type --type=all
-php craft translation-manager/maintenance/clean-by-type --type=site
-php craft translation-manager/maintenance/clean-by-type --type=formie
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/maintenance/clean-by-type --type=all
 ```
 
 ## Backup Commands
 
-### Create Backup
+### `translation-manager/backup/create`
 
-```bash
-# Create manual backup
+Create a manual backup of current translations.
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `--reason` | `string` | Optional reason for the backup |
+
+```bash title="PHP"
 php craft translation-manager/backup/create
+```
 
-# Create with custom reason
+```bash title="DDEV"
+ddev craft translation-manager/backup/create
+```
+
+With a reason:
+
+```bash title="PHP"
 php craft translation-manager/backup/create --reason="Before major update"
 ```
 
-### Scheduled Backup
+```bash title="DDEV"
+ddev craft translation-manager/backup/create --reason="Before major update"
+```
 
-Run scheduled backup (for cron jobs):
+### `translation-manager/backup/scheduled`
 
-```bash
+Run a scheduled backup. Use this for cron jobs — it respects the backup schedule settings.
+
+```bash title="PHP"
 php craft translation-manager/backup/scheduled
 ```
 
-### List Backups
+```bash title="DDEV"
+ddev craft translation-manager/backup/scheduled
+```
 
-```bash
+### `translation-manager/backup/list`
+
+List all existing backups.
+
+```bash title="PHP"
 php craft translation-manager/backup/list
 ```
 
-### Clean Old Backups
+```bash title="DDEV"
+ddev craft translation-manager/backup/list
+```
 
-Clean backups based on retention settings:
+### `translation-manager/backup/clean`
 
-```bash
+Clean old backups based on retention settings.
+
+```bash title="PHP"
 php craft translation-manager/backup/clean
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/backup/clean
 ```
 
 ## Debug Commands
 
-### Search Debug
+### `translation-manager/debug/search`
 
-Test search functionality:
+Test search functionality against the translation database.
 
-```bash
+```bash title="PHP"
 php craft translation-manager/debug/search "search term"
 ```
 
-### Recent Translations
+```bash title="DDEV"
+ddev craft translation-manager/debug/search "search term"
+```
 
-List recent translations:
+### `translation-manager/debug/recent`
 
-```bash
+List recent translations. Defaults to the last 10 entries.
+
+| Argument | Type | Default | Description |
+|----------|------|---------|-------------|
+| `limit` | `int` | `10` | Number of recent translations to show |
+
+```bash title="PHP"
 php craft translation-manager/debug/recent
-php craft translation-manager/debug/recent 50  # Limit to 50
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/debug/recent
+```
+
+With a custom limit:
+
+```bash title="PHP"
+php craft translation-manager/debug/recent 50
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/debug/recent 50
 ```
 
 ## Cron Examples
 
-### Daily Backup
+Daily backup at 3 AM:
 
 ```bash
-# Run daily at 3 AM
 0 3 * * * cd /path/to/project && php craft translation-manager/backup/scheduled
 ```
 
-### Weekly Template Scan
+Weekly template scan on Sunday at 2 AM:
 
 ```bash
-# Run weekly on Sunday at 2 AM
 0 2 * * 0 cd /path/to/project && php craft translation-manager/maintenance/scan-templates
 ```
