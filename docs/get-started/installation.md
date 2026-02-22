@@ -22,3 +22,15 @@ composer require lindemannrock/craft-translation-manager && php craft plugin/ins
 ```bash title="DDEV"
 ddev composer require lindemannrock/craft-translation-manager && ddev craft plugin/install translation-manager
 ```
+
+3. **Optional** — Install [Logging Library](https://github.com/LindemannRock/craft-logging-library) for log viewing:
+
+```bash title="Composer"
+php craft plugin/install logging-library
+```
+
+```bash title="DDEV"
+ddev craft plugin/install logging-library
+```
+
+Or via the Control Panel: **Settings → Plugins → Logging Library → Install**

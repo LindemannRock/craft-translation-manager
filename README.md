@@ -9,7 +9,11 @@ Comprehensive translation management for Craft CMS 5 with Formie integration, mu
 
 ## License
 
-Commercial plugin licensed under the [Craft License](https://craftcms.github.io/license/). See [LICENSE.md](LICENSE.md) for details.
+This is a commercial plugin licensed under the [Craft License](https://craftcms.github.io/license/). It will be available on the [Craft Plugin Store](https://plugins.craftcms.com) soon. See [LICENSE.md](LICENSE.md) for details.
+
+## Pre-Release
+
+This plugin is in active development and not yet available on the Craft Plugin Store. Features and APIs may change before the initial public release.
 
 ## Features
 
@@ -28,32 +32,23 @@ Commercial plugin licensed under the [Craft License](https://craftcms.github.io/
 
 ## Requirements
 
-| Requirement | Version |
-|-------------|---------|
-| Craft CMS   | 5.0+    |
-| PHP         | 8.2+    |
+- Craft CMS 5.0+
+- PHP 8.2+
+- [Logging Library](https://github.com/LindemannRock/craft-logging-library) 5.0+ — optional, install in CP for logs
 
 ## Installation
 
 ### Via Composer
 
 ```bash
-cd /path/to/project
-```
-
-```bash
 composer require lindemannrock/craft-translation-manager
 ```
 
 ```bash
-./craft plugin/install translation-manager
+php craft plugin/install translation-manager
 ```
 
 ### Using DDEV
-
-```bash
-cd /path/to/project
-```
 
 ```bash
 ddev composer require lindemannrock/craft-translation-manager

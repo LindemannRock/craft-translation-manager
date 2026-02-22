@@ -9,9 +9,9 @@
 
 ## Dependencies
 
-The following packages are installed automatically via Composer:
+Composer pulls these packages automatically. Craft plugin dependencies also need to be installed in the Control Panel.
 
 | Package | Version | Purpose |
 |---------|---------|---------|
 | [lindemannrock/craft-plugin-base](https://github.com/LindemannRock/craft-plugin-base) | ^5.0 | Shared base plugin utilities (helpers, traits, layouts) |
-| [lindemannrock/craft-logging-library](https://github.com/LindemannRock/craft-logging-library) | ^5.0 | Plugin logging and log viewer |
+| [lindemannrock/craft-logging-library](https://github.com/LindemannRock/craft-logging-library) | ^5.0 | Optional — install in CP for log viewing |
