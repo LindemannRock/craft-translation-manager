@@ -1,47 +1,77 @@
 # Configuration
 
-Configure Translation Manager by creating a config file in your `config/` directory.
+Configure Translation Manager by creating a config file at `config/translation-manager.php`.
 
 ## Configuration Options
 
+### Translation Sources
+
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `pluginName` | `string` | `'Translation Manager'` | The display name for the plugin (shown in CP menu and breadcrumbs) |
-| `translationCategory` | `string` | `'messages'` | The translation category to use for site translations (e.g. |t('messages')) |
-| `sourceLanguage` | `string` | `'en'` | The source language of template strings (language your |t() strings are written in) |
-| `enableFormieIntegration` | `bool` | `true` | Whether to enable Formie form translation integration |
-| `enableSiteTranslations` | `bool` | `true` | Whether to enable site translation capture |
-| `autoExport` | `bool` | `true` | Whether to automatically export translations when saved |
-| `exportPath` | `string` | `'@root/translations'` | The path where translation files should be exported |
-| `itemsPerPage` | `int` | `100` | Number of items to show per page in the translation manager |
-| `autoSaveEnabled` | `bool` | `false` | Whether to enable auto-save after typing stops |
-| `autoSaveDelay` | `int` | `2` | Auto-save delay in seconds (how long to wait after typing stops) |
-| `showContext` | `bool` | `false` | Whether to show the translation context in the CP interface |
-| `logLevel` | `string` | `'error'` | The logging level for the plugin |
-| `skipPatterns` | `array` | `[]` | List of text patterns to skip when capturing translations |
-| `localeMapping` | `array` | `[]` | Maps regional locale variants to base locales (see Locale Mapping section below) |
-| `integrationSettings` | `array` | `[]` | Dynamic integration settings for discovered integrations |
-| `enableSuggestions` | `bool` | `false` | Whether to enable automatic translation suggestions (future feature) |
-| `backupEnabled` | `bool` | `true` | Whether to enable automatic backups |
-| `backupRetentionDays` | `int` | `30` | Number of days to keep backups (0 = keep forever) |
-| `backupOnImport` | `bool` | `true` | Whether to create a backup before importing |
-| `backupSchedule` | `string` | `'manual'` | Backup schedule (manual, daily, weekly) |
-| `backupPath` | `string` | `'@storage/translation-manager/backups'` | The path where backups should be stored |
-| `backupVolumeUid` | `string` | `null` | Asset volume UID for backup storage (null = use backupPath) |
+| `pluginName` | `string` | `'Translation Manager'` | Display name for the plugin (shown in CP menu and breadcrumbs) |
+| `translationCategory` | `string` | `'messages'` | **Deprecated** — use `translationCategories` instead. Single translation category for site translations |
+| `translationCategories` | `array` | `[]` | Multiple translation categories. Format: `[['key' => 'messages', 'enabled' => true]]`. Falls back to `translationCategory` if empty |
+| `sourceLanguage` | `string` | `'en'` | Source language of template strings (language your `\|t()` strings are written in) |
+| `enableFormieIntegration` | `bool` | `true` | Enable Formie form translation integration |
+| `enableSiteTranslations` | `bool` | `true` | Enable site translation capture from `\|t()` calls |
+| `captureMissingTranslations` | `bool` | `false` | Capture missing translations at runtime (auto-add when used) |
+| `captureMissingOnlyDevMode` | `bool` | `true` | Only capture missing translations when devMode is enabled (recommended) |
+| `excludeFormHandlePatterns` | `array` | `[]` | Form handle patterns to exclude from Formie capture (e.g., `['-ar', '_ar']`) @since(5.14.0) |
+| `skipPatterns` | `array` | `[]` | Text patterns to skip when capturing translations |
+| `localeMapping` | `array` | `[]` | Maps regional locale variants to base locales (see [Locale Mapping](#locale-mapping)) @since(5.17.0) |
+
+### Interface
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `itemsPerPage` | `int` | `100` | Items per page in the translation list (10–500) |
+| `autoSaveEnabled` | `bool` | `false` | Enable auto-save after typing stops |
+| `autoSaveDelay` | `int` | `2` | Auto-save delay in seconds (1–10) |
+| `showContext` | `bool` | `false` | Show translation context column in the CP |
+| `enableSuggestions` | `bool` | `false` | Enable automatic translation suggestions (future feature) |
+
+### Export
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `autoExport` | `bool` | `true` | Automatically export PHP translation files when translations are saved |
+| `exportPath` | `string` | `'@root/translations'` | Export directory. Supports `$VARIABLE` env vars. Must be under `@root`, `@storage`, or `@translations` |
+
+### Backup
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `backupEnabled` | `bool` | `true` | Enable automatic backups |
+| `backupRetentionDays` | `int` | `30` | Days to keep backups (0 = keep forever, max 365) |
+| `backupOnImport` | `bool` | `true` | Create a backup before importing |
+| `backupSchedule` | `string` | `'manual'` | Backup schedule: `manual`, `daily`, `weekly` |
+| `backupPath` | `string` | `'@storage/translation-manager/backups'` | Backup directory. Supports `$VARIABLE` env vars. Must be under `@root` or `@storage` |
+| `backupVolumeUid` | `string\|null` | `null` | Asset volume UID for cloud backup storage (overrides `backupPath`) |
+
+### Logging
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `logLevel` | `string` | `'error'` | Log level: `error`, `warning`, `info`, `debug`. Debug requires devMode — auto-corrected to `info` otherwise |
+| `integrationSettings` | `array` | `[]` | Dynamic integration settings (managed by the plugin, not typically set in config) |
 
 ## Example Configuration
 
 ```php
 <?php
-// config/{plugin-handle}.php
+// config/translation-manager.php
 
 return [
     '*' => [
         'pluginName' => 'Translation Manager',
-        'translationCategory' => 'messages',
+        'translationCategories' => [
+            ['key' => 'messages', 'enabled' => true],
+        ],
         'sourceLanguage' => 'en',
         'enableFormieIntegration' => true,
         'enableSiteTranslations' => true,
+        'captureMissingTranslations' => false,
+        'captureMissingOnlyDevMode' => true,
         'autoExport' => true,
         'exportPath' => '@root/translations',
         'itemsPerPage' => 100,
@@ -50,8 +80,6 @@ return [
         'showContext' => false,
         'logLevel' => 'error',
         'skipPatterns' => [],
-        'integrationSettings' => [],
-        'enableSuggestions' => false,
         'backupEnabled' => true,
         'backupRetentionDays' => 30,
         'backupOnImport' => true,
@@ -62,7 +90,7 @@ return [
 ];
 ```
 
-## Locale Mapping
+## Locale Mapping @since(5.17.0)
 
 Locale mapping allows you to consolidate regional locale variants to base locales, reducing translation duplication. For example, if you have sites using `en-US`, `en-GB`, and `en-AU`, you can map all of them to `en` so they share the same translation files.
 

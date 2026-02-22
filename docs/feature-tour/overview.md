@@ -15,9 +15,11 @@ Translation Manager provides a comprehensive translation management system for C
 ## Smart Features
 
 - **Smart Usage Detection**: Automatically identifies unused translations when forms/fields are deleted
+- **Capture Missing Translations**: Automatically add translations at runtime when `|t()` calls encounter unknown strings
 - **Advanced Maintenance Tools**: Template scanner to identify unused translations automatically
+- **Locale Mapping**: Consolidate regional variants (en-US, en-GB) to base locales to reduce duplication
 - **Import/Export Functionality**: CSV export with current filters, CSV import with preview and malicious content detection
-- **PHP Translation File Generation**: Generate production-ready translation files
+- **PHP Translation Files**: Generate and import production-ready PHP translation files
 
 ## Enterprise Features
 
