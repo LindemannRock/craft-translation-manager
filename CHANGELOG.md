@@ -1,5 +1,20 @@
 # Changelog
 
+## [5.21.2](https://github.com/LindemannRock/craft-translation-manager/compare/v5.21.1...v5.21.2) (2026-02-22)
+
+
+### Bug Fixes
+
+* **index.twig:** remove unnecessary permission check for viewing translations ([dcc4a6e](https://github.com/LindemannRock/craft-translation-manager/commit/dcc4a6eca89f7ba0f85af51054643a28aed1164c))
+* **TranslationsController, SettingsController:** update permissions and settings handling ([6e40abd](https://github.com/LindemannRock/craft-translation-manager/commit/6e40abd4a07afc3aa8312c6089114ee6c9baaec7))
+
+
+### Miscellaneous Chores
+
+* **.gitignore:** reorganize entries and update file exclusions ([e345f5d](https://github.com/LindemannRock/craft-translation-manager/commit/e345f5de10cd023d67679be111737ab80cc8981f))
+* add .gitattributes with export-ignore for Packagist distribution ([9f1f1a5](https://github.com/LindemannRock/craft-translation-manager/commit/9f1f1a55208fcc20a7f1985fb5358a3eb07af052))
+* switch to Craft License for commercial release ([06ea38b](https://github.com/LindemannRock/craft-translation-manager/commit/06ea38b502da052fd88485bfc1f5c774c73bae3e))
+
 ## [5.21.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.21.0...v5.21.1) (2026-02-07)
 
 
