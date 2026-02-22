@@ -3,6 +3,7 @@
 [![Latest Version](https://img.shields.io/packagist/v/lindemannrock/craft-translation-manager.svg)](https://packagist.org/packages/lindemannrock/craft-translation-manager)
 [![Craft CMS](https://img.shields.io/badge/Craft%20CMS-5.0+-orange.svg)](https://craftcms.com/)
 [![PHP](https://img.shields.io/badge/PHP-8.2+-blue.svg)](https://php.net/)
+[![Logging Library](https://img.shields.io/badge/Logging%20Library-5.0+-green.svg)](https://github.com/LindemannRock/craft-logging-library)
 [![License](https://img.shields.io/packagist/l/lindemannrock/craft-translation-manager.svg)](LICENSE)
 
 Comprehensive translation management for Craft CMS 5 with Formie integration, multi-site support, and enterprise-grade security.
@@ -11,7 +12,7 @@ Comprehensive translation management for Craft CMS 5 with Formie integration, mu
 
 This is a commercial plugin licensed under the [Craft License](https://craftcms.github.io/license/). It will be available on the [Craft Plugin Store](https://plugins.craftcms.com) soon. See [LICENSE.md](LICENSE.md) for details.
 
-## Pre-Release
+## ⚠️ Pre-Release
 
 This plugin is in active development and not yet available on the Craft Plugin Store. Features and APIs may change before the initial public release.
 
@@ -34,7 +35,7 @@ This plugin is in active development and not yet available on the Craft Plugin S
 
 - Craft CMS 5.0+
 - PHP 8.2+
-- [Logging Library](https://github.com/LindemannRock/craft-logging-library) 5.0+ — optional, install in CP for logs
+- [Logging Library](https://github.com/LindemannRock/craft-logging-library) 5.0+ (installed automatically)
 
 ## Installation
 
@@ -60,13 +61,17 @@ ddev craft plugin/install translation-manager
 
 ## Documentation
 
-Full documentation available at **Settings > Translation Manager > Docs** or in the [`docs/`](docs/) folder.
+Full documentation is available in the [docs](docs/) folder.
 
 ## Support
 
-- Email: support@lindemannrock.com
-- Issues: [GitHub Issues](https://github.com/LindemannRock/craft-translation-manager/issues)
+- **Issues**: [GitHub Issues](https://github.com/LindemannRock/craft-translation-manager/issues)
+- **Email**: [support@lindemannrock.com](mailto:support@lindemannrock.com)
+
+## License
+
+This plugin is licensed under the [Craft License](https://craftcms.github.io/license/). See [LICENSE.md](LICENSE.md) for details.
 
 ---
 
-<p align="center">Made by <a href="https://lindemannrock.com">LindemannRock</a></p>
+Developed by [LindemannRock](https://lindemannrock.com)
