@@ -231,7 +231,9 @@ class SettingsController extends Controller
             Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Could not save settings.'));
 
             // Get the section to re-render the correct template with errors
-            $section = $this->request->getBodyParam('section', 'general');
+            $section = $this->_validSettingsSection(
+                $this->request->getBodyParam('section', 'general'),
+            );
             $template = "translation-manager/settings/{$section}";
 
             return $this->renderTemplate($template, [
@@ -483,5 +485,18 @@ class SettingsController extends Controller
         }
         
         return $this->redirectToPostedUrl();
+    }
+
+    /**
+     * Validate and sanitize the settings section parameter
+     *
+     * @param string $section The section from POST data
+     * @return string A validated section name
+     */
+    private function _validSettingsSection(string $section): string
+    {
+        $allowed = ['general', 'generation', 'backup', 'sources', 'interface', 'locale-mapping', 'integrations', 'capture'];
+
+        return in_array($section, $allowed, true) ? $section : 'general';
     }
 }
