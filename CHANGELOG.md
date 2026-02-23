@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.21.3](https://github.com/LindemannRock/craft-translation-manager/compare/v5.21.2...v5.21.3) (2026-02-23)
+
+
+### Bug Fixes
+
+* **SettingsController:** validate and sanitize settings section parameter ([427cac3](https://github.com/LindemannRock/craft-translation-manager/commit/427cac31d966c396a64f5cd88245ef23ad8948f2))
+
 ## [5.21.2](https://github.com/LindemannRock/craft-translation-manager/compare/v5.21.1...v5.21.2) (2026-02-22)
 
 
