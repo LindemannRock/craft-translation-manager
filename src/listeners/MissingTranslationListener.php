@@ -44,8 +44,6 @@ class MissingTranslationListener
 
     /**
      * Handle the missing translation event
-     *
-     * @since 5.17.0
      */
     public static function handle(MissingTranslationEvent $event): void
     {
@@ -208,8 +206,6 @@ class MissingTranslationListener
 
     /**
      * Reset the request caches (useful for testing)
-     *
-     * @since 5.17.0
      */
     public static function resetCaches(): void
     {

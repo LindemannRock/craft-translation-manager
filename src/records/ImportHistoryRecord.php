@@ -47,7 +47,6 @@ class ImportHistoryRecord extends ActiveRecord
      * Returns the user relation
      *
      * @return \yii\db\ActiveQuery
-     * @since 1.0.0
      */
     public function getUser()
     {

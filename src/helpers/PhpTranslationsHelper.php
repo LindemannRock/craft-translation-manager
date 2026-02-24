@@ -28,7 +28,6 @@ class PhpTranslationsHelper
      * Find all PHP translation files in the configured export path
      *
      * @return array<string, array<string, array{value: string, label: string, language: string, category: string}>>
-     * @since 5.17.0
      */
     public static function findFiles(): array
     {
@@ -75,7 +74,6 @@ class PhpTranslationsHelper
      * @param string $language Target language code
      * @param string $category Translation category
      * @return array{new: array, existing: array, unchanged: array}
-     * @since 5.17.0
      */
     public static function parseAndCompare(string $filePath, string $language, string $category): array
     {
@@ -150,7 +148,6 @@ class PhpTranslationsHelper
      *
      * @param string $filePath
      * @return array<string, string>|null
-     * @since 5.17.0
      */
     public static function safeParseFile(string $filePath): ?array
     {
@@ -165,7 +162,6 @@ class PhpTranslationsHelper
      *
      * @param string $filePath
      * @return array<string, string>|null
-     * @since 5.17.0
      */
     public static function safeParseFileForConsole(string $filePath): ?array
     {
@@ -440,7 +436,6 @@ class PhpTranslationsHelper
      * Get available languages from scanned files
      *
      * @return array<string>
-     * @since 5.17.0
      */
     public static function getAvailableLanguages(): array
     {
@@ -453,7 +448,6 @@ class PhpTranslationsHelper
      *
      * @param string $language
      * @return array<string>
-     * @since 5.17.0
      */
     public static function getAvailableCategories(string $language): array
     {

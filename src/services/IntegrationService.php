@@ -94,7 +94,6 @@ class IntegrationService extends Component
      * @param string $name Integration name
      * @param string|TranslationIntegrationInterface $integration Integration class or instance
      * @param array $config Optional configuration
-     * @since 1.5.0
      */
     public function register(string $name, $integration, array $config = []): void
     {
@@ -112,8 +111,6 @@ class IntegrationService extends Component
 
     /**
      * Get a registered integration by name
-     *
-     * @since 1.5.0
      */
     public function get(string $name): ?TranslationIntegrationInterface
     {
@@ -125,7 +122,6 @@ class IntegrationService extends Component
      * Get all registered integrations
      *
      * @return TranslationIntegrationInterface[]
-     * @since 1.5.0
      */
     public function getAll(): array
     {
@@ -137,7 +133,6 @@ class IntegrationService extends Component
      * Get only enabled and available integrations
      *
      * @return TranslationIntegrationInterface[]
-     * @since 1.5.0
      */
     public function getEnabledIntegrations(): array
     {
@@ -149,8 +144,6 @@ class IntegrationService extends Component
 
     /**
      * Check if an integration is enabled in settings
-     *
-     * @since 1.5.0
      */
     public function isIntegrationEnabled(string $name): bool
     {
@@ -175,8 +168,6 @@ class IntegrationService extends Component
 
     /**
      * Get dynamic integration settings from database/config
-     *
-     * @since 1.5.0
      */
     public function getIntegrationSettings(): array
     {
@@ -205,8 +196,6 @@ class IntegrationService extends Component
 
     /**
      * Save integration settings
-     *
-     * @since 1.5.0
      */
     public function saveIntegrationSettings(array $integrationSettings): bool
     {
@@ -222,8 +211,6 @@ class IntegrationService extends Component
 
     /**
      * Get combined statistics from all enabled integrations
-     *
-     * @since 1.5.0
      */
     public function getCombinedStatistics(): array
     {
@@ -253,8 +240,6 @@ class IntegrationService extends Component
 
     /**
      * Trigger usage check across all enabled integrations
-     *
-     * @since 1.5.0
      */
     public function checkAllUsage(): void
     {
@@ -269,8 +254,6 @@ class IntegrationService extends Component
 
     /**
      * Ensure integrations are loaded (lazy loading)
-     *
-     * @since 1.5.0
      */
     public function ensureIntegrationsLoaded(): void
     {

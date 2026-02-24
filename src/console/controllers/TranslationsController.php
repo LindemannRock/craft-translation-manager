@@ -31,8 +31,6 @@ class TranslationsController extends Controller
 
     /**
      * Capture all existing Formie form translations
-     *
-     * @since 1.0.0
      */
     public function actionCaptureFormie(): int
     {
@@ -94,8 +92,6 @@ class TranslationsController extends Controller
 
     /**
      * Export Formie translations to PHP files
-     *
-     * @since 1.0.0
      */
     public function actionExportFormie(): int
     {
@@ -127,8 +123,6 @@ class TranslationsController extends Controller
 
     /**
      * Export site translations to PHP files
-     *
-     * @since 1.0.0
      */
     public function actionExportSite(): int
     {
@@ -150,8 +144,6 @@ class TranslationsController extends Controller
 
     /**
      * Export all translations (Formie + site)
-     *
-     * @since 1.0.0
      */
     public function actionExportAll(): int
     {
@@ -182,8 +174,6 @@ class TranslationsController extends Controller
 
     /**
      * Import existing Formie translation files to database
-     *
-     * @since 1.0.0
      */
     public function actionImportFormie(): int
     {

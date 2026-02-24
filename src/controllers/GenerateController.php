@@ -50,7 +50,6 @@ class GenerateController extends Controller
      * Generate index page
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionIndex(): Response
     {

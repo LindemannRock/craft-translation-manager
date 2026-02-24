@@ -54,7 +54,6 @@ class ImportController extends Controller
      * Check which translations already exist
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionCheckExisting(): Response
     {
@@ -372,7 +371,6 @@ class ImportController extends Controller
      * @param array $rows
      * @param array $columnMap
      * @return array
-     * @since 5.21.0
      */
     private function buildTranslationsFromRows(array $rows, array $columnMap): array
     {
@@ -444,7 +442,6 @@ class ImportController extends Controller
      *
      * @param array $translations
      * @return string
-     * @since 5.21.0
      */
     private function writeTranslationsCsv(array $translations): string
     {
@@ -496,7 +493,6 @@ class ImportController extends Controller
      *
      * @param array $translations
      * @return array
-     * @since 5.21.0
      */
     private function analyzeTranslations(array $translations): array
     {
@@ -1063,7 +1059,6 @@ class ImportController extends Controller
      * Import history page
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionHistory(): Response
     {
@@ -1107,7 +1102,6 @@ class ImportController extends Controller
      * Log malicious content attempts (for audit trail)
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionLogMalicious(): Response
     {
@@ -1200,7 +1194,6 @@ class ImportController extends Controller
      * Clear import logs
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionClearLogs(): Response
     {

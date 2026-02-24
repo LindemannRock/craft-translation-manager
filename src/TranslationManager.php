@@ -88,7 +88,6 @@ class TranslationManager extends Plugin
 
     /**
      * @inheritdoc
-     * @since 1.0.0
      */
     public static function config(): array
     {
@@ -105,7 +104,6 @@ class TranslationManager extends Plugin
 
     /**
      * @inheritdoc
-     * @since 1.0.0
      */
     public function init(): void
     {
@@ -309,7 +307,6 @@ class TranslationManager extends Plugin
 
     /**
      * @inheritdoc
-     * @since 1.0.0
      */
     public function getCpNavItem(): ?array
     {
@@ -432,7 +429,6 @@ class TranslationManager extends Plugin
 
     /**
      * @inheritdoc
-     * @since 1.0.0
      */
     public function getSettingsResponse(): mixed
     {
@@ -509,7 +505,6 @@ class TranslationManager extends Plugin
      * Get the backup service
      *
      * @return BackupService
-     * @since 1.0.0
      */
     public function getBackup(): BackupService
     {
@@ -520,7 +515,6 @@ class TranslationManager extends Plugin
      * Get all allowed sites
      *
      * @return array
-     * @since 1.0.0
      */
     public function getAllowedSites(): array
     {
@@ -532,7 +526,6 @@ class TranslationManager extends Plugin
      *
      * @param int $siteId
      * @return bool
-     * @since 1.0.0
      */
     public function isSiteAllowed(int $siteId): bool
     {
@@ -564,7 +557,6 @@ class TranslationManager extends Plugin
      *
      * @param int $siteId
      * @return string|null
-     * @since 1.0.0
      */
     public function getSiteLanguage(int $siteId): ?string
     {
@@ -576,7 +568,6 @@ class TranslationManager extends Plugin
      * Get the configured name of the Formie plugin
      *
      * @return string
-     * @since 1.0.0
      */
     public static function getFormiePluginName(): string
     {

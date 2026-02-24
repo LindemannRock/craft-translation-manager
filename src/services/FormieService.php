@@ -34,8 +34,6 @@ class FormieService extends Component
 
     /**
      * Register Formie event hooks
-     *
-     * @since 1.0.0
      */
     public function registerFormieHooks(): void
     {
@@ -54,8 +52,6 @@ class FormieService extends Component
 
     /**
      * Capture all translatable text from a Formie form
-     *
-     * @since 1.0.0
      */
     public function captureFormTranslations($form): void
     {
@@ -493,8 +489,6 @@ class FormieService extends Component
 
     /**
      * Get all active form handles
-     *
-     * @since 1.0.0
      */
     public function getActiveFormHandles(): array
     {
@@ -514,8 +508,6 @@ class FormieService extends Component
     
     /**
      * Check form usage and mark unused translations
-     *
-     * @since 1.0.0
      */
     public function checkFormUsage(): void
     {

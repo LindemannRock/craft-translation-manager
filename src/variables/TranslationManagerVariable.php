@@ -25,8 +25,6 @@ class TranslationManagerVariable
      * Translate text
      *
      * Usage: {{ craft.translationManager.t('Text to translate', 'context') }}
-     *
-     * @since 1.0.0
      */
     public function t(string $text, string $context = ''): string
     {
@@ -59,8 +57,6 @@ class TranslationManagerVariable
     
     /**
      * Get translation statistics
-     *
-     * @since 1.0.0
      */
     public function getStats(): array
     {
@@ -69,8 +65,6 @@ class TranslationManagerVariable
     
     /**
      * Get allowed sites for current license
-     *
-     * @since 1.0.0
      */
     public function getAllowedSites(): array
     {
@@ -79,8 +73,6 @@ class TranslationManagerVariable
     
     /**
      * Check if a translation exists
-     *
-     * @since 1.0.0
      */
     public function hasTranslation(string $text, string $context = ''): bool
     {
@@ -95,8 +87,6 @@ class TranslationManagerVariable
     
     /**
      * Get unused translation counts by type and category (for maintenance dropdown)
-     *
-     * @since 1.0.0
      */
     public function getUnusedTranslationCounts(): array
     {
@@ -144,8 +134,6 @@ class TranslationManagerVariable
     
     /**
      * Get total translation counts by type and category (for clear translations dropdown)
-     *
-     * @since 1.0.0
      */
     public function getTranslationCounts(): array
     {
@@ -190,8 +178,6 @@ class TranslationManagerVariable
 
     /**
      * Get the configured Formie plugin name
-     *
-     * @since 1.0.0
      */
     public function getFormiePluginName(): string
     {
@@ -200,8 +186,6 @@ class TranslationManagerVariable
     
     /**
      * Get count of unused translations (forms that no longer exist)
-     *
-     * @since 1.0.0
      */
     public function getUnusedTranslationCount(): int
     {
@@ -210,8 +194,6 @@ class TranslationManagerVariable
     
     /**
      * Get the backup service
-     *
-     * @since 1.0.0
      */
     public function getBackup(): \lindemannrock\translationmanager\services\BackupService
     {
@@ -220,8 +202,6 @@ class TranslationManagerVariable
     
     /**
      * Get plugin settings
-     *
-     * @since 1.0.0
      */
     public function getSettings(): \lindemannrock\translationmanager\models\Settings
     {

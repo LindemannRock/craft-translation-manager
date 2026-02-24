@@ -51,7 +51,6 @@ class LocaleMappingPhpMessageSource extends PhpMessageSource
      *
      * @param string $language The original language code
      * @return string The mapped language code (or original if no mapping exists)
-     * @since 5.17.0
      */
     public function mapLanguage(string $language): string
     {

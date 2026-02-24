@@ -53,7 +53,6 @@ class BackupController extends Controller
      * Creates a backup of all translations
      *
      * @return int
-     * @since 1.0.0
      */
     public function actionCreate(): int
     {
@@ -102,7 +101,6 @@ class BackupController extends Controller
      * Runs scheduled backup based on settings
      *
      * @return int
-     * @since 1.0.0
      */
     public function actionScheduled(): int
     {
@@ -145,7 +143,6 @@ class BackupController extends Controller
      * Lists all backups
      *
      * @return int
-     * @since 1.0.0
      */
     public function actionList(): int
     {
@@ -180,7 +177,6 @@ class BackupController extends Controller
      * Cleans old backups based on retention settings
      *
      * @return int
-     * @since 1.0.0
      */
     public function actionClean(): int
     {

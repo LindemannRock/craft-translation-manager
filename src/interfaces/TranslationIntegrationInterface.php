@@ -23,7 +23,6 @@ interface TranslationIntegrationInterface
      * Get the integration name (e.g., 'formie', 'commerce', 'seomatic')
      *
      * @return string
-     * @since 1.5.0
      */
     public function getName(): string;
 
@@ -31,7 +30,6 @@ interface TranslationIntegrationInterface
      * Get the plugin handle this integration supports
      *
      * @return string
-     * @since 1.5.0
      */
     public function getPluginHandle(): string;
 
@@ -39,14 +37,11 @@ interface TranslationIntegrationInterface
      * Check if the target plugin is installed and compatible
      *
      * @return bool
-     * @since 1.5.0
      */
     public function isAvailable(): bool;
 
     /**
      * Register event hooks and listeners for the target plugin
-     *
-     * @since 1.5.0
      */
     public function registerHooks(): void;
 
@@ -55,15 +50,12 @@ interface TranslationIntegrationInterface
      *
      * @param mixed $element The element to extract translations from
      * @return array Array of captured translation data
-     * @since 1.5.0
      */
     public function captureTranslations($element): array;
 
     /**
      * Check usage of existing translations and mark unused ones
      * Called after content changes to clean up orphaned translations
-     *
-     * @since 1.5.0
      */
     public function checkUsage(): void;
 
@@ -71,7 +63,6 @@ interface TranslationIntegrationInterface
      * Get all translatable fields/content types this integration supports
      *
      * @return array List of supported content types
-     * @since 1.5.0
      */
     public function getSupportedContentTypes(): array;
 
@@ -80,7 +71,6 @@ interface TranslationIntegrationInterface
      * Used to generate settings UI and validation
      *
      * @return array Configuration schema
-     * @since 1.5.0
      */
     public function getConfigSchema(): array;
 
@@ -89,7 +79,6 @@ interface TranslationIntegrationInterface
      *
      * @param array $config Configuration to validate
      * @return array Validation errors (empty if valid)
-     * @since 1.5.0
      */
     public function validateConfig(array $config): array;
 
@@ -97,7 +86,6 @@ interface TranslationIntegrationInterface
      * Get statistics for this integration (translation counts, etc.)
      *
      * @return array Statistics data
-     * @since 1.5.0
      */
     public function getStatistics(): array;
 }

@@ -85,7 +85,6 @@ class ExportController extends Controller
      * Exports all when called from settings page
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionIndex(): Response
     {
@@ -210,7 +209,6 @@ class ExportController extends Controller
      * Export download action - works with regular CP URLs instead of action URLs
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionDownload(): Response
     {
@@ -221,7 +219,6 @@ class ExportController extends Controller
      * Export selected translations as CSV
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionSelected(): Response
     {
@@ -312,7 +309,6 @@ class ExportController extends Controller
      * Export all translations to files (for auto-export)
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionFiles(): Response
     {
@@ -401,7 +397,6 @@ class ExportController extends Controller
      * Export Formie translations to files
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionFormieFiles(): Response
     {
@@ -450,7 +445,6 @@ class ExportController extends Controller
      * Export site translations to files
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionSiteFiles(): Response
     {

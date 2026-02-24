@@ -109,8 +109,6 @@ class TranslationsService extends Component
     }
     /**
      * Get translations with optional filters
-     *
-     * @since 1.0.0
      */
     public function getTranslations(array $criteria = []): array
     {
@@ -258,8 +256,6 @@ class TranslationsService extends Component
 
     /**
      * Get a single translation by ID
-     *
-     * @since 1.0.0
      */
     public function getTranslationById(int $id): ?TranslationRecord
     {
@@ -268,8 +264,6 @@ class TranslationsService extends Component
 
     /**
      * Save a translation
-     *
-     * @since 1.0.0
      */
     public function saveTranslation(TranslationRecord $translation): bool
     {
@@ -290,8 +284,6 @@ class TranslationsService extends Component
     /**
      * Create or update a translation
      * Automatically skips text that is not in the source language
-     *
-     * @since 1.0.0
      */
     public function createOrUpdateTranslation(string $text, string $context = 'site', ?string $category = null): ?TranslationRecord
     {
@@ -500,8 +492,6 @@ class TranslationsService extends Component
 
     /**
      * Scan all templates for translation usage and mark unused ones
-     *
-     * @since 1.0.0
      */
     public function scanTemplatesForUnused(): array
     {
@@ -655,7 +645,6 @@ class TranslationsService extends Component
     
     /**
      * @var int Count of template files scanned during usage checks
-     * @since 1.0.0
      */
     public $_scannedFileCount = 0;
 
@@ -715,7 +704,6 @@ class TranslationsService extends Component
      * Uses AST-based parsing for accurate translation detection
      *
      * @deprecated Use scanTemplateDirectoryAllCategories instead
-     * @since 1.0.0
      */
     public function scanTemplateDirectory(string $path, string $category): array
     {
@@ -740,8 +728,6 @@ class TranslationsService extends Component
 
     /**
      * Delete translations by IDs
-     *
-     * @since 1.0.0
      */
     public function deleteTranslations(array $ids): int
     {
@@ -895,8 +881,6 @@ class TranslationsService extends Component
 
     /**
      * Get translation statistics
-     *
-     * @since 1.0.0
      */
     public function getStatistics(?int $siteId = null): array
     {
@@ -977,8 +961,6 @@ class TranslationsService extends Component
     
     /**
      * Clear all Formie translations
-     *
-     * @since 1.0.0
      */
     public function clearFormieTranslations(): int
     {
@@ -998,8 +980,6 @@ class TranslationsService extends Component
     
     /**
      * Clear all site translations
-     *
-     * @since 1.0.0
      */
     public function clearSiteTranslations(): int
     {
@@ -1019,8 +999,6 @@ class TranslationsService extends Component
     
     /**
      * Clear all translations
-     *
-     * @since 1.0.0
      */
     public function clearAllTranslations(): int
     {
@@ -1205,8 +1183,6 @@ class TranslationsService extends Component
     
     /**
      * Get count of unused translations (forms that no longer exist)
-     *
-     * @since 1.0.0
      */
     public function getUnusedTranslationCount(): int
     {
@@ -1219,8 +1195,6 @@ class TranslationsService extends Component
     
     /**
      * Clean up unused translations and regenerate files
-     *
-     * @since 1.0.0
      */
     public function cleanUnusedTranslations(): int
     {

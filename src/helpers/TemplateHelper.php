@@ -40,7 +40,6 @@ class TemplateHelper
      *     errors: array<string>,
      *     scannedFiles: int
      * }
-     * @since 5.17.0
      */
     public static function scanTemplates(array $enabledCategories): array
     {
@@ -108,7 +107,6 @@ class TemplateHelper
      * Parse a single template file for translation keys
      *
      * @return array<array{key: string, category: string}>
-     * @since 5.17.0
      */
     public static function parseTemplateFile(\Twig\Environment $twig, string $filePath, string $defaultCategory = 'site'): array
     {

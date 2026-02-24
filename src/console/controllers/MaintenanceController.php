@@ -25,8 +25,6 @@ class MaintenanceController extends Controller
 {
     /**
      * Scan all templates for translation usage and mark unused translations
-     *
-     * @since 1.0.0
      */
     public function actionScanTemplates(): int
     {
@@ -61,8 +59,6 @@ class MaintenanceController extends Controller
     
     /**
      * Delete all unused translations
-     *
-     * @since 1.0.0
      */
     public function actionCleanUnused(): int
     {
@@ -100,8 +96,6 @@ class MaintenanceController extends Controller
     
     /**
      * Show template scanning preview without making changes
-     *
-     * @since 1.0.0
      */
     public function actionPreviewScan(): int
     {
@@ -163,8 +157,6 @@ class MaintenanceController extends Controller
     
     /**
      * Clean unused translations by type
-     *
-     * @since 1.0.0
      */
     public function actionCleanByType(?string $type = null): int
     {

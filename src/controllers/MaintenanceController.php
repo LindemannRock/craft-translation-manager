@@ -77,7 +77,6 @@ class MaintenanceController extends Controller
      * Maintenance index page
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionIndex(): Response
     {
@@ -92,7 +91,6 @@ class MaintenanceController extends Controller
      * Clean up unused translations
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionCleanUnused(): Response
     {
@@ -168,7 +166,6 @@ class MaintenanceController extends Controller
      * Display debug search page
      *
      * @return mixed
-     * @since 1.0.0
      */
     public function actionDebugSearchPage(): mixed
     {
@@ -181,7 +178,6 @@ class MaintenanceController extends Controller
      * Debug search functionality
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionDebugSearch(): Response
     {
@@ -302,7 +298,6 @@ class MaintenanceController extends Controller
      * Force recapture all Formie translations
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionRecaptureFormie(): Response
     {

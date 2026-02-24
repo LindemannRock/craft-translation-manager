@@ -56,7 +56,6 @@ class PhpImportController extends Controller
      * Get available PHP files for import (AJAX)
      *
      * @return Response
-     * @since 5.17.0
      */
     public function actionGetFiles(): Response
     {
@@ -72,7 +71,6 @@ class PhpImportController extends Controller
      * Preview PHP file contents before import (AJAX)
      *
      * @return Response
-     * @since 5.17.0
      */
     public function actionPreview(): Response
     {
@@ -103,7 +101,6 @@ class PhpImportController extends Controller
      * Creates records for ALL site languages (like scan does)
      *
      * @return Response
-     * @since 5.17.0
      */
     public function actionImport(): Response
     {

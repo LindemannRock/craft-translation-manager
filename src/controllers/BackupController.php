@@ -84,7 +84,6 @@ class BackupController extends Controller
      * List all backups (page render only - data loaded via AJAX)
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionIndex(): Response
     {
@@ -99,7 +98,6 @@ class BackupController extends Controller
      * Get backups list as JSON (for async loading)
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionGetBackups(): Response
     {
@@ -189,7 +187,6 @@ class BackupController extends Controller
      * Create a new backup
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionCreate(): Response
     {
@@ -238,7 +235,6 @@ class BackupController extends Controller
      * Restore from a backup
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionRestore(): Response
     {
@@ -264,7 +260,6 @@ class BackupController extends Controller
      * Delete a backup
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionDelete(): Response
     {
@@ -303,7 +298,6 @@ class BackupController extends Controller
      * Download a backup
      *
      * @return Response
-     * @since 1.0.0
      */
     public function actionDownload(): Response
     {

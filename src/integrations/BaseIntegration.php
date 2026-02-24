@@ -230,8 +230,6 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
     /**
      * Default implementation returns empty config schema
      * Override in specific integrations to provide settings
-     *
-     * @since 1.5.0
      */
     public function getConfigSchema(): array
     {
@@ -247,8 +245,6 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
     /**
      * Default validation accepts any config
      * Override for specific validation rules
-     *
-     * @since 1.5.0
      */
     public function validateConfig(array $config): array
     {
@@ -258,8 +254,6 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
     /**
      * Default statistics implementation
      * Override for integration-specific stats
-     *
-     * @since 1.5.0
      */
     public function getStatistics(): array
     {

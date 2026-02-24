@@ -257,7 +257,6 @@ class Settings extends Model
      * Set skip patterns from string (for form submission)
      *
      * @param string|array $value
-     * @since 1.0.0
      */
     public function setSkipPatterns($value): void
     {
@@ -303,8 +302,6 @@ class Settings extends Model
 
     /**
      * Validates the translation category (deprecated single category)
-     *
-     * @since 1.0.0
      */
     public function validateTranslationCategory($attribute, $params, $validator)
     {
@@ -545,8 +542,6 @@ class Settings extends Model
 
     /**
      * Validates the log level
-     *
-     * @since 1.0.0
      */
     public function validateLogLevel($attribute, $params, $validator)
     {
@@ -587,8 +582,6 @@ class Settings extends Model
 
     /**
      * Validates the export path to prevent directory traversal attacks
-     *
-     * @since 1.0.0
      */
     public function validateExportPath($attribute, $params, $validator)
     {
@@ -651,8 +644,6 @@ class Settings extends Model
 
     /**
      * Validates the backup path to prevent directory traversal attacks
-     *
-     * @since 1.0.0
      */
     public function validateBackupPath($attribute, $params, $validator)
     {
@@ -725,7 +716,6 @@ class Settings extends Model
      * Returns the full export path
      *
      * @return string
-     * @since 1.0.0
      */
     public function getExportPath(): string
     {
@@ -776,7 +766,6 @@ class Settings extends Model
      * Returns the full backup path
      *
      * @return string
-     * @since 1.0.0
      */
     public function getBackupPath(): string
     {
