@@ -326,7 +326,7 @@ class ExportService extends Component
         // Build CSV content with UTF-8 BOM for Excel compatibility
         $csv = "\xEF\xBB\xBF"; // UTF-8 BOM
 
-        $csv .= "Translation Key,Translation,Category,Type,Context,Status,Language\n";
+        $csv .= "Translation Key,Translation,Category,Type,Context,Status,Origin,Language,Created By User ID,Reviewed By User ID,Reviewed At,Updated At\n";
 
         foreach ($ids as $id) {
             $translation = $translationsService->getTranslationById($id);
@@ -336,10 +336,16 @@ class ExportService extends Component
                 $translationText = $this->sanitizeForCsv($translation->translation ?? '');
                 $category = $this->sanitizeForCsv($translation->category ?? 'messages');
                 $type = strpos($translation->context, 'formie.') === 0 ? TranslationManager::getFormiePluginName() : 'Site';
+                $status = $this->sanitizeForCsv($translation->status ?? '');
+                $origin = $this->sanitizeForCsv($translation->translationOrigin ?? 'system');
                 $language = $translation->language ?? 'unknown';
+                $createdByUserId = $this->sanitizeForCsv($translation->createdByUserId ?? '');
+                $reviewedByUserId = $this->sanitizeForCsv($translation->reviewedByUserId ?? '');
+                $reviewedAt = $this->sanitizeForCsv($translation->reviewedAt ?? '');
+                $updatedAt = $this->sanitizeForCsv($translation->dateUpdated ?? '');
 
                 $context = $this->sanitizeForCsv($translation->context);
-                $csv .= "\"{$translationKey}\",\"{$translationText}\",\"{$category}\",\"{$type}\",\"{$context}\",\"{$translation->status}\",\"{$language}\"\n";
+                $csv .= "\"{$translationKey}\",\"{$translationText}\",\"{$category}\",\"{$type}\",\"{$context}\",\"{$status}\",\"{$origin}\",\"{$language}\",\"{$createdByUserId}\",\"{$reviewedByUserId}\",\"{$reviewedAt}\",\"{$updatedAt}\"\n";
             }
         }
 

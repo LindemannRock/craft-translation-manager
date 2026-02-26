@@ -11,6 +11,7 @@
 namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
+use craft\elements\User;
 use craft\web\Controller;
 use lindemannrock\base\helpers\ExportHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
@@ -146,9 +147,34 @@ class ExportController extends Controller
             $translations = $translationsService->getTranslations($criteria);
             
             // If no translations found, still export empty CSV with headers
-            $headers = ['Translation Key', 'Translation', 'Category', 'Type', 'Context', 'Status', 'Language'];
+            $headers = [
+                'Translation Key',
+                'Translation',
+                'Category',
+                'Type',
+                'Context',
+                'Status',
+                'Origin',
+                'Language',
+                'Created By',
+                'Reviewed By',
+                'Reviewed At',
+                'Updated At',
+            ];
 
             $rows = [];
+            $userIds = [];
+            foreach ($translations as $translation) {
+                if (!empty($translation['createdByUserId'])) {
+                    $userIds[] = (int) $translation['createdByUserId'];
+                }
+                if (!empty($translation['reviewedByUserId'])) {
+                    $userIds[] = (int) $translation['reviewedByUserId'];
+                }
+            }
+
+            $userEmailMap = $this->getUserEmailMap($userIds);
+
             foreach ($translations as $translation) {
                 $context = $translation['context'] ?? '';
                 $isFormie = str_starts_with($context, 'formie.') || $context === 'formie';
@@ -164,7 +190,12 @@ class ExportController extends Controller
                 $row['context'] = $context;
 
                 $row['status'] = $translation['status'] ?? '';
+                $row['origin'] = $translation['translationOrigin'] ?? 'system';
                 $row['language'] = $translation['language'] ?? '';
+                $row['createdBy'] = $this->resolveUserEmail($translation['createdByUserId'] ?? null, $userEmailMap);
+                $row['reviewedBy'] = $this->resolveUserEmail($translation['reviewedByUserId'] ?? null, $userEmailMap);
+                $row['reviewedAt'] = $translation['reviewedAt'] ?? '';
+                $row['dateUpdated'] = $translation['dateUpdated'] ?? '';
 
                 $rows[] = $row;
             }
@@ -201,7 +232,7 @@ class ExportController extends Controller
 
             $filename = ExportHelper::filename($settings, $filenameParts, 'csv');
 
-            return ExportHelper::toCsv($rows, $headers, $filename);
+            return ExportHelper::toCsv($rows, $headers, $filename, ['reviewedAt', 'dateUpdated']);
         } catch (\Exception $e) {
             $this->logError('Export failed', ['error' => $e->getMessage()]);
             throw $e;
@@ -248,12 +279,42 @@ class ExportController extends Controller
         }
 
         $settings = TranslationManager::$plugin->getSettings();
-        $headers = ['Translation Key', 'Translation', 'Category', 'Type', 'Context', 'Status', 'Language'];
+        $headers = [
+            'Translation Key',
+            'Translation',
+            'Category',
+            'Type',
+            'Context',
+            'Status',
+            'Origin',
+            'Language',
+            'Created By',
+            'Reviewed By',
+            'Reviewed At',
+            'Updated At',
+        ];
 
         $translationsService = TranslationManager::getInstance()->translations;
         $rows = [];
         $languages = [];
         $types = [];
+        $userIds = [];
+
+        foreach ($ids as $id) {
+            $translation = $translationsService->getTranslationById($id);
+            if (!$translation) {
+                continue;
+            }
+
+            if (!empty($translation->createdByUserId)) {
+                $userIds[] = (int) $translation->createdByUserId;
+            }
+            if (!empty($translation->reviewedByUserId)) {
+                $userIds[] = (int) $translation->reviewedByUserId;
+            }
+        }
+
+        $userEmailMap = $this->getUserEmailMap($userIds);
 
         foreach ($ids as $id) {
             $translation = $translationsService->getTranslationById($id);
@@ -275,7 +336,12 @@ class ExportController extends Controller
             $row['context'] = $context;
 
             $row['status'] = $translation->status ?? '';
+            $row['origin'] = $translation->translationOrigin ?? 'system';
             $row['language'] = $translation->language ?? '';
+            $row['createdBy'] = $this->resolveUserEmail($translation->createdByUserId ?? null, $userEmailMap);
+            $row['reviewedBy'] = $this->resolveUserEmail($translation->reviewedByUserId ?? null, $userEmailMap);
+            $row['reviewedAt'] = $translation->reviewedAt ?? '';
+            $row['dateUpdated'] = $translation->dateUpdated ?? '';
 
             $rows[] = $row;
             if (!empty($translation->language)) {
@@ -301,7 +367,7 @@ class ExportController extends Controller
 
         $filename = ExportHelper::filename($settings, $filenameParts, 'csv');
 
-        return ExportHelper::toCsv($rows, $headers, $filename);
+        return ExportHelper::toCsv($rows, $headers, $filename, ['reviewedAt', 'dateUpdated']);
     }
 
     /**
@@ -563,5 +629,46 @@ class ExportController extends Controller
         $sanitized = preg_replace('/[^a-z0-9._-]+/i', '-', $part);
         // Remove leading/trailing hyphens and convert to lowercase
         return strtolower(trim($sanitized, '-'));
+    }
+
+    /**
+     * Build a map of userId => email for export metadata.
+     *
+     * @param array<int> $userIds
+     * @return array<int,string>
+     */
+    private function getUserEmailMap(array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn(int $id) => $id > 0)));
+        if (empty($userIds)) {
+            return [];
+        }
+
+        $users = User::find()
+            ->status(null)
+            ->id($userIds)
+            ->all();
+
+        $map = [];
+        foreach ($users as $user) {
+            if ($user->id) {
+                $map[(int) $user->id] = (string) ($user->email ?? '');
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * Resolve a user email from an ID and preloaded map.
+     */
+    private function resolveUserEmail(mixed $userId, array $map): string
+    {
+        $id = (int) $userId;
+        if ($id <= 0) {
+            return '';
+        }
+
+        return $map[$id] ?? '';
     }
 }
