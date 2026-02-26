@@ -68,11 +68,11 @@
                 <div class="flex">
                     <div class="btngroup">
                         <button type="button" class="btn menubtn statusmenubtn">
-                            <span class="status {{ status == 'all' ? 'all' : (status == 'pending' ? 'orange' : (status == 'ai_draft' ? 'blue' : (status == 'translated' ? 'teal' : (status == 'unused' ? 'gray' : ''))) ) }}"></span>
+                            <span class="status {{ status == 'all' ? 'all' : (status == 'pending' ? 'orange' : (status == 'draft' ? 'blue' : (status == 'translated' ? 'teal' : (status == 'unused' ? 'gray' : ''))) ) }}"></span>
                             {% if status == 'all' %}
                                 All
-                            {% elseif status == 'ai_draft' %}
-                                AI Draft
+                            {% elseif status == 'draft' %}
+                                Draft
                             {% elseif status == 'unused' %}
                                 Unused
                             {% else %}
@@ -87,8 +87,8 @@
                                 <li><a class="{{ status == 'pending' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=pending&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
                                     <span class="status orange"></span>Pending
                                 </a></li>
-                                <li><a class="{{ status == 'ai_draft' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=ai_draft&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
-                                    <span class="status blue"></span>AI Draft
+                                <li><a class="{{ status == 'draft' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=draft&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
+                                    <span class="status blue"></span>Draft
                                 </a></li>
                                 <li><a class="{{ status == 'translated' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=translated&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
                                     <span class="status teal"></span>Translated
@@ -287,11 +287,13 @@
                                 {% set statusMap = {
                                     'unused': { label: 'Unused', color: 'gray' },
                                     'pending': { label: 'Pending', color: 'orange' },
-                                    'ai_draft': { label: 'AI Draft', color: 'blue' },
+                                    'draft': { label: 'Draft', color: 'blue' },
                                     'translated': { label: 'Translated', color: 'teal' },
-                                    'approved': { label: 'Approved', color: 'green' },
                                 } %}
                                 {% set statusBadge = statusMap[translation.status] ?? { label: translation.status|title, color: 'gray' } %}
+                                {% if translation.status == 'draft' and (translation.translationOrigin ?? '') == 'ai' %}
+                                    {% set statusBadge = statusBadge|merge({ label: 'AI Draft' }) %}
+                                {% endif %}
 
                                 {% include 'lindemannrock-base/_components/status-badge' with {
                                     label: statusBadge.label,

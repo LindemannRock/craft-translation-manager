@@ -157,6 +157,9 @@ class TranslationManager extends Plugin
                                 'translationManager:editTranslations' => [
                                     'label' => Craft::t('translation-manager', 'Edit {plural}', ['plural' => $plural]),
                                 ],
+                                'translationManager:approveTranslations' => [
+                                    'label' => Craft::t('translation-manager', 'Approve {plural}', ['plural' => $plural]),
+                                ],
                                 'translationManager:deleteTranslations' => [
                                     'label' => Craft::t('translation-manager', 'Delete unused {plural}', ['plural' => $plural]),
                                 ],

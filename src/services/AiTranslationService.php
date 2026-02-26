@@ -182,7 +182,10 @@ class AiTranslationService extends Component
                 );
 
                 $row->translation = $translated;
-                $row->status = 'ai_draft';
+                $row->status = 'draft';
+                $row->translationOrigin = 'ai';
+                $row->reviewedByUserId = null;
+                $row->reviewedAt = null;
                 $row->dateUpdated = Db::prepareDateForDb(new \DateTime());
 
                 if ($row->save()) {

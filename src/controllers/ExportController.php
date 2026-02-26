@@ -416,7 +416,7 @@ class ExportController extends Controller
                 $this->logInfo("Formie export completed", ['message' => $message]);
             } else {
                 $pluginName = TranslationManager::getFormiePluginName();
-                $message = "No translated {$pluginName} translations found. Add Arabic translations to forms first.";
+                $message = "No translated {$pluginName} translations found. Add translations first.";
             }
             
             if (Craft::$app->getRequest()->getAcceptsJson()) {
@@ -464,7 +464,7 @@ class ExportController extends Controller
             } else {
                 $settings = TranslationManager::getInstance()->getSettings();
                 $category = $settings->translationCategory;
-                $message = "No translated site translations found. Add Arabic translations for |t('{$category}') strings first.";
+                $message = "No translated site translations found. Add translations first.";
             }
             
             if (Craft::$app->getRequest()->getAcceptsJson()) {
@@ -527,7 +527,7 @@ class ExportController extends Controller
                 $message = ucfirst($category) . " translation files generated successfully ({$count} translations)";
                 $this->logInfo("Category export completed", ['message' => $message]);
             } else {
-                $message = "No translated translations found for category '{$category}'. Add translations for |t('{$category}') strings first.";
+                $message = "No translated translations found for category '{$category}'. Add translations first.";
             }
 
             if (Craft::$app->getRequest()->getAcceptsJson()) {

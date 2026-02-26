@@ -158,6 +158,15 @@ class PhpImportController extends Controller
                         if ($isImportLanguage) {
                             $record->translation = $value;
                             $record->status = !empty($value) ? 'translated' : 'pending';
+                            $record->translationOrigin = 'import';
+                            $record->createdByUserId = Craft::$app->getUser()->getId();
+                            if (!empty($value)) {
+                                $record->reviewedByUserId = Craft::$app->getUser()->getId();
+                                $record->reviewedAt = Db::prepareDateForDb(new \DateTime());
+                            } else {
+                                $record->reviewedByUserId = null;
+                                $record->reviewedAt = null;
+                            }
                             $record->dateUpdated = Db::prepareDateForDb(new \DateTime());
 
                             if ($record->save()) {
@@ -186,14 +195,22 @@ class PhpImportController extends Controller
                             // This is the language being imported - use the value
                             $record->translation = $value;
                             $record->status = !empty($value) ? 'translated' : 'pending';
+                            $record->translationOrigin = 'import';
+                            $record->createdByUserId = Craft::$app->getUser()->getId();
+                            if (!empty($value)) {
+                                $record->reviewedByUserId = Craft::$app->getUser()->getId();
+                                $record->reviewedAt = Db::prepareDateForDb(new \DateTime());
+                            }
                         } elseif ($isSourceLang) {
                             // Source language: key is the translation
                             $record->translation = $key;
                             $record->status = 'translated';
+                            $record->translationOrigin = 'system';
                         } else {
                             // Other languages: empty translation, pending
                             $record->translation = '';
                             $record->status = 'pending';
+                            $record->translationOrigin = 'system';
                         }
 
                         if ($record->save()) {

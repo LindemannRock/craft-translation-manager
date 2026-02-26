@@ -459,6 +459,7 @@ class ImportController extends Controller
             'Category',
             'Context',
             'Type',
+            'Status',
             'Site ID',
         ];
 
@@ -479,6 +480,7 @@ class ImportController extends Controller
                 $translation['category'] ?? '',
                 $translation['context'] ?? '',
                 $translation['type'] ?? '',
+                $translation['status'] ?? '',
                 $translation['siteId'] ?? '',
             ]);
         }
@@ -643,6 +645,7 @@ class ImportController extends Controller
                         'currentStatus' => $existing->status,
                         'existingContext' => $existing->context,
                         'language' => $targetLanguage,
+                        'status' => $translation['status'] ?? '',
                     ];
                 } else {
                     $toUpdate[] = [
@@ -655,6 +658,7 @@ class ImportController extends Controller
                         'currentStatus' => $existing->status,
                         'existingContext' => $existing->context,
                         'language' => $targetLanguage,
+                        'status' => $translation['status'] ?? '',
                     ];
                 }
             } else {
@@ -665,6 +669,7 @@ class ImportController extends Controller
                     'context' => $context,
                     'category' => $category,
                     'language' => $targetLanguage,
+                    'status' => $translation['status'] ?? '',
                 ];
             }
         }
@@ -758,6 +763,10 @@ class ImportController extends Controller
                 $context = ($contextIndex !== false && isset($row[$contextIndex])) ? $row[$contextIndex] : 'site';
                 $category = ($categoryIndex !== false && isset($row[$categoryIndex])) ? $row[$categoryIndex] : '';
                 $type = ($typeIndex !== false && isset($row[$typeIndex])) ? strtolower(trim($row[$typeIndex])) : '';
+                $importedStatus = null;
+                if ($statusIndex !== false && isset($row[$statusIndex])) {
+                    $importedStatus = $this->normalizeImportedStatus($row[$statusIndex]);
+                }
 
                 // Strip CSV formula-escape prefix (apostrophe followed by formula character)
                 // This restores original values that were escaped during export
@@ -863,9 +872,6 @@ class ImportController extends Controller
                     continue;
                 }
                 
-                // Status is always auto-determined based on content
-                // Ignore any status column in the CSV
-                
                 // Use the service method which handles deduplication
                 $translationService = TranslationManager::getInstance()->translations;
                 $sourceHash = md5($keyText);
@@ -891,9 +897,21 @@ class ImportController extends Controller
                     // Update existing
                     $existingTranslation->translation = $translationText;
                     
-                    // Auto-determine status based on content (preserve 'unused' status)
-                    if ($existingTranslation->status !== 'unused') {
+                    // Respect explicitly imported status if provided and valid.
+                    if ($importedStatus !== null) {
+                        $existingTranslation->status = $importedStatus;
+                    } elseif (!in_array($existingTranslation->status, ['unused', 'draft'], true)) {
+                        // Auto-determine status based on content for non-review/system rows.
                         $existingTranslation->status = $translationText ? 'translated' : 'pending';
+                    }
+                    $existingTranslation->translationOrigin = 'import';
+                    $existingTranslation->createdByUserId = Craft::$app->getUser()->getId();
+                    if ($existingTranslation->status === 'translated') {
+                        $existingTranslation->reviewedByUserId = Craft::$app->getUser()->getId();
+                        $existingTranslation->reviewedAt = Db::prepareDateForDb(new \DateTime());
+                    } else {
+                        $existingTranslation->reviewedByUserId = null;
+                        $existingTranslation->reviewedAt = null;
                     }
                     
                     // Update context if the imported one is more specific
@@ -952,7 +970,16 @@ class ImportController extends Controller
                             $translation->source = $keyText; // Fix missing source field
                         }
                         $translation->translation = $translationText;
-                        $translation->status = $translationText ? 'translated' : 'pending';
+                        $translation->status = $importedStatus ?? ($translationText ? 'translated' : 'pending');
+                        $translation->translationOrigin = 'import';
+                        $translation->createdByUserId = Craft::$app->getUser()->getId();
+                        if ($translation->status === 'translated') {
+                            $translation->reviewedByUserId = Craft::$app->getUser()->getId();
+                            $translation->reviewedAt = Db::prepareDateForDb(new \DateTime());
+                        } else {
+                            $translation->reviewedByUserId = null;
+                            $translation->reviewedAt = null;
+                        }
                         // Update category if provided in CSV
                         if ($categoryIndex !== false) {
                             $translation->category = $category;
@@ -1016,6 +1043,32 @@ class ImportController extends Controller
         }
         
         return $result;
+    }
+
+    /**
+     * Normalize and validate imported status from CSV.
+     */
+    private function normalizeImportedStatus(?string $rawStatus): ?string
+    {
+        if ($rawStatus === null) {
+            return null;
+        }
+
+        $status = strtolower(trim($rawStatus));
+        if ($status === '') {
+            return null;
+        }
+
+        // Accept label-style values from CSV exports too.
+        if ($status === 'ai draft' || $status === 'ai_draft') {
+            $status = 'draft';
+        }
+        if ($status === 'approved') {
+            $status = 'translated';
+        }
+
+        $allowed = ['pending', 'draft', 'translated', 'unused'];
+        return in_array($status, $allowed, true) ? $status : null;
     }
     
     /**

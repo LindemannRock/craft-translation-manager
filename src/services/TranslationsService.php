@@ -269,8 +269,8 @@ class TranslationsService extends Component
     {
         $translation->dateUpdated = Db::prepareDateForDb(new \DateTime());
         
-        // Keep review/system states untouched unless explicitly changed elsewhere.
-        if (!in_array($translation->status, ['unused', 'approved', 'ai_draft'], true)) {
+        // Keep system states untouched unless explicitly changed elsewhere.
+        if (!in_array($translation->status, ['unused', 'draft'], true)) {
             if ($translation->translation) {
                 $translation->status = 'translated';
             } else {
@@ -384,6 +384,7 @@ class TranslationsService extends Component
                     'translationKey' => $text,
                     'translation' => $this->getDefaultTranslationForLanguage($text, $language),
                     'status' => $this->getDefaultStatusForLanguage($language),
+                    'translationOrigin' => 'system',
                     'usageCount' => 1,
                     'lastUsed' => new \DateTime(),
                     'dateCreated' => new \DateTime(),
@@ -914,9 +915,8 @@ class TranslationsService extends Component
         }
         
         $pending = $counts['pending'] ?? 0;
-        $aiDraft = $counts['ai_draft'] ?? 0;
+        $draft = $counts['draft'] ?? 0;
         $translated = $counts['translated'] ?? 0;
-        $approved = $counts['approved'] ?? 0;
         $unused = $counts['unused'] ?? 0;
         
 
@@ -940,9 +940,8 @@ class TranslationsService extends Component
         $stats = [
             'total' => $total,
             'pending' => $pending,
-            'aiDraft' => $aiDraft,
+            'draft' => $draft,
             'translated' => $translated,
-            'approved' => $approved,
             'unused' => $unused,
             'formie' => $formieCount,
             'site' => $siteCount,

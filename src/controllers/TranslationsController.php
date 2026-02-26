@@ -11,6 +11,7 @@
 namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
+use craft\helpers\Db;
 use craft\web\Controller;
 use lindemannrock\base\helpers\CpNavHelper;
 use lindemannrock\translationmanager\records\TranslationRecord;
@@ -174,6 +175,16 @@ class TranslationsController extends Controller
         }
 
         $translation->translation = $translationText;
+        $translation->status = $this->resolveStatusForSave($translation, $translationText);
+        $translation->translationOrigin = 'manual';
+        $translation->createdByUserId = Craft::$app->getUser()->getId();
+        if ($translation->status === 'draft' || $translationText === '') {
+            $translation->reviewedByUserId = null;
+            $translation->reviewedAt = null;
+        } else {
+            $translation->reviewedByUserId = Craft::$app->getUser()->getId();
+            $translation->reviewedAt = Db::prepareDateForDb(new \DateTime());
+        }
         
         if (TranslationManager::getInstance()->translations->saveTranslation($translation)) {
             // Export if auto-export is enabled
@@ -237,6 +248,16 @@ class TranslationsController extends Controller
                 }
 
                 $translation->translation = $translationText;
+                $translation->status = $this->resolveStatusForSave($translation, $translationText);
+                $translation->translationOrigin = 'manual';
+                $translation->createdByUserId = Craft::$app->getUser()->getId();
+                if ($translation->status === 'draft' || $translationText === '') {
+                    $translation->reviewedByUserId = null;
+                    $translation->reviewedAt = null;
+                } else {
+                    $translation->reviewedByUserId = Craft::$app->getUser()->getId();
+                    $translation->reviewedAt = Db::prepareDateForDb(new \DateTime());
+                }
                 if (TranslationManager::getInstance()->translations->saveTranslation($translation)) {
                     $saved++;
                     
@@ -299,5 +320,27 @@ class TranslationsController extends Controller
             'success' => true,
             'deleted' => $deleted,
         ]);
+    }
+
+    /**
+     * Resolve target status on manual save based on workflow settings + permissions.
+     */
+    private function resolveStatusForSave(TranslationRecord $translation, string $translationText): string
+    {
+        if ($translation->status === 'unused') {
+            return 'unused';
+        }
+
+        if (trim($translationText) === '') {
+            return 'pending';
+        }
+
+        $settings = TranslationManager::getInstance()->getSettings();
+        if (!$settings->requireApproval) {
+            return 'translated';
+        }
+
+        $canApprove = Craft::$app->getUser()->checkPermission('translationManager:approveTranslations');
+        return $canApprove ? 'translated' : 'draft';
     }
 }

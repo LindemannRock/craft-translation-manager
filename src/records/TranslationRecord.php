@@ -25,6 +25,10 @@ use craft\db\ActiveRecord;
  * @property int $siteId Legacy - kept for backwards compatibility
  * @property string|null $language Language code (e.g., 'en-US', 'ar', 'fr')
  * @property string $status
+ * @property string $translationOrigin
+ * @property int|null $createdByUserId
+ * @property int|null $reviewedByUserId
+ * @property string|null $reviewedAt
  * @property int $usageCount
  * @property string|null $lastUsed
  * @property string|null $dateCreated
@@ -45,14 +49,17 @@ class TranslationRecord extends ActiveRecord
             [['source', 'sourceHash', 'context', 'category', 'translationKey', 'status', 'siteId'], 'required'],
             [['source', 'translationKey', 'translation'], 'string'],
             [['siteId'], 'integer', 'min' => 1],
+            [['createdByUserId', 'reviewedByUserId'], 'integer'],
             [['sourceHash'], 'string', 'max' => 32],
             [['context'], 'string', 'max' => 255],
             [['category'], 'string', 'max' => 50],
             [['language'], 'string', 'max' => 12],
-            [['status'], 'in', 'range' => ['pending', 'ai_draft', 'translated', 'approved', 'unused']],
+            [['status'], 'in', 'range' => ['pending', 'draft', 'translated', 'unused']],
+            [['translationOrigin'], 'in', 'range' => ['system', 'ai', 'manual', 'import']],
             [['usageCount'], 'integer', 'min' => 0],
             [['usageCount'], 'default', 'value' => 1],
             [['status'], 'default', 'value' => 'pending'],
+            [['translationOrigin'], 'default', 'value' => 'system'],
             [['category'], 'default', 'value' => 'messages'],
         ];
     }

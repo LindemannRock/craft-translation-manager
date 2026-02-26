@@ -122,6 +122,11 @@ class Settings extends Model
     public bool $showContext = false;
 
     /**
+     * @var bool Whether translation changes require an approver before becoming translated
+     */
+    public bool $requireApproval = false;
+
+    /**
      * @var string The logging level for the plugin
      */
     public string $logLevel = 'error';
@@ -257,7 +262,7 @@ class Settings extends Model
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
             [['enableFormieIntegration', 'enableSiteTranslations', 'autoExport',
               'showContext', 'enableSuggestions', 'autoSaveEnabled', 'backupEnabled',
-              'backupOnImport', 'enableAiTranslations', ], 'boolean'],
+              'backupOnImport', 'enableAiTranslations', 'requireApproval', ], 'boolean'],
             [['skipPatterns', 'excludeFormHandlePatterns', 'translationCategories', 'localeMapping'], 'safe'],
             [['localeMapping'], 'validateLocaleMapping'],
             [['backupRetentionDays'], 'integer', 'min' => 0, 'max' => 365],
@@ -283,6 +288,7 @@ class Settings extends Model
             'autoSaveEnabled' => 'Enable Auto-Save',
             'autoSaveDelay' => 'Auto-Save Delay',
             'showContext' => 'Show Context',
+            'requireApproval' => 'Require Approval',
             'skipPatterns' => 'Skip Patterns',
             'excludeFormHandlePatterns' => 'Exclude Form Handle Patterns',
             'enableAiTranslations' => 'Enable AI Translations',
@@ -945,6 +951,7 @@ class Settings extends Model
             'enableSiteTranslations',
             'autoExport',
             'showContext',
+            'requireApproval',
             'enableSuggestions',
             'autoSaveEnabled',
             'backupEnabled',
