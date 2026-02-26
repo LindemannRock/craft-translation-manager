@@ -122,6 +122,10 @@ class ExportController extends Controller
             if ($statusParam && $statusParam !== 'all') {
                 $criteria['status'] = $statusParam;
             }
+            $originParam = $request->getParam('origin') ?: $request->getBodyParam('origin');
+            if ($originParam && $originParam !== 'all') {
+                $criteria['origin'] = $originParam;
+            }
             $searchParam = $request->getParam('search') ?: $request->getBodyParam('search');
             if ($searchParam) {
                 $criteria['search'] = $searchParam;
@@ -142,9 +146,7 @@ class ExportController extends Controller
             $translations = $translationsService->getTranslations($criteria);
             
             // If no translations found, still export empty CSV with headers
-            $headers = $settings->showContext
-                ? ['Translation Key', 'Translation', 'Category', 'Type', 'Context', 'Status', 'Language']
-                : ['Translation Key', 'Translation', 'Category', 'Type', 'Status', 'Language'];
+            $headers = ['Translation Key', 'Translation', 'Category', 'Type', 'Context', 'Status', 'Language'];
 
             $rows = [];
             foreach ($translations as $translation) {
@@ -159,9 +161,7 @@ class ExportController extends Controller
                     'type' => $typeLabel,
                 ];
 
-                if ($settings->showContext) {
-                    $row['context'] = $context;
-                }
+                $row['context'] = $context;
 
                 $row['status'] = $translation['status'] ?? '';
                 $row['language'] = $translation['language'] ?? '';
@@ -194,6 +194,9 @@ class ExportController extends Controller
             }
             if ($statusParam && $statusParam !== 'all') {
                 $filenameParts[] = $this->sanitizeFilenamePart($statusParam);
+            }
+            if ($originParam && $originParam !== 'all') {
+                $filenameParts[] = $this->sanitizeFilenamePart($originParam);
             }
 
             $filename = ExportHelper::filename($settings, $filenameParts, 'csv');
@@ -245,9 +248,7 @@ class ExportController extends Controller
         }
 
         $settings = TranslationManager::$plugin->getSettings();
-        $headers = $settings->showContext
-            ? ['Translation Key', 'Translation', 'Category', 'Type', 'Context', 'Status', 'Language']
-            : ['Translation Key', 'Translation', 'Category', 'Type', 'Status', 'Language'];
+        $headers = ['Translation Key', 'Translation', 'Category', 'Type', 'Context', 'Status', 'Language'];
 
         $translationsService = TranslationManager::getInstance()->translations;
         $rows = [];
@@ -271,9 +272,7 @@ class ExportController extends Controller
                 'type' => $typeLabel,
             ];
 
-            if ($settings->showContext) {
-                $row['context'] = $context;
-            }
+            $row['context'] = $context;
 
             $row['status'] = $translation->status ?? '';
             $row['language'] = $translation->language ?? '';
