@@ -82,7 +82,7 @@
     {% if hasNavigation %}
         {% set navButtons = [] %}
         {% if canViewTranslations %}
-            {% set navButtons = navButtons|merge([{type: 'link', label: 'Manage Translations'|t('translation-manager'), url: url('translation-manager', {siteId: currentSiteId})}]) %}
+            {% set navButtons = navButtons|merge([{type: 'link', label: 'Manage Translations'|t('translation-manager'), url: url('translation-manager', {language: stats.siteInfo.language ?? craft.app.sites.currentSite.language})}]) %}
         {% endif %}
         {% if canImportExport %}
             {% set navButtons = navButtons|merge([{type: 'link', label: 'Manage Import/Export'|t('translation-manager'), url: url('translation-manager/import-export')}]) %}

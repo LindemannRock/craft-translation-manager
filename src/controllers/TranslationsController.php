@@ -71,15 +71,8 @@ class TranslationsController extends Controller
         $search = $request->getParam('search', '');
         $sort = $request->getParam('sort', 'translationKey');
 
-        // Get language selection (or fall back to siteId for backwards compatibility)
+        // Get language selection
         $language = $request->getParam('language');
-        $siteId = $request->getParam('siteId'); // Legacy support
-
-        if (!$language && $siteId) {
-            // Convert legacy siteId to language
-            $site = Craft::$app->getSites()->getSiteById($siteId);
-            $language = $site?->language;
-        }
 
         if (!$language) {
             // Default to current site's language
