@@ -114,7 +114,6 @@ class Install extends Migration
                 'itemsPerPage' => $this->integer()->notNull()->defaultValue(100),
                 'autoSaveEnabled' => $this->boolean()->notNull()->defaultValue(false),
                 'autoSaveDelay' => $this->integer()->notNull()->defaultValue(2),
-                'showContext' => $this->boolean()->notNull()->defaultValue(true),
                 'requireApproval' => $this->boolean()->notNull()->defaultValue(false),
                 'enableSuggestions' => $this->boolean()->notNull()->defaultValue(false),
                 'backupEnabled' => $this->boolean()->defaultValue(true),

@@ -319,7 +319,6 @@ class ExportService extends Component
     public function exportSelected(array $ids): string
     {
         $translationsService = TranslationManager::getInstance()->translations;
-        $settings = TranslationManager::getInstance()->getSettings();
 
         $count = count($ids);
         $this->logInfo("Exporting selected translations", ['count' => $count]);
@@ -327,12 +326,7 @@ class ExportService extends Component
         // Build CSV content with UTF-8 BOM for Excel compatibility
         $csv = "\xEF\xBB\xBF"; // UTF-8 BOM
 
-        // Build header based on showContext setting
-        if ($settings->showContext) {
-            $csv .= "Translation Key,Translation,Category,Type,Context,Status,Language\n";
-        } else {
-            $csv .= "Translation Key,Translation,Category,Type,Status,Language\n";
-        }
+        $csv .= "Translation Key,Translation,Category,Type,Context,Status,Language\n";
 
         foreach ($ids as $id) {
             $translation = $translationsService->getTranslationById($id);
@@ -344,12 +338,8 @@ class ExportService extends Component
                 $type = strpos($translation->context, 'formie.') === 0 ? TranslationManager::getFormiePluginName() : 'Site';
                 $language = $translation->language ?? 'unknown';
 
-                if ($settings->showContext) {
-                    $context = $this->sanitizeForCsv($translation->context);
-                    $csv .= "\"{$translationKey}\",\"{$translationText}\",\"{$category}\",\"{$type}\",\"{$context}\",\"{$translation->status}\",\"{$language}\"\n";
-                } else {
-                    $csv .= "\"{$translationKey}\",\"{$translationText}\",\"{$category}\",\"{$type}\",\"{$translation->status}\",\"{$language}\"\n";
-                }
+                $context = $this->sanitizeForCsv($translation->context);
+                $csv .= "\"{$translationKey}\",\"{$translationText}\",\"{$category}\",\"{$type}\",\"{$context}\",\"{$translation->status}\",\"{$language}\"\n";
             }
         }
 

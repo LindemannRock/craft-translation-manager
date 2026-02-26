@@ -117,11 +117,6 @@ class Settings extends Model
 
 
     /**
-     * @var bool Whether to show the translation context in the CP interface
-     */
-    public bool $showContext = false;
-
-    /**
      * @var bool Whether translation changes require an approver before becoming translated
      */
     public bool $requireApproval = false;
@@ -261,7 +256,7 @@ class Settings extends Model
             [['itemsPerPage'], 'integer', 'min' => 10, 'max' => 500],
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
             [['enableFormieIntegration', 'enableSiteTranslations', 'autoExport',
-              'showContext', 'enableSuggestions', 'autoSaveEnabled', 'backupEnabled',
+              'enableSuggestions', 'autoSaveEnabled', 'backupEnabled',
               'backupOnImport', 'enableAiTranslations', 'requireApproval', ], 'boolean'],
             [['skipPatterns', 'excludeFormHandlePatterns', 'translationCategories', 'localeMapping'], 'safe'],
             [['localeMapping'], 'validateLocaleMapping'],
@@ -287,7 +282,6 @@ class Settings extends Model
             'itemsPerPage' => 'Items Per Page',
             'autoSaveEnabled' => 'Enable Auto-Save',
             'autoSaveDelay' => 'Auto-Save Delay',
-            'showContext' => 'Show Context',
             'requireApproval' => 'Require Approval',
             'skipPatterns' => 'Skip Patterns',
             'excludeFormHandlePatterns' => 'Exclude Form Handle Patterns',
@@ -950,7 +944,6 @@ class Settings extends Model
             'enableFormieIntegration',
             'enableSiteTranslations',
             'autoExport',
-            'showContext',
             'requireApproval',
             'enableSuggestions',
             'autoSaveEnabled',
