@@ -53,6 +53,11 @@
                     {{ 'Integrations'|t('translation-manager') }}
                 </a>
             </li>
+            <li>
+                <a href="{{ url('translation-manager/settings/ai') }}" {% if selectedSettingsItem == 'ai' %}class="sel"{% endif %} data-nav-item="ai">
+                    {{ 'AI Translation'|t('translation-manager') }}
+                </a>
+            </li>
         </ul>
     </nav>
 {% endblock %}

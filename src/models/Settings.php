@@ -144,6 +144,31 @@ class Settings extends Model
     public array $integrationSettings = [];
 
     /**
+     * @var bool Whether AI-powered translation should be enabled
+     */
+    public bool $enableAiTranslations = false;
+
+    /**
+     * @var string AI provider handle (openai|gemini)
+     */
+    public string $aiProvider = 'openai';
+
+    /**
+     * @var string|null OpenAI API key (direct key or env var like $OPENAI_API_KEY)
+     */
+    public ?string $openAiApiKey = null;
+
+    /**
+     * @var string|null Gemini API key (direct key or env var like $GEMINI_API_KEY)
+     */
+    public ?string $geminiApiKey = null;
+
+    /**
+     * @var string|null Anthropic API key (direct key or env var like $ANTHROPIC_API_KEY)
+     */
+    public ?string $anthropicApiKey = null;
+
+    /**
      * @var array Locale mapping configuration
      * Maps regional locale variants to base locales (e.g., en-US -> en, fr-CA -> fr)
      * Format: [['source' => 'en-US', 'destination' => 'en', 'enabled' => true], ...]
@@ -211,14 +236,17 @@ class Settings extends Model
             [['exportPath'], 'validateExportPath'],
             [['backupPath'], 'validateBackupPath'],
             [['backupVolumeUid'], 'string'],
+            [['openAiApiKey', 'geminiApiKey', 'anthropicApiKey'], 'string'],
             [['itemsPerPage'], 'integer', 'min' => 10, 'max' => 500],
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
             [['enableFormieIntegration', 'enableSiteTranslations', 'autoExport',
-              'showContext', 'enableSuggestions', 'autoSaveEnabled', 'backupEnabled', 'backupOnImport', ], 'boolean'],
+              'showContext', 'enableSuggestions', 'autoSaveEnabled', 'backupEnabled',
+              'backupOnImport', 'enableAiTranslations', ], 'boolean'],
             [['skipPatterns', 'excludeFormHandlePatterns', 'translationCategories', 'localeMapping'], 'safe'],
             [['localeMapping'], 'validateLocaleMapping'],
             [['backupRetentionDays'], 'integer', 'min' => 0, 'max' => 365],
             [['backupSchedule'], 'in', 'range' => ['manual', 'daily', 'weekly']],
+            [['aiProvider'], 'in', 'range' => ['openai', 'gemini', 'anthropic']],
             [['logLevel'], 'in', 'range' => ['debug', 'info', 'warning', 'error']],
             [['logLevel'], 'validateLogLevel'],
         ];
@@ -241,6 +269,11 @@ class Settings extends Model
             'showContext' => 'Show Context',
             'skipPatterns' => 'Skip Patterns',
             'excludeFormHandlePatterns' => 'Exclude Form Handle Patterns',
+            'enableAiTranslations' => 'Enable AI Translations',
+            'aiProvider' => 'AI Provider',
+            'openAiApiKey' => 'OpenAI API Key',
+            'geminiApiKey' => 'Gemini API Key',
+            'anthropicApiKey' => 'Anthropic API Key',
             'enableSuggestions' => 'Enable Translation Suggestions',
             'backupEnabled' => 'Enable Backups',
             'backupRetentionDays' => 'Backup Retention Days',
@@ -851,6 +884,7 @@ class Settings extends Model
             'backupOnImport',
             'captureMissingTranslations',
             'captureMissingOnlyDevMode',
+            'enableAiTranslations',
         ];
     }
 

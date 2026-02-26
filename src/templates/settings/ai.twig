@@ -1,0 +1,145 @@
+{% extends "translation-manager/_layouts/settings" %}
+{% set title = "AI Translation"|t('translation-manager') %}
+{% set fullPageForm = true %}
+{% set selectedSettingsItem = 'ai' %}
+
+{% set crumbs = [
+    {
+        label: translationHelper.fullName|t('translation-manager'),
+        url: url('translation-manager'),
+    },
+    {
+        label: 'Settings'|t('translation-manager'),
+        url: url('translation-manager/settings'),
+    },
+    {
+        label: 'AI Translation'|t('translation-manager'),
+        url: url('translation-manager/settings/ai'),
+    },
+] %}
+
+{% import "_includes/forms" as forms %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        {{ actionInput('translation-manager/settings/save') }}
+        {{ redirectInput('translation-manager/settings/ai') }}
+        {{ hiddenInput('section', 'ai') }}
+
+        <h2 style="margin-top: 0;">{{ "AI Translation Provider"|t('translation-manager') }}</h2>
+
+        <p class="light" style="margin-bottom: 24px;">
+            {{ "Configure provider settings for AI-assisted translation workflows."|t('translation-manager') }}
+        </p>
+
+        {{ forms.lightswitchField({
+            label: "Enable AI Translations"|t('translation-manager'),
+            instructions: "Allow translation jobs to use an AI provider (provider-specific jobs will be added in a later step)."|t('translation-manager'),
+            id: 'enableAiTranslations',
+            name: 'settings[enableAiTranslations]',
+            on: settings.enableAiTranslations,
+            toggle: 'ai-provider-settings',
+            disabled: settings.isOverriddenByConfig('enableAiTranslations'),
+            warning: settings.isOverriddenByConfig('enableAiTranslations') ?
+                "This is being overridden by the <code>enableAiTranslations</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+        }) }}
+
+        <div id="ai-provider-settings" class="{{ not settings.enableAiTranslations ? 'hidden' }}">
+            {{ forms.selectField({
+                label: "Provider"|t('translation-manager'),
+                instructions: "Choose which AI provider should be used for translation jobs."|t('translation-manager'),
+                id: 'aiProvider',
+                name: 'settings[aiProvider]',
+                value: settings.aiProvider ?? 'openai',
+                options: [
+                    { value: 'openai', label: 'OpenAI (GPT/Codex-family models)' },
+                    { value: 'gemini', label: 'Google Gemini' },
+                    { value: 'anthropic', label: 'Anthropic Claude' },
+                ],
+                disabled: settings.isOverriddenByConfig('aiProvider'),
+                warning: settings.isOverriddenByConfig('aiProvider') ?
+                    "This is being overridden by the <code>aiProvider</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+            }) }}
+
+            <div id="provider-openai" class="{{ (settings.aiProvider ?? 'openai') != 'openai' ? 'hidden' }}">
+                {{ forms.autosuggestField({
+                    label: "OpenAI API Key"|t('translation-manager'),
+                    instructions: "Direct key or environment variable (for example <code>$OPENAI_API_KEY</code>)."|t('translation-manager')|raw,
+                    id: 'openAiApiKey',
+                    name: 'settings[openAiApiKey]',
+                    value: settings.openAiApiKey ?? '',
+                    suggestEnvVars: true,
+                    disabled: settings.isOverriddenByConfig('openAiApiKey'),
+                    warning: settings.isOverriddenByConfig('openAiApiKey') ?
+                        "This is being overridden by the <code>openAiApiKey</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                }) }}
+            </div>
+
+            <div id="provider-gemini" class="{{ (settings.aiProvider ?? 'openai') != 'gemini' ? 'hidden' }}">
+                {{ forms.autosuggestField({
+                    label: "Gemini API Key"|t('translation-manager'),
+                    instructions: "Direct key or environment variable (for example <code>$GEMINI_API_KEY</code>)."|t('translation-manager')|raw,
+                    id: 'geminiApiKey',
+                    name: 'settings[geminiApiKey]',
+                    value: settings.geminiApiKey ?? '',
+                    suggestEnvVars: true,
+                    disabled: settings.isOverriddenByConfig('geminiApiKey'),
+                    warning: settings.isOverriddenByConfig('geminiApiKey') ?
+                        "This is being overridden by the <code>geminiApiKey</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                    }) }}
+            </div>
+
+            <div id="provider-anthropic" class="{{ (settings.aiProvider ?? 'openai') != 'anthropic' ? 'hidden' }}">
+                {{ forms.autosuggestField({
+                    label: "Anthropic API Key"|t('translation-manager'),
+                    instructions: "Direct key or environment variable (for example <code>$ANTHROPIC_API_KEY</code>)."|t('translation-manager')|raw,
+                    id: 'anthropicApiKey',
+                    name: 'settings[anthropicApiKey]',
+                    value: settings.anthropicApiKey ?? '',
+                    suggestEnvVars: true,
+                    disabled: settings.isOverriddenByConfig('anthropicApiKey'),
+                    warning: settings.isOverriddenByConfig('anthropicApiKey') ?
+                        "This is being overridden by the <code>anthropicApiKey</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                }) }}
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">{{ "Save Settings"|t('translation-manager') }}</button>
+        </div>
+
+    </form>
+
+    <script>
+        (() => {
+            const providerSelect = document.getElementById('aiProvider');
+            const openAi = document.getElementById('provider-openai');
+            const gemini = document.getElementById('provider-gemini');
+            const anthropic = document.getElementById('provider-anthropic');
+
+            const toggleProviderSections = () => {
+                const provider = providerSelect?.value || 'openai';
+
+                if (openAi) {
+                    openAi.classList.toggle('hidden', provider !== 'openai');
+                }
+
+                if (gemini) {
+                    gemini.classList.toggle('hidden', provider !== 'gemini');
+                }
+
+                if (anthropic) {
+                    anthropic.classList.toggle('hidden', provider !== 'anthropic');
+                }
+            };
+
+            if (providerSelect) {
+                providerSelect.addEventListener('change', toggleProviderSections);
+                toggleProviderSections();
+            }
+        })();
+    </script>
+
+    {% include 'lindemannrock-base/_components/plugin-credit' %}
+{% endblock %}

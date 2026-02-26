@@ -171,6 +171,20 @@ class SettingsController extends Controller
     }
 
     /**
+     * AI translation settings page
+     *
+     * @return Response
+     */
+    public function actionAi(): Response
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+
+        return $this->renderTemplate('translation-manager/settings/ai', [
+            'settings' => $settings,
+        ]);
+    }
+
+    /**
      * Auto-capture settings page
      *
      * @return Response
@@ -485,7 +499,7 @@ class SettingsController extends Controller
      */
     private function _validSettingsSection(string $section): string
     {
-        $allowed = ['general', 'generation', 'backup', 'sources', 'interface', 'locale-mapping', 'integrations', 'capture'];
+        $allowed = ['general', 'generation', 'backup', 'sources', 'interface', 'locale-mapping', 'integrations', 'ai', 'capture'];
 
         return in_array($section, $allowed, true) ? $section : 'general';
     }

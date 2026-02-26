@@ -54,6 +54,14 @@ return [
         // Formie Integration
         'enableFormieIntegration' => true,
 
+        // AI Translation Provider
+        // Controls provider selection for AI-assisted translation workflows
+        'enableAiTranslations' => false,
+        'aiProvider' => 'openai',      // Options: 'openai', 'gemini', 'anthropic'
+        'openAiApiKey' => null,        // Direct key or env var, e.g. '$OPENAI_API_KEY'
+        'geminiApiKey' => null,        // Direct key or env var, e.g. '$GEMINI_API_KEY'
+        'anthropicApiKey' => null,     // Direct key or env var, e.g. '$ANTHROPIC_API_KEY'
+
         // Form Exclusion Patterns
         // Forms with handles OR titles containing these patterns will be skipped entirely (case-insensitive)
         // Useful for excluding language-specific duplicates like 'booking-ar' or 'Contact Form (Ar)'
