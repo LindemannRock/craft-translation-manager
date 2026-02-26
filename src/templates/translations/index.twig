@@ -1,17 +1,19 @@
-{% extends "translation-manager/_layouts/cp" %}
-{% set title = "Translations" %}
-{% set fullPageForm = false %}
-{% set selectedSubnavItem = 'translations' %}
+{% extends 'lindemannrock-base/_layouts/cp-table' %}
 
-{# Set up breadcrumbs with language switcher #}
-{% set crumbs = [] %}
+{% set plugin = craft.app.plugins.getPlugin('translation-manager') %}
+{% set settings = plugin.settings %}
 
-{# Language switcher (first item) - shows unique languages across all sites #}
-{# Filter out mapped source locales (e.g., if en-US → en, don't show en-US) #}
+{% set canEditTranslations = currentUser.can('translationManager:editTranslations') %}
+{% set canApproveTranslations = currentUser.can('translationManager:approveTranslations') %}
+{% set canDeleteTranslations = currentUser.can('translationManager:deleteTranslations') %}
+{% set canExportTranslations = currentUser.can('translationManager:exportTranslations') %}
+
+{% set showTypeCol = settings.enableFormieIntegration and settings.enableSiteTranslations %}
+{% set showCategoryCol = allCategories|length > 1 %}
+
+{# Language switcher in crumbs #}
 {% set activeLocaleMapping = settings.getActiveLocaleMapping() %}
 {% set mappedSourceLocales = activeLocaleMapping|keys %}
-
-{# Map currentLanguage to destination if it's a mapped source #}
 {% if currentLanguage in mappedSourceLocales %}
     {% set currentLanguage = activeLocaleMapping[currentLanguage] %}
 {% endif %}
@@ -23,18 +25,18 @@
     {% endif %}
 {% endfor %}
 
+{% set crumbs = [] %}
 {% if filteredLanguages|length > 1 %}
-    {# Get language menu items #}
     {% set languageMenuItems = [] %}
     {% for lang in filteredLanguages %}
         {% set languageMenuItems = languageMenuItems|merge([{
             label: lang|upper,
-            url: url('translation-manager/translations', {language: lang, status: status, type: type, category: category, search: search, sort: sort, dir: dir}),
+            url: url('translation-manager/translations', {language: lang, status: status, type: type, origin: origin, category: category, search: search, sort: sort, dir: dir}),
             selected: lang == currentLanguage
         }]) %}
     {% endfor %}
 
-    {% set crumbs = [{
+    {% set crumbs = crumbs|merge([{
         id: 'language-crumb',
         icon: 'language',
         label: currentLanguage|upper,
@@ -42,11 +44,9 @@
             items: languageMenuItems,
             label: 'Select language'|t('translation-manager')
         }
-    }] %}
+    }]) %}
 {% endif %}
 
-{# Main navigation #}
-{% set plugin = craft.app.plugins.getPlugin('translation-manager') %}
 {% set crumbs = crumbs|merge([
     {
         label: translationHelper.fullName|t('translation-manager'),
@@ -54,119 +54,132 @@
     },
 ]) %}
 
-{% block toolbar %}
-    <div id="toolbar" class="flex">
-        <div class="flex-grow">
-            <form method="get" action="{{ url('translation-manager') }}">
-                {# Preserve other parameters #}
-                <input type="hidden" name="language" value="{{ currentLanguage }}">
-                <input type="hidden" name="type" value="{{ type }}">
-                <input type="hidden" name="category" value="{{ category }}">
-                <input type="hidden" name="status" value="{{ status }}">
-                <input type="hidden" name="sort" value="{{ sort }}">
-                <input type="hidden" name="dir" value="{{ dir }}">
-                <div class="flex">
-                    <div class="btngroup">
-                        <button type="button" class="btn menubtn statusmenubtn">
-                            <span class="status {{ status == 'all' ? 'all' : (status == 'pending' ? 'orange' : (status == 'draft' ? 'blue' : (status == 'translated' ? 'teal' : (status == 'unused' ? 'gray' : ''))) ) }}"></span>
-                            {% if status == 'all' %}
-                                All
-                            {% elseif status == 'draft' %}
-                                Draft
-                            {% elseif status == 'unused' %}
-                                Unused
-                            {% else %}
-                                {{ status|capitalize }}
-                            {% endif %}
-                        </button>
-                        <div class="menu">
-                            <ul>
-                                <li><a class="{{ status == 'all' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=all&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
-                                    <span class="status all"></span>All
-                                </a></li>
-                                <li><a class="{{ status == 'pending' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=pending&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
-                                    <span class="status orange"></span>Pending
-                                </a></li>
-                                <li><a class="{{ status == 'draft' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=draft&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
-                                    <span class="status blue"></span>Draft
-                                </a></li>
-                                <li><a class="{{ status == 'translated' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=translated&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
-                                    <span class="status teal"></span>Translated
-                                </a></li>
-                                <li><a class="{{ status == 'unused' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=unused&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
-                                    <span class="status gray"></span>Unused
-                                </a></li>
-                                {% if settings.enableFormieIntegration or settings.enableSiteTranslations %}
-                                <li><hr class="padded"></li>
-                                <li class="menu-header">Type</li>
-                                <li><a class="{{ type == 'all' ? 'sel' : '' }}" href="?type=all&status={{ status }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
-                                    <span class="status {{ type == 'all' ? 'pink' : 'disabled' }}"></span>All Types
-                                </a></li>
-                                {% if settings.enableFormieIntegration %}
-                                <li><a class="{{ type == 'forms' ? 'sel' : '' }}" href="?type=forms&status={{ status }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
-                                    <span class="status {{ type == 'forms' ? 'pink' : 'disabled' }}"></span>{{ craft.translationManager.getFormiePluginName() }}
-                                </a></li>
-                                {% endif %}
-                                {% if settings.enableSiteTranslations %}
-                                <li><a class="{{ type == 'site' ? 'sel' : '' }}" href="?type=site&status={{ status }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
-                                    <span class="status {{ type == 'site' ? 'pink' : 'disabled' }}"></span>Site
-                                </a></li>
-                                {% endif %}
-                                {% endif %}
-                            </ul>
-                        </div>
-                    </div>
-                    {# Category filter dropdown #}
-                    {% if allCategories|length > 1 %}
-                    <div class="btngroup">
-                        <button type="button" class="btn menubtn">
-                            <span class="icon" data-icon="tag"></span>
-                            {{ category == 'all' ? 'All Categories' : category|title }}
-                        </button>
-                        <div class="menu">
-                            <ul>
-                                <li><a class="{{ category == 'all' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status={{ status }}&type={{ type }}&category=all&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
-                                    All Categories
-                                </a></li>
-                                <li><hr class="padded"></li>
-                                {% for cat in allCategories %}
-                                <li><a class="{{ category == cat ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status={{ status }}&type={{ type }}&category={{ cat }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
-                                    {{ cat|title }}
-                                </a></li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                    {% endif %}
-                    <div class="search-container texticon flex-grow">
-                        <span class="texticon-icon search icon" aria-hidden="true"></span>
-                        <input type="text"
-                               class="clearable text fullwidth"
-                               name="search"
-                               value="{{ search }}"
-                               placeholder="{{ 'Search'|t('translation-manager') }}"
-                               autocomplete="off"
-                               dir="ltr"
-                               aria-label="Search"
-                               {% if search %}autofocus{% endif %}>
-                        <button type="button" class="clear-btn {{ search ? '' : 'hidden' }}"
-                                title="Clear search"
-                                role="button"
-                                aria-label="Clear search"></button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-{% endblock %}
+{% set groupedFilter = {
+    type: 'status',
+    param: 'status',
+    current: status,
+    label: status == 'all' ? 'All' : (status == 'draft' ? 'Draft' : (status == 'unused' ? 'Unused' : status|capitalize)),
+    groups: [
+        {
+            param: 'status',
+            current: status,
+            options: [
+                { value: 'all', label: 'All', status: 'all' },
+                { value: 'pending', label: 'Pending', statusColor: '#f59e0b' },
+                { value: 'draft', label: 'Draft', statusColor: '#3b82f6' },
+                { value: 'translated', label: 'Translated', statusColor: '#14b8a6' },
+                { value: 'unused', label: 'Unused', statusColor: '#64748b' },
+            ],
+        }
+    ],
+} %}
+
+{% if showTypeCol %}
+    {% set groupedFilter = groupedFilter|merge({
+        groups: groupedFilter.groups|merge([{
+            header: 'Type',
+            param: 'type',
+            current: type,
+            options: [
+                { value: 'all', label: 'All Types', status: 'all' },
+                { value: 'forms', label: craft.translationManager.getFormiePluginName(), statusColor: '#3b82f6' },
+                { value: 'site', label: 'Site', statusColor: '#14b8a6' },
+            ],
+        }])
+    }) %}
+{% endif %}
+
+{% set groupedFilter = groupedFilter|merge({
+    groups: groupedFilter.groups|merge([{
+        header: 'Origin',
+        param: 'origin',
+        current: origin,
+        options: [
+            { value: 'all', label: 'All Origins', status: 'all' },
+            { value: 'ai', label: 'AI', statusColor: '#7c3aed' },
+            { value: 'manual', label: 'Manual', statusColor: '#16a34a' },
+            { value: 'import', label: 'Import', statusColor: '#dc2626' },
+            { value: 'system', label: 'System', statusColor: '#475569' },
+        ],
+    }])
+}) %}
+
+{% set filters = [groupedFilter] %}
+
+{% if showCategoryCol %}
+    {% set categoryOptions = [{ value: 'all', label: 'All Categories' }] %}
+    {% for cat in allCategories %}
+        {% set categoryOptions = categoryOptions|merge([{ value: cat, label: cat|title }]) %}
+    {% endfor %}
+
+    {% set filters = filters|merge([{
+        type: 'dropdown',
+        param: 'category',
+        current: category,
+        label: category == 'all' ? 'All Categories' : category|title,
+        icon: 'tag',
+        options: categoryOptions,
+    }]) %}
+{% endif %}
+
+{% set columns = [] %}
+{% if showTypeCol %}
+    {% set columns = columns|merge([{key: 'type', label: 'Type', sortable: true, width: '90px', hideable: true}]) %}
+{% endif %}
+{% if showCategoryCol %}
+    {% set columns = columns|merge([{key: 'category', label: 'Category', sortable: true, width: '120px', hideable: true}]) %}
+{% endif %}
+{% set columns = columns|merge([
+    {key: 'translationKey', label: 'Translation Key', sortable: true, width: '260px', hideable: true},
+    {key: 'translation', label: 'Translation (' ~ currentLanguage|upper ~ ')', sortable: true},
+    {key: 'status', label: 'Status', sortable: true, width: '110px', hideable: true},
+    {key: 'origin', label: 'Origin', width: '100px', hideable: true},
+]) %}
+{% set columns = columns|merge([{key: 'context', label: 'Context', width: '170px', hideable: true}]) %}
+
+{% set hasAnyGeneratePermission =
+    currentUser.can('translationManager:generateTranslations') or
+    currentUser.can('translationManager:generateAllTranslations') or
+    currentUser.can('translationManager:generateFormieTranslations') or
+    currentUser.can('translationManager:generateSiteTranslations')
+%}
+
+{% set tableConfig = {
+    plugin: {
+        handle: 'translation-manager',
+        name: translationHelper.fullName,
+    },
+    page: {
+        title: 'Translations'|t('translation-manager'),
+        subnav: 'translations',
+        crumbs: crumbs,
+    },
+    filters: filters,
+    search: {
+        placeholder: 'Search'|t('translation-manager'),
+        value: search,
+    },
+    sort: {
+        field: sort,
+        direction: dir,
+    },
+    table: {
+        columns: columns,
+        items: translations,
+        emptyMessage: 'No translations found.'|t('translation-manager'),
+    },
+    pagination: {
+        page: page,
+        limit: limit,
+        totalCount: totalCount,
+        itemLabel: {singular: 'entry', plural: 'entries'},
+    },
+    checkboxes: canEditTranslations or canDeleteTranslations,
+    rowActions: false,
+} %}
 
 {% block content %}
     <style>
-        .tableview table.data {
-            table-layout: fixed;
-            width: 100%;
-        }
-
         .translation-text {
             direction: {{ currentLanguage starts with 'ar' ? 'rtl' : 'ltr' }};
             font-family: system-ui, -apple-system, sans-serif;
@@ -183,473 +196,196 @@
             overflow-y: auto;
         }
 
-
-
-        .page-info {
-            margin: 0 12px;
-            color: #596673;
+        td[data-column='translationKey'] {
+            white-space: pre-wrap;
+            max-width: 260px;
         }
 
-        .context-col,
-        .context-cell {
-            width: 170px;
-            max-width: 170px;
+        td[data-column='translation'] {
+            min-width: 360px;
+        }
+
+        td[data-column='type'],
+        th[data-column='type'] {
+            white-space: nowrap;
+        }
+
+        td[data-column='context'] {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .status-col,
-        .status-cell {
-            width: 95px;
+        tr.tm-unsaved {
+            background-color: #fff4e6;
+            transition: background-color 0.2s ease;
         }
-
-        .origin-col,
-        .origin-cell {
-            width: 90px;
-        }
-
-        .type-col {
-            width: 90px;
-            white-space: nowrap;
-        }
-
-        .type-cell {
-            white-space: nowrap;
-        }
-
-        .category-col {
-            width: 120px;
-        }
-
-        .translation-key-col,
-        .translation-key-cell {
-            width: 260px;
-            max-width: 260px;
-        }
-
-        .translation-col,
-        .translation-cell {
-            width: auto;
-        }
-
-        .status-cell,
-        .origin-cell {
-            white-space: nowrap;
-        }
-
-        /* Checkbox cells */
-        .checkbox-cell {
-            width: 40px !important;
-            text-align: center;
-        }
-
-        /* Pagination styles */
-        .pagination {
-            gap: 4px;
-            align-items: center;
-        }
-
-        /* Menu header styling */
-        .menu-header {
-            font-size: 11px;
-            text-transform: uppercase;
-            color: #7c97b2;
-            padding: 8px 14px 4px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        /* Make gray status more visible in active button */
-        .statusmenubtn .status.gray {
-            background-color: #8c97a3 !important;
-        }
-
     </style>
 
-    <div id="elements" class="elements">
-        <div class="tableview tablepane">
-            {% set showTypeCol = settings.enableFormieIntegration and settings.enableSiteTranslations %}
-            {% set showCategoryCol = allCategories|length > 1 %}
-            {% set showContextCol = settings.showContext %}
-            <table class="data fullwidth">
-                <colgroup>
-                    <col style="width: 40px;">
-                    {% if showTypeCol %}<col style="width: 90px;">{% endif %}
-                    {% if showCategoryCol %}<col style="width: 120px;">{% endif %}
-                    <col style="width: 260px;">
-                    <col>
-                    <col style="width: 110px;">
-                    <col style="width: 100px;">
-                    {% if showContextCol %}<col style="width: 170px;">{% endif %}
-                </colgroup>
-                <thead>
-                    <tr>
-                        <th class="checkbox-cell selectallcontainer">
-                            <div class="checkbox" role="checkbox" tabindex="0" aria-checked="false" aria-label="Select all"></div>
-                        </th>
-                        {% if showTypeCol %}
-                        <th scope="col" data-attribute="type" class="type-col orderable {{ sort == 'type' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'type' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
-                            <button type="button" aria-pressed="{{ sort == 'type' ? 'true' : 'false' }}" data-sort="type">
-                                Type
-                                <div class="spinner"></div>
-                            </button>
-                        </th>
-                        {% endif %}
-                        {% if showCategoryCol %}
-                        <th scope="col" data-attribute="category" class="orderable {{ sort == 'category' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'category' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
-                            <button type="button" aria-pressed="{{ sort == 'category' ? 'true' : 'false' }}" data-sort="category">
-                                Category
-                                <div class="spinner"></div>
-                            </button>
-                        </th>
-                        {% endif %}
-                        <th scope="col" data-attribute="translationKey" class="translation-key-col orderable {{ sort == 'translationKey' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'translationKey' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
-                            <button type="button" aria-pressed="{{ sort == 'translationKey' ? 'true' : 'false' }}" data-sort="translationKey">
-                                Translation Key
-                                <div class="spinner"></div>
-                            </button>
-                        </th>
-                        <th scope="col" data-attribute="translation" class="translation-col orderable {{ sort == 'translation' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'translation' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
-                            <button type="button" aria-pressed="{{ sort == 'translation' ? 'true' : 'false' }}" data-sort="translation">
-                                Translation ({{ currentLanguage|upper }})
-                                <div class="spinner"></div>
-                            </button>
-                        </th>
-                        <th scope="col" data-attribute="status" class="status-col orderable {{ sort == 'status' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'status' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
-                            <button type="button" aria-pressed="{{ sort == 'status' ? 'true' : 'false' }}" data-sort="status">
-                                Status
-                                <div class="spinner"></div>
-                            </button>
-                        </th>
-                        <th scope="col" class="origin-col">Origin</th>
-                        {% if showContextCol %}
-                            <th scope="col" class="context-col">Context</th>
-                        {% endif %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for translation in translations %}
-                        <tr data-id="{{ translation.id }}" class="{{ translation.status == 'unused' ? 'not-used' : '' }}">
-                            <td class="checkbox-cell">
-                                <div class="checkbox" title="Select" tabindex="0" aria-checked="false" aria-label="{{ translation.translationKey }}" role="checkbox"></div>
-                            </td>
-                            {% if showTypeCol %}
-                            <td class="type-cell">
-                                {% if translation.context starts with 'formie.' %}
-                                    <span class="light">{{ craft.translationManager.getFormiePluginName() }}</span>
-                                {% else %}
-                                    <span class="light">Site</span>
-                                {% endif %}
-                            </td>
-                            {% endif %}
-                            {% if showCategoryCol %}
-                            <td><span class="light">{{ translation.category }}</span></td>
-                            {% endif %}
-                            <td class="translation-key-cell" style="white-space: pre-wrap;">{{ translation.translationKey|e }}</td>
-                            <td class="translation-cell">
-                                <textarea class="translation-text" placeholder="{% if currentLanguage starts with 'ar' %}أدخل الترجمة العربية هنا...{% else %}Enter translation for {{ currentLanguage|upper }}...{% endif %}">{{ translation.translation|e }}</textarea>
-                            </td>
-                            <td class="status-cell">
-                                {% set statusMap = {
-                                    'unused': { label: 'Unused', color: 'gray' },
-                                    'pending': { label: 'Pending', color: 'orange' },
-                                    'draft': { label: 'Draft', color: 'blue' },
-                                    'translated': { label: 'Translated', color: 'teal' },
-                                } %}
-                                {% set statusBadge = statusMap[translation.status] ?? { label: translation.status|title, color: 'gray' } %}
-                                {% if translation.status == 'draft' and (translation.translationOrigin ?? '') == 'ai' %}
-                                    {% set statusBadge = statusBadge|merge({ label: 'AI Draft' }) %}
-                                {% endif %}
+    {{ parent() }}
+{% endblock %}
 
-                                {% include 'lindemannrock-base/_components/status-badge' with {
-                                    label: statusBadge.label,
-                                    status: statusBadge.color,
-                                } only %}
-                            </td>
-                            <td class="origin-cell">
-                                {% set originMap = {
-                                    'ai': { label: 'AI', color: '#7c3aed', rgb: '124, 58, 237', text: '#4c1d95' },
-                                    'manual': { label: 'Manual', color: '#16a34a', rgb: '22, 163, 74', text: '#14532d' },
-                                    'import': { label: 'Import', color: '#dc2626', rgb: '220, 38, 38', text: '#7f1d1d' },
-                                    'system': { label: 'System', color: '#475569', rgb: '71, 85, 105', text: '#1e293b' },
-                                } %}
-                                {% set originKey = translation.translationOrigin ?? 'system' %}
-                                {% set originBadge = originMap[originKey] ?? originMap['system'] %}
+{% block tableRow %}
+    {% if showTypeCol %}
+        <td data-column="type" class="lr-hideable-column">
+            {% if item.context starts with 'formie.' %}
+                <span class="light">{{ craft.translationManager.getFormiePluginName() }}</span>
+            {% else %}
+                <span class="light">Site</span>
+            {% endif %}
+        </td>
+    {% endif %}
 
-                                {% include 'lindemannrock-base/_components/status-badge' with {
-                                    label: originBadge.label,
-                                    color: originBadge.color,
-                                    rgb: originBadge.rgb,
-                                    textColor: originBadge.text,
-                                } only %}
-                            </td>
-                            {% if showContextCol %}
-                                <td class="light context-cell" title="{{ translation.context|e }}">{{ translation.context|e }}</td>
-                            {% endif %}
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+    {% if showCategoryCol %}
+        <td data-column="category" class="lr-hideable-column"><span class="light">{{ item.category }}</span></td>
+    {% endif %}
 
-    <div id="footer" class="flex-justify flex">
-        <div id="count-spinner" class="spinner small hidden"></div>
-        <div id="count-container" class="light">
-            <div class="pagination flex">
-                <nav class="flex" aria-label="entry pagination">
-                    <button type="button" class="page-link prev-page {{ page <= 1 ? 'disabled' : '' }}" {{ page <= 1 ? 'disabled' : '' }} title="Previous Page"></button>
-                    <button type="button" class="page-link next-page {{ page >= totalPages ? 'disabled' : '' }}" {{ page >= totalPages ? 'disabled' : '' }} title="Next Page"></button>
-                </nav>
-                <div class="page-info">
-                    {% set endRange = min(offset + limit, totalCount) %}
-                    {% if totalCount == 0 %}
-                        no entries
-                    {% else %}
-                        {{ offset + 1 }} – {{ endRange }} of {{ totalCount }} {{ totalCount == 1 ? 'entry' : 'entries' }}
+    <td data-column="translationKey" class="lr-hideable-column">{{ item.translationKey|e }}</td>
+
+    <td data-column="translation">
+        <textarea class="translation-text" placeholder="{% if currentLanguage starts with 'ar' %}أدخل الترجمة العربية هنا...{% else %}Enter translation for {{ currentLanguage|upper }}...{% endif %}">{{ item.translation|e }}</textarea>
+    </td>
+
+    <td data-column="status" class="lr-hideable-column">
+        {% set statusMap = {
+            'unused': { label: 'Unused', color: 'gray' },
+            'pending': { label: 'Pending', color: 'orange' },
+            'draft': { label: 'Draft', color: 'blue' },
+            'translated': { label: 'Translated', color: 'teal' },
+        } %}
+        {% set statusBadge = statusMap[item.status] ?? { label: item.status|title, color: 'gray' } %}
+        {% if item.status == 'draft' and (item.translationOrigin ?? '') == 'ai' %}
+            {% set statusBadge = statusBadge|merge({ label: 'AI Draft' }) %}
+        {% endif %}
+
+        {% include 'lindemannrock-base/_components/status-badge' with {
+            label: statusBadge.label,
+            status: statusBadge.color,
+        } only %}
+    </td>
+
+    <td data-column="origin" class="lr-hideable-column">
+        {% set originMap = {
+            'ai': { label: 'AI', color: '#7c3aed', rgb: '124, 58, 237', text: '#4c1d95' },
+            'manual': { label: 'Manual', color: '#16a34a', rgb: '22, 163, 74', text: '#14532d' },
+            'import': { label: 'Import', color: '#dc2626', rgb: '220, 38, 38', text: '#7f1d1d' },
+            'system': { label: 'System', color: '#475569', rgb: '71, 85, 105', text: '#1e293b' },
+        } %}
+        {% set originKey = item.translationOrigin ?? 'system' %}
+        {% set originBadge = originMap[originKey] ?? originMap['system'] %}
+
+        {% include 'lindemannrock-base/_components/status-badge' with {
+            label: originBadge.label,
+            color: originBadge.color,
+            rgb: originBadge.rgb,
+            textColor: originBadge.text,
+        } only %}
+    </td>
+
+    <td data-column="context" class="light lr-hideable-column" title="{{ item.context|e }}">{{ item.context|e }}</td>
+{% endblock %}
+
+{% block bulkActions %}
+    {% if canEditTranslations %}
+        <button type="button" class="btn secondary" id="mark-draft-btn">
+            <span id="mark-draft-label">{{ 'Mark Draft'|t('translation-manager') }}</span>
+        </button>
+    {% endif %}
+
+    {% if canApproveTranslations or (canEditTranslations and not settings.requireApproval) %}
+        <button type="button" class="btn secondary" id="mark-translated-btn">
+            <span id="mark-translated-label">{{ 'Mark Translated'|t('translation-manager') }}</span>
+        </button>
+    {% endif %}
+
+    {% if status == 'unused' and canDeleteTranslations %}
+        <button type="button" class="btn secondary" id="delete-selected-btn">
+            <span id="delete-label">{{ 'Delete'|t('translation-manager') }}</span>
+        </button>
+    {% endif %}
+{% endblock %}
+
+{% block extraFooter %}
+    {% if not settings.autoExport and hasAnyGeneratePermission %}
+        <form>
+            <button type="button" class="btn secondary menubtn" data-icon="settings" title="Generate translation files" id="generate-menu-btn"></button>
+            <div class="menu" data-align="right">
+                <ul>
+                    {% if currentUser.can('translationManager:generateAllTranslations') %}
+                        <li><a href="#" id="generate-all-btn">Generate All Files</a></li>
                     {% endif %}
-                </div>
+                    {% if settings.enableFormieIntegration and currentUser.can('translationManager:generateFormieTranslations') %}
+                        <li><a href="#" id="generate-formie-btn">Generate {{ craft.translationManager.getFormiePluginName() }} Files Only</a></li>
+                    {% endif %}
+                    {% if settings.enableSiteTranslations and currentUser.can('translationManager:generateSiteTranslations') %}
+                        <li><a href="#" id="generate-site-btn">Generate {{ settings.translationCategory|title }} Files Only</a></li>
+                    {% endif %}
+                </ul>
             </div>
-        </div>
-        {% set hasAnyGeneratePermission =
-            currentUser.can('translationManager:generateTranslations') or
-            currentUser.can('translationManager:generateAllTranslations') or
-            currentUser.can('translationManager:generateFormieTranslations') or
-            currentUser.can('translationManager:generateSiteTranslations')
-        %}
-        <div id="actions-container" class="{% if not settings.autoExport and hasAnyGeneratePermission %}flex{% else %}hidden{% endif %}">
-            {% if not settings.autoExport and hasAnyGeneratePermission %}
-                <form>
-                    <button type="button" class="btn secondary menubtn" data-icon="settings" title="Generate translation files" id="generate-menu-btn"></button>
-                    <div class="menu" data-align="right">
-                        <ul>
-                            {% if currentUser.can('translationManager:generateAllTranslations') %}
-                            <li><a href="#" id="generate-all-btn">
-                                Generate All Files
-                            </a></li>
-                            {% endif %}
-                            {% if settings.enableFormieIntegration and currentUser.can('translationManager:generateFormieTranslations') %}
-                            <li><a href="#" id="generate-formie-btn">
-                                Generate {{ craft.translationManager.getFormiePluginName() }} Files Only
-                            </a></li>
-                            {% endif %}
-                            {% if settings.enableSiteTranslations and currentUser.can('translationManager:generateSiteTranslations') %}
-                            <li><a href="#" id="generate-site-btn">
-                                Generate {{ settings.translationCategory|title }} Files Only
-                            </a></li>
-                            {% endif %}
-                        </ul>
-                    </div>
-                </form>
-            {% endif %}
-        </div>
-        <div class="flex flex-nowrap">
-            {% set canEditTranslations = currentUser.can('translationManager:editTranslations') %}
-            {% set canApproveTranslations = currentUser.can('translationManager:approveTranslations') %}
-            {% if currentUser.can('translationManager:exportTranslations') %}
-                <button type="button" class="btn" id="export-btn" tabindex="0" aria-expanded="false" title="Export translations as CSV file">Export…</button>
-            {% endif %}
-            {% if canEditTranslations %}
-                <button type="button" class="btn secondary" id="mark-draft-btn" style="display: none;">
-                    <span id="mark-draft-label">{{ 'Mark Draft'|t('translation-manager') }}</span>
-                </button>
-            {% endif %}
-            {% if canApproveTranslations or (canEditTranslations and not settings.requireApproval) %}
-                <button type="button" class="btn secondary" id="mark-translated-btn" style="display: none;">
-                    <span id="mark-translated-label">{{ 'Mark Translated'|t('translation-manager') }}</span>
-                </button>
-            {% endif %}
-            {% if status == 'unused' and currentUser.can('translationManager:deleteTranslations') %}
-                <button type="button" class="btn secondary" id="delete-selected-btn" style="display: none;">
-                    <span id="delete-label">{{ 'Delete'|t('translation-manager') }}</span>
-                </button>
-            {% endif %}
-            {% if currentUser.can('translationManager:editTranslations') %}
-                <button type="button" class="btn submit" id="save-all-btn" tabindex="0">
-                    <div class="gap-xs inline-flex"><div class="label">Save All Changes</div></div>
-                    <div class="spinner spinner-absolute"></div>
-                </button>
-            {% endif %}
-        </div>
-    </div>
+        </form>
+    {% endif %}
 
+    {% if canExportTranslations %}
+        <button type="button" class="btn" id="export-btn" tabindex="0" aria-expanded="false" title="Export translations as CSV file">Export…</button>
+    {% endif %}
+
+    {% if canEditTranslations %}
+        <button type="button" class="btn submit" id="save-all-btn" tabindex="0">
+            <div class="gap-xs inline-flex"><div class="label">Save All Changes</div></div>
+            <div class="spinner spinner-absolute"></div>
+        </button>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
     <script>
-        // Initialize Craft's menu button functionality
-        // Note: Craft may not have ui namespace in newer versions
-        document.querySelectorAll('.menubtn').forEach(btn => {
-            if (typeof Craft !== 'undefined' && Craft.MenuBtn) {
-                new Craft.MenuBtn(btn);
-            } else if (typeof Garnish !== 'undefined' && Garnish.MenuBtn) {
-                new Garnish.MenuBtn(btn);
+        function getSelectedIds() {
+            if (window.lrTableSelection && typeof window.lrTableSelection.getSelectedIds === 'function') {
+                return window.lrTableSelection.getSelectedIds();
             }
-        });
-
-        // Clear search button
-        const clearBtn = document.querySelector('.clear-btn');
-        if (clearBtn) {
-            clearBtn.addEventListener('click', function() {
-                const searchInput = this.previousElementSibling;
-                searchInput.value = '';
-                searchInput.form.submit();
-            });
+            return [];
         }
 
-        // Handle search form submission on Enter key
-        const searchInput = document.querySelector('input[name="search"]');
-        if (searchInput) {
-            searchInput.addEventListener('keyup', function(e) {
-                if (e.key === 'Enter') {
-                    this.form.submit();
-                }
-            });
-
-            // Also submit on blur if value changed
-            let originalValue = searchInput.value;
-            searchInput.addEventListener('blur', function() {
-                if (this.value !== originalValue) {
-                    this.form.submit();
-                }
-            });
-        }
-
-        // Sort buttons
-        document.querySelectorAll('th.orderable button').forEach(button => {
-            button.addEventListener('click', function() {
-                const sortField = this.dataset.sort;
-                const currentSort = '{{ sort }}';
-                const currentDir = '{{ dir }}';
-                let newDir = 'asc';
-
-                if (sortField === currentSort) {
-                    newDir = currentDir === 'asc' ? 'desc' : 'asc';
-                }
-
-                window.location.href = '?language={{ currentLanguage }}&type={{ type }}&category={{ category }}&status={{ status }}&search={{ search }}&sort=' + sortField + '&dir=' + newDir + '&page=1';
-            });
-        });
-
-        // Pagination buttons
-        document.querySelector('.prev-page:not(.disabled)')?.addEventListener('click', function() {
-            window.location.href = '?language={{ currentLanguage }}&type={{ type }}&category={{ category }}&status={{ status }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}&page={{ page - 1 }}';
-        });
-
-        document.querySelector('.next-page:not(.disabled)')?.addEventListener('click', function() {
-            window.location.href = '?language={{ currentLanguage }}&type={{ type }}&category={{ category }}&status={{ status }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}&page={{ page + 1 }}';
-        });
-
-        // Checkbox functionality
-        const selectAllCheckbox = document.querySelector('.selectallcontainer .checkbox');
-        const checkboxes = document.querySelectorAll('tbody .checkbox');
-        let selectedIds = new Set();
-
-        // Helper to toggle checkbox state
-        function toggleCheckbox(checkbox, checked) {
-            if (checked) {
-                checkbox.classList.add('checked');
-                checkbox.setAttribute('aria-checked', 'true');
-            } else {
-                checkbox.classList.remove('checked');
-                checkbox.setAttribute('aria-checked', 'false');
-            }
-        }
-
-        // Select all functionality
-        selectAllCheckbox.addEventListener('click', function() {
-            const isChecked = !this.classList.contains('checked');
-            toggleCheckbox(this, isChecked);
-
-            checkboxes.forEach(checkbox => {
-                toggleCheckbox(checkbox, isChecked);
-                const id = checkbox.closest('tr').dataset.id;
-                if (isChecked) {
-                    selectedIds.add(id);
-                } else {
-                    selectedIds.delete(id);
-                }
-            });
-
-            updateActionButtons();
-        });
-
-        // Individual checkbox functionality
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('click', function() {
-                const isChecked = !this.classList.contains('checked');
-                toggleCheckbox(this, isChecked);
-
-                const id = this.closest('tr').dataset.id;
-                if (isChecked) {
-                    selectedIds.add(id);
-                } else {
-                    selectedIds.delete(id);
-                }
-
-                // Update select all checkbox
-                const allChecked = selectedIds.size === checkboxes.length;
-                const someChecked = selectedIds.size > 0;
-                toggleCheckbox(selectAllCheckbox, allChecked);
-                if (someChecked && !allChecked) {
-                    selectAllCheckbox.classList.add('indeterminate');
-                } else {
-                    selectAllCheckbox.classList.remove('indeterminate');
-                }
-
-                updateActionButtons();
-            });
-        });
-
-        function updateActionButtons() {
+        function updateActionButtons(count) {
             {% if canEditTranslations %}
-            const markDraftBtn = document.getElementById('mark-draft-btn');
             const markDraftLabel = document.getElementById('mark-draft-label');
-            if (markDraftBtn && markDraftLabel) {
-                const hasSelection = selectedIds.size > 0;
-                markDraftBtn.style.display = hasSelection ? '' : 'none';
-                if (hasSelection) {
-                    markDraftLabel.textContent = `{{ 'Mark Draft'|t('translation-manager') }} (${selectedIds.size})`;
-                }
+            if (markDraftLabel) {
+                markDraftLabel.textContent = count > 0
+                    ? `{{ 'Mark Draft'|t('translation-manager') }} (${count})`
+                    : `{{ 'Mark Draft'|t('translation-manager') }}`;
             }
             {% endif %}
 
             {% if canApproveTranslations or (canEditTranslations and not settings.requireApproval) %}
-            const markTranslatedBtn = document.getElementById('mark-translated-btn');
             const markTranslatedLabel = document.getElementById('mark-translated-label');
-            if (markTranslatedBtn && markTranslatedLabel) {
-                const hasSelection = selectedIds.size > 0;
-                markTranslatedBtn.style.display = hasSelection ? '' : 'none';
-                if (hasSelection) {
-                    markTranslatedLabel.textContent = `{{ 'Mark Translated'|t('translation-manager') }} (${selectedIds.size})`;
-                }
+            if (markTranslatedLabel) {
+                markTranslatedLabel.textContent = count > 0
+                    ? `{{ 'Mark Translated'|t('translation-manager') }} (${count})`
+                    : `{{ 'Mark Translated'|t('translation-manager') }}`;
             }
             {% endif %}
 
-            {% if status == 'unused' and currentUser.can('translationManager:deleteTranslations') %}
-            const deleteBtn = document.getElementById('delete-selected-btn');
+            {% if status == 'unused' and canDeleteTranslations %}
             const deleteLabel = document.getElementById('delete-label');
-
-            if (deleteBtn && deleteLabel) {
-                const hasSelection = selectedIds.size > 0;
-                if (hasSelection) {
-                    deleteBtn.style.display = '';
-                    deleteLabel.textContent = `{{ 'Delete'|t('translation-manager') }} (${selectedIds.size})`;
-                } else {
-                    deleteBtn.style.display = 'none';
-                }
+            if (deleteLabel) {
+                deleteLabel.textContent = count > 0
+                    ? `{{ 'Delete'|t('translation-manager') }} (${count})`
+                    : `{{ 'Delete'|t('translation-manager') }}`;
             }
             {% endif %}
         }
 
-        // Export button
-        {% if currentUser.can('translationManager:exportTranslations') %}
+        document.addEventListener('lr:selectionChanged', function(e) {
+            updateActionButtons(e.detail?.count || 0);
+        });
+        updateActionButtons(0);
+
+        {% if canExportTranslations %}
         document.getElementById('export-btn')?.addEventListener('click', function(e) {
             e.preventDefault();
 
-            if (selectedIds.size > 0) {
-                // Export selected
-                const ids = Array.from(selectedIds);
-
-                // Create and submit a form for download
+            const selectedIds = getSelectedIds();
+            if (selectedIds.length > 0) {
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '{{ actionUrl('translation-manager/export/selected') }}';
@@ -663,34 +399,34 @@
                 const idsInput = document.createElement('input');
                 idsInput.type = 'hidden';
                 idsInput.name = 'ids';
-                idsInput.value = JSON.stringify(ids);
+                idsInput.value = JSON.stringify(selectedIds);
                 form.appendChild(idsInput);
 
                 document.body.appendChild(form);
                 form.submit();
                 document.body.removeChild(form);
             } else {
-                // Export all with current filters
-                // Use the same approach as the settings page which we know works
                 const actionUrl = '{{ actionUrl('translation-manager/export') }}';
                 const type = {{ type|json_encode|raw }};
                 const status = {{ status|json_encode|raw }};
+                const origin = {{ origin|json_encode|raw }};
                 const search = {{ search|json_encode|raw }};
+                const category = {{ category|json_encode|raw }};
 
-                // Build URL manually to avoid encoding issues
                 let url = actionUrl;
                 url += (actionUrl.indexOf('?') === -1 ? '?' : '&') + 'type=' + encodeURIComponent(type);
                 url += '&status=' + encodeURIComponent(status);
+                url += '&origin=' + encodeURIComponent(origin);
                 url += '&search=' + encodeURIComponent(search);
+                url += '&category=' + encodeURIComponent(category);
 
                 window.location.href = url;
             }
         });
         {% endif %}
 
-        // Bulk status actions
         async function bulkSetStatus(status) {
-            const ids = Array.from(selectedIds);
+            const ids = getSelectedIds();
             if (ids.length === 0) {
                 return;
             }
@@ -738,15 +474,13 @@
         });
         {% endif %}
 
-        // Delete selected (only for not used)
-        {% if status == 'unused' and currentUser.can('translationManager:deleteTranslations') %}
-        const deleteBtn = document.getElementById('delete-selected-btn');
-        if (deleteBtn) {
-            deleteBtn.addEventListener('click', function(e) {
+        {% if status == 'unused' and canDeleteTranslations %}
+        document.getElementById('delete-selected-btn')?.addEventListener('click', function(e) {
             e.preventDefault();
-            const ids = Array.from(selectedIds);
-
-            if (ids.length === 0) return;
+            const ids = getSelectedIds();
+            if (ids.length === 0) {
+                return;
+            }
 
             if (!confirm(`Are you sure you want to delete ${ids.length} translation${ids.length > 1 ? 's' : ''}?`)) {
                 return;
@@ -766,22 +500,17 @@
             .then(data => {
                 if (data.success) {
                     Craft.cp.displayNotice(`Deleted ${data.deleted} translations`);
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
+                    setTimeout(() => window.location.reload(), 800);
                 } else {
                     Craft.cp.displayError(data.error || 'Failed to delete translations');
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
+            .catch(() => {
                 Craft.cp.displayError('Failed to delete translations');
             });
-            });
-        }
+        });
         {% endif %}
 
-        // Translation Change Tracker
         class TranslationTracker {
             constructor() {
                 this.unsavedChanges = new Map();
@@ -790,7 +519,6 @@
             }
 
             init() {
-                // Store original values
                 document.querySelectorAll('.translation-text').forEach(textarea => {
                     const id = textarea.closest('tr').dataset.id;
                     this.originalValues.set(id, textarea.value.trim());
@@ -815,15 +543,10 @@
 
             updateUI(id) {
                 const row = document.querySelector(`tr[data-id="${id}"]`);
-
-                if (this.unsavedChanges.has(id)) {
-                    // Light orange/yellow background for unsaved changes
-                    row.style.backgroundColor = '#fff4e6';
-                    row.style.transition = 'background-color 0.2s ease';
-                } else {
-                    // Reset background
-                    row.style.backgroundColor = '';
+                if (!row) {
+                    return;
                 }
+                row.classList.toggle('tm-unsaved', this.unsavedChanges.has(id));
             }
 
             hasUnsavedChanges() {
@@ -841,73 +564,46 @@
         const tracker = new TranslationTracker();
         tracker.init();
 
-        // Update status display
         function updateStatusDisplay(row, status) {
-            const cells = row.querySelectorAll('td');
-            let statusCell = null;
-
-            // Find the cell containing the status-label
-            for (let cell of cells) {
-                if (cell.querySelector('.status-label')) {
-                    statusCell = cell;
-                    break;
-                }
+            const statusCell = row.querySelector('td[data-column="status"]');
+            if (!statusCell) {
+                return;
             }
 
-            if (statusCell) {
-                let statusHtml = '';
-                switch (status) {
-                    case 'translated':
-                        statusHtml = `
-                            <span class="status-label teal">
-                                <span class="status teal"></span>
-                                <span class="status-label-text">Translated</span>
-                            </span>
-                        `;
-                        break;
-                    case 'draft':
-                        statusHtml = `
-                            <span class="status-label blue">
-                                <span class="status blue"></span>
-                                <span class="status-label-text">Draft</span>
-                            </span>
-                        `;
-                        break;
-                    case 'pending':
-                        statusHtml = `
-                            <span class="status-label orange">
-                                <span class="status orange"></span>
-                                <span class="status-label-text">Pending</span>
-                            </span>
-                        `;
-                        break;
-                    case 'unused':
-                        statusHtml = `
-                            <span class="status-label gray">
-                                <span class="status gray"></span>
-                                <span class="status-label-text">Unused</span>
-                            </span>
-                        `;
-                        break;
-                }
+            let statusHtml = '';
+            switch (status) {
+                case 'translated':
+                    statusHtml = '<span class="status-label teal"><span class="status teal"></span><span class="status-label-text">Translated</span></span>';
+                    break;
+                case 'draft':
+                    statusHtml = '<span class="status-label blue"><span class="status blue"></span><span class="status-label-text">Draft</span></span>';
+                    break;
+                case 'pending':
+                    statusHtml = '<span class="status-label orange"><span class="status orange"></span><span class="status-label-text">Pending</span></span>';
+                    break;
+                case 'unused':
+                    statusHtml = '<span class="status-label gray"><span class="status gray"></span><span class="status-label-text">Unused</span></span>';
+                    break;
+            }
 
-                if (statusHtml) {
-                    statusCell.innerHTML = statusHtml;
-                }
+            if (statusHtml) {
+                statusCell.innerHTML = statusHtml;
             }
         }
 
-        // Save individual translation
         async function saveTranslation(id, translationText) {
             if (tracker.savingInProgress.has(id)) {
-                return; // Already saving
+                return;
             }
 
             tracker.savingInProgress.add(id);
             const row = document.querySelector(`tr[data-id="${id}"]`);
-            const textarea = row.querySelector('.translation-text');
+            const textarea = row?.querySelector('.translation-text');
+            if (!row || !textarea) {
+                tracker.savingInProgress.delete(id);
+                return;
+            }
 
-            // Show saving indicator
             textarea.style.opacity = '0.6';
 
             try {
@@ -923,26 +619,25 @@
                 });
 
                 const data = await response.json();
-
-                if (data.success) {
-                    tracker.markSaved(id, translationText);
-
-                    // Update status if provided
-                    if (data.status) {
-                        updateStatusDisplay(row, data.status);
-                    }
-
-                    // Flash green briefly
-                    row.style.backgroundColor = '#d4edda';
-                    setTimeout(() => row.style.backgroundColor = '', 800);
-                } else {
+                if (!data.success) {
                     throw new Error(data.error || 'Failed to save');
                 }
+
+                tracker.markSaved(id, translationText);
+                if (data.status) {
+                    updateStatusDisplay(row, data.status);
+                }
+
+                row.style.backgroundColor = '#d4edda';
+                setTimeout(() => {
+                    row.style.backgroundColor = '';
+                }, 700);
             } catch (error) {
                 console.error('Save error:', error);
-                // Red background for error
                 row.style.backgroundColor = '#fee';
-                setTimeout(() => row.style.backgroundColor = '', 2000);
+                setTimeout(() => {
+                    row.style.backgroundColor = '';
+                }, 1600);
                 Craft.cp.displayError('Failed to save translation');
             } finally {
                 tracker.savingInProgress.delete(id);
@@ -950,27 +645,20 @@
             }
         }
 
-        // Set up event listeners for each textarea
         document.querySelectorAll('.translation-text').forEach(textarea => {
             const row = textarea.closest('tr');
             const id = row.dataset.id;
 
-            // Track changes
             textarea.addEventListener('input', function() {
                 tracker.markChanged(id, this.value);
             });
 
-            // Auto-save on blur if enabled
             textarea.addEventListener('blur', function() {
                 if (tracker.unsavedChanges.has(id) && {{ settings.autoSaveEnabled|json_encode|raw }}) {
-                    // Small delay to show the unsaved state briefly
-                    setTimeout(() => {
-                        saveTranslation(id, this.value);
-                    }, 300);
+                    setTimeout(() => saveTranslation(id, this.value), 250);
                 }
             });
 
-            // Save on Ctrl/Cmd + Enter
             textarea.addEventListener('keydown', function(e) {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                     e.preventDefault();
@@ -981,11 +669,9 @@
             });
         });
 
-        // Save all button - only saves changed items
-        {% if currentUser.can('translationManager:editTranslations') %}
+        {% if canEditTranslations %}
         document.getElementById('save-all-btn')?.addEventListener('click', async function() {
             const unsavedChanges = tracker.getUnsavedChanges();
-
             if (unsavedChanges.length === 0) {
                 Craft.cp.displayNotice('No changes to save');
                 return;
@@ -995,32 +681,28 @@
             btn.disabled = true;
             btn.classList.add('loading');
 
-            // Show which translations we're saving
             Craft.cp.displayNotice(`Saving ${unsavedChanges.length} translation${unsavedChanges.length > 1 ? 's' : ''}...`);
 
-            // Save in batches to avoid timeout
-            const batchSize = 20;
             let saved = 0;
             let failed = 0;
+            const batchSize = 20;
 
             for (let i = 0; i < unsavedChanges.length; i += batchSize) {
                 const batch = unsavedChanges.slice(i, i + batchSize);
-
-                try {
-                    // Save each translation in the batch
-                    const promises = batch.map(({ id, translation }) =>
-                        saveTranslation(id, translation)
-                            .then(() => { saved++; return true; })
-                            .catch(() => { failed++; return false; })
-                    );
-
-                    await Promise.all(promises);
-                } catch (error) {
-                    console.error('Batch save error:', error);
-                }
+                const promises = batch.map(({ id, translation }) =>
+                    saveTranslation(id, translation)
+                        .then(() => {
+                            saved++;
+                            return true;
+                        })
+                        .catch(() => {
+                            failed++;
+                            return false;
+                        })
+                );
+                await Promise.all(promises);
             }
 
-            // Show results
             if (failed === 0) {
                 Craft.cp.displayNotice(`Successfully saved ${saved} translation${saved > 1 ? 's' : ''}`);
             } else {
@@ -1032,7 +714,6 @@
         });
         {% endif %}
 
-        // Save on Ctrl+S / Cmd+S
         document.addEventListener('keydown', function(e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
@@ -1040,7 +721,6 @@
             }
         });
 
-        // Warn before leaving with unsaved changes
         window.addEventListener('beforeunload', function(e) {
             if (tracker.hasUnsavedChanges()) {
                 e.preventDefault();
@@ -1049,26 +729,15 @@
             }
         });
 
-        // Generate files functionality
-        {% if not settings.autoExport and (currentUser.can('translationManager:exportTranslations')) %}
+        {% if not settings.autoExport and hasAnyGeneratePermission %}
         function generateTranslationFiles(type) {
-            let url;
+            let url = '';
             if (type === 'all') {
                 url = '{{ actionUrl('translation-manager/export/files') }}';
             } else if (type === 'formie') {
                 url = '{{ actionUrl('translation-manager/export/formie-files') }}';
             } else if (type === 'site') {
                 url = '{{ actionUrl('translation-manager/export/site-files') }}';
-            }
-
-            console.log('Generating files for:', type);
-            console.log('URL:', url);
-
-            // Show loading spinner
-            const generateAllBtn = document.getElementById('generate-all-btn');
-            if (generateAllBtn) {
-                generateAllBtn.classList.add('loading');
-                generateAllBtn.disabled = true;
             }
 
             fetch(url, {
@@ -1080,56 +749,33 @@
                     'Content-Type': 'application/json'
                 }
             })
-            .then(response => {
-                console.log('Response status:', response.status);
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log('Response data:', data);
                 if (data.success) {
                     Craft.cp.displayNotice(data.message || 'Translation files generated successfully');
                 } else {
                     Craft.cp.displayError(data.error || 'Failed to generate translation files');
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
+            .catch(() => {
                 Craft.cp.displayError('Failed to generate translation files');
-            })
-            .finally(() => {
-                if (generateAllBtn) {
-                    generateAllBtn.classList.remove('loading');
-                    generateAllBtn.disabled = false;
-                }
             });
         }
 
-        // Attach click handlers
-        const generateAllBtn = document.getElementById('generate-all-btn');
-        if (generateAllBtn) {
-            generateAllBtn.addEventListener('click', function() {
-                generateTranslationFiles('all');
-            });
-        }
+        document.getElementById('generate-all-btn')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            generateTranslationFiles('all');
+        });
 
-        const generateFormieBtn = document.getElementById('generate-formie-btn');
-        if (generateFormieBtn) {
-            generateFormieBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                generateTranslationFiles('formie');
-            });
-        }
+        document.getElementById('generate-formie-btn')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            generateTranslationFiles('formie');
+        });
 
-        const generateSiteBtn = document.getElementById('generate-site-btn');
-        if (generateSiteBtn) {
-            generateSiteBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                generateTranslationFiles('site');
-            });
-        }
+        document.getElementById('generate-site-btn')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            generateTranslationFiles('site');
+        });
         {% endif %}
     </script>
 {% endblock %}
