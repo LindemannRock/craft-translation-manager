@@ -149,7 +149,7 @@ class Settings extends Model
     public bool $enableAiTranslations = false;
 
     /**
-     * @var string AI provider handle (openai|gemini)
+     * @var string AI provider handle (openai|gemini|anthropic|mock)
      */
     public string $aiProvider = 'openai';
 
@@ -159,14 +159,29 @@ class Settings extends Model
     public ?string $openAiApiKey = null;
 
     /**
+     * @var string OpenAI model identifier
+     */
+    public string $openAiModel = 'gpt-4o-mini';
+
+    /**
      * @var string|null Gemini API key (direct key or env var like $GEMINI_API_KEY)
      */
     public ?string $geminiApiKey = null;
 
     /**
+     * @var string Gemini model identifier
+     */
+    public string $geminiModel = 'gemini-2.0-flash';
+
+    /**
      * @var string|null Anthropic API key (direct key or env var like $ANTHROPIC_API_KEY)
      */
     public ?string $anthropicApiKey = null;
+
+    /**
+     * @var string Anthropic model identifier
+     */
+    public string $anthropicModel = 'claude-3-haiku-20240307';
 
     /**
      * @var array Locale mapping configuration
@@ -215,7 +230,7 @@ class Settings extends Model
         return [
             'parser' => [
                 'class' => EnvAttributeParserBehavior::class,
-                'attributes' => ['exportPath', 'backupPath'],
+                'attributes' => ['exportPath', 'backupPath', 'openAiApiKey', 'geminiApiKey', 'anthropicApiKey'],
             ],
         ];
     }
@@ -237,6 +252,7 @@ class Settings extends Model
             [['backupPath'], 'validateBackupPath'],
             [['backupVolumeUid'], 'string'],
             [['openAiApiKey', 'geminiApiKey', 'anthropicApiKey'], 'string'],
+            [['openAiModel', 'geminiModel', 'anthropicModel'], 'string', 'max' => 100],
             [['itemsPerPage'], 'integer', 'min' => 10, 'max' => 500],
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
             [['enableFormieIntegration', 'enableSiteTranslations', 'autoExport',
@@ -246,7 +262,7 @@ class Settings extends Model
             [['localeMapping'], 'validateLocaleMapping'],
             [['backupRetentionDays'], 'integer', 'min' => 0, 'max' => 365],
             [['backupSchedule'], 'in', 'range' => ['manual', 'daily', 'weekly']],
-            [['aiProvider'], 'in', 'range' => ['openai', 'gemini', 'anthropic']],
+            [['aiProvider'], 'in', 'range' => ['openai', 'gemini', 'anthropic', 'mock']],
             [['logLevel'], 'in', 'range' => ['debug', 'info', 'warning', 'error']],
             [['logLevel'], 'validateLogLevel'],
         ];
@@ -272,8 +288,11 @@ class Settings extends Model
             'enableAiTranslations' => 'Enable AI Translations',
             'aiProvider' => 'AI Provider',
             'openAiApiKey' => 'OpenAI API Key',
+            'openAiModel' => 'OpenAI Model',
             'geminiApiKey' => 'Gemini API Key',
+            'geminiModel' => 'Gemini Model',
             'anthropicApiKey' => 'Anthropic API Key',
+            'anthropicModel' => 'Anthropic Model',
             'enableSuggestions' => 'Enable Translation Suggestions',
             'backupEnabled' => 'Enable Backups',
             'backupRetentionDays' => 'Backup Retention Days',
@@ -846,6 +865,54 @@ class Settings extends Model
 
         // Return the resolved path
         return $path;
+    }
+
+    /**
+     * Resolve AI API key by provider handle.
+     */
+    public function getResolvedAiApiKey(?string $provider = null): ?string
+    {
+        $providerHandle = $provider ?? $this->aiProvider;
+
+        $raw = match ($providerHandle) {
+            'openai' => $this->openAiApiKey,
+            'gemini' => $this->geminiApiKey,
+            'anthropic' => $this->anthropicApiKey,
+            default => null,
+        };
+
+        if ($raw === null || trim($raw) === '') {
+            return null;
+        }
+
+        $resolved = trim((string) Craft::parseEnv($raw));
+        return $resolved !== '' ? $resolved : null;
+    }
+
+    /**
+     * Resolve model by provider handle, with safe defaults.
+     */
+    public function getResolvedAiModel(?string $provider = null): string
+    {
+        $providerHandle = $provider ?? $this->aiProvider;
+
+        $model = match ($providerHandle) {
+            'openai' => trim($this->openAiModel),
+            'gemini' => trim($this->geminiModel),
+            'anthropic' => trim($this->anthropicModel),
+            default => '',
+        };
+
+        if ($model !== '') {
+            return $model;
+        }
+
+        return match ($providerHandle) {
+            'openai' => 'gpt-4o-mini',
+            'gemini' => 'gemini-2.0-flash',
+            'anthropic' => 'claude-3-haiku-20240307',
+            default => 'gpt-4o-mini',
+        };
     }
 
     // =========================================================================

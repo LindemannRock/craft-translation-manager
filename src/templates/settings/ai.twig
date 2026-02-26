@@ -20,8 +20,16 @@
 
 {% import "_includes/forms" as forms %}
 
+{% set openAiKnownModels = ['gpt-4o-mini', 'gpt-4.1-mini', 'gpt-4.1'] %}
+{% set geminiKnownModels = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-pro'] %}
+{% set anthropicKnownModels = ['claude-3-haiku-20240307', 'claude-3-5-haiku-20241022', 'claude-3-5-sonnet-20241022'] %}
+
+{% set openAiCurrentModel = settings.openAiModel ?? 'gpt-4o-mini' %}
+{% set geminiCurrentModel = settings.geminiModel ?? 'gemini-2.0-flash' %}
+{% set anthropicCurrentModel = settings.anthropicModel ?? 'claude-3-haiku-20240307' %}
+
 {% block content %}
-    <form method="post" accept-charset="UTF-8">
+    <form id="ai-settings-form" method="post" accept-charset="UTF-8">
         {{ csrfInput() }}
         {{ actionInput('translation-manager/settings/save') }}
         {{ redirectInput('translation-manager/settings/ai') }}
@@ -56,6 +64,7 @@
                     { value: 'openai', label: 'OpenAI (GPT/Codex-family models)' },
                     { value: 'gemini', label: 'Google Gemini' },
                     { value: 'anthropic', label: 'Anthropic Claude' },
+                    { value: 'mock', label: 'Mock Provider (local testing)' },
                 ],
                 disabled: settings.isOverriddenByConfig('aiProvider'),
                 warning: settings.isOverriddenByConfig('aiProvider') ?
@@ -74,6 +83,34 @@
                     warning: settings.isOverriddenByConfig('openAiApiKey') ?
                         "This is being overridden by the <code>openAiApiKey</code> setting in <code>config/translation-manager.php</code>."|raw : null,
                 }) }}
+
+                {{ forms.selectField({
+                    label: "OpenAI Model"|t('translation-manager'),
+                    instructions: "Select a recommended model or choose Custom. <a href=\"https://platform.openai.com/docs/models\" target=\"_blank\" rel=\"noopener\">OpenAI model docs</a>"|raw,
+                    id: 'openAiModel',
+                    name: 'settings[openAiModel]',
+                    value: openAiCurrentModel in openAiKnownModels ? openAiCurrentModel : '__custom__',
+                    options: [
+                        { value: 'gpt-4o-mini', label: 'gpt-4o-mini (recommended)' },
+                        { value: 'gpt-4.1-mini', label: 'gpt-4.1-mini' },
+                        { value: 'gpt-4.1', label: 'gpt-4.1' },
+                        { value: '__custom__', label: 'Custom model ID...' },
+                    ],
+                    disabled: settings.isOverriddenByConfig('openAiModel'),
+                    warning: settings.isOverriddenByConfig('openAiModel') ?
+                        "This is being overridden by the <code>openAiModel</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                }) }}
+
+                <div id="openAiModelCustomWrap" class="{{ openAiCurrentModel in openAiKnownModels ? 'hidden' }}">
+                    {{ forms.textField({
+                        label: "Custom OpenAI Model ID"|t('translation-manager'),
+                        instructions: "Used when OpenAI Model is set to Custom."|t('translation-manager'),
+                        id: 'openAiModelCustom',
+                        name: '',
+                        value: openAiCurrentModel in openAiKnownModels ? '' : openAiCurrentModel,
+                        disabled: settings.isOverriddenByConfig('openAiModel'),
+                    }) }}
+                </div>
             </div>
 
             <div id="provider-gemini" class="{{ (settings.aiProvider ?? 'openai') != 'gemini' ? 'hidden' }}">
@@ -88,6 +125,34 @@
                     warning: settings.isOverriddenByConfig('geminiApiKey') ?
                         "This is being overridden by the <code>geminiApiKey</code> setting in <code>config/translation-manager.php</code>."|raw : null,
                     }) }}
+
+                {{ forms.selectField({
+                    label: "Gemini Model"|t('translation-manager'),
+                    instructions: "Select a recommended model or choose Custom. <a href=\"https://ai.google.dev/gemini-api/docs/models\" target=\"_blank\" rel=\"noopener\">Gemini model docs</a>"|raw,
+                    id: 'geminiModel',
+                    name: 'settings[geminiModel]',
+                    value: geminiCurrentModel in geminiKnownModels ? geminiCurrentModel : '__custom__',
+                    options: [
+                        { value: 'gemini-2.0-flash', label: 'gemini-2.0-flash (recommended)' },
+                        { value: 'gemini-2.0-flash-lite', label: 'gemini-2.0-flash-lite' },
+                        { value: 'gemini-1.5-pro', label: 'gemini-1.5-pro' },
+                        { value: '__custom__', label: 'Custom model ID...' },
+                    ],
+                    disabled: settings.isOverriddenByConfig('geminiModel'),
+                    warning: settings.isOverriddenByConfig('geminiModel') ?
+                        "This is being overridden by the <code>geminiModel</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                }) }}
+
+                <div id="geminiModelCustomWrap" class="{{ geminiCurrentModel in geminiKnownModels ? 'hidden' }}">
+                    {{ forms.textField({
+                        label: "Custom Gemini Model ID"|t('translation-manager'),
+                        instructions: "Used when Gemini Model is set to Custom."|t('translation-manager'),
+                        id: 'geminiModelCustom',
+                        name: '',
+                        value: geminiCurrentModel in geminiKnownModels ? '' : geminiCurrentModel,
+                        disabled: settings.isOverriddenByConfig('geminiModel'),
+                    }) }}
+                </div>
             </div>
 
             <div id="provider-anthropic" class="{{ (settings.aiProvider ?? 'openai') != 'anthropic' ? 'hidden' }}">
@@ -102,6 +167,40 @@
                     warning: settings.isOverriddenByConfig('anthropicApiKey') ?
                         "This is being overridden by the <code>anthropicApiKey</code> setting in <code>config/translation-manager.php</code>."|raw : null,
                 }) }}
+
+                {{ forms.selectField({
+                    label: "Anthropic Model"|t('translation-manager'),
+                    instructions: "Select a recommended model or choose Custom. <a href=\"https://docs.anthropic.com/en/docs/about-claude/models/overview\" target=\"_blank\" rel=\"noopener\">Anthropic model docs</a>"|raw,
+                    id: 'anthropicModel',
+                    name: 'settings[anthropicModel]',
+                    value: anthropicCurrentModel in anthropicKnownModels ? anthropicCurrentModel : '__custom__',
+                    options: [
+                        { value: 'claude-3-haiku-20240307', label: 'claude-3-haiku-20240307 (recommended)' },
+                        { value: 'claude-3-5-haiku-20241022', label: 'claude-3-5-haiku-20241022' },
+                        { value: 'claude-3-5-sonnet-20241022', label: 'claude-3-5-sonnet-20241022' },
+                        { value: '__custom__', label: 'Custom model ID...' },
+                    ],
+                    disabled: settings.isOverriddenByConfig('anthropicModel'),
+                    warning: settings.isOverriddenByConfig('anthropicModel') ?
+                        "This is being overridden by the <code>anthropicModel</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                }) }}
+
+                <div id="anthropicModelCustomWrap" class="{{ anthropicCurrentModel in anthropicKnownModels ? 'hidden' }}">
+                    {{ forms.textField({
+                        label: "Custom Anthropic Model ID"|t('translation-manager'),
+                        instructions: "Used when Anthropic Model is set to Custom."|t('translation-manager'),
+                        id: 'anthropicModelCustom',
+                        name: '',
+                        value: anthropicCurrentModel in anthropicKnownModels ? '' : anthropicCurrentModel,
+                        disabled: settings.isOverriddenByConfig('anthropicModel'),
+                    }) }}
+                </div>
+            </div>
+
+            <div id="provider-mock" class="{{ (settings.aiProvider ?? 'openai') != 'mock' ? 'hidden' }}">
+                <p class="light" style="margin: 6px 0 0;">
+                    {{ "Mock Provider runs local deterministic translations for workflow testing. No API key or model configuration is required."|t('translation-manager') }}
+                </p>
             </div>
         </div>
 
@@ -111,12 +210,60 @@
 
     </form>
 
+    <hr style="margin: 24px 0;">
+
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        {{ actionInput('translation-manager/settings/test-ai') }}
+        {{ redirectInput('translation-manager/settings/ai') }}
+
+        <h2 style="margin-top: 0;">{{ "Test AI Translation"|t('translation-manager') }}</h2>
+        <p class="light" style="margin-bottom: 16px;">
+            {{ "Run a live provider test from the Control Panel using your saved API key and model."|t('translation-manager') }}
+        </p>
+
+        {{ forms.selectField({
+            label: "Provider"|t('translation-manager'),
+            id: 'testProvider',
+            name: 'provider',
+            value: settings.aiProvider ?? 'openai',
+            options: [
+                { value: 'openai', label: 'OpenAI' },
+                { value: 'gemini', label: 'Google Gemini' },
+                { value: 'anthropic', label: 'Anthropic Claude' },
+                { value: 'mock', label: 'Mock Provider' },
+            ],
+        }) }}
+
+        {{ forms.textField({
+            label: "Target Language"|t('translation-manager'),
+            id: 'testTargetLanguage',
+            name: 'targetLanguage',
+            value: 'de',
+            instructions: "Locale/language code (for example <code>de</code>, <code>ar</code>, <code>de-DE</code>)."|t('translation-manager')|raw,
+        }) }}
+
+        {{ forms.textareaField({
+            label: "Sample Text"|t('translation-manager'),
+            id: 'testText',
+            name: 'text',
+            value: 'Welcome {name}, your order %1$s is ready.<br/>Thank you!',
+            rows: 3,
+        }) }}
+
+        <div class="buttons">
+            <button type="submit" class="btn">{{ "Run AI Test"|t('translation-manager') }}</button>
+        </div>
+    </form>
+
     <script>
         (() => {
+            const settingsForm = document.getElementById('ai-settings-form');
             const providerSelect = document.getElementById('aiProvider');
             const openAi = document.getElementById('provider-openai');
             const gemini = document.getElementById('provider-gemini');
             const anthropic = document.getElementById('provider-anthropic');
+            const mock = document.getElementById('provider-mock');
 
             const toggleProviderSections = () => {
                 const provider = providerSelect?.value || 'openai';
@@ -132,11 +279,70 @@
                 if (anthropic) {
                     anthropic.classList.toggle('hidden', provider !== 'anthropic');
                 }
+
+                if (mock) {
+                    mock.classList.toggle('hidden', provider !== 'mock');
+                }
             };
 
             if (providerSelect) {
                 providerSelect.addEventListener('change', toggleProviderSections);
                 toggleProviderSections();
+            }
+
+            const syncModelField = (selectId, customWrapId, customInputId) => {
+                const select = document.getElementById(selectId);
+                const customWrap = document.getElementById(customWrapId);
+                const customInput = document.getElementById(customInputId);
+
+                if (!select || !customWrap || !customInput) {
+                    return;
+                }
+
+                const update = () => {
+                    const isCustom = select.value === '__custom__';
+                    customWrap.classList.toggle('hidden', !isCustom);
+
+                    if (!isCustom) {
+                        customInput.value = select.value;
+                    }
+                };
+
+                select.addEventListener('change', update);
+                update();
+            };
+
+            syncModelField('openAiModel', 'openAiModelCustomWrap', 'openAiModelCustom');
+            syncModelField('geminiModel', 'geminiModelCustomWrap', 'geminiModelCustom');
+            syncModelField('anthropicModel', 'anthropicModelCustomWrap', 'anthropicModelCustom');
+
+            if (settingsForm) {
+                settingsForm.addEventListener('submit', () => {
+                    const finalizeModel = (selectId, customInputId, fallbackValue) => {
+                        const select = document.getElementById(selectId);
+                        const customInput = document.getElementById(customInputId);
+
+                        if (!select || !customInput || select.value !== '__custom__') {
+                            return;
+                        }
+
+                        const customValue = customInput.value.trim() || fallbackValue;
+                        let existingOption = select.querySelector(`option[value="${customValue}"]`);
+
+                        if (!existingOption) {
+                            existingOption = document.createElement('option');
+                            existingOption.value = customValue;
+                            existingOption.text = customValue;
+                            select.appendChild(existingOption);
+                        }
+
+                        select.value = customValue;
+                    };
+
+                    finalizeModel('openAiModel', 'openAiModelCustom', 'gpt-4o-mini');
+                    finalizeModel('geminiModel', 'geminiModelCustom', 'gemini-2.0-flash');
+                    finalizeModel('anthropicModel', 'anthropicModelCustom', 'claude-3-haiku-20240307');
+                });
             }
         })();
     </script>

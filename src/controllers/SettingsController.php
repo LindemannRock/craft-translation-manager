@@ -200,6 +200,60 @@ class SettingsController extends Controller
     }
 
     /**
+     * Run a live AI provider test from settings UI.
+     */
+    public function actionTestAi(): Response
+    {
+        $this->requirePostRequest();
+
+        $provider = (string) $this->request->getBodyParam('provider', '');
+        $targetLanguage = trim((string) $this->request->getBodyParam('targetLanguage', 'de'));
+        $text = trim((string) $this->request->getBodyParam('text', 'Welcome {name}, your order %1$s is ready.<br/>Thank you!'));
+
+        if (!in_array($provider, ['openai', 'gemini', 'anthropic', 'mock'], true)) {
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Invalid AI provider selected.'));
+            return $this->redirectToPostedUrl();
+        }
+
+        if ($targetLanguage === '') {
+            $targetLanguage = 'de';
+        }
+
+        if ($text === '') {
+            $text = 'Welcome {name}, your order %1$s is ready.<br/>Thank you!';
+        }
+
+        try {
+            $settings = TranslationManager::getInstance()->getSettings();
+            $test = TranslationManager::getInstance()->ai->testProvider($provider);
+            $translated = TranslationManager::getInstance()->ai->translateText(
+                $text,
+                $settings->sourceLanguage,
+                $targetLanguage,
+                $provider,
+            );
+
+            Craft::$app->getSession()->setNotice(Craft::t(
+                'translation-manager',
+                'AI test successful ({provider}, {model}). Translation: {translation}',
+                [
+                    'provider' => $test['provider'],
+                    'model' => $test['model'],
+                    'translation' => $translated,
+                ]
+            ));
+        } catch (\Throwable $e) {
+            Craft::$app->getSession()->setError(Craft::t(
+                'translation-manager',
+                'AI test failed: {error}',
+                ['error' => $e->getMessage()]
+            ));
+        }
+
+        return $this->redirectToPostedUrl();
+    }
+
+    /**
      * Save settings
      *
      * @return Response|null

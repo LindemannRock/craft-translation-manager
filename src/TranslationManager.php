@@ -31,6 +31,7 @@ use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\i18n\LocaleMappingPhpMessageSource;
 use lindemannrock\translationmanager\listeners\MissingTranslationListener;
 use lindemannrock\translationmanager\models\Settings;
+use lindemannrock\translationmanager\services\AiTranslationService;
 use lindemannrock\translationmanager\services\BackupService;
 use lindemannrock\translationmanager\services\ExportService;
 use lindemannrock\translationmanager\services\IntegrationService;
@@ -49,6 +50,7 @@ use yii\i18n\MessageSource;
  * @since 1.0.0
  *
  * @property-read TranslationsService $translations
+ * @property-read AiTranslationService $ai
  * @property-read ExportService $export
  * @property-read BackupService $backup
  * @property-read Settings $settings
@@ -92,6 +94,7 @@ class TranslationManager extends Plugin
         return [
             'components' => [
                 'translations' => TranslationsService::class,
+                'ai' => AiTranslationService::class,
                 'export' => ExportService::class,
                 'backup' => BackupService::class,
                 'integrations' => IntegrationService::class,
@@ -119,6 +122,7 @@ class TranslationManager extends Plugin
         // Register services
         $this->setComponents([
             'translations' => TranslationsService::class,
+            'ai' => AiTranslationService::class,
             'export' => ExportService::class,
             'backup' => BackupService::class,
             'integrations' => IntegrationService::class,
@@ -500,6 +504,17 @@ class TranslationManager extends Plugin
     public function getBackup(): BackupService
     {
         return $this->get('backup');
+    }
+
+    /**
+     * Get the AI translation service
+     *
+     * @return AiTranslationService
+     * @since 5.22.0
+     */
+    public function getAi(): AiTranslationService
+    {
+        return $this->get('ai');
     }
 
     /**
