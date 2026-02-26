@@ -323,6 +323,90 @@ class TranslationsController extends Controller
     }
 
     /**
+     * Bulk set status for selected translations.
+     */
+    public function actionSetStatus(): Response
+    {
+        $this->requirePostRequest();
+        $this->requireAcceptsJson();
+
+        if (!Craft::$app->getUser()->checkPermission('translationManager:editTranslations')) {
+            throw new ForbiddenHttpException('User does not have permission to edit translations');
+        }
+
+        $request = Craft::$app->getRequest();
+        $ids = $request->getRequiredBodyParam('ids');
+        $targetStatus = (string) $request->getRequiredBodyParam('status');
+
+        if (!is_array($ids) || !in_array($targetStatus, ['draft', 'translated'], true)) {
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Invalid request payload.',
+            ]);
+        }
+
+        $settings = TranslationManager::getInstance()->getSettings();
+        if (
+            $targetStatus === 'translated'
+            && $settings->requireApproval
+            && !Craft::$app->getUser()->checkPermission('translationManager:approveTranslations')
+        ) {
+            throw new ForbiddenHttpException('User does not have permission to approve translations');
+        }
+
+        $updated = 0;
+        $skipped = 0;
+
+        foreach ($ids as $id) {
+            if (!is_numeric($id)) {
+                $skipped++;
+                continue;
+            }
+
+            $translation = TranslationRecord::findOne((int) $id);
+            if (!$translation instanceof TranslationRecord) {
+                $skipped++;
+                continue;
+            }
+
+            if ($translation->status === 'unused') {
+                $skipped++;
+                continue;
+            }
+
+            $translation->status = $targetStatus;
+            $translation->translationOrigin = 'manual';
+            $translation->createdByUserId = Craft::$app->getUser()->getId();
+            $translation->dateUpdated = Db::prepareDateForDb(new \DateTime());
+
+            if ($targetStatus === 'translated') {
+                $translation->reviewedByUserId = Craft::$app->getUser()->getId();
+                $translation->reviewedAt = Db::prepareDateForDb(new \DateTime());
+            } else {
+                $translation->reviewedByUserId = null;
+                $translation->reviewedAt = null;
+            }
+
+            if ($translation->save()) {
+                $updated++;
+            } else {
+                $skipped++;
+            }
+        }
+
+        // Export if auto-export is enabled and rows were marked translated.
+        if ($updated > 0 && $targetStatus === 'translated' && $settings->autoExport) {
+            TranslationManager::getInstance()->export->exportAll();
+        }
+
+        return $this->asJson([
+            'success' => true,
+            'updated' => $updated,
+            'skipped' => $skipped,
+        ]);
+    }
+
+    /**
      * Resolve target status on manual save based on workflow settings + permissions.
      */
     private function resolveStatusForSave(TranslationRecord $translation, string $translationText): string

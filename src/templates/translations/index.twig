@@ -162,6 +162,11 @@
 
 {% block content %}
     <style>
+        .tableview table.data {
+            table-layout: fixed;
+            width: 100%;
+        }
+
         .translation-text {
             direction: {{ currentLanguage starts with 'ar' ? 'rtl' : 'ltr' }};
             font-family: system-ui, -apple-system, sans-serif;
@@ -183,6 +188,54 @@
         .page-info {
             margin: 0 12px;
             color: #596673;
+        }
+
+        .context-col,
+        .context-cell {
+            width: 170px;
+            max-width: 170px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .status-col,
+        .status-cell {
+            width: 95px;
+        }
+
+        .origin-col,
+        .origin-cell {
+            width: 90px;
+        }
+
+        .type-col {
+            width: 90px;
+            white-space: nowrap;
+        }
+
+        .type-cell {
+            white-space: nowrap;
+        }
+
+        .category-col {
+            width: 120px;
+        }
+
+        .translation-key-col,
+        .translation-key-cell {
+            width: 260px;
+            max-width: 260px;
+        }
+
+        .translation-col,
+        .translation-cell {
+            width: auto;
+        }
+
+        .status-cell,
+        .origin-cell {
+            white-space: nowrap;
         }
 
         /* Checkbox cells */
@@ -216,21 +269,34 @@
 
     <div id="elements" class="elements">
         <div class="tableview tablepane">
+            {% set showTypeCol = settings.enableFormieIntegration and settings.enableSiteTranslations %}
+            {% set showCategoryCol = allCategories|length > 1 %}
+            {% set showContextCol = settings.showContext %}
             <table class="data fullwidth">
+                <colgroup>
+                    <col style="width: 40px;">
+                    {% if showTypeCol %}<col style="width: 90px;">{% endif %}
+                    {% if showCategoryCol %}<col style="width: 120px;">{% endif %}
+                    <col style="width: 260px;">
+                    <col>
+                    <col style="width: 110px;">
+                    <col style="width: 100px;">
+                    {% if showContextCol %}<col style="width: 170px;">{% endif %}
+                </colgroup>
                 <thead>
                     <tr>
                         <th class="checkbox-cell selectallcontainer">
                             <div class="checkbox" role="checkbox" tabindex="0" aria-checked="false" aria-label="Select all"></div>
                         </th>
-                        {% if settings.enableFormieIntegration and settings.enableSiteTranslations %}
-                        <th scope="col" data-attribute="type" class="orderable {{ sort == 'type' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'type' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                        {% if showTypeCol %}
+                        <th scope="col" data-attribute="type" class="type-col orderable {{ sort == 'type' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'type' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
                             <button type="button" aria-pressed="{{ sort == 'type' ? 'true' : 'false' }}" data-sort="type">
                                 Type
                                 <div class="spinner"></div>
                             </button>
                         </th>
                         {% endif %}
-                        {% if allCategories|length > 1 %}
+                        {% if showCategoryCol %}
                         <th scope="col" data-attribute="category" class="orderable {{ sort == 'category' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'category' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
                             <button type="button" aria-pressed="{{ sort == 'category' ? 'true' : 'false' }}" data-sort="category">
                                 Category
@@ -238,26 +304,27 @@
                             </button>
                         </th>
                         {% endif %}
-                        <th scope="col" data-attribute="translationKey" class="orderable {{ sort == 'translationKey' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'translationKey' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                        <th scope="col" data-attribute="translationKey" class="translation-key-col orderable {{ sort == 'translationKey' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'translationKey' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
                             <button type="button" aria-pressed="{{ sort == 'translationKey' ? 'true' : 'false' }}" data-sort="translationKey">
                                 Translation Key
                                 <div class="spinner"></div>
                             </button>
                         </th>
-                        <th scope="col" data-attribute="translation" class="orderable {{ sort == 'translation' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'translation' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                        <th scope="col" data-attribute="translation" class="translation-col orderable {{ sort == 'translation' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'translation' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
                             <button type="button" aria-pressed="{{ sort == 'translation' ? 'true' : 'false' }}" data-sort="translation">
                                 Translation ({{ currentLanguage|upper }})
                                 <div class="spinner"></div>
                             </button>
                         </th>
-                        <th scope="col" data-attribute="status" class="orderable {{ sort == 'status' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'status' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                        <th scope="col" data-attribute="status" class="status-col orderable {{ sort == 'status' ? 'ordered ' ~ dir : '' }}" aria-sort="{{ sort == 'status' ? (dir == 'asc' ? 'ascending' : 'descending') : 'none' }}">
                             <button type="button" aria-pressed="{{ sort == 'status' ? 'true' : 'false' }}" data-sort="status">
                                 Status
                                 <div class="spinner"></div>
                             </button>
                         </th>
-                        {% if settings.showContext %}
-                            <th scope="col">Context</th>
+                        <th scope="col" class="origin-col">Origin</th>
+                        {% if showContextCol %}
+                            <th scope="col" class="context-col">Context</th>
                         {% endif %}
                     </tr>
                 </thead>
@@ -267,8 +334,8 @@
                             <td class="checkbox-cell">
                                 <div class="checkbox" title="Select" tabindex="0" aria-checked="false" aria-label="{{ translation.translationKey }}" role="checkbox"></div>
                             </td>
-                            {% if settings.enableFormieIntegration and settings.enableSiteTranslations %}
-                            <td>
+                            {% if showTypeCol %}
+                            <td class="type-cell">
                                 {% if translation.context starts with 'formie.' %}
                                     <span class="light">{{ craft.translationManager.getFormiePluginName() }}</span>
                                 {% else %}
@@ -276,14 +343,14 @@
                                 {% endif %}
                             </td>
                             {% endif %}
-                            {% if allCategories|length > 1 %}
+                            {% if showCategoryCol %}
                             <td><span class="light">{{ translation.category }}</span></td>
                             {% endif %}
-                            <td style="white-space: pre-wrap;">{{ translation.translationKey|e }}</td>
-                            <td>
+                            <td class="translation-key-cell" style="white-space: pre-wrap;">{{ translation.translationKey|e }}</td>
+                            <td class="translation-cell">
                                 <textarea class="translation-text" placeholder="{% if currentLanguage starts with 'ar' %}أدخل الترجمة العربية هنا...{% else %}Enter translation for {{ currentLanguage|upper }}...{% endif %}">{{ translation.translation|e }}</textarea>
                             </td>
-                            <td>
+                            <td class="status-cell">
                                 {% set statusMap = {
                                     'unused': { label: 'Unused', color: 'gray' },
                                     'pending': { label: 'Pending', color: 'orange' },
@@ -300,8 +367,25 @@
                                     status: statusBadge.color,
                                 } only %}
                             </td>
-                            {% if settings.showContext %}
-                                <td class="light">{{ translation.context|e }}</td>
+                            <td class="origin-cell">
+                                {% set originMap = {
+                                    'ai': { label: 'AI', color: '#7c3aed', rgb: '124, 58, 237', text: '#4c1d95' },
+                                    'manual': { label: 'Manual', color: '#16a34a', rgb: '22, 163, 74', text: '#14532d' },
+                                    'import': { label: 'Import', color: '#dc2626', rgb: '220, 38, 38', text: '#7f1d1d' },
+                                    'system': { label: 'System', color: '#475569', rgb: '71, 85, 105', text: '#1e293b' },
+                                } %}
+                                {% set originKey = translation.translationOrigin ?? 'system' %}
+                                {% set originBadge = originMap[originKey] ?? originMap['system'] %}
+
+                                {% include 'lindemannrock-base/_components/status-badge' with {
+                                    label: originBadge.label,
+                                    color: originBadge.color,
+                                    rgb: originBadge.rgb,
+                                    textColor: originBadge.text,
+                                } only %}
+                            </td>
+                            {% if showContextCol %}
+                                <td class="light context-cell" title="{{ translation.context|e }}">{{ translation.context|e }}</td>
                             {% endif %}
                         </tr>
                     {% endfor %}
@@ -361,8 +445,20 @@
             {% endif %}
         </div>
         <div class="flex flex-nowrap">
+            {% set canEditTranslations = currentUser.can('translationManager:editTranslations') %}
+            {% set canApproveTranslations = currentUser.can('translationManager:approveTranslations') %}
             {% if currentUser.can('translationManager:exportTranslations') %}
                 <button type="button" class="btn" id="export-btn" tabindex="0" aria-expanded="false" title="Export translations as CSV file">Export…</button>
+            {% endif %}
+            {% if canEditTranslations %}
+                <button type="button" class="btn secondary" id="mark-draft-btn" style="display: none;">
+                    <span id="mark-draft-label">{{ 'Mark Draft'|t('translation-manager') }}</span>
+                </button>
+            {% endif %}
+            {% if canApproveTranslations or (canEditTranslations and not settings.requireApproval) %}
+                <button type="button" class="btn secondary" id="mark-translated-btn" style="display: none;">
+                    <span id="mark-translated-label">{{ 'Mark Translated'|t('translation-manager') }}</span>
+                </button>
             {% endif %}
             {% if status == 'unused' and currentUser.can('translationManager:deleteTranslations') %}
                 <button type="button" class="btn secondary" id="delete-selected-btn" style="display: none;">
@@ -504,6 +600,30 @@
         });
 
         function updateActionButtons() {
+            {% if canEditTranslations %}
+            const markDraftBtn = document.getElementById('mark-draft-btn');
+            const markDraftLabel = document.getElementById('mark-draft-label');
+            if (markDraftBtn && markDraftLabel) {
+                const hasSelection = selectedIds.size > 0;
+                markDraftBtn.style.display = hasSelection ? '' : 'none';
+                if (hasSelection) {
+                    markDraftLabel.textContent = `{{ 'Mark Draft'|t('translation-manager') }} (${selectedIds.size})`;
+                }
+            }
+            {% endif %}
+
+            {% if canApproveTranslations or (canEditTranslations and not settings.requireApproval) %}
+            const markTranslatedBtn = document.getElementById('mark-translated-btn');
+            const markTranslatedLabel = document.getElementById('mark-translated-label');
+            if (markTranslatedBtn && markTranslatedLabel) {
+                const hasSelection = selectedIds.size > 0;
+                markTranslatedBtn.style.display = hasSelection ? '' : 'none';
+                if (hasSelection) {
+                    markTranslatedLabel.textContent = `{{ 'Mark Translated'|t('translation-manager') }} (${selectedIds.size})`;
+                }
+            }
+            {% endif %}
+
             {% if status == 'unused' and currentUser.can('translationManager:deleteTranslations') %}
             const deleteBtn = document.getElementById('delete-selected-btn');
             const deleteLabel = document.getElementById('delete-label');
@@ -564,6 +684,56 @@
                 url += '&search=' + encodeURIComponent(search);
 
                 window.location.href = url;
+            }
+        });
+        {% endif %}
+
+        // Bulk status actions
+        async function bulkSetStatus(status) {
+            const ids = Array.from(selectedIds);
+            if (ids.length === 0) {
+                return;
+            }
+
+            const response = await fetch('{{ actionUrl('translation-manager/translations/set-status') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ ids, status })
+            });
+
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to update status');
+            }
+
+            const label = status === 'translated' ? '{{ "translated"|t("translation-manager") }}' : '{{ "draft"|t("translation-manager") }}';
+            Craft.cp.displayNotice(`Updated ${data.updated} translation${data.updated === 1 ? '' : 's'} to ${label}.`);
+            setTimeout(() => window.location.reload(), 600);
+        }
+
+        {% if canEditTranslations %}
+        document.getElementById('mark-draft-btn')?.addEventListener('click', async function() {
+            try {
+                await bulkSetStatus('draft');
+            } catch (error) {
+                console.error(error);
+                Craft.cp.displayError(error.message || 'Failed to mark as draft');
+            }
+        });
+        {% endif %}
+
+        {% if canApproveTranslations or (canEditTranslations and not settings.requireApproval) %}
+        document.getElementById('mark-translated-btn')?.addEventListener('click', async function() {
+            try {
+                await bulkSetStatus('translated');
+            } catch (error) {
+                console.error(error);
+                Craft.cp.displayError(error.message || 'Failed to mark as translated');
             }
         });
         {% endif %}
@@ -692,6 +862,14 @@
                             <span class="status-label teal">
                                 <span class="status teal"></span>
                                 <span class="status-label-text">Translated</span>
+                            </span>
+                        `;
+                        break;
+                    case 'draft':
+                        statusHtml = `
+                            <span class="status-label blue">
+                                <span class="status blue"></span>
+                                <span class="status-label-text">Draft</span>
                             </span>
                         `;
                         break;
