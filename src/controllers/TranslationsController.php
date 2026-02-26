@@ -90,6 +90,7 @@ class TranslationsController extends Controller
         $uniqueLanguages = TranslationManager::getInstance()->getUniqueLanguages();
         $dir = $request->getParam('dir', 'asc');
         $type = $request->getParam('type', 'all');
+        $origin = $request->getParam('origin', 'all');
         $category = $request->getParam('category', 'all');
 
         $limit = $settings->itemsPerPage;
@@ -103,6 +104,7 @@ class TranslationsController extends Controller
             'sort' => $sort,
             'dir' => $dir,
             'type' => $type,
+            'origin' => $origin,
             'category' => $category,
             'includeUsageCheck' => true,
         ];
@@ -135,6 +137,7 @@ class TranslationsController extends Controller
             'sort' => $sort,
             'dir' => $dir,
             'type' => $type,
+            'origin' => $origin,
             'category' => $category,
             'allCategories' => $allCategories,
             'settings' => $settings,

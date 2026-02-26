@@ -133,6 +133,9 @@ class TranslationsService extends Component
             if (isset($criteria['type'])) {
                 $filterDesc[] = "type:{$criteria['type']}";
             }
+            if (isset($criteria['origin'])) {
+                $filterDesc[] = "origin:{$criteria['origin']}";
+            }
             if (isset($criteria['allSites']) && $criteria['allSites']) {
                 $filterDesc[] = "allSites";
             }
@@ -201,6 +204,11 @@ class TranslationsService extends Component
         // Apply category filter
         if (!empty($criteria['category']) && $criteria['category'] !== 'all') {
             $query->andWhere(['category' => $criteria['category']]);
+        }
+
+        // Apply origin filter
+        if (!empty($criteria['origin']) && $criteria['origin'] !== 'all') {
+            $query->andWhere(['translationOrigin' => $criteria['origin']]);
         }
 
         // Apply search
