@@ -46,17 +46,6 @@
         }) }}
 
 		{{ forms.lightswitchField({
-            label: "Show Context"|t('translation-manager'),
-            instructions: "Display the translation context in the interface"|t('translation-manager'),
-            id: 'showContext',
-            name: 'settings[showContext]',
-            on: settings.showContext,
-            disabled: settings.isOverriddenByConfig('showContext'),
-            warning: settings.isOverriddenByConfig('showContext') ?
-                "This is being overridden by the <code>showContext</code> setting in <code>config/translation-manager.php</code>."|raw : null,
-        }) }}
-
-		{{ forms.lightswitchField({
             label: "Enable Auto-Save"|t('translation-manager'),
             instructions: "Automatically save each translation when you click outside the field (blur)"|t('translation-manager'),
             id: 'autoSaveEnabled',

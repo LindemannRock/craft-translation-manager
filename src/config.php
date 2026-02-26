@@ -104,7 +104,6 @@ return [
         // Control panel interface options
 
         'itemsPerPage' => 100,         // Number of translations to show per page
-        'showContext' => false,        // Display the translation context in the interface
         'requireApproval' => false,    // If true, translators save to draft and approvers publish as translated
         'enableSuggestions' => false,  // Enable translation suggestions (future feature)
 

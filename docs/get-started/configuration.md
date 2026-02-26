@@ -27,7 +27,6 @@ Configure Translation Manager by creating a config file at `config/translation-m
 | `itemsPerPage` | `int` | `100` | Items per page in the translation list (10–500) |
 | `autoSaveEnabled` | `bool` | `false` | Enable auto-save after typing stops |
 | `autoSaveDelay` | `int` | `2` | Auto-save delay in seconds (1–10) |
-| `showContext` | `bool` | `false` | Show translation context column in the CP |
 | `enableSuggestions` | `bool` | `false` | Enable automatic translation suggestions (future feature) |
 
 ### Export
@@ -77,7 +76,6 @@ return [
         'itemsPerPage' => 100,
         'autoSaveEnabled' => false,
         'autoSaveDelay' => 2,
-        'showContext' => false,
         'logLevel' => 'error',
         'skipPatterns' => [],
         'backupEnabled' => true,
