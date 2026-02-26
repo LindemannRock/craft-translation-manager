@@ -778,7 +778,7 @@ class Settings extends Model
                     $fs = $volume->getFs();
 
                     // For volumes, we should return a display-friendly path
-                    // The actual storage will be handled by VolumeBackupService
+                    // The actual storage and I/O are handled by BackupService
                     $volumeName = $volume->name;
                     return "Volume: {$volumeName}/translation-manager/backups";
                 } catch (\Exception $e) {

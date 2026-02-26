@@ -33,7 +33,6 @@ use lindemannrock\translationmanager\listeners\MissingTranslationListener;
 use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\translationmanager\services\BackupService;
 use lindemannrock\translationmanager\services\ExportService;
-use lindemannrock\translationmanager\services\FormieService;
 use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\services\TranslationsService;
 use lindemannrock\translationmanager\utilities\TranslationStatsUtility;
@@ -50,7 +49,6 @@ use yii\i18n\MessageSource;
  * @since 1.0.0
  *
  * @property-read TranslationsService $translations
- * @property-read FormieService $formie
  * @property-read ExportService $export
  * @property-read BackupService $backup
  * @property-read Settings $settings
@@ -94,10 +92,9 @@ class TranslationManager extends Plugin
         return [
             'components' => [
                 'translations' => TranslationsService::class,
-                'formie' => FormieService::class, // Legacy - will be deprecated
                 'export' => ExportService::class,
                 'backup' => BackupService::class,
-                'integrations' => IntegrationService::class, // New integration system
+                'integrations' => IntegrationService::class,
             ],
         ];
     }
@@ -122,10 +119,9 @@ class TranslationManager extends Plugin
         // Register services
         $this->setComponents([
             'translations' => TranslationsService::class,
-            'formie' => FormieService::class, // Legacy - will be deprecated
             'export' => ExportService::class,
             'backup' => BackupService::class,
-            'integrations' => IntegrationService::class, // New integration system
+            'integrations' => IntegrationService::class,
         ]);
 
         // Register CP routes
@@ -290,11 +286,6 @@ class TranslationManager extends Plugin
 
         // Trigger integration service initialization (lightweight event handler registration)
         $this->get('integrations');
-
-        // DISABLED: Old Formie hooks - testing new integration system
-        // if ($this->getSettings()->enableFormieIntegration && class_exists('verbb\formie\Formie')) {
-        //     $this->formie->registerFormieHooks();
-        // }
 
         // Register console controllers
         if (Craft::$app instanceof ConsoleApplication) {

@@ -14,6 +14,7 @@ use craft\console\Controller;
 use craft\helpers\Console;
 use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\translationmanager\helpers\PhpTranslationsHelper;
+use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\console\ExitCode;
 
@@ -59,14 +60,21 @@ class TranslationsController extends Controller
 
             $this->stdout("Found {$totalForms} forms to process.\n\n", Console::FG_GREEN);
 
-            $formieService = TranslationManager::getInstance()->formie;
+            /** @var IntegrationService $integrationService */
+            $integrationService = TranslationManager::getInstance()->get('integrations');
+            $formieIntegration = $integrationService->get('formie');
+            if ($formieIntegration === null) {
+                $this->stderr("Formie integration is not available.\n", Console::FG_RED);
+                return ExitCode::UNSPECIFIED_ERROR;
+            }
+
             $processed = 0;
 
             foreach ($forms as $form) {
                 $this->stdout("Processing form: {$form->title} ({$form->handle})... ", Console::FG_CYAN);
                 
                 try {
-                    $formieService->captureFormTranslations($form);
+                    $formieIntegration->captureTranslations($form);
                     $processed++;
                     $this->stdout("Done\n", Console::FG_GREEN);
                 } catch (\Exception $e) {
@@ -80,7 +88,7 @@ class TranslationsController extends Controller
             
             // Check for unused translations after capturing
             $this->stdout("Checking for unused translations...\n", Console::FG_YELLOW);
-            $formieService->checkFormUsage();
+            $formieIntegration->checkUsage();
             $this->stdout("Usage check complete.\n", Console::FG_GREEN);
 
             return ExitCode::OK;

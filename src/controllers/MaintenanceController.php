@@ -14,6 +14,7 @@ use Craft;
 use craft\web\Controller;
 use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\Response;
 
@@ -310,12 +311,24 @@ class MaintenanceController extends Controller
             $pluginName = TranslationManager::getFormiePluginName();
 
             if (PluginHelper::isPluginEnabled('formie')) {
+                /** @var IntegrationService $integrationService */
+                $integrationService = TranslationManager::getInstance()->get('integrations');
+                $formieIntegration = $integrationService->get('formie');
+                if ($formieIntegration === null) {
+                    return $this->asJson([
+                        'success' => false,
+                        'error' => 'Formie integration is not available.',
+                    ]);
+                }
+
                 $forms = \verbb\formie\Formie::getInstance()->getForms()->getAllForms();
 
                 foreach ($forms as $form) {
-                    TranslationManager::getInstance()->formie->captureFormTranslations($form);
+                    $formieIntegration->captureTranslations($form);
                     $count++;
                 }
+
+                $formieIntegration->checkUsage();
             }
 
             return $this->asJson([
