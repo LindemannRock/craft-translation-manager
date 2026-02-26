@@ -269,8 +269,8 @@ class TranslationsService extends Component
     {
         $translation->dateUpdated = Db::prepareDateForDb(new \DateTime());
         
-        // Don't override 'unused' status
-        if ($translation->status !== 'unused') {
+        // Keep review/system states untouched unless explicitly changed elsewhere.
+        if (!in_array($translation->status, ['unused', 'approved', 'ai_draft'], true)) {
             if ($translation->translation) {
                 $translation->status = 'translated';
             } else {
@@ -914,6 +914,7 @@ class TranslationsService extends Component
         }
         
         $pending = $counts['pending'] ?? 0;
+        $aiDraft = $counts['ai_draft'] ?? 0;
         $translated = $counts['translated'] ?? 0;
         $approved = $counts['approved'] ?? 0;
         $unused = $counts['unused'] ?? 0;
@@ -939,6 +940,7 @@ class TranslationsService extends Component
         $stats = [
             'total' => $total,
             'pending' => $pending,
+            'aiDraft' => $aiDraft,
             'translated' => $translated,
             'approved' => $approved,
             'unused' => $unused,

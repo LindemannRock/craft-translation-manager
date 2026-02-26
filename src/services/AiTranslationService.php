@@ -11,12 +11,14 @@
 namespace lindemannrock\translationmanager\services;
 
 use craft\base\Component;
+use craft\helpers\Db;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\interfaces\AiTranslationProviderInterface;
 use lindemannrock\translationmanager\providers\ai\AnthropicProvider;
 use lindemannrock\translationmanager\providers\ai\GeminiProvider;
 use lindemannrock\translationmanager\providers\ai\MockProvider;
 use lindemannrock\translationmanager\providers\ai\OpenAiProvider;
+use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\TranslationManager;
 
 /**
@@ -116,6 +118,90 @@ class AiTranslationService extends Component
         $this->assertHtmlTagStructurePreserved($text, $translated, $provider->getHandle());
 
         return $translated;
+    }
+
+    /**
+     * Translate pending rows to AI drafts for a target language.
+     *
+     * @return array{processed: int, translated: int, skipped: int, failed: int, provider: string, language: string}
+     */
+    public function translatePendingToDraft(
+        string $targetLanguage,
+        int $limit = 50,
+        string $type = 'all',
+        ?string $providerHandle = null,
+    ): array {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $provider = $this->getProvider($providerHandle);
+        $sourceLanguage = $settings->sourceLanguage;
+
+        $query = TranslationRecord::find()
+            ->where([
+                'language' => $targetLanguage,
+                'status' => 'pending',
+            ])
+            ->orderBy(['id' => SORT_ASC])
+            ->limit(max(1, $limit));
+
+        if ($type === 'forms') {
+            $query->andWhere(['or',
+                ['like', 'context', 'formie.%', false],
+                ['=', 'context', 'formie'],
+            ]);
+        } elseif ($type === 'site') {
+            $query->andWhere(['and',
+                ['not', ['like', 'context', 'formie.%', false]],
+                ['!=', 'context', 'formie'],
+            ]);
+        }
+
+        /** @var TranslationRecord[] $rows */
+        $rows = $query->all();
+        $result = [
+            'processed' => count($rows),
+            'translated' => 0,
+            'skipped' => 0,
+            'failed' => 0,
+            'provider' => $provider->getHandle(),
+            'language' => $targetLanguage,
+        ];
+
+        foreach ($rows as $row) {
+            $sourceText = trim((string) $row->translationKey);
+            if ($sourceText === '' || trim((string) $row->translation) !== '') {
+                $result['skipped']++;
+                continue;
+            }
+
+            try {
+                $translated = $this->translateText(
+                    $sourceText,
+                    $sourceLanguage,
+                    $targetLanguage,
+                    $provider->getHandle(),
+                );
+
+                $row->translation = $translated;
+                $row->status = 'ai_draft';
+                $row->dateUpdated = Db::prepareDateForDb(new \DateTime());
+
+                if ($row->save()) {
+                    $result['translated']++;
+                } else {
+                    $result['failed']++;
+                }
+            } catch (\Throwable $e) {
+                $result['failed']++;
+                $this->logError('AI draft translation failed', [
+                    'id' => $row->id,
+                    'language' => $targetLanguage,
+                    'provider' => $provider->getHandle(),
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $result;
     }
 
     /**

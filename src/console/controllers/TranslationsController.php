@@ -31,6 +31,53 @@ class TranslationsController extends Controller
     public $defaultAction = 'capture-formie';
 
     /**
+     * Translate pending rows into AI drafts (manual approval remains separate).
+     *
+     * Usage:
+     * - php craft translation-manager/translations/ai-draft ar
+     * - php craft translation-manager/translations/ai-draft de 100 site mock
+     *
+     * @since 5.22.0
+     */
+    public function actionAiDraft(
+        string $language,
+        int $limit = 50,
+        string $type = 'all',
+        ?string $provider = null,
+    ): int {
+        $this->stdout("AI draft translation batch\n", Console::FG_YELLOW);
+        $this->stdout("Language: {$language}\n", Console::FG_CYAN);
+        $this->stdout("Limit: {$limit}\n", Console::FG_CYAN);
+        $this->stdout("Type: {$type}\n", Console::FG_CYAN);
+        $this->stdout("Provider: " . ($provider ?? 'settings default') . "\n\n", Console::FG_CYAN);
+
+        if (!in_array($type, ['all', 'forms', 'site'], true)) {
+            $this->stderr("Invalid type. Use: all, forms, or site.\n", Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+
+        try {
+            $result = TranslationManager::getInstance()->ai->translatePendingToDraft(
+                targetLanguage: $language,
+                limit: $limit,
+                type: $type,
+                providerHandle: $provider,
+            );
+
+            $this->stdout("Processed: {$result['processed']}\n", Console::FG_CYAN);
+            $this->stdout("AI drafts created: {$result['translated']}\n", Console::FG_GREEN);
+            $this->stdout("Skipped: {$result['skipped']}\n", Console::FG_YELLOW);
+            $this->stdout("Failed: {$result['failed']}\n", $result['failed'] > 0 ? Console::FG_RED : Console::FG_GREEN);
+            $this->stdout("Provider used: {$result['provider']}\n", Console::FG_CYAN);
+
+            return $result['failed'] > 0 ? ExitCode::UNSPECIFIED_ERROR : ExitCode::OK;
+        } catch (\Throwable $e) {
+            $this->stderr("AI draft batch failed: {$e->getMessage()}\n", Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+    }
+
+    /**
      * Capture all existing Formie form translations
      */
     public function actionCaptureFormie(): int

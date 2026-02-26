@@ -36,7 +36,7 @@ class Install extends Migration
                 'language' => $this->string(12)->notNull()->comment('Language code (e.g., en-US, ar, fr)'),
                 'translationKey' => $this->text()->notNull()->comment('The key used in code (any language)'),
                 'translation' => $this->text()->null()->comment('Language-specific translation'),
-                'status' => $this->enum('status', ['pending', 'translated', 'unused', 'approved'])->notNull()->defaultValue('pending'),
+                'status' => $this->enum('status', ['pending', 'ai_draft', 'translated', 'unused', 'approved'])->notNull()->defaultValue('pending'),
                 'usageCount' => $this->integer()->notNull()->defaultValue(1),
                 'lastUsed' => $this->dateTime()->null(),
                 'dateCreated' => $this->dateTime()->notNull(),

@@ -49,7 +49,7 @@ class TranslationRecord extends ActiveRecord
             [['context'], 'string', 'max' => 255],
             [['category'], 'string', 'max' => 50],
             [['language'], 'string', 'max' => 12],
-            [['status'], 'in', 'range' => ['pending', 'translated', 'approved', 'unused']],
+            [['status'], 'in', 'range' => ['pending', 'ai_draft', 'translated', 'approved', 'unused']],
             [['usageCount'], 'integer', 'min' => 0],
             [['usageCount'], 'default', 'value' => 1],
             [['status'], 'default', 'value' => 'pending'],

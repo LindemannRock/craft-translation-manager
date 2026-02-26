@@ -68,9 +68,11 @@
                 <div class="flex">
                     <div class="btngroup">
                         <button type="button" class="btn menubtn statusmenubtn">
-                            <span class="status {{ status == 'all' ? 'all' : (status == 'pending' ? 'orange' : (status == 'translated' ? 'teal' : (status == 'unused' ? 'gray' : ''))) }}"></span>
+                            <span class="status {{ status == 'all' ? 'all' : (status == 'pending' ? 'orange' : (status == 'ai_draft' ? 'blue' : (status == 'translated' ? 'teal' : (status == 'unused' ? 'gray' : ''))) ) }}"></span>
                             {% if status == 'all' %}
                                 All
+                            {% elseif status == 'ai_draft' %}
+                                AI Draft
                             {% elseif status == 'unused' %}
                                 Unused
                             {% else %}
@@ -85,6 +87,9 @@
                                 <li><a class="{{ status == 'pending' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=pending&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
                                     <span class="status orange"></span>Pending
                                 </a></li>
+                                <li><a class="{{ status == 'ai_draft' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=ai_draft&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
+                                    <span class="status blue"></span>AI Draft
+                                </a></li>
                                 <li><a class="{{ status == 'translated' ? 'sel' : '' }}" href="?language={{ currentLanguage }}&status=translated&type={{ type }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
                                     <span class="status teal"></span>Translated
                                 </a></li>
@@ -95,16 +100,16 @@
                                 <li><hr class="padded"></li>
                                 <li class="menu-header">Type</li>
                                 <li><a class="{{ type == 'all' ? 'sel' : '' }}" href="?type=all&status={{ status }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
-                                    <span class="status {{ type == 'all' ? 'blue' : 'disabled' }}"></span>All Types
+                                    <span class="status {{ type == 'all' ? 'pink' : 'disabled' }}"></span>All Types
                                 </a></li>
                                 {% if settings.enableFormieIntegration %}
                                 <li><a class="{{ type == 'forms' ? 'sel' : '' }}" href="?type=forms&status={{ status }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
-                                    <span class="status {{ type == 'forms' ? 'blue' : 'disabled' }}"></span>{{ craft.translationManager.getFormiePluginName() }}
+                                    <span class="status {{ type == 'forms' ? 'pink' : 'disabled' }}"></span>{{ craft.translationManager.getFormiePluginName() }}
                                 </a></li>
                                 {% endif %}
                                 {% if settings.enableSiteTranslations %}
                                 <li><a class="{{ type == 'site' ? 'sel' : '' }}" href="?type=site&status={{ status }}&search={{ search }}&sort={{ sort }}&dir={{ dir }}">
-                                    <span class="status {{ type == 'site' ? 'blue' : 'disabled' }}"></span>Site
+                                    <span class="status {{ type == 'site' ? 'pink' : 'disabled' }}"></span>Site
                                 </a></li>
                                 {% endif %}
                                 {% endif %}
@@ -279,22 +284,19 @@
                                 <textarea class="translation-text" placeholder="{% if currentLanguage starts with 'ar' %}أدخل الترجمة العربية هنا...{% else %}Enter translation for {{ currentLanguage|upper }}...{% endif %}">{{ translation.translation|e }}</textarea>
                             </td>
                             <td>
-                                {% if translation.status == 'unused' %}
-                                    <span class="status-label gray">
-                                        <span class="status gray"></span>
-                                        <span class="status-label-text">Unused</span>
-                                    </span>
-                                {% elseif translation.status == 'pending' %}
-                                    <span class="status-label orange">
-                                        <span class="status orange"></span>
-                                        <span class="status-label-text">Pending</span>
-                                    </span>
-                                {% elseif translation.status == 'translated' %}
-                                    <span class="status-label teal">
-                                        <span class="status teal"></span>
-                                        <span class="status-label-text">Translated</span>
-                                    </span>
-                                {% endif %}
+                                {% set statusMap = {
+                                    'unused': { label: 'Unused', color: 'gray' },
+                                    'pending': { label: 'Pending', color: 'orange' },
+                                    'ai_draft': { label: 'AI Draft', color: 'blue' },
+                                    'translated': { label: 'Translated', color: 'teal' },
+                                    'approved': { label: 'Approved', color: 'green' },
+                                } %}
+                                {% set statusBadge = statusMap[translation.status] ?? { label: translation.status|title, color: 'gray' } %}
+
+                                {% include 'lindemannrock-base/_components/status-badge' with {
+                                    label: statusBadge.label,
+                                    status: statusBadge.color,
+                                } only %}
                             </td>
                             {% if settings.showContext %}
                                 <td class="light">{{ translation.context|e }}</td>
