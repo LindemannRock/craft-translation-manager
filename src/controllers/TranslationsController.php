@@ -86,6 +86,9 @@ class TranslationsController extends Controller
             $language = Craft::$app->getSites()->getCurrentSite()->language;
         }
 
+        // Always normalize selected language to canonical mapped target.
+        $language = $settings->mapLanguage($language);
+
         // Get unique languages for the selector
         $uniqueLanguages = TranslationManager::getInstance()->getUniqueLanguages();
         $dir = $request->getParam('dir', 'asc');

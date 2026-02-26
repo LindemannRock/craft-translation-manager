@@ -412,9 +412,11 @@
                 const origin = {{ origin|json_encode|raw }};
                 const search = {{ search|json_encode|raw }};
                 const category = {{ category|json_encode|raw }};
+                const language = {{ currentLanguage|json_encode|raw }};
 
                 let url = actionUrl;
-                url += (actionUrl.indexOf('?') === -1 ? '?' : '&') + 'type=' + encodeURIComponent(type);
+                url += (actionUrl.indexOf('?') === -1 ? '?' : '&') + 'language=' + encodeURIComponent(language);
+                url += '&type=' + encodeURIComponent(type);
                 url += '&status=' + encodeURIComponent(status);
                 url += '&origin=' + encodeURIComponent(origin);
                 url += '&search=' + encodeURIComponent(search);

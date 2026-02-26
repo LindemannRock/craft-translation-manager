@@ -151,10 +151,16 @@ class TranslationsService extends Component
             $query->andWhere(['siteId' => $criteria['siteId']]);
         } elseif (!isset($criteria['allSites']) || !$criteria['allSites']) {
             // Default to current site's language if no specific filter and allSites not set
-            $currentLanguage = Craft::$app->getSites()->getCurrentSite()->language;
+            $currentLanguage = $settings->mapLanguage(Craft::$app->getSites()->getCurrentSite()->language);
             $query->andWhere(['language' => $currentLanguage]);
         }
         // If allSites is true, don't add any language/site filter
+
+        // Hide mapped source locales globally (e.g., en-US when mapped to en).
+        $mappedSourceLocales = array_keys($settings->getActiveLocaleMapping());
+        if (!empty($mappedSourceLocales)) {
+            $query->andWhere(['not in', 'language', $mappedSourceLocales]);
+        }
 
         // Apply status filter
         if (!empty($criteria['status']) && $criteria['status'] !== 'all') {

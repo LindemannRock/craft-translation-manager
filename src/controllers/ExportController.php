@@ -103,12 +103,13 @@ class ExportController extends Controller
             $exportAll = empty($languageParam) && empty($siteParam);
 
             if (!empty($languageParam)) {
+                $languageParam = $settings->mapLanguage($languageParam);
                 $criteria['language'] = $languageParam;
             } elseif (!empty($siteParam)) {
                 // Legacy: convert siteId to language
                 $site = Craft::$app->getSites()->getSiteById($siteParam);
                 if ($site) {
-                    $criteria['language'] = $site->language;
+                    $criteria['language'] = $settings->mapLanguage($site->language);
                 }
             } else {
                 // Export all languages
@@ -211,7 +212,7 @@ class ExportController extends Controller
                 // Legacy: use site's language
                 $site = Craft::$app->getSites()->getSiteById($siteParam);
                 if ($site) {
-                    $filenameParts[] = $this->sanitizeFilenamePart($site->language);
+                    $filenameParts[] = $this->sanitizeFilenamePart($settings->mapLanguage($site->language));
                 }
             }
 
