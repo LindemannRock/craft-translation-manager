@@ -393,6 +393,7 @@ class ImportController extends Controller
                 'siteLanguage' => '',
                 'type' => '',
                 'status' => '',
+                'origin' => '',
                 '_rowNumber' => $rowNumber,
             ];
 
@@ -428,6 +429,9 @@ class ImportController extends Controller
                     case 'status':
                         $translation['status'] = $value;
                         break;
+                    case 'origin':
+                        $translation['origin'] = $value;
+                        break;
                 }
             }
 
@@ -460,6 +464,7 @@ class ImportController extends Controller
             'Context',
             'Type',
             'Status',
+            'Origin',
             'Site ID',
         ];
 
@@ -481,6 +486,7 @@ class ImportController extends Controller
                 $translation['context'] ?? '',
                 $translation['type'] ?? '',
                 $translation['status'] ?? '',
+                $translation['origin'] ?? '',
                 $translation['siteId'] ?? '',
             ]);
         }
@@ -544,6 +550,18 @@ class ImportController extends Controller
 
             if (!$targetLanguage) {
                 $targetLanguage = Craft::$app->getSites()->getPrimarySite()->language;
+            }
+            $targetLanguage = TranslationManager::getInstance()->getSettings()->mapLanguage($targetLanguage);
+            if (!$this->isAllowedImportLanguage($targetLanguage)) {
+                $errors[] = [
+                    'rowNumber' => $translation['_rowNumber'] ?? null,
+                    'english' => $translation['english'] ?? '',
+                    'arabic' => $translation['arabic'] ?? '',
+                    'context' => $translation['context'] ?? 'site',
+                    'language' => $targetLanguage,
+                    'error' => "Language '{$targetLanguage}' is not allowed for import.",
+                ];
+                continue;
             }
 
             $originalEnglish = $translation['english'];
@@ -719,6 +737,7 @@ class ImportController extends Controller
         $categoryIndex = $this->findColumnIndex($headers, ['Category']);
         $typeIndex = $this->findColumnIndex($headers, ['Type']);
         $statusIndex = $this->findColumnIndex($headers, ['Status']);
+        $originIndex = $this->findColumnIndex($headers, ['Origin', 'Translation Origin', 'TranslationOrigin', 'translationOrigin']);
         
         
         if ($keyIndex === false) {
@@ -767,6 +786,10 @@ class ImportController extends Controller
                 if ($statusIndex !== false && isset($row[$statusIndex])) {
                     $importedStatus = $this->normalizeImportedStatus($row[$statusIndex]);
                 }
+                $importedOrigin = null;
+                if ($originIndex !== false && isset($row[$originIndex])) {
+                    $importedOrigin = $this->normalizeImportedOrigin($row[$originIndex]);
+                }
 
                 // Strip CSV formula-escape prefix (apostrophe followed by formula character)
                 // This restores original values that were escaped during export
@@ -808,6 +831,12 @@ class ImportController extends Controller
                 // Default to primary site's language if no language info provided
                 if (!$language) {
                     $language = Craft::$app->getSites()->getPrimarySite()->language;
+                }
+                $language = TranslationManager::getInstance()->getSettings()->mapLanguage($language);
+                if (!$this->isAllowedImportLanguage($language)) {
+                    $errors[] = "Row $rowNumber: Language '{$language}' is not allowed for import";
+                    $skipped++;
+                    continue;
                 }
 
                 // Get a siteId for backwards compatibility (used when creating new records)
@@ -904,7 +933,7 @@ class ImportController extends Controller
                         // Auto-determine status based on content for non-review/system rows.
                         $existingTranslation->status = $translationText ? 'translated' : 'pending';
                     }
-                    $existingTranslation->translationOrigin = 'import';
+                    $existingTranslation->translationOrigin = $importedOrigin ?? 'import';
                     $existingTranslation->createdByUserId = Craft::$app->getUser()->getId();
                     if ($existingTranslation->status === 'translated') {
                         $existingTranslation->reviewedByUserId = Craft::$app->getUser()->getId();
@@ -971,7 +1000,7 @@ class ImportController extends Controller
                         }
                         $translation->translation = $translationText;
                         $translation->status = $importedStatus ?? ($translationText ? 'translated' : 'pending');
-                        $translation->translationOrigin = 'import';
+                        $translation->translationOrigin = $importedOrigin ?? 'import';
                         $translation->createdByUserId = Craft::$app->getUser()->getId();
                         if ($translation->status === 'translated') {
                             $translation->reviewedByUserId = Craft::$app->getUser()->getId();
@@ -1069,6 +1098,24 @@ class ImportController extends Controller
 
         $allowed = ['pending', 'draft', 'translated', 'unused'];
         return in_array($status, $allowed, true) ? $status : null;
+    }
+
+    /**
+     * Normalize and validate imported origin from CSV.
+     */
+    private function normalizeImportedOrigin(?string $rawOrigin): ?string
+    {
+        if ($rawOrigin === null) {
+            return null;
+        }
+
+        $origin = strtolower(trim($rawOrigin));
+        if ($origin === '') {
+            return null;
+        }
+
+        $allowed = ['ai', 'manual', 'import', 'system'];
+        return in_array($origin, $allowed, true) ? $origin : null;
     }
     
     /**
@@ -1323,5 +1370,41 @@ class ImportController extends Controller
 
         // Fallback to primary site
         return Craft::$app->getSites()->getPrimarySite()->id;
+    }
+
+    /**
+     * Check whether a language is allowed for import.
+     */
+    private function isAllowedImportLanguage(string $language): bool
+    {
+        $normalized = strtolower(trim($language));
+        if ($normalized === '') {
+            return false;
+        }
+
+        return in_array($normalized, $this->getAllowedImportLanguages(), true);
+    }
+
+    /**
+     * Get canonical language codes allowed for import.
+     *
+     * Includes mapped target locales and canonical site locales.
+     *
+     * @return array<int,string>
+     */
+    private function getAllowedImportLanguages(): array
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $allowed = [];
+
+        foreach (TranslationManager::getInstance()->getAllowedSites() as $site) {
+            $allowed[] = strtolower($settings->mapLanguage($site->language));
+        }
+
+        foreach ($settings->getActiveLocaleMapping() as $source => $target) {
+            $allowed[] = strtolower($target);
+        }
+
+        return array_values(array_unique(array_filter($allowed)));
     }
 }

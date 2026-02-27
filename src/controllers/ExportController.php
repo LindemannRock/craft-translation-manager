@@ -139,6 +139,7 @@ class ExportController extends Controller
 
             // Get translations with filters
             $translations = $translationsService->getTranslations($criteria);
+            $allowedExportLanguages = $this->getAllowedExportLanguages();
             
             // If no translations found, still export empty CSV with headers
             $headers = [
@@ -170,6 +171,11 @@ class ExportController extends Controller
             $userEmailMap = $this->getUserEmailMap($userIds);
 
             foreach ($translations as $translation) {
+                $mappedLanguage = $settings->mapLanguage((string)($translation['language'] ?? ''));
+                if ($mappedLanguage === '' || !in_array(strtolower($mappedLanguage), $allowedExportLanguages, true)) {
+                    continue;
+                }
+
                 $context = $translation['context'] ?? '';
                 $isFormie = str_starts_with($context, 'formie.') || $context === 'formie';
                 $typeLabel = $isFormie ? TranslationManager::getFormiePluginName() : 'Site';
@@ -185,7 +191,7 @@ class ExportController extends Controller
 
                 $row['status'] = $translation['status'] ?? '';
                 $row['origin'] = $translation['translationOrigin'] ?? 'system';
-                $row['language'] = $translation['language'] ?? '';
+                $row['language'] = $mappedLanguage;
                 $row['createdBy'] = $this->resolveUserEmail($translation['createdByUserId'] ?? null, $userEmailMap);
                 $row['reviewedBy'] = $this->resolveUserEmail($translation['reviewedByUserId'] ?? null, $userEmailMap);
                 $row['reviewedAt'] = $translation['reviewedAt'] ?? '';
@@ -325,7 +331,7 @@ class ExportController extends Controller
 
             $row['status'] = $translation->status ?? '';
             $row['origin'] = $translation->translationOrigin ?? 'system';
-            $row['language'] = $translation->language ?? '';
+            $row['language'] = $settings->mapLanguage((string)($translation->language ?? ''));
             $row['createdBy'] = $this->resolveUserEmail($translation->createdByUserId ?? null, $userEmailMap);
             $row['reviewedBy'] = $this->resolveUserEmail($translation->reviewedByUserId ?? null, $userEmailMap);
             $row['reviewedAt'] = $translation->reviewedAt ?? '';
@@ -658,5 +664,28 @@ class ExportController extends Controller
         }
 
         return $map[$id] ?? '';
+    }
+
+    /**
+     * Get canonical language codes allowed for export.
+     *
+     * Includes mapped target locales and canonical site locales.
+     *
+     * @return array<int,string>
+     */
+    private function getAllowedExportLanguages(): array
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $allowed = [];
+
+        foreach (TranslationManager::getInstance()->getAllowedSites() as $site) {
+            $allowed[] = strtolower($settings->mapLanguage($site->language));
+        }
+
+        foreach ($settings->getActiveLocaleMapping() as $source => $target) {
+            $allowed[] = strtolower($target);
+        }
+
+        return array_values(array_unique(array_filter($allowed)));
     }
 }
