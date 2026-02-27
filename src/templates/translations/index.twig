@@ -134,6 +134,9 @@
     {key: 'translation', label: 'Translation (' ~ currentLanguage|upper ~ ')', sortable: true},
     {key: 'status', label: 'Status', sortable: true, width: '110px', hideable: true},
     {key: 'origin', label: 'Origin', width: '100px', hideable: true},
+    {key: 'createdBy', label: 'Created By', width: '150px', hideable: true},
+    {key: 'reviewedBy', label: 'Reviewed By', width: '150px', hideable: true},
+    {key: 'reviewedAt', label: 'Reviewed At', width: '170px', hideable: true},
 ]) %}
 {% set columns = columns|merge([{key: 'context', label: 'Context', width: '170px', hideable: true}]) %}
 
@@ -280,6 +283,18 @@
             rgb: originBadge.rgb,
             textColor: originBadge.text,
         } only %}
+    </td>
+
+    <td data-column="createdBy" class="lr-hideable-column">
+        <span class="light">{{ item.createdByEmail ?: '-' }}</span>
+    </td>
+
+    <td data-column="reviewedBy" class="lr-hideable-column">
+        <span class="light">{{ item.reviewedByEmail ?: '-' }}</span>
+    </td>
+
+    <td data-column="reviewedAt" class="lr-hideable-column">
+        <span class="light">{{ item.reviewedAtFormatted ?: '-' }}</span>
     </td>
 
     <td data-column="context" class="light lr-hideable-column" title="{{ item.context|e }}">{{ item.context|e }}</td>
