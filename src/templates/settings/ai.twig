@@ -48,6 +48,7 @@
             name: 'settings[enableAiTranslations]',
             on: settings.enableAiTranslations,
             toggle: 'ai-provider-settings',
+            errors: settings.getErrors('enableAiTranslations'),
             disabled: settings.isOverriddenByConfig('enableAiTranslations'),
             warning: settings.isOverriddenByConfig('enableAiTranslations') ?
                 "This is being overridden by the <code>enableAiTranslations</code> setting in <code>config/translation-manager.php</code>."|raw : null,
@@ -60,6 +61,7 @@
                 id: 'aiProvider',
                 name: 'settings[aiProvider]',
                 value: settings.aiProvider ?? 'openai',
+                errors: settings.getErrors('aiProvider'),
                 options: [
                     { value: 'openai', label: 'OpenAI (GPT/Codex-family models)' },
                     { value: 'gemini', label: 'Google Gemini' },
@@ -79,6 +81,7 @@
                     name: 'settings[openAiApiKey]',
                     value: settings.openAiApiKey ?? '',
                     suggestEnvVars: true,
+                    errors: settings.getErrors('openAiApiKey'),
                     disabled: settings.isOverriddenByConfig('openAiApiKey'),
                     warning: settings.isOverriddenByConfig('openAiApiKey') ?
                         "This is being overridden by the <code>openAiApiKey</code> setting in <code>config/translation-manager.php</code>."|raw : null,
@@ -90,6 +93,7 @@
                     id: 'openAiModel',
                     name: 'settings[openAiModel]',
                     value: openAiCurrentModel in openAiKnownModels ? openAiCurrentModel : '__custom__',
+                    errors: settings.getErrors('openAiModel'),
                     options: [
                         { value: 'gpt-4o-mini', label: 'gpt-4o-mini (recommended)' },
                         { value: 'gpt-4.1-mini', label: 'gpt-4.1-mini' },
@@ -121,6 +125,7 @@
                     name: 'settings[geminiApiKey]',
                     value: settings.geminiApiKey ?? '',
                     suggestEnvVars: true,
+                    errors: settings.getErrors('geminiApiKey'),
                     disabled: settings.isOverriddenByConfig('geminiApiKey'),
                     warning: settings.isOverriddenByConfig('geminiApiKey') ?
                         "This is being overridden by the <code>geminiApiKey</code> setting in <code>config/translation-manager.php</code>."|raw : null,
@@ -132,6 +137,7 @@
                     id: 'geminiModel',
                     name: 'settings[geminiModel]',
                     value: geminiCurrentModel in geminiKnownModels ? geminiCurrentModel : '__custom__',
+                    errors: settings.getErrors('geminiModel'),
                     options: [
                         { value: 'gemini-2.0-flash', label: 'gemini-2.0-flash (recommended)' },
                         { value: 'gemini-2.0-flash-lite', label: 'gemini-2.0-flash-lite' },
@@ -163,6 +169,7 @@
                     name: 'settings[anthropicApiKey]',
                     value: settings.anthropicApiKey ?? '',
                     suggestEnvVars: true,
+                    errors: settings.getErrors('anthropicApiKey'),
                     disabled: settings.isOverriddenByConfig('anthropicApiKey'),
                     warning: settings.isOverriddenByConfig('anthropicApiKey') ?
                         "This is being overridden by the <code>anthropicApiKey</code> setting in <code>config/translation-manager.php</code>."|raw : null,
@@ -174,6 +181,7 @@
                     id: 'anthropicModel',
                     name: 'settings[anthropicModel]',
                     value: anthropicCurrentModel in anthropicKnownModels ? anthropicCurrentModel : '__custom__',
+                    errors: settings.getErrors('anthropicModel'),
                     options: [
                         { value: 'claude-3-haiku-20240307', label: 'claude-3-haiku-20240307 (recommended)' },
                         { value: 'claude-3-5-haiku-20241022', label: 'claude-3-5-haiku-20241022' },

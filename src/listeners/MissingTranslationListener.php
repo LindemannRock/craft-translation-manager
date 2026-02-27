@@ -38,6 +38,11 @@ class MissingTranslationListener
     private static array $enabledCategoriesCache = [];
 
     /**
+     * @var array Cache of allowed capture languages this request
+     */
+    private static array $allowedLanguagesCache = [];
+
+    /**
      * @var array Cache of translations we've already captured this request (to avoid duplicates)
      */
     private static array $capturedThisRequest = [];
@@ -71,6 +76,11 @@ class MissingTranslationListener
         // Apply locale mapping to use the mapped language for saving
         // This ensures translations are stored under the base locale (e.g., en instead of en-US)
         $language = $settings->mapLanguage($language);
+
+        // Skip capture for languages that aren't in allowed canonical locale set.
+        if (!self::isAllowedLanguage($language, $settings)) {
+            return;
+        }
 
         // Skip empty messages
         if (empty($message) || trim($message) === '') {
@@ -161,6 +171,33 @@ class MissingTranslationListener
     }
 
     /**
+     * Check if language is in the allowed canonical language set.
+     */
+    private static function isAllowedLanguage(string $language, $settings): bool
+    {
+        $normalized = strtolower(trim($language));
+        if ($normalized === '') {
+            return false;
+        }
+
+        if (empty(self::$allowedLanguagesCache)) {
+            $allowed = [];
+
+            foreach (TranslationManager::getInstance()->getAllowedSites() as $site) {
+                $allowed[] = strtolower($settings->mapLanguage($site->language));
+            }
+
+            foreach ($settings->getActiveLocaleMapping() as $source => $target) {
+                $allowed[] = strtolower($target);
+            }
+
+            self::$allowedLanguagesCache = array_values(array_unique(array_filter($allowed)));
+        }
+
+        return in_array($normalized, self::$allowedLanguagesCache, true);
+    }
+
+    /**
      * Check if text contains Twig code that shouldn't be translated
      */
     private static function containsTwigCode(string $text): bool
@@ -210,6 +247,7 @@ class MissingTranslationListener
     public static function resetCaches(): void
     {
         self::$enabledCategoriesCache = [];
+        self::$allowedLanguagesCache = [];
         self::$capturedThisRequest = [];
     }
 }

@@ -38,6 +38,7 @@ class MaintenanceController extends Controller
         switch ($action->id) {
             case 'clean-unused':
             case 'clean-unused-type':
+            case 'clean-languages':
                 if (!$user->checkPermission('translationManager:cleanUnused')) {
                     throw new \yii\web\ForbiddenHttpException('User does not have permission to clean unused translations');
                 }
@@ -436,6 +437,98 @@ class MaintenanceController extends Controller
             ]);
         }
     }
+
+    /**
+     * Remove translations for selected language codes (mapped-source and ghost locales).
+     *
+     * @return Response
+     */
+    public function actionCleanLanguages(): Response
+    {
+        $this->requirePostRequest();
+        $this->requireAcceptsJson();
+        $this->requirePermission('translationManager:cleanUnused');
+
+        $request = Craft::$app->getRequest();
+        $languages = $request->getBodyParam('languages', []);
+        if (!is_array($languages)) {
+            $languages = [];
+        }
+
+        $languages = array_values(array_unique(array_filter(array_map(static fn($value) => trim((string)$value), $languages))));
+        if (empty($languages)) {
+            return $this->asJson([
+                'success' => false,
+                'error' => 'No languages selected.',
+            ]);
+        }
+
+        $candidates = $this->getLanguageCleanupCandidates();
+        $allowed = [];
+        foreach ($candidates['mappedSource'] as $row) {
+            $allowed[] = (string)($row['language'] ?? '');
+        }
+        foreach ($candidates['ghost'] as $row) {
+            $allowed[] = (string)($row['language'] ?? '');
+        }
+        $allowed = array_values(array_unique(array_filter($allowed)));
+
+        $invalid = array_values(array_diff($languages, $allowed));
+        if (!empty($invalid)) {
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Invalid language selection: ' . implode(', ', $invalid),
+            ]);
+        }
+
+        try {
+            $settings = TranslationManager::getInstance()->getSettings();
+            if ($settings->backupEnabled) {
+                try {
+                    $backupService = TranslationManager::getInstance()->backup;
+                    $backupService->createBackup('before_cleanup_languages');
+                } catch (\Exception $e) {
+                    $this->logError("Failed to create backup before language cleanup", ['error' => $e->getMessage()]);
+                }
+            }
+
+            $rows = (new \craft\db\Query())
+                ->select(['id', 'language'])
+                ->from('{{%translationmanager_translations}}')
+                ->where(['language' => $languages])
+                ->all();
+
+            if (empty($rows)) {
+                return $this->asJson([
+                    'success' => true,
+                    'deleted' => 0,
+                    'message' => 'No matching translations found for selected languages.',
+                ]);
+            }
+
+            $ids = array_values(array_unique(array_map(static fn($row) => (int)$row['id'], $rows)));
+            $deleted = TranslationManager::getInstance()->translations->deleteTranslations($ids);
+
+            $counts = [];
+            foreach ($rows as $row) {
+                $lang = (string)$row['language'];
+                $counts[$lang] = ($counts[$lang] ?? 0) + 1;
+            }
+            ksort($counts);
+
+            return $this->asJson([
+                'success' => true,
+                'deleted' => $deleted,
+                'deletedByLanguage' => $counts,
+                'message' => "Deleted {$deleted} translations across " . count($counts) . " language(s).",
+            ]);
+        } catch (\Exception $e) {
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Failed to clean languages: ' . $e->getMessage(),
+            ]);
+        }
+    }
     
     /**
      * Scan templates action
@@ -471,5 +564,73 @@ class MaintenanceController extends Controller
                 'error' => 'Failed to scan templates: ' . $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Get cleanup candidates for language-level cleanup.
+     *
+     * @return array{mappedSource: array<int, array<string,mixed>>, ghost: array<int, array<string,mixed>>, totalCandidates:int, totalRows:int}
+     */
+    private function getLanguageCleanupCandidates(): array
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+
+        $languageCounts = (new \craft\db\Query())
+            ->select(['language', 'COUNT(*) as count'])
+            ->from('{{%translationmanager_translations}}')
+            ->groupBy(['language'])
+            ->all();
+
+        $activeMapping = $settings->getActiveLocaleMapping();
+        $mappedSources = array_keys($activeMapping);
+
+        $canonicalLocales = [];
+        foreach (TranslationManager::getInstance()->getAllowedSites() as $site) {
+            $canonicalLocales[] = $settings->mapLanguage($site->language);
+        }
+        foreach ($activeMapping as $target) {
+            $canonicalLocales[] = $target;
+        }
+        $canonicalLocales = array_values(array_unique(array_filter($canonicalLocales)));
+
+        $canonicalLookup = array_fill_keys(array_map('strtolower', $canonicalLocales), true);
+        $mappedSourceLookup = array_fill_keys(array_map('strtolower', $mappedSources), true);
+
+        $result = [
+            'mappedSource' => [],
+            'ghost' => [],
+            'totalCandidates' => 0,
+            'totalRows' => 0,
+        ];
+
+        foreach ($languageCounts as $row) {
+            $language = (string)($row['language'] ?? '');
+            $count = (int)($row['count'] ?? 0);
+            if ($language === '' || $count <= 0) {
+                continue;
+            }
+
+            $normalized = strtolower($language);
+            $entry = [
+                'language' => $language,
+                'count' => $count,
+            ];
+
+            if (isset($mappedSourceLookup[$normalized])) {
+                $entry['mappedTo'] = $activeMapping[$language] ?? $settings->mapLanguage($language);
+                $result['mappedSource'][] = $entry;
+                $result['totalCandidates']++;
+                $result['totalRows'] += $count;
+                continue;
+            }
+
+            if (!isset($canonicalLookup[$normalized])) {
+                $result['ghost'][] = $entry;
+                $result['totalCandidates']++;
+                $result['totalRows'] += $count;
+            }
+        }
+
+        return $result;
     }
 }

@@ -46,6 +46,7 @@
             name: 'settings[enableFormieIntegration]',
             on: settings.enableFormieIntegration,
             toggle: 'formie-integration-settings',
+            errors: settings.getErrors('enableFormieIntegration'),
             disabled: not craft.app.plugins.isPluginEnabled('formie') or settings.isOverriddenByConfig('enableFormieIntegration'),
             warning: settings.isOverriddenByConfig('enableFormieIntegration') ?
                 "This is being overridden by the <code>enableFormieIntegration</code> setting in <code>config/translation-manager.php</code>."|raw :
@@ -60,6 +61,7 @@
                 name: 'settings[excludeFormHandlePatterns]',
                 value: settings.excludeFormHandlePatterns|join("\n"),
                 rows: 4,
+                errors: settings.getErrors('excludeFormHandlePatterns'),
                 placeholder: "Example:\n(Ar)\n(ar)\nAr1\n-ar"|t('translation-manager'),
                 disabled: settings.isOverriddenByConfig('excludeFormHandlePatterns'),
                 warning: settings.isOverriddenByConfig('excludeFormHandlePatterns') ?

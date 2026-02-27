@@ -38,6 +38,7 @@
             name: 'settings[enableSiteTranslations]',
             on: settings.enableSiteTranslations,
             toggle: 'site-translation-settings',
+            errors: settings.getErrors('enableSiteTranslations'),
             disabled: settings.isOverriddenByConfig('enableSiteTranslations'),
             warning: settings.isOverriddenByConfig('enableSiteTranslations') ?
                 "This is being overridden by the <code>enableSiteTranslations</code> setting in <code>config/translation-manager.php</code>."|raw : null,
@@ -127,6 +128,7 @@
                 name: 'settings[skipPatterns]',
                 value: settings.skipPatterns|join("\n"),
                 rows: 5,
+                errors: settings.getErrors('skipPatterns'),
                 placeholder: "Example:\nID\nTitle\nStatus"|t('translation-manager'),
                 disabled: settings.isOverriddenByConfig('skipPatterns'),
                 warning: settings.isOverriddenByConfig('skipPatterns') ?

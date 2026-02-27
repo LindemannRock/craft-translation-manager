@@ -287,14 +287,19 @@ class SettingsController extends Controller
             }
         }
 
-        // Validate
-        if (!$settings->validate()) {
+        // Validate only fields belonging to the current section.
+        $section = $this->_validSettingsSection(
+            $this->request->getBodyParam('section', 'general'),
+        );
+        $attributesToValidate = $this->_validationAttributesForSection($section);
+        $attributesToValidate = array_values(array_filter(
+            $attributesToValidate,
+            fn(string $attribute): bool => !$settings->isOverriddenByConfig($attribute),
+        ));
+
+        if (!$settings->validate($attributesToValidate)) {
             Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Could not save settings.'));
 
-            // Get the section to re-render the correct template with errors
-            $section = $this->_validSettingsSection(
-                $this->request->getBodyParam('section', 'general'),
-            );
             $template = "translation-manager/settings/{$section}";
 
             return $this->renderTemplate($template, [
@@ -302,8 +307,8 @@ class SettingsController extends Controller
             ]);
         }
 
-        // Save settings to database
-        if ($settings->saveToDatabase()) {
+        // Save settings to database (same scoped attributes)
+        if ($settings->saveToDatabase($attributesToValidate)) {
             // Detect backup schedule changes and update queue jobs
             if ($oldBackupEnabled !== $settings->backupEnabled ||
                 $oldBackupSchedule !== $settings->backupSchedule
@@ -556,5 +561,64 @@ class SettingsController extends Controller
         $allowed = ['general', 'generation', 'backup', 'sources', 'interface', 'locale-mapping', 'integrations', 'ai', 'capture'];
 
         return in_array($section, $allowed, true) ? $section : 'general';
+    }
+
+    /**
+     * Get validation attributes for a settings section.
+     */
+    private function _validationAttributesForSection(string $section): array
+    {
+        return match ($section) {
+            'general' => [
+                'pluginName',
+                'requireApproval',
+                'logLevel',
+            ],
+            'generation' => [
+                'autoExport',
+                'exportPath',
+            ],
+            'backup' => [
+                'backupEnabled',
+                'backupOnImport',
+                'backupSchedule',
+                'backupRetentionDays',
+                'backupVolumeUid',
+                'backupPath',
+            ],
+            'sources' => [
+                'enableSiteTranslations',
+                'translationCategories',
+                'sourceLanguage',
+                'skipPatterns',
+            ],
+            'interface' => [
+                'itemsPerPage',
+                'autoSaveEnabled',
+                'autoSaveDelay',
+            ],
+            'locale-mapping' => [
+                'localeMapping',
+            ],
+            'integrations' => [
+                'enableFormieIntegration',
+                'excludeFormHandlePatterns',
+            ],
+            'ai' => [
+                'enableAiTranslations',
+                'aiProvider',
+                'openAiApiKey',
+                'openAiModel',
+                'geminiApiKey',
+                'geminiModel',
+                'anthropicApiKey',
+                'anthropicModel',
+            ],
+            'capture' => [
+                'captureMissingTranslations',
+                'captureMissingOnlyDevMode',
+            ],
+            default => [],
+        };
     }
 }

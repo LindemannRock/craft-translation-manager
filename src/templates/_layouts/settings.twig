@@ -5,6 +5,14 @@
 
 {% set selectedSettingsItem = selectedSettingsItem ?? 'general' %}
 {% set selectedSubnavItem = 'settings' %}
+{% set errorSummary = '' %}
+{% if settings is defined and settings.hasErrors() %}
+    {% set errorSummary = include('lindemannrock-base/_partials/error-summary', {
+        errors: settings.getErrors(),
+        linkMode: 'field-id',
+        translationCategory: 'translation-manager'
+    })|trim %}
+{% endif %}
 
 
 {# {% set plugin = craft.app.plugins.getPlugin('translation-manager') %} #}

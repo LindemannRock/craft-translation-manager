@@ -177,6 +177,75 @@ class TranslationManagerVariable
     }
 
     /**
+     * Get cleanup candidates for language-level data cleanup.
+     *
+     * - mappedSource: languages that are mapped source locales and still exist in DB
+     * - ghost: languages that are not in active canonical locale set and not mapped sources
+     */
+    public function getLanguageCleanupCandidates(): array
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+
+        $languageCounts = (new \craft\db\Query())
+            ->select(['language', 'COUNT(*) as count'])
+            ->from('{{%translationmanager_translations}}')
+            ->groupBy(['language'])
+            ->all();
+
+        $activeMapping = $settings->getActiveLocaleMapping();
+        $mappedSources = array_keys($activeMapping);
+
+        $canonicalLocales = [];
+        foreach (TranslationManager::getInstance()->getAllowedSites() as $site) {
+            $canonicalLocales[] = $settings->mapLanguage($site->language);
+        }
+        foreach ($activeMapping as $target) {
+            $canonicalLocales[] = $target;
+        }
+        $canonicalLocales = array_values(array_unique(array_filter($canonicalLocales)));
+
+        $canonicalLookup = array_fill_keys(array_map('strtolower', $canonicalLocales), true);
+        $mappedSourceLookup = array_fill_keys(array_map('strtolower', $mappedSources), true);
+
+        $result = [
+            'mappedSource' => [],
+            'ghost' => [],
+            'totalCandidates' => 0,
+            'totalRows' => 0,
+        ];
+
+        foreach ($languageCounts as $row) {
+            $language = (string)($row['language'] ?? '');
+            $count = (int)($row['count'] ?? 0);
+            if ($language === '' || $count <= 0) {
+                continue;
+            }
+
+            $normalized = strtolower($language);
+            $entry = [
+                'language' => $language,
+                'count' => $count,
+            ];
+
+            if (isset($mappedSourceLookup[$normalized])) {
+                $entry['mappedTo'] = $activeMapping[$language] ?? $settings->mapLanguage($language);
+                $result['mappedSource'][] = $entry;
+                $result['totalCandidates']++;
+                $result['totalRows'] += $count;
+                continue;
+            }
+
+            if (!isset($canonicalLookup[$normalized])) {
+                $result['ghost'][] = $entry;
+                $result['totalCandidates']++;
+                $result['totalRows'] += $count;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Get the configured Formie plugin name
      */
     public function getFormiePluginName(): string

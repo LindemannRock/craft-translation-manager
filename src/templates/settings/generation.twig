@@ -30,21 +30,22 @@
 
 		<h2 style="margin-top: 0px;">{{ "File Generation Settings"|t('translation-manager') }}</h2>
 
-		{{ forms.lightswitchField({
+        {{ forms.lightswitchField({
             label: "Auto Generate"|t('translation-manager'),
             instructions: "Automatically generate translation files when translations are saved"|t('translation-manager'),
             id: 'autoExport',
             name: 'settings[autoExport]',
             on: settings.autoExport,
+            errors: settings.getErrors('autoExport'),
             disabled: settings.isOverriddenByConfig('autoExport'),
             warning: settings.isOverriddenByConfig('autoExport') ?
                 "This is being overridden by the <code>autoExport</code> setting in <code>config/translation-manager.php</code>."|raw : null,
         }) }}
 
-		{{ forms.autosuggestField({
+        {{ forms.autosuggestField({
             label: "Generation Path"|t('translation-manager'),
             instructions: "The path where PHP translation files should be generated for Craft to read"|t('translation-manager'),
-            tip: "Use Craft path aliases: <code>@root/translations/translation-manager</code> or <code>@translations/translation-manager</code> (Craft's default translations folder). Paths must be outside webroot for security. Environment variables like <code>$ENV_VAR</code> are supported."|t('translation-manager')|raw,
+            tip: "Use Craft path aliases only: <code>@translations</code>, <code>@translations/translation-manager</code>, or <code>@root/translations/translation-manager</code>. Paths must be outside webroot for security."|t('translation-manager')|raw,
             id: 'exportPath',
             name: 'settings[exportPath]',
             value: settings.exportPath,
@@ -61,11 +62,12 @@
 		</div>
 	</form>
 
-	{% set generationPath = settings.getExportPath() %}
-
-    {% include 'lindemannrock-base/_components/info-box' with {
-	    message: '<strong>' ~ "Generation Location:"|t('translation-manager') ~ '</strong> <code>' ~ generationPath ~ '</code>'
-    } %}
+    {% if not settings.getErrors('exportPath') %}
+	    {% set generationPath = settings.getExportPath() %}
+        {% include 'lindemannrock-base/_components/info-box' with {
+	        message: '<strong>' ~ "Generation Location:"|t('translation-manager') ~ '</strong> <code>' ~ generationPath ~ '</code>'
+        } %}
+    {% endif %}
 
 
 	{% include 'lindemannrock-base/_components/plugin-credit' %}

@@ -24,6 +24,7 @@
     {# Enhanced unused translations cleanup with dropdown #}
     {% set unusedCounts = craft.translationManager.getUnusedTranslationCounts() %}
     {% set totalUnused = unusedCounts.total %}
+    {% set languageCleanup = craft.translationManager.getLanguageCleanupCandidates() %}
 
     <div class="field">
         <div class="heading">
@@ -78,6 +79,48 @@
                 </div>
             {% else %}
                 <p class="light">{{ "No unused translations found. Run template scan below to identify unused translations."|t('translation-manager') }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <hr>
+
+    {# Language cleanup (mapped-source + ghost locales) #}
+    <div class="field">
+        <div class="heading">
+            <label>{{ "Clean Up Languages"|t('translation-manager') }}</label>
+            <div class="instructions">
+                <p>{{ "Optionally remove mapped-source and ghost language rows (for example old en-US or test languages like de)."|t('translation-manager') }}</p>
+            </div>
+        </div>
+        <div class="input">
+            {% if languageCleanup.totalCandidates > 0 %}
+                <div style="margin-bottom: 12px;">
+                    <p class="light">{{ "Found {langs} cleanup candidate language(s) with {rows} total row(s)."|t('translation-manager', {langs: languageCleanup.totalCandidates, rows: languageCleanup.totalRows}) }}</p>
+                </div>
+
+                <div id="language-cleanup-options" style="display: grid; gap: 6px; margin-bottom: 12px;">
+                    {% for row in languageCleanup.mappedSource %}
+                        <label>
+                            <input type="checkbox" class="language-cleanup-checkbox" value="{{ row.language }}">
+                            <strong>{{ row.language }}</strong>
+                            <span class="light">→ {{ row.mappedTo }} ({{ row.count }} rows, mapped source)</span>
+                        </label>
+                    {% endfor %}
+                    {% for row in languageCleanup.ghost %}
+                        <label>
+                            <input type="checkbox" class="language-cleanup-checkbox" value="{{ row.language }}">
+                            <strong>{{ row.language }}</strong>
+                            <span class="light">({{ row.count }} rows, ghost locale)</span>
+                        </label>
+                    {% endfor %}
+                </div>
+
+                <button type="button" class="btn secondary" id="clean-languages-btn" disabled>
+                    {{ "Delete Selected Languages"|t('translation-manager') }}
+                </button>
+            {% else %}
+                <p class="light">{{ "No mapped-source or ghost language rows found."|t('translation-manager') }}</p>
             {% endif %}
         </div>
     </div>
@@ -206,6 +249,8 @@
     const unusedDescription = document.getElementById('unusedDescription');
     const unusedDescriptionText = document.getElementById('unusedDescriptionText');
     const cleanUnusedEnhancedBtn = document.getElementById('clean-unused-enhanced-btn');
+    const cleanLanguagesBtn = document.getElementById('clean-languages-btn');
+    const languageCleanupCheckboxes = document.querySelectorAll('.language-cleanup-checkbox');
 
     if (unusedTypeSelect) {
         const descriptions = {
@@ -281,6 +326,62 @@
                     Craft.cp.displayError('Failed to clean unused translations: ' + error.message);
                 });
             }
+        });
+    }
+
+    if (cleanLanguagesBtn && languageCleanupCheckboxes.length > 0) {
+        function updateCleanLanguagesState() {
+            const hasSelection = Array.from(languageCleanupCheckboxes).some(cb => cb.checked);
+            cleanLanguagesBtn.disabled = !hasSelection;
+            cleanLanguagesBtn.classList.toggle('disabled', !hasSelection);
+        }
+
+        languageCleanupCheckboxes.forEach(cb => cb.addEventListener('change', updateCleanLanguagesState));
+        updateCleanLanguagesState();
+
+        cleanLanguagesBtn.addEventListener('click', function() {
+            const selected = Array.from(languageCleanupCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+
+            if (selected.length === 0) {
+                return;
+            }
+
+            if (!confirm(`{{ "Delete all translations for selected languages?"|t('translation-manager')|e('js') }}\\n\\n${selected.join(', ')}`)) {
+                return;
+            }
+
+            const btn = this;
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            fetch('{{ actionUrl('translation-manager/maintenance/clean-languages') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({languages: selected})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Craft.cp.displayNotice(data.message || 'Language cleanup completed');
+                    setTimeout(() => window.location.reload(), 1200);
+                } else {
+                    btn.classList.remove('loading');
+                    updateCleanLanguagesState();
+                    Craft.cp.displayError(data.error || 'Failed to clean languages');
+                }
+            })
+            .catch(error => {
+                btn.classList.remove('loading');
+                updateCleanLanguagesState();
+                Craft.cp.displayError('Failed to clean languages: ' + error.message);
+            });
         });
     }
 

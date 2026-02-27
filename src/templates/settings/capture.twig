@@ -40,6 +40,7 @@
             name: 'settings[captureMissingTranslations]',
             on: settings.captureMissingTranslations,
             toggle: 'capture-missing-settings',
+            errors: settings.getErrors('captureMissingTranslations'),
             disabled: settings.isOverriddenByConfig('captureMissingTranslations'),
             warning: settings.isOverriddenByConfig('captureMissingTranslations') ?
                 "This is being overridden by the <code>captureMissingTranslations</code> setting in <code>config/translation-manager.php</code>."|raw : null,
@@ -52,6 +53,7 @@
                 id: 'captureMissingOnlyDevMode',
                 name: 'settings[captureMissingOnlyDevMode]',
                 on: settings.captureMissingOnlyDevMode,
+                errors: settings.getErrors('captureMissingOnlyDevMode'),
                 disabled: settings.isOverriddenByConfig('captureMissingOnlyDevMode'),
                 warning: settings.isOverriddenByConfig('captureMissingOnlyDevMode') ?
                     "This is being overridden by the <code>captureMissingOnlyDevMode</code> setting in <code>config/translation-manager.php</code>."|raw : null,

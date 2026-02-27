@@ -16,6 +16,7 @@ use craft\behaviors\EnvAttributeParserBehavior;
 use lindemannrock\base\traits\SettingsConfigTrait;
 use lindemannrock\base\traits\SettingsDisplayNameTrait;
 use lindemannrock\base\traits\SettingsPersistenceTrait;
+use lindemannrock\base\validators\StoragePathValidator;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 
 /**
@@ -230,7 +231,7 @@ class Settings extends Model
         return [
             'parser' => [
                 'class' => EnvAttributeParserBehavior::class,
-                'attributes' => ['exportPath', 'backupPath', 'openAiApiKey', 'geminiApiKey', 'anthropicApiKey'],
+                'attributes' => ['openAiApiKey', 'geminiApiKey', 'anthropicApiKey'],
             ],
         ];
     }
@@ -248,8 +249,24 @@ class Settings extends Model
              'message' => 'Translation category must start with a letter and contain only letters, numbers, hyphens, and underscores.', ],
             [['translationCategory'], 'validateTranslationCategory'],
             [['translationCategories'], 'validateTranslationCategories'],
-            [['exportPath'], 'validateExportPath'],
-            [['backupPath'], 'validateBackupPath'],
+            [
+                ['exportPath'],
+                StoragePathValidator::class,
+                'translationCategory' => static::pluginHandle(),
+                'allowedAliases' => ['@translations', '@root', '@storage'],
+                'requireAlias' => true,
+                'preventWebroot' => true,
+            ],
+            [['exportPath'], 'validateExportPathRootSubfolder'],
+            [
+                ['backupPath'],
+                StoragePathValidator::class,
+                'translationCategory' => static::pluginHandle(),
+                'allowedAliases' => ['@storage', '@root'],
+                'requireAlias' => true,
+                'preventWebroot' => true,
+            ],
+            [['backupPath'], 'validateBackupPathRootSubfolder'],
             [['backupVolumeUid'], 'string'],
             [['openAiApiKey', 'geminiApiKey', 'anthropicApiKey'], 'string'],
             [['openAiModel', 'geminiModel', 'anthropicModel'], 'string', 'max' => 100],
@@ -761,6 +778,44 @@ class Settings extends Model
             }
         } catch (\Exception $e) {
             $this->addError($attribute, Craft::t('translation-manager', 'Invalid backup path: {error}', ['error' => $e->getMessage()]));
+        }
+    }
+
+    /**
+     * Require a subfolder when using @root for exportPath.
+     */
+    public function validateExportPathRootSubfolder($attribute): void
+    {
+        $value = trim((string)$this->$attribute);
+        if ($value === '') {
+            return;
+        }
+
+        $normalized = rtrim($value, '/\\');
+        if (strcasecmp($normalized, '@root') === 0) {
+            $this->addError(
+                $attribute,
+                Craft::t(static::pluginHandle(), 'When using @root, include a subfolder (for example: @root/translations).')
+            );
+        }
+    }
+
+    /**
+     * Require a subfolder when using @root for backupPath.
+     */
+    public function validateBackupPathRootSubfolder($attribute): void
+    {
+        $value = trim((string)$this->$attribute);
+        if ($value === '') {
+            return;
+        }
+
+        $normalized = rtrim($value, '/\\');
+        if (strcasecmp($normalized, '@root') === 0) {
+            $this->addError(
+                $attribute,
+                Craft::t(static::pluginHandle(), 'When using @root, include a subfolder (for example: @root/backups/translation-manager).')
+            );
         }
     }
 

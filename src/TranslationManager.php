@@ -468,6 +468,9 @@ class TranslationManager extends Plugin
                 }
             }
 
+            // Normalize legacy absolute paths to aliases before strict validation.
+            $this->normalizeLegacyPathSettings($settings);
+
             // CRITICAL: Validate settings even when loaded from config
             // This prevents config files from bypassing security validation
             if (!$settings->validate()) {
@@ -475,12 +478,12 @@ class TranslationManager extends Plugin
 
                 $this->logError('Invalid Translation Manager configuration', [
                     'errors' => $errors,
-                    'configFile' => 'config/translation-manager.php',
+                    'configSource' => 'database and/or config/translation-manager.php',
                 ]);
 
                 // For security, throw exception rather than silently using invalid config
                 $errorMessage = 'Invalid Translation Manager configuration: ' . implode(', ', $errors);
-                throw new \Exception($errorMessage . ' Please check your config/translation-manager.php file.');
+                throw new \Exception($errorMessage . ' Please check Translation Manager settings (database and config/translation-manager.php).');
             }
 
             $this->_settings = $settings;
@@ -518,6 +521,75 @@ class TranslationManager extends Plugin
     public function getAi(): AiTranslationService
     {
         return $this->get('ai');
+    }
+
+    private function normalizeLegacyPathSettings(Settings $settings): void
+    {
+        // Keep bootstrap resilient if a legacy value uses @root directly.
+        if ($this->isRootAliasValue($settings->exportPath)) {
+            $settings->exportPath = '@root/translations';
+        }
+        if ($this->isRootAliasValue($settings->backupPath)) {
+            $settings->backupPath = '@root/backups/translation-manager';
+        }
+
+        $normalizedExportPath = $this->normalizeAbsolutePathToAlias(
+            $settings->exportPath,
+            ['@translations', '@root', '@storage']
+        );
+        if ($normalizedExportPath !== null) {
+            $settings->exportPath = $normalizedExportPath;
+        }
+        if ($this->isRootAliasValue($settings->exportPath)) {
+            $settings->exportPath = '@root/translations';
+        }
+
+        $normalizedBackupPath = $this->normalizeAbsolutePathToAlias(
+            $settings->backupPath,
+            ['@storage', '@root']
+        );
+        if ($normalizedBackupPath !== null) {
+            $settings->backupPath = $normalizedBackupPath;
+        }
+        if ($this->isRootAliasValue($settings->backupPath)) {
+            $settings->backupPath = '@root/backups/translation-manager';
+        }
+    }
+
+    private function isRootAliasValue(string $value): bool
+    {
+        $normalized = rtrim(trim($value), "/\\");
+        return strcasecmp($normalized, '@root') === 0;
+    }
+
+    private function normalizeAbsolutePathToAlias(string $path, array $allowedAliases): ?string
+    {
+        $trimmedPath = trim($path);
+        if ($trimmedPath === '' || str_starts_with($trimmedPath, '@')) {
+            return null;
+        }
+
+        $normalizedPath = rtrim(str_replace('\\', '/', $trimmedPath), '/');
+
+        foreach ($allowedAliases as $alias) {
+            $resolvedAlias = Craft::getAlias($alias, false);
+            if (!is_string($resolvedAlias) || $resolvedAlias === '') {
+                continue;
+            }
+
+            $normalizedAlias = rtrim(str_replace('\\', '/', $resolvedAlias), '/');
+
+            if ($normalizedPath === $normalizedAlias) {
+                return $alias;
+            }
+
+            if (str_starts_with($normalizedPath, $normalizedAlias . '/')) {
+                $suffix = substr($normalizedPath, strlen($normalizedAlias));
+                return $alias . $suffix;
+            }
+        }
+
+        return null;
     }
 
     /**

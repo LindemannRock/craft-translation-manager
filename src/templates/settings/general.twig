@@ -47,12 +47,13 @@
 
 		<h2>{{ "Workflow Settings"|t('translation-manager') }}</h2>
 
-		{{ forms.lightswitchField({
+        {{ forms.lightswitchField({
             label: "Require Approval Before Publish"|t('translation-manager'),
             instructions: "When enabled, users without approval permission can only save drafts. Approvers can publish as translated."|t('translation-manager'),
             id: 'requireApproval',
             name: 'settings[requireApproval]',
             on: settings.requireApproval,
+            errors: settings.getErrors('requireApproval'),
             disabled: settings.isOverriddenByConfig('requireApproval'),
             warning: settings.isOverriddenByConfig('requireApproval') ?
                 "This is being overridden by the <code>requireApproval</code> setting in <code>config/translation-manager.php</code>."|raw : null,
@@ -81,6 +82,7 @@
             name: 'settings[logLevel]',
             value: settings.logLevel,
             options: logOptions,
+            errors: settings.getErrors('logLevel'),
             disabled: settings.isOverriddenByConfig('logLevel'),
             warning: settings.isOverriddenByConfig('logLevel') ?
                 "This is being overridden by the <code>logLevel</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
