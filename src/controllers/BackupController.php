@@ -427,6 +427,20 @@ class BackupController extends Controller
      */
     private function _formatBackupType(string $reason): array
     {
+        if (str_starts_with($reason, 'before_cleanup')) {
+            return [
+                'label' => Craft::t('translation-manager', 'Clean'),
+                'value' => 'clean',
+            ];
+        }
+
+        if (str_starts_with($reason, 'before_clear')) {
+            return [
+                'label' => Craft::t('translation-manager', 'Clear'),
+                'value' => 'clear',
+            ];
+        }
+
         return match ($reason) {
             'before_import', 'before_php_import' => [
                 'label' => Craft::t('translation-manager', 'Import'),
@@ -443,20 +457,6 @@ class BackupController extends Controller
             'manual' => [
                 'label' => Craft::t('translation-manager', 'Manual'),
                 'value' => 'manual',
-            ],
-            'before_clear_all',
-            'before_clear_formie',
-            'before_clear_site',
-            'before_clear' => [
-                'label' => Craft::t('translation-manager', 'Clear'),
-                'value' => 'clear',
-            ],
-            'before_cleanup',
-            'before_cleanup_all',
-            'before_cleanup_formie',
-            'before_cleanup_site' => [
-                'label' => Craft::t('translation-manager', 'Maintenance'),
-                'value' => 'maintenance',
             ],
             default => [
                 'label' => Craft::t('translation-manager', 'Other'),

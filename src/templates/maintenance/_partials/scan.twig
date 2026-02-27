@@ -1,0 +1,44 @@
+{% set canScanTemplates = currentUser.can('translationManager:scanTemplates') %}
+{% set canRecaptureFormie = settings.enableFormieIntegration and currentUser.can('translationManager:recaptureFormie') %}
+
+{% if canScanTemplates %}
+<div class="field">
+    <div class="heading">
+        <label>{{ "Template Scanner"|t('translation-manager') }}</label>
+        <div class="instructions">
+            <p>{{ "Scan all templates to identify translations that are no longer used and update their status"|t('translation-manager') }}</p>
+        </div>
+    </div>
+    <div class="input">
+        <div style="margin-bottom: 10px;">
+            <button type="button" class="btn secondary" id="rescan-templates-btn">
+                {{ "Scan Templates"|t('translation-manager') }}
+            </button>
+        </div>
+        <p class="light">{{ "Scans all .twig files to find unused translations and mark them for cleanup"|t('translation-manager') }}</p>
+    </div>
+</div>
+{% endif %}
+
+{% if canScanTemplates and canRecaptureFormie %}
+<hr>
+{% endif %}
+
+{% if canRecaptureFormie %}
+<div class="field">
+    <div class="heading">
+        <label>{{ craft.translationManager.getFormiePluginName() ~ " Scanner"|t('translation-manager') }}</label>
+        <div class="instructions">
+            <p>{{ "Rescan all forms to capture any missing translations"|t('translation-manager') }}</p>
+        </div>
+    </div>
+    <div class="input">
+        <div style="margin-bottom: 10px;">
+            <button type="button" class="btn secondary" id="recapture-formie-btn">
+                {{ "Scan {pluginName} Translations"|t('translation-manager', {pluginName: craft.translationManager.getFormiePluginName()}) }}
+            </button>
+        </div>
+        <p class="light">{{ "Scans all forms to capture field labels, placeholders, and other translatable strings"|t('translation-manager') }}</p>
+    </div>
+</div>
+{% endif %}

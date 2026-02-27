@@ -1,0 +1,69 @@
+{% import "_includes/forms" as forms %}
+
+{% if currentUser.can('translationManager:clearTranslations') %}
+<h2 class="error">{{ "Danger Zone"|t('translation-manager') }}</h2>
+
+{% set translationCounts = craft.translationManager.getTranslationCounts() %}
+{% set clearOptions = [{ value: '', label: 'Select an option'|t('translation-manager') }] %}
+{% if settings.enableFormieIntegration and currentUser.can('translationManager:clearFormie') %}
+    {% set clearOptions = clearOptions|merge([{ value: 'formie', label: craft.translationManager.getFormiePluginName() ~ ' Only (' ~ (translationCounts.formie|number_format) ~ ')' }]) %}
+{% endif %}
+{% if settings.enableSiteTranslations and currentUser.can('translationManager:clearSite') %}
+    {% set enabledCategories = settings.getEnabledCategories() %}
+    {% for category in enabledCategories %}
+        {% set clearOptions = clearOptions|merge([{ value: 'category:' ~ category, label: category|title ~ ' Only (' ~ ((translationCounts[category] ?? 0)|number_format) ~ ')' }]) %}
+    {% endfor %}
+{% endif %}
+{% if (settings.enableFormieIntegration or settings.enableSiteTranslations) and currentUser.can('translationManager:clearAll') %}
+    {% set clearOptions = clearOptions|merge([{ value: 'all', label: 'All (' ~ (translationCounts.total|number_format) ~ ')' }]) %}
+{% endif %}
+
+{% set formiePluginName = craft.translationManager.getFormiePluginName() %}
+{% set hasClearOptions = clearOptions|length > 1 %}
+
+{% if hasClearOptions %}
+{{ forms.selectField({
+    label: "Clear Translations"|t('translation-manager'),
+    instructions: "Select which translations to permanently delete from the database and remove corresponding translation files."|t('translation-manager'),
+    id: 'clearType',
+    name: 'clearType',
+    options: clearOptions,
+    value: ''
+}) }}
+{% elseif not (settings.enableFormieIntegration or settings.enableSiteTranslations) %}
+<div class="field">
+    <div class="heading">
+        <label>{{ "Clear Translations"|t('translation-manager') }}</label>
+    </div>
+    <p class="light">{{ ("No translation integrations are currently enabled. Enable " ~ formiePluginName ~ " Integration or Site Translations above to start capturing translations.")|t('translation-manager') }}</p>
+</div>
+{% endif %}
+
+{% if hasClearOptions %}
+{% include 'lindemannrock-base/_components/info-box' with {
+    message: '',
+    type: settings.backupEnabled ? 'warning' : 'error',
+    variant: 'colored',
+    margin: 'top',
+    boxId: 'clearDescription',
+    messageId: 'clearDescriptionText',
+    hidden: true,
+    allowHtml: false,
+} %}
+{% include 'lindemannrock-base/_components/info-box' with {
+    message: "No translations found for the selected option."|t('translation-manager'),
+    type: 'info',
+    variant: 'subtle',
+    margin: 'top',
+    boxId: 'clearNoItemsDescription',
+    hidden: true,
+    allowHtml: false,
+} %}
+
+<div style="margin-top: 20px;">
+    <button type="button" id="clearButton" class="btn submit formaction error disabled" style="display: inline-block;" disabled data-redirect="{{ 'translation-manager/maintenance'|hash }}">
+        {{ "Clear Selected Translations"|t('translation-manager') }}
+    </button>
+</div>
+{% endif %}
+{% endif %}

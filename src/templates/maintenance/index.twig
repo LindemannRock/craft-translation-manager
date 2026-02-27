@@ -16,266 +16,172 @@
 ] %}
 
 {% import "_includes/forms" as forms %}
+{% set canScan = currentUser.can('translationManager:scanTemplates')
+    or (settings.enableFormieIntegration and currentUser.can('translationManager:recaptureFormie')) %}
+{% set canCleanup = currentUser.can('translationManager:cleanUnused') %}
+{% set canDanger = currentUser.can('translationManager:clearTranslations') %}
+
+{% set tabs = {} %}
+{% if canScan %}
+    {% set tabs = tabs|merge({
+        scan: {
+            label: 'Scan'|t('translation-manager'),
+            url: '#scan',
+        },
+    }) %}
+{% endif %}
+{% if canCleanup %}
+    {% set tabs = tabs|merge({
+        cleanup: {
+            label: 'Cleanup'|t('translation-manager'),
+            url: '#cleanup',
+        },
+    }) %}
+{% endif %}
+{% if canDanger %}
+    {% set tabs = tabs|merge({
+        danger: {
+            label: 'Danger Zone'|t('translation-manager'),
+            url: '#danger',
+        },
+    }) %}
+{% endif %}
+
+{% set selectedTab = canScan ? 'scan' : (canCleanup ? 'cleanup' : 'danger') %}
+{% set hashTab = craft.app.request.getParam('tab') ?? craft.app.request.getSegment(4) %}
+{% if hashTab in tabs|keys %}
+    {% set selectedTab = hashTab %}
+{% endif %}
+{% set unusedCounts = {
+    total: 0,
+    site: 0,
+    formie: 0,
+} %}
+{% set languageCleanup = {
+    totalCandidates: 0,
+    totalRows: 0,
+    mappedSource: [],
+    ghost: [],
+} %}
+{% set categoryCleanup = {
+    totalCandidates: 0,
+    totalRows: 0,
+    removed: [],
+} %}
+{% set translationCounts = {
+    total: 0,
+    formie: 0,
+    site: 0,
+} %}
+{% if currentUser.can('translationManager:cleanUnused') %}
+    {% set unusedCounts = craft.translationManager.getUnusedTranslationCounts() %}
+    {% set languageCleanup = craft.translationManager.getLanguageCleanupCandidates() %}
+    {% set categoryCleanup = craft.translationManager.getCategoryCleanupCandidates() %}
+{% endif %}
+{% if canDanger %}
+    {% set translationCounts = craft.translationManager.getTranslationCounts() %}
+{% endif %}
 
 {% block content %}
-    <h2>{{ "Maintenance Tools"|t('translation-manager') }}</h2>
-
-    {% if currentUser.can('translationManager:cleanUnused') %}
-    {# Enhanced unused translations cleanup with dropdown #}
-    {% set unusedCounts = craft.translationManager.getUnusedTranslationCounts() %}
-    {% set totalUnused = unusedCounts.total %}
-    {% set languageCleanup = craft.translationManager.getLanguageCleanupCandidates() %}
-
-    <div class="field">
-        <div class="heading">
-            <label>{{ "Clean Up Unused Translations"|t('translation-manager') }}</label>
-            <div class="instructions">
-                <p>{{ "Remove translations that are no longer used in templates or forms"|t('translation-manager') }}</p>
-            </div>
+    {% if canScan %}
+        <div id="scan" class="{{ selectedTab != 'scan' ? 'hidden' }}">
+            {% include 'translation-manager/maintenance/_partials/scan' %}
         </div>
-        <div class="input">
-            {% if totalUnused > 0 %}
-                <div style="margin-bottom: 15px;">
-                    <p class="light">
-                        {{ "You have {total} unused translation(s): {site} site translations and {formie} {formieName} translations"|t('translation-manager', {
-                            total: totalUnused,
-                            site: unusedCounts.site,
-                            formie: unusedCounts.formie,
-                            formieName: craft.translationManager.getFormiePluginName()|lower
-                        }) }}
-                    </p>
-                </div>
-
-                <div style="display: flex; align-items: flex-end; gap: 12px;">
-                    <div class="flex-grow">
-                        {% set unusedOptions = [
-                            {value: '', label: 'Select type'|t('translation-manager')},
-                            {value: 'all', label: 'All Unused (' ~ totalUnused ~ ')'|t('translation-manager')}
-                        ] %}
-                        {# Add each enabled category as a separate option #}
-                        {% set enabledCategories = settings.getEnabledCategories() %}
-                        {% for category in enabledCategories %}
-                            {% set unusedOptions = unusedOptions|merge([{value: 'category:' ~ category, label: 'Unused ' ~ category|title ~ ' (' ~ (unusedCounts[category] ?? 0) ~ ')'}]) %}
-                        {% endfor %}
-                        {# Add Formie if enabled #}
-                        {% if settings.enableFormieIntegration %}
-                            {% set unusedOptions = unusedOptions|merge([{value: 'formie', label: 'Unused ' ~ craft.translationManager.getFormiePluginName() ~ ' (' ~ unusedCounts.formie ~ ')'}]) %}
-                        {% endif %}
-                        {{ forms.selectField({
-                            label: "Type to Clean"|t('translation-manager'),
-                            id: 'unusedType',
-                            name: 'unusedType',
-                            options: unusedOptions,
-                            value: ''
-                        }) }}
-                    </div>
-
-                    <button type="button" class="btn secondary" id="clean-unused-enhanced-btn" disabled>
-                        {{ "Clean Up"|t('translation-manager') }}
-                    </button>
-                </div>
-                <div id="unusedDescription" style="margin-top: 12px; padding: 12px; background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 4px; display: none;">
-                    <p id="unusedDescriptionText" style="margin: 0; color: #92400E;"></p>
-                </div>
-            {% else %}
-                <p class="light">{{ "No unused translations found. Run template scan below to identify unused translations."|t('translation-manager') }}</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <hr>
-
-    {# Language cleanup (mapped-source + ghost locales) #}
-    <div class="field">
-        <div class="heading">
-            <label>{{ "Clean Up Languages"|t('translation-manager') }}</label>
-            <div class="instructions">
-                <p>{{ "Optionally remove mapped-source and ghost language rows (for example old en-US or test languages like de)."|t('translation-manager') }}</p>
-            </div>
-        </div>
-        <div class="input">
-            {% if languageCleanup.totalCandidates > 0 %}
-                <div style="margin-bottom: 12px;">
-                    <p class="light">{{ "Found {langs} cleanup candidate language(s) with {rows} total row(s)."|t('translation-manager', {langs: languageCleanup.totalCandidates, rows: languageCleanup.totalRows}) }}</p>
-                </div>
-
-                <div id="language-cleanup-options" style="display: grid; gap: 6px; margin-bottom: 12px;">
-                    {% for row in languageCleanup.mappedSource %}
-                        <label>
-                            <input type="checkbox" class="language-cleanup-checkbox" value="{{ row.language }}">
-                            <strong>{{ row.language }}</strong>
-                            <span class="light">→ {{ row.mappedTo }} ({{ row.count }} rows, mapped source)</span>
-                        </label>
-                    {% endfor %}
-                    {% for row in languageCleanup.ghost %}
-                        <label>
-                            <input type="checkbox" class="language-cleanup-checkbox" value="{{ row.language }}">
-                            <strong>{{ row.language }}</strong>
-                            <span class="light">({{ row.count }} rows, ghost locale)</span>
-                        </label>
-                    {% endfor %}
-                </div>
-
-                <button type="button" class="btn secondary" id="clean-languages-btn" disabled>
-                    {{ "Delete Selected Languages"|t('translation-manager') }}
-                </button>
-            {% else %}
-                <p class="light">{{ "No mapped-source or ghost language rows found."|t('translation-manager') }}</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <hr>
     {% endif %}
 
-    {% if currentUser.can('translationManager:scanTemplates') %}
-    {# Template Scanner Section #}
-    <div class="field">
-        <div class="heading">
-            <label>{{ "Template Scanner"|t('translation-manager') }}</label>
-            <div class="instructions">
-                <p>{{ "Scan all templates to identify translations that are no longer used and update their status"|t('translation-manager') }}</p>
-            </div>
+    {% if canCleanup %}
+        <div id="cleanup" class="{{ selectedTab != 'cleanup' ? 'hidden' }}">
+            {% include 'translation-manager/maintenance/_partials/cleanup' %}
         </div>
-        <div class="input">
-            <div style="margin-bottom: 10px;">
-                <button type="button" class="btn secondary" id="rescan-templates-btn">
-                    {{ "Rescan Templates"|t('translation-manager') }}
-                </button>
-            </div>
-            <p class="light">{{ "Scans all .twig files to find unused translations and mark them for cleanup"|t('translation-manager') }}</p>
+    {% endif %}
+
+    {% if canDanger %}
+        <div id="danger" class="{{ selectedTab != 'danger' ? 'hidden' }}">
+            {% include 'translation-manager/maintenance/_partials/danger' %}
         </div>
-    </div>
-
-    <hr>
     {% endif %}
 
-    {% if settings.enableFormieIntegration and currentUser.can('translationManager:recaptureFormie') %}
-    {# Formie Scanner Section #}
-    <div class="field">
-        <div class="heading">
-            <label>{{ craft.translationManager.getFormiePluginName() ~ " Scanner"|t('translation-manager') }}</label>
-            <div class="instructions">
-                <p>{{ "Rescan all forms to capture any missing translations"|t('translation-manager') }}</p>
-            </div>
-        </div>
-        <div class="input">
-            <div style="margin-bottom: 10px;">
-                <button type="button" class="btn secondary" id="recapture-formie-btn">
-                    {{ "Recapture {pluginName} Translations"|t('translation-manager', {pluginName: craft.translationManager.getFormiePluginName()}) }}
-                </button>
-            </div>
-            <p class="light">{{ "Scans all forms to capture field labels, placeholders, and other translatable strings"|t('translation-manager') }}</p>
-        </div>
-    </div>
-
-    <hr>
-    {% endif %}
-
-    {% if currentUser.can('translationManager:clearTranslations') %}
-    <h2 class="error">{{ "Danger Zone"|t('translation-manager') }}</h2>
-
-    <div class="field">
-        <p class="warning">
-            <span class="icon" aria-hidden="true"></span>
-            {{ "Warning: These actions are permanent and cannot be undone. Make sure to export your translations before clearing."|t('translation-manager') }}
-        </p>
-        {% if settings.backupEnabled %}
-        <p class="light">
-            <span class="icon" aria-hidden="true"></span>
-            {{ "Auto-backup is enabled. A backup will be created automatically before any delete operation."|t('translation-manager') }}
-        </p>
-        {% endif %}
-    </div>
-
-    {% set translationCounts = craft.translationManager.getTranslationCounts() %}
-    {% set clearOptions = [{ value: '', label: 'Select an option'|t('translation-manager') }] %}
-    {% if settings.enableFormieIntegration and currentUser.can('translationManager:clearFormie') %}
-        {% set clearOptions = clearOptions|merge([{ value: 'formie', label: craft.translationManager.getFormiePluginName() ~ ' Only (' ~ translationCounts.formie ~ ')' }]) %}
-    {% endif %}
-    {% if settings.enableSiteTranslations and currentUser.can('translationManager:clearSite') %}
-        {# Add each enabled category as a separate option #}
-        {% set enabledCategories = settings.getEnabledCategories() %}
-        {% for category in enabledCategories %}
-            {% set clearOptions = clearOptions|merge([{ value: 'category:' ~ category, label: category|title ~ ' Only (' ~ (translationCounts[category] ?? 0) ~ ')' }]) %}
-        {% endfor %}
-    {% endif %}
-    {% if (settings.enableFormieIntegration or settings.enableSiteTranslations) and currentUser.can('translationManager:clearAll') %}
-        {% set clearOptions = clearOptions|merge([{ value: 'all', label: 'All (' ~ translationCounts.total ~ ')' }]) %}
-    {% endif %}
-
-    {% set formiePluginName = craft.translationManager.getFormiePluginName() %}
-
-    {# Only show if user has at least one clear permission and there are options #}
-    {% set hasClearOptions = clearOptions|length > 1 %}
-
-    {% if hasClearOptions %}
-    {{ forms.selectField({
-        label: "Clear Translations"|t('translation-manager'),
-        instructions: "Select which translations to permanently delete from the database and remove corresponding translation files."|t('translation-manager'),
-        id: 'clearType',
-        name: 'clearType',
-        options: clearOptions,
-        value: ''
-    }) }}
-    {% elseif not (settings.enableFormieIntegration or settings.enableSiteTranslations) %}
-    <div class="field">
-        <div class="heading">
-            <label>{{ "Clear Translations"|t('translation-manager') }}</label>
-        </div>
-        <p class="light">{{ ("No translation integrations are currently enabled. Enable " ~ formiePluginName ~ " Integration or Site Translations above to start capturing translations.")|t('translation-manager') }}</p>
-    </div>
-    {% endif %}
-
-    {% if hasClearOptions %}
-    <div id="clearDescription" style="margin-top: 12px; padding: 12px; background: #FEE2E2; border: 1px solid #FECACA; border-radius: 4px; display: none;">
-        <p id="clearDescriptionText" style="margin: 0; color: #991B1B;"></p>
-    </div>
-
-    <div style="margin-top: 20px;">
-        <button type="button" id="clearButton" class="btn submit formaction error" style="display: none;" data-redirect="{{ 'translation-manager/maintenance'|hash }}">
-            {{ "Clear Selected Translations"|t('translation-manager') }}
-        </button>
-    </div>
-    {% endif %}
-    {% endif %}
-
-    {% include 'lindemannrock-base/_components/plugin-credit' %}
+{% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}
+
+{% css %}
+    #clean-unused-enhanced-btn:disabled,
+    #clean-languages-btn:disabled,
+    #clean-categories-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+{% endcss %}
 
 {% js %}
     // NEW: Handle enhanced unused cleanup dropdown
     const unusedTypeSelect = document.getElementById('unusedType');
     const unusedDescription = document.getElementById('unusedDescription');
     const unusedDescriptionText = document.getElementById('unusedDescriptionText');
+    const unusedNoItemsDescription = document.getElementById('unusedNoItemsDescription');
     const cleanUnusedEnhancedBtn = document.getElementById('clean-unused-enhanced-btn');
     const cleanLanguagesBtn = document.getElementById('clean-languages-btn');
-    const languageCleanupCheckboxes = document.querySelectorAll('.language-cleanup-checkbox');
+    const cleanCategoriesBtn = document.getElementById('clean-categories-btn');
+    const cleanLanguageSelect = document.getElementById('cleanLanguage');
+    const cleanCategorySelect = document.getElementById('cleanCategory');
+    const languageCleanupDescription = document.getElementById('languageCleanupDescription');
+    const languageCleanupDescriptionText = document.getElementById('languageCleanupDescriptionText');
+    const categoryCleanupDescription = document.getElementById('categoryCleanupDescription');
+    const categoryCleanupDescriptionText = document.getElementById('categoryCleanupDescriptionText');
 
     if (unusedTypeSelect) {
+        const cleanupBackupDescriptionSuffix = '{{ settings.backupEnabled ? " A backup will be created automatically before deleting."|t('translation-manager')|e('js') : '' }}';
         const descriptions = {
             all: '{{ "This will permanently delete ALL unused translations (both site and form translations) that are no longer used anywhere."|t('translation-manager')|e('js') }}',
             formie: '{{ "This will permanently delete unused form translations from deleted forms or fields."|t('translation-manager')|e('js') }}'
+        };
+        const counts = {
+            all: {{ unusedCounts.total ?? 0 }},
+            formie: {{ unusedCounts.formie ?? 0 }},
         };
 
         // Add dynamic descriptions for each category
         {% for category in settings.getEnabledCategories() %}
         descriptions['category:{{ category }}'] = '{{ "This will permanently delete unused translations for the"|t('translation-manager')|e('js') }} {{ category }} {{ "category that are no longer found in any template files."|t('translation-manager')|e('js') }}';
+        counts['category:{{ category }}'] = {{ unusedCounts[category] ?? 0 }};
         {% endfor %}
+        if (cleanupBackupDescriptionSuffix) {
+            Object.keys(descriptions).forEach((key) => {
+                descriptions[key] = descriptions[key] + cleanupBackupDescriptionSuffix;
+            });
+        }
 
         unusedTypeSelect.addEventListener('change', function() {
             const value = this.value;
+            const selectedCount = counts[value] ?? 0;
 
             if (value && descriptions[value]) {
-                unusedDescription.style.display = 'block';
-                unusedDescriptionText.textContent = descriptions[value];
-                cleanUnusedEnhancedBtn.classList.remove('disabled');
-                cleanUnusedEnhancedBtn.disabled = false;
-                cleanUnusedEnhancedBtn.setAttribute('data-type', value);
+                if (unusedNoItemsDescription) {
+                    unusedNoItemsDescription.style.display = 'none';
+                }
+                if (selectedCount > 0) {
+                    unusedDescription.style.display = 'block';
+                    unusedDescriptionText.textContent = descriptions[value];
+                    cleanUnusedEnhancedBtn.classList.remove('disabled');
+                    cleanUnusedEnhancedBtn.disabled = false;
+                    cleanUnusedEnhancedBtn.setAttribute('data-type', value);
+                } else {
+                    unusedDescription.style.display = 'none';
+                    if (unusedNoItemsDescription) {
+                        unusedNoItemsDescription.style.display = 'block';
+                    }
+                    cleanUnusedEnhancedBtn.classList.add('disabled');
+                    cleanUnusedEnhancedBtn.disabled = true;
+                    cleanUnusedEnhancedBtn.removeAttribute('data-type');
+                }
             } else {
                 unusedDescription.style.display = 'none';
+                if (unusedNoItemsDescription) {
+                    unusedNoItemsDescription.style.display = 'none';
+                }
                 cleanUnusedEnhancedBtn.classList.add('disabled');
                 cleanUnusedEnhancedBtn.disabled = true;
+                cleanUnusedEnhancedBtn.removeAttribute('data-type');
             }
         });
 
@@ -329,26 +235,51 @@
         });
     }
 
-    if (cleanLanguagesBtn && languageCleanupCheckboxes.length > 0) {
-        function updateCleanLanguagesState() {
-            const hasSelection = Array.from(languageCleanupCheckboxes).some(cb => cb.checked);
-            cleanLanguagesBtn.disabled = !hasSelection;
-            cleanLanguagesBtn.classList.toggle('disabled', !hasSelection);
+    if (cleanLanguagesBtn && cleanLanguageSelect) {
+        const languageCleanupBackupDescriptionSuffix = '{{ settings.backupEnabled ? " A backup will be created automatically before deleting."|t('translation-manager')|e('js') : '' }}';
+        const languageDescriptions = {
+            {% for row in languageCleanup.mappedSource %}
+            '{{ row.language }}': '{{ "This will permanently delete all rows for"|t('translation-manager')|e('js') }} {{ row.language }} {{ "(mapped to"|t('translation-manager')|e('js') }} {{ row.mappedTo }}).',
+            {% endfor %}
+            {% for row in languageCleanup.ghost %}
+            '{{ row.language }}': '{{ "This will permanently delete all rows for ghost language"|t('translation-manager')|e('js') }} {{ row.language }}.',
+            {% endfor %}
+        };
+        if (languageCleanupBackupDescriptionSuffix) {
+            Object.keys(languageDescriptions).forEach((key) => {
+                languageDescriptions[key] = languageDescriptions[key] + languageCleanupBackupDescriptionSuffix;
+            });
         }
 
-        languageCleanupCheckboxes.forEach(cb => cb.addEventListener('change', updateCleanLanguagesState));
+        function updateCleanLanguagesState() {
+            const selected = cleanLanguageSelect.value;
+            const hasSelection = !!selected;
+            cleanLanguagesBtn.disabled = !hasSelection;
+            cleanLanguagesBtn.classList.toggle('disabled', !hasSelection);
+
+            if (hasSelection) {
+                const description = languageDescriptions[selected] || (
+                    '{{ "This will permanently delete all rows for language"|t('translation-manager')|e('js') }} ' +
+                    selected +
+                    '.'
+                ) + languageCleanupBackupDescriptionSuffix;
+                languageCleanupDescription.style.display = 'block';
+                languageCleanupDescriptionText.textContent = description;
+            } else {
+                languageCleanupDescription.style.display = 'none';
+            }
+        }
+
+        cleanLanguageSelect.addEventListener('change', updateCleanLanguagesState);
         updateCleanLanguagesState();
 
         cleanLanguagesBtn.addEventListener('click', function() {
-            const selected = Array.from(languageCleanupCheckboxes)
-                .filter(cb => cb.checked)
-                .map(cb => cb.value);
-
-            if (selected.length === 0) {
+            const selected = cleanLanguageSelect.value;
+            if (!selected) {
                 return;
             }
 
-            if (!confirm(`{{ "Delete all translations for selected languages?"|t('translation-manager')|e('js') }}\\n\\n${selected.join(', ')}`)) {
+            if (!confirm(`{{ "Delete all translations for selected language?"|t('translation-manager')|e('js') }}\\n\\n${selected}`)) {
                 return;
             }
 
@@ -364,7 +295,7 @@
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({languages: selected})
+                body: JSON.stringify({languages: [selected]})
             })
             .then(response => response.json())
             .then(data => {
@@ -381,6 +312,84 @@
                 btn.classList.remove('loading');
                 updateCleanLanguagesState();
                 Craft.cp.displayError('Failed to clean languages: ' + error.message);
+            });
+        });
+    }
+
+    if (cleanCategoriesBtn && cleanCategorySelect) {
+        const categoryCleanupBackupDescriptionSuffix = '{{ settings.backupEnabled ? " A backup will be created automatically before deleting."|t('translation-manager')|e('js') : '' }}';
+        const categoryDescriptions = {
+            {% for row in categoryCleanup.removed %}
+            '{{ row.category }}': '{{ "This will permanently delete all rows for removed category"|t('translation-manager')|e('js') }} {{ row.category }}.',
+            {% endfor %}
+        };
+        if (categoryCleanupBackupDescriptionSuffix) {
+            Object.keys(categoryDescriptions).forEach((key) => {
+                categoryDescriptions[key] = categoryDescriptions[key] + categoryCleanupBackupDescriptionSuffix;
+            });
+        }
+
+        function updateCleanCategoriesState() {
+            const selected = cleanCategorySelect.value;
+            const hasSelection = !!selected;
+            cleanCategoriesBtn.disabled = !hasSelection;
+            cleanCategoriesBtn.classList.toggle('disabled', !hasSelection);
+
+            if (hasSelection) {
+                const description = categoryDescriptions[selected] || (
+                    '{{ "This will permanently delete all rows for removed category"|t('translation-manager')|e('js') }} ' +
+                    selected +
+                    '.'
+                ) + categoryCleanupBackupDescriptionSuffix;
+                categoryCleanupDescription.style.display = 'block';
+                categoryCleanupDescriptionText.textContent = description;
+            } else {
+                categoryCleanupDescription.style.display = 'none';
+            }
+        }
+
+        cleanCategorySelect.addEventListener('change', updateCleanCategoriesState);
+        updateCleanCategoriesState();
+
+        cleanCategoriesBtn.addEventListener('click', function() {
+            const selected = cleanCategorySelect.value;
+            if (!selected) {
+                return;
+            }
+
+            if (!confirm(`{{ "Delete all translations for selected removed category?"|t('translation-manager')|e('js') }}\\n\\n${selected}`)) {
+                return;
+            }
+
+            const btn = this;
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            fetch('{{ actionUrl('translation-manager/maintenance/clean-categories') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({categories: [selected]})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Craft.cp.displayNotice(data.message || 'Category cleanup completed');
+                    setTimeout(() => window.location.reload(), 1200);
+                } else {
+                    btn.classList.remove('loading');
+                    updateCleanCategoriesState();
+                    Craft.cp.displayError(data.error || 'Failed to clean categories');
+                }
+            })
+            .catch(error => {
+                btn.classList.remove('loading');
+                updateCleanCategoriesState();
+                Craft.cp.displayError('Failed to clean categories: ' + error.message);
             });
         });
     }
@@ -514,12 +523,14 @@
     const clearTypeSelect = document.getElementById('clearType');
     const clearDescription = document.getElementById('clearDescription');
     const clearDescriptionText = document.getElementById('clearDescriptionText');
+    const clearNoItemsDescription = document.getElementById('clearNoItemsDescription');
     const clearButton = document.getElementById('clearButton');
 
     if (clearTypeSelect) {
         const hasFormie = {{ settings.enableFormieIntegration ? 'true' : 'false' }};
         const hasSite = {{ settings.enableSiteTranslations ? 'true' : 'false' }};
         const formiePluginName = '{{ craft.translationManager.getFormiePluginName()|e('js') }}';
+        const backupDescriptionSuffix = '{{ settings.backupEnabled ? " A backup will be created automatically before deleting."|t('translation-manager')|e('js') : '' }}';
 
         let allDescription = '{{ "This will permanently delete ALL translations from the database and remove all translation files. Use this to start completely fresh."|t('translation-manager')|e('js') }}';
         if (hasFormie && hasSite) {
@@ -530,11 +541,22 @@
             formie: '{{ "This will permanently delete all "|t('translation-manager')|e('js') }}' + formiePluginName + '{{ " form translations from the database and remove the corresponding translation files. Your forms will not be affected, only the stored translations will be removed."|t('translation-manager')|e('js') }}',
             all: allDescription
         };
+        const counts = {
+            formie: {{ translationCounts.formie ?? 0 }},
+            all: {{ translationCounts.total ?? 0 }}
+        };
 
         // Add dynamic descriptions for each category
         {% for category in settings.getEnabledCategories() %}
         descriptions['category:{{ category }}'] = '{{ "This will permanently delete all translations for the"|t('translation-manager')|e('js') }} {{ category }} {{ "category from the database and remove the corresponding translation files. You will need to re-translate this content."|t('translation-manager')|e('js') }}';
+        counts['category:{{ category }}'] = {{ translationCounts[category] ?? 0 }};
         {% endfor %}
+
+        if (backupDescriptionSuffix) {
+            Object.keys(descriptions).forEach((key) => {
+                descriptions[key] = descriptions[key] + backupDescriptionSuffix;
+            });
+        }
 
         const confirmMessages = {
             formie: '{{ "Are you sure you want to delete all "|t('translation-manager')|e('js') }}' + formiePluginName + '{{ " translations and their files? This action cannot be undone."|t('translation-manager')|e('js') }}',
@@ -558,16 +580,34 @@
 
         clearTypeSelect.addEventListener('change', function() {
             const value = this.value;
+            const selectedCount = counts[value] ?? 0;
+            if (clearNoItemsDescription) {
+                clearNoItemsDescription.style.display = 'none';
+            }
 
             if (value) {
-                clearDescription.style.display = 'block';
-                clearDescriptionText.textContent = descriptions[value];
-                clearButton.style.display = 'inline-block';
-                clearButton.setAttribute('data-action', actions[value]);
-                clearButton.setAttribute('data-confirm', confirmMessages[value]);
+                if (selectedCount > 0) {
+                    clearDescription.style.display = 'block';
+                    clearDescriptionText.textContent = descriptions[value];
+                    clearButton.disabled = false;
+                    clearButton.classList.remove('disabled');
+                    clearButton.setAttribute('data-action', actions[value]);
+                    clearButton.setAttribute('data-confirm', confirmMessages[value]);
+                } else {
+                    clearDescription.style.display = 'none';
+                    clearButton.disabled = true;
+                    clearButton.classList.add('disabled');
+                    if (clearNoItemsDescription) {
+                        clearNoItemsDescription.style.display = 'block';
+                    }
+                }
             } else {
                 clearDescription.style.display = 'none';
-                clearButton.style.display = 'none';
+                clearButton.disabled = true;
+                clearButton.classList.add('disabled');
+                if (clearNoItemsDescription) {
+                    clearNoItemsDescription.style.display = 'none';
+                }
             }
         });
 

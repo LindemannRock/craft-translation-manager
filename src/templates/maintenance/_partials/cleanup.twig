@@ -1,0 +1,192 @@
+{% import "_includes/forms" as forms %}
+
+{% if currentUser.can('translationManager:cleanUnused') %}
+<div class="field">
+    <div class="heading">
+        <label>{{ "Clean Up Unused Translations"|t('translation-manager') }}</label>
+        <div class="instructions">
+            <p>{{ "Remove translations that are no longer used in templates or forms"|t('translation-manager') }}</p>
+        </div>
+    </div>
+    <div class="input">
+        {% set totalUnused = unusedCounts.total %}
+        {% if totalUnused > 0 %}
+            <div style="margin-bottom: 15px;">
+                <p class="light">
+                    {{ "You have {total} unused translation(s): {site} site translations and {formie} {formieName} translations"|t('translation-manager', {
+                        total: totalUnused|number_format,
+                        site: unusedCounts.site|number_format,
+                        formie: unusedCounts.formie|number_format,
+                        formieName: craft.translationManager.getFormiePluginName()|lower
+                    }) }}
+                </p>
+            </div>
+
+            <div>
+                {% set unusedOptions = [
+                    {value: '', label: 'Select type'|t('translation-manager')},
+                    {value: 'all', label: 'All Unused (' ~ (totalUnused|number_format) ~ ')'|t('translation-manager')}
+                ] %}
+                {% set enabledCategories = settings.getEnabledCategories() %}
+                {% for category in enabledCategories %}
+                    {% set unusedOptions = unusedOptions|merge([{value: 'category:' ~ category, label: 'Unused ' ~ category|title ~ ' (' ~ ((unusedCounts[category] ?? 0)|number_format) ~ ')'}]) %}
+                {% endfor %}
+                {% if settings.enableFormieIntegration %}
+                    {% set unusedOptions = unusedOptions|merge([{value: 'formie', label: 'Unused ' ~ craft.translationManager.getFormiePluginName() ~ ' (' ~ (unusedCounts.formie|number_format) ~ ')'}]) %}
+                {% endif %}
+                {{ forms.selectField({
+                    label: "Type to Clean"|t('translation-manager'),
+                    id: 'unusedType',
+                    name: 'unusedType',
+                    options: unusedOptions,
+                    value: ''
+                }) }}
+                {% include 'lindemannrock-base/_components/info-box' with {
+                    message: '',
+                    type: settings.backupEnabled ? 'warning' : 'error',
+                    variant: 'colored',
+                    margin: 'top',
+                    boxId: 'unusedDescription',
+                    messageId: 'unusedDescriptionText',
+                    hidden: true,
+                    allowHtml: false,
+                } %}
+                {% include 'lindemannrock-base/_components/info-box' with {
+                    message: "No unused translations found for the selected type."|t('translation-manager'),
+                    type: 'info',
+                    variant: 'subtle',
+                    margin: 'top',
+                    boxId: 'unusedNoItemsDescription',
+                    hidden: true,
+                    allowHtml: false,
+                } %}
+                <div style="margin-top: 8px;">
+                    <button type="button" class="btn secondary" id="clean-unused-enhanced-btn" disabled>
+                        {{ "Clean Up Unused"|t('translation-manager') }}
+                    </button>
+                </div>
+            </div>
+        {% else %}
+            <p class="light">{{ "No unused translations found. Run template scan below to identify unused translations."|t('translation-manager') }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<hr>
+
+<div class="field">
+    <div class="heading">
+        <label>{{ "Clean Up Removed Categories"|t('translation-manager') }}</label>
+        <div class="instructions">
+            <p>{{ "Remove translations for categories that still exist in the database but are no longer enabled (for example removed plugin categories)."|t('translation-manager') }}</p>
+        </div>
+    </div>
+    <div class="input">
+        {% if categoryCleanup.totalCandidates > 0 %}
+            <div style="margin-bottom: 12px;">
+                {% set candidateWord = categoryCleanup.totalCandidates == 1 ? "category"|t('translation-manager') : "categories"|t('translation-manager') %}
+                {% set rowWord = categoryCleanup.totalRows == 1 ? "row"|t('translation-manager') : "rows"|t('translation-manager') %}
+                <p class="light">{{ "Found {categories} removed {candidateWord} with {rows} total {rowWord}."|t('translation-manager', {categories: categoryCleanup.totalCandidates|number_format, rows: categoryCleanup.totalRows|number_format, candidateWord: candidateWord, rowWord: rowWord}) }}</p>
+            </div>
+
+            <div>
+                {% set categoryCleanupOptions = [
+                    {value: '', label: 'Select category'|t('translation-manager')}
+                ] %}
+                {% for row in categoryCleanup.removed %}
+                    {% set categoryCleanupOptions = categoryCleanupOptions|merge([{
+                        value: row.category,
+                        label: row.category ~ ' (' ~ (row.count|number_format) ~ ' rows)'
+                    }]) %}
+                {% endfor %}
+                {{ forms.selectField({
+                    label: "Category to Clean Up"|t('translation-manager'),
+                    id: 'cleanCategory',
+                    name: 'cleanCategory',
+                    options: categoryCleanupOptions,
+                    value: ''
+                }) }}
+                {% include 'lindemannrock-base/_components/info-box' with {
+                    message: '',
+                    type: settings.backupEnabled ? 'warning' : 'error',
+                    variant: 'colored',
+                    margin: 'top',
+                    boxId: 'categoryCleanupDescription',
+                    messageId: 'categoryCleanupDescriptionText',
+                    hidden: true,
+                    allowHtml: false,
+                } %}
+                <div style="margin-top: 8px;">
+                    <button type="button" class="btn secondary" id="clean-categories-btn" disabled>
+                        {{ "Clean Up Category"|t('translation-manager') }}
+                    </button>
+                </div>
+            </div>
+        {% else %}
+            <p class="light">{{ "No removed category rows found."|t('translation-manager') }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<hr>
+
+<div class="field">
+    <div class="heading">
+        <label>{{ "Clean Up Languages"|t('translation-manager') }}</label>
+        <div class="instructions">
+            <p>{{ "Optionally remove mapped-source and ghost language rows (for example old en-US or test languages like de)."|t('translation-manager') }}</p>
+        </div>
+    </div>
+    <div class="input">
+        {% if languageCleanup.totalCandidates > 0 %}
+            <div style="margin-bottom: 12px;">
+                {% set candidateWord = languageCleanup.totalCandidates == 1 ? "language"|t('translation-manager') : "languages"|t('translation-manager') %}
+                {% set rowWord = languageCleanup.totalRows == 1 ? "row"|t('translation-manager') : "rows"|t('translation-manager') %}
+                <p class="light">{{ "Found {langs} cleanup candidate {candidateWord} with {rows} total {rowWord}."|t('translation-manager', {langs: languageCleanup.totalCandidates|number_format, rows: languageCleanup.totalRows|number_format, candidateWord: candidateWord, rowWord: rowWord}) }}</p>
+            </div>
+
+            <div>
+                {% set languageCleanupOptions = [
+                    {value: '', label: 'Select language'|t('translation-manager')}
+                ] %}
+                {% for row in languageCleanup.mappedSource %}
+                    {% set languageCleanupOptions = languageCleanupOptions|merge([{
+                        value: row.language,
+                        label: row.language ~ ' -> ' ~ row.mappedTo ~ ' (' ~ (row.count|number_format) ~ ' rows, mapped source)'
+                    }]) %}
+                {% endfor %}
+                {% for row in languageCleanup.ghost %}
+                    {% set languageCleanupOptions = languageCleanupOptions|merge([{
+                        value: row.language,
+                        label: row.language ~ ' (' ~ (row.count|number_format) ~ ' rows, ghost locale)'
+                    }]) %}
+                {% endfor %}
+                {{ forms.selectField({
+                    label: "Language to Clean Up"|t('translation-manager'),
+                    id: 'cleanLanguage',
+                    name: 'cleanLanguage',
+                    options: languageCleanupOptions,
+                    value: ''
+                }) }}
+                {% include 'lindemannrock-base/_components/info-box' with {
+                    message: '',
+                    type: settings.backupEnabled ? 'warning' : 'error',
+                    variant: 'colored',
+                    margin: 'top',
+                    boxId: 'languageCleanupDescription',
+                    messageId: 'languageCleanupDescriptionText',
+                    hidden: true,
+                    allowHtml: false,
+                } %}
+                <div style="margin-top: 8px;">
+                    <button type="button" class="btn secondary" id="clean-languages-btn" disabled>
+                        {{ "Clean Up Language"|t('translation-manager') }}
+                    </button>
+                </div>
+            </div>
+        {% else %}
+            <p class="light">{{ "No mapped-source or ghost language rows found."|t('translation-manager') }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

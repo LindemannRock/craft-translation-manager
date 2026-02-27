@@ -246,6 +246,58 @@ class TranslationManagerVariable
     }
 
     /**
+     * Get cleanup candidates for removed/disabled categories.
+     *
+     * Categories present in DB but not currently enabled in settings are candidates.
+     */
+    public function getCategoryCleanupCandidates(): array
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+
+        $categoryCounts = (new \craft\db\Query())
+            ->select(['category', 'COUNT(*) as count'])
+            ->from('{{%translationmanager_translations}}')
+            ->groupBy(['category'])
+            ->all();
+
+        $enabledCategories = $settings->getEnabledCategories();
+        if ($settings->enableFormieIntegration && !in_array('formie', $enabledCategories, true)) {
+            $enabledCategories[] = 'formie';
+        }
+        $enabledLookup = array_fill_keys(array_map('strtolower', array_filter($enabledCategories)), true);
+
+        $result = [
+            'removed' => [],
+            'totalCandidates' => 0,
+            'totalRows' => 0,
+        ];
+
+        foreach ($categoryCounts as $row) {
+            $category = (string)($row['category'] ?? '');
+            $count = (int)($row['count'] ?? 0);
+            if ($category === '' || $count <= 0) {
+                continue;
+            }
+
+            $normalized = strtolower($category);
+            if (isset($enabledLookup[$normalized])) {
+                continue;
+            }
+
+            $result['removed'][] = [
+                'category' => $category,
+                'count' => $count,
+            ];
+            $result['totalCandidates']++;
+            $result['totalRows'] += $count;
+        }
+
+        usort($result['removed'], static fn(array $a, array $b): int => strcmp($a['category'], $b['category']));
+
+        return $result;
+    }
+
+    /**
      * Get the configured Formie plugin name
      */
     public function getFormiePluginName(): string

@@ -39,6 +39,7 @@ class MaintenanceController extends Controller
             case 'clean-unused':
             case 'clean-unused-type':
             case 'clean-languages':
+            case 'clean-categories':
                 if (!$user->checkPermission('translationManager:cleanUnused')) {
                     throw new \yii\web\ForbiddenHttpException('User does not have permission to clean unused translations');
                 }
@@ -529,6 +530,91 @@ class MaintenanceController extends Controller
             ]);
         }
     }
+
+    /**
+     * Remove translations for selected removed/disabled categories.
+     *
+     * @return Response
+     */
+    public function actionCleanCategories(): Response
+    {
+        $this->requirePostRequest();
+        $this->requireAcceptsJson();
+        $this->requirePermission('translationManager:cleanUnused');
+
+        $request = Craft::$app->getRequest();
+        $categories = $request->getBodyParam('categories', []);
+        if (!is_array($categories)) {
+            $categories = [];
+        }
+
+        $categories = array_values(array_unique(array_filter(array_map(static fn($value) => trim((string)$value), $categories))));
+        if (empty($categories)) {
+            return $this->asJson([
+                'success' => false,
+                'error' => 'No categories selected.',
+            ]);
+        }
+
+        $candidateRows = $this->getCategoryCleanupCandidates()['removed'];
+        $allowed = array_values(array_unique(array_filter(array_map(static fn(array $row) => (string)($row['category'] ?? ''), $candidateRows))));
+
+        $invalid = array_values(array_diff($categories, $allowed));
+        if (!empty($invalid)) {
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Invalid category selection: ' . implode(', ', $invalid),
+            ]);
+        }
+
+        try {
+            $settings = TranslationManager::getInstance()->getSettings();
+            if ($settings->backupEnabled) {
+                try {
+                    $backupService = TranslationManager::getInstance()->backup;
+                    $backupService->createBackup('before_cleanup_categories');
+                } catch (\Exception $e) {
+                    $this->logError("Failed to create backup before category cleanup", ['error' => $e->getMessage()]);
+                }
+            }
+
+            $rows = (new \craft\db\Query())
+                ->select(['id', 'category'])
+                ->from('{{%translationmanager_translations}}')
+                ->where(['category' => $categories])
+                ->all();
+
+            if (empty($rows)) {
+                return $this->asJson([
+                    'success' => true,
+                    'deleted' => 0,
+                    'message' => 'No matching translations found for selected categories.',
+                ]);
+            }
+
+            $ids = array_values(array_unique(array_map(static fn($row) => (int)$row['id'], $rows)));
+            $deleted = TranslationManager::getInstance()->translations->deleteTranslations($ids);
+
+            $counts = [];
+            foreach ($rows as $row) {
+                $category = (string)$row['category'];
+                $counts[$category] = ($counts[$category] ?? 0) + 1;
+            }
+            ksort($counts);
+
+            return $this->asJson([
+                'success' => true,
+                'deleted' => $deleted,
+                'deletedByCategory' => $counts,
+                'message' => "Deleted {$deleted} translations across " . count($counts) . " category(s).",
+            ]);
+        } catch (\Exception $e) {
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Failed to clean categories: ' . $e->getMessage(),
+            ]);
+        }
+    }
     
     /**
      * Scan templates action
@@ -630,6 +716,58 @@ class MaintenanceController extends Controller
                 $result['totalRows'] += $count;
             }
         }
+
+        return $result;
+    }
+
+    /**
+     * Get cleanup candidates for removed/disabled categories.
+     *
+     * @return array{removed: array<int, array<string,mixed>>, totalCandidates:int, totalRows:int}
+     */
+    private function getCategoryCleanupCandidates(): array
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+
+        $categoryCounts = (new \craft\db\Query())
+            ->select(['category', 'COUNT(*) as count'])
+            ->from('{{%translationmanager_translations}}')
+            ->groupBy(['category'])
+            ->all();
+
+        $enabledCategories = $settings->getEnabledCategories();
+        if ($settings->enableFormieIntegration && !in_array('formie', $enabledCategories, true)) {
+            $enabledCategories[] = 'formie';
+        }
+        $enabledLookup = array_fill_keys(array_map('strtolower', array_filter($enabledCategories)), true);
+
+        $result = [
+            'removed' => [],
+            'totalCandidates' => 0,
+            'totalRows' => 0,
+        ];
+
+        foreach ($categoryCounts as $row) {
+            $category = (string)($row['category'] ?? '');
+            $count = (int)($row['count'] ?? 0);
+            if ($category === '' || $count <= 0) {
+                continue;
+            }
+
+            $normalized = strtolower($category);
+            if (isset($enabledLookup[$normalized])) {
+                continue;
+            }
+
+            $result['removed'][] = [
+                'category' => $category,
+                'count' => $count,
+            ];
+            $result['totalCandidates']++;
+            $result['totalRows'] += $count;
+        }
+
+        usort($result['removed'], static fn(array $a, array $b): int => strcmp($a['category'], $b['category']));
 
         return $result;
     }
