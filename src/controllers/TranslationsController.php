@@ -11,9 +11,11 @@
 namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
+use craft\elements\User;
 use craft\helpers\Db;
 use craft\web\Controller;
 use lindemannrock\base\helpers\CpNavHelper;
+use lindemannrock\base\helpers\DateFormatHelper;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
@@ -113,6 +115,7 @@ class TranslationsController extends Controller
 
         // Slice for current page
         $translations = array_slice($allTranslations, $offset, $limit);
+        $translations = $this->hydrateAuditFields($translations);
 
         // Get statistics
         $stats = TranslationManager::getInstance()->translations->getStatistics();
@@ -143,6 +146,90 @@ class TranslationsController extends Controller
             // Legacy support (keeping for backwards compatibility)
             'allSites' => TranslationManager::getInstance()->getAllowedSites(),
         ]);
+    }
+
+    /**
+     * Add UI-ready audit fields to translation rows.
+     *
+     * @param array<int, array<string, mixed>> $translations
+     * @return array<int, array<string, mixed>>
+     */
+    private function hydrateAuditFields(array $translations): array
+    {
+        $userIds = [];
+        foreach ($translations as $translation) {
+            if (!empty($translation['createdByUserId'])) {
+                $userIds[] = (int)$translation['createdByUserId'];
+            }
+            if (!empty($translation['reviewedByUserId'])) {
+                $userIds[] = (int)$translation['reviewedByUserId'];
+            }
+        }
+
+        $userEmailMap = $this->getUserEmailMap($userIds);
+
+        foreach ($translations as &$translation) {
+            $translation['createdByEmail'] = $this->resolveUserEmail($translation['createdByUserId'] ?? null, $userEmailMap);
+            $translation['reviewedByEmail'] = $this->resolveUserEmail($translation['reviewedByUserId'] ?? null, $userEmailMap);
+            $translation['reviewedAtFormatted'] = $this->formatDateForDisplay($translation['reviewedAt'] ?? null);
+        }
+        unset($translation);
+
+        return $translations;
+    }
+
+    /**
+     * @param array<int> $userIds
+     * @return array<int, string>
+     */
+    private function getUserEmailMap(array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds))));
+        if (empty($userIds)) {
+            return [];
+        }
+
+        $users = User::find()
+            ->status(null)
+            ->id($userIds)
+            ->all();
+
+        $map = [];
+        foreach ($users as $user) {
+            $map[(int)$user->id] = (string)($user->email ?? '');
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param mixed $userId
+     * @param array<int, string> $userEmailMap
+     */
+    private function resolveUserEmail(mixed $userId, array $userEmailMap): string
+    {
+        $id = (int)$userId;
+        if ($id <= 0) {
+            return '';
+        }
+
+        return $userEmailMap[$id] ?? (string)$id;
+    }
+
+    private function formatDateForDisplay(mixed $dateValue): string
+    {
+        if (!$dateValue) {
+            return '';
+        }
+
+        try {
+            $date = $dateValue instanceof \DateTime
+                ? $dateValue
+                : new \DateTime((string)$dateValue);
+            return DateFormatHelper::formatDatetime($date);
+        } catch (\Throwable) {
+            return (string)$dateValue;
+        }
     }
 
     /**
