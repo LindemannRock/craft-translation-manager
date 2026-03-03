@@ -12,16 +12,19 @@ namespace lindemannrock\translationmanager\jobs;
 
 use Craft;
 use craft\queue\BaseJob;
+use lindemannrock\base\traits\QueueTtrTrait;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\TranslationManager;
+use yii\queue\RetryableJobInterface;
 
 /**
  * Create Backup Job
  *
  * @since 1.0.0
  */
-class CreateBackupJob extends BaseJob
+class CreateBackupJob extends BaseJob implements RetryableJobInterface
 {
+    use QueueTtrTrait;
     use LoggingTrait;
 
     /**
@@ -74,6 +77,14 @@ class CreateBackupJob extends BaseJob
         }
 
         return $description;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function canRetry($attempt, $error): bool
+    {
+        return false;
     }
     
     /**
