@@ -55,6 +55,8 @@ return [
     'Site Translations' => 'Site Translations',
     'Manage Translations' => 'Manage Translations',
     'Export All' => 'Export All',
+    'No valid {pluginName} found to import.' => 'No valid {pluginName} found to import.',
+    'Successfully imported {imported} {pluginName}.' => 'Successfully imported {imported} {pluginName}.',
 
     // Backup reasons
     'Manual' => 'Manual',

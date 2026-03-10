@@ -291,8 +291,11 @@ class ImportController extends Controller
         }
 
         $translations = array_merge($previewData['toImport'] ?? [], $previewData['toUpdate'] ?? []);
+        $pluginName = TranslationManager::$plugin->getSettings()->getPluralLowerDisplayName();
         if (empty($translations)) {
-            Craft::$app->getSession()->setNotice(Craft::t('translation-manager', 'No valid translations found to import.'));
+            Craft::$app->getSession()->setNotice(Craft::t('translation-manager', 'No valid {pluginName} found to import.', [
+                'pluginName' => $pluginName,
+            ]));
             return $this->redirect('translation-manager/import-export');
         }
 
@@ -336,8 +339,9 @@ class ImportController extends Controller
             Craft::$app->getSession()->remove('translation-import');
             Craft::$app->getSession()->remove('translation-preview');
 
-            $message = Craft::t('translation-manager', 'Successfully imported {imported} translations.', [
+            $message = Craft::t('translation-manager', 'Successfully imported {imported} {pluginName}.', [
                 'imported' => $results['imported'],
+                'pluginName' => $pluginName,
             ]);
             if ($results['updated'] > 0) {
                 $message .= ' ' . Craft::t('translation-manager', '{updated} updated.', [
