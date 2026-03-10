@@ -361,39 +361,14 @@
 
 
 {% js %}
-    // Check if we should show the history tab after reload
-    if (sessionStorage.getItem('showHistoryTab') === 'true') {
-        sessionStorage.removeItem('showHistoryTab');
-        // Click the history tab
-        const historyTab = document.querySelector('a[href="#history"]');
-        if (historyTab) {
-            historyTab.click();
-        }
-    }
-
-    // Clear history button
-    document.getElementById('clear-logs-btn')?.addEventListener('click', function(e) {
-        e.preventDefault();
-
-        if (!confirm('{{ "Are you sure you want to clear all import logs? This action cannot be undone."|t('translation-manager')|e('js') }}')) {
-            return;
-        }
-
-        const button = this;
-        button.classList.add('loading');
-        button.disabled = true;
-
-        Craft.sendActionRequest('POST', 'translation-manager/import/clear-logs')
-            .then(() => {
-                sessionStorage.setItem('showHistoryTab', 'true');
-                window.location.reload(true);
-            })
-            .catch(error => {
-                button.classList.remove('loading');
-                button.disabled = false;
-                Craft.cp.displayError(error.response?.data?.error || '{{ "Failed to clear history."|t('translation-manager')|e('js') }}');
-            });
-    });
+    {% include 'lindemannrock-base/_partials/import-history-js' with {
+        tabStorageKey: 'showHistoryTab',
+        tabSelector: 'a[href="#history"]',
+        clearButtonId: 'clear-logs-btn',
+        clearAction: 'translation-manager/import/clear-logs',
+        confirmMessage: 'Are you sure you want to clear all import logs? This action cannot be undone.'|t('translation-manager'),
+        clearErrorMessage: 'Failed to clear history.'|t('translation-manager'),
+    } only %}
 
     // PHP FILE IMPORT FUNCTIONALITY
     // ========================================
