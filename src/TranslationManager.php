@@ -315,9 +315,6 @@ class TranslationManager extends Plugin
             $settings = $this->getSettings();
             $item['label'] = $settings->getFullName();
 
-            // Use Craft's built-in language icon (same as the module used)
-            $item['icon'] = '@app/icons/language.svg';
-
             $user = Craft::$app->getUser();
             $sections = $this->getCpSections($settings);
             $item['subnav'] = CpNavHelper::buildSubnav($user, $settings, $sections);

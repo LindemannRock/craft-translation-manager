@@ -42,7 +42,7 @@ class TranslationStatsUtility extends Utility
      */
     public static function icon(): ?string
     {
-        return 'language';
+        return '@lindemannrock/translationmanager/icon-mask.svg';
     }
 
     /**
