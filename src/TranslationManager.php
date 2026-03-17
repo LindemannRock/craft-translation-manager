@@ -115,7 +115,17 @@ class TranslationManager extends Plugin
             $this,
             'translationHelper',
             ['translationManager:viewSystemLogs'],
-            ['translationManager:downloadSystemLogs']
+            ['translationManager:downloadSystemLogs'],
+            [
+                'installExperience' => [
+                    'headline' => 'Translation Manager',
+                    'body' => 'Manage translations, exports, backups, and AI-assisted workflows from one control panel workspace.',
+                    'ctaLabel' => 'Open Translation Manager',
+                    'ctaUrl' => 'translation-manager',
+                    'redirectUri' => 'translation-manager',
+                    'confettiPreset' => 'surprise',
+                ],
+            ]
         );
         PluginHelper::applyPluginNameFromConfig($this);
 
@@ -272,14 +282,7 @@ class TranslationManager extends Plugin
         );
 
         // Register variables
-        Event::on(
-            CraftVariable::class,
-            CraftVariable::EVENT_INIT,
-            function(Event $event) {
-                $variable = $event->sender;
-                $variable->set('translationManager', TranslationManagerVariable::class);
-            }
-        );
+        $this->registerTemplateVariable();
 
         // Register message source for translation category
         if ($this->getSettings()->enableSiteTranslations) {
@@ -301,6 +304,30 @@ class TranslationManager extends Plugin
 
         // Schedule backup job if enabled
         $this->scheduleBackupJob();
+    }
+
+    /**
+     * Register the translationManager Twig variable.
+     *
+     * Some requests may initialize CraftVariable before this plugin finishes
+     * attaching its EVENT_INIT listener, so also register against the current
+     * Twig global when available.
+     */
+    private function registerTemplateVariable(): void
+    {
+        Event::on(
+            CraftVariable::class,
+            CraftVariable::EVENT_INIT,
+            function(Event $event) {
+                $variable = $event->sender;
+                $variable->set('translationManager', TranslationManagerVariable::class);
+            }
+        );
+
+        $craftVariable = Craft::$app->getView()->getTwig()->getGlobals()['craft'] ?? null;
+        if ($craftVariable instanceof CraftVariable) {
+            $craftVariable->set('translationManager', TranslationManagerVariable::class);
+        }
     }
 
     /**
