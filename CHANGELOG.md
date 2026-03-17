@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.22.2](https://github.com/LindemannRock/craft-translation-manager/compare/v5.22.1...v5.22.2) (2026-03-17)
+
+
+### Bug Fixes
+
+* **index.twig:** add devMode check for PHP file import functionality ([1b2f801](https://github.com/LindemannRock/craft-translation-manager/commit/1b2f801943f6216e37cfba1a2a9874ad9eb633fd))
+
 ## [5.22.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.22.0...v5.22.1) (2026-03-17)
 
 
