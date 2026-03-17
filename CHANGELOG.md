@@ -1,5 +1,31 @@
 # Changelog
 
+## [5.22.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.21.3...v5.22.0) (2026-03-17)
+
+
+### Features
+
+* **ai:** add provider test workflow, model selectors, and mock provider ([d38c6c6](https://github.com/LindemannRock/craft-translation-manager/commit/d38c6c6d922c7da3ce24f4bf3f1d61baf62029e3))
+* **CreateBackupJob:** implement retry logic for backup job execution ([423e4c0](https://github.com/LindemannRock/craft-translation-manager/commit/423e4c0a98cfc878029267abf831184ec48669a8))
+* **export, import:** add origin field handling in translation processes ([032a9ef](https://github.com/LindemannRock/craft-translation-manager/commit/032a9efd2bd7cbcebb34464e25bd7cd6952b64d0))
+* **export:** enhance CSV export with additional metadata fields ([24114c3](https://github.com/LindemannRock/craft-translation-manager/commit/24114c39879d6ce05ae25a4f0e982f8db20bd812))
+* **maintenance:** add cleanup tools for unused translations, categories, and languages ([c4cfd19](https://github.com/LindemannRock/craft-translation-manager/commit/c4cfd19902aeb76c9c086212d671808a00de5535))
+* **settings:** add AI translation settings and configuration options ([d892725](https://github.com/LindemannRock/craft-translation-manager/commit/d892725fd8b6ac0a9d790ea26b9e9ba1014011bc))
+* **TranslationManager, MaintenanceController, SettingsController:** add language cleanup functionality and improve settings validation ([011f662](https://github.com/LindemannRock/craft-translation-manager/commit/011f662e84d4731322d90fcba2b4b0c857f9055a))
+* **translations:** add AI draft translation functionality and update status handling ([1cf4688](https://github.com/LindemannRock/craft-translation-manager/commit/1cf468858d68862925115febf531fdcb7fa07844))
+* **translations:** add bulk status update functionality for translations ([0e1abe1](https://github.com/LindemannRock/craft-translation-manager/commit/0e1abe1b145bf32748535b69d3b8f590ae2d12a7))
+* **translations:** add origin filter to export functionality ([49a2853](https://github.com/LindemannRock/craft-translation-manager/commit/49a2853899c1d79302d73910eb6609481a5430e7))
+* **translations:** add origin filter to translation queries ([edcb312](https://github.com/LindemannRock/craft-translation-manager/commit/edcb312fb51a29b4828c107f520ede86cae0f4ba))
+* **TranslationsController, index.twig:** add audit fields to translation rows ([c0b7a62](https://github.com/LindemannRock/craft-translation-manager/commit/c0b7a6256dd5eb55169d980de04b72b5318ee2df))
+* **TranslationsController:** add audit fields to translation rows ([ce6b923](https://github.com/LindemannRock/craft-translation-manager/commit/ce6b92352de2bf457ee825ae554ff4eb8498cdf7))
+* **translations:** implement translation approval workflow and status handling ([0683aee](https://github.com/LindemannRock/craft-translation-manager/commit/0683aeea5ba58ac226edad4b345de21779a3708a))
+
+
+### Bug Fixes
+
+* **settings:** remove redundant save buttons from settings forms ([e103e0f](https://github.com/LindemannRock/craft-translation-manager/commit/e103e0f24221f828bf41c671ae9ee736cf61fe93))
+* **TranslationManager:** update icon handling to use SVG file ([13b6ae2](https://github.com/LindemannRock/craft-translation-manager/commit/13b6ae29ec60bbfd947ff7ce6bdc675ea3c0d94d))
+
 ## [5.21.3](https://github.com/LindemannRock/craft-translation-manager/compare/v5.21.2...v5.21.3) (2026-02-23)
 
 
