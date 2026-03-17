@@ -370,6 +370,7 @@
         clearErrorMessage: 'Failed to clear history.'|t('translation-manager'),
     } only %}
 
+    {% if craft.app.config.general.devMode %}
     // PHP FILE IMPORT FUNCTIONALITY
     // ========================================
 
@@ -772,4 +773,5 @@
 
     // Load PHP files on page load
     loadPhpFiles();
+    {% endif %}
 {% endjs %}
