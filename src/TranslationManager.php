@@ -110,6 +110,9 @@ class TranslationManager extends Plugin
         parent::init();
         self::$plugin = $this;
 
+        // Register the Twig variable as early as possible in the request lifecycle.
+        $this->registerTemplateVariable();
+
         // Bootstrap shared plugin functionality (Twig helper, logging)
         PluginHelper::bootstrap(
             $this,
@@ -281,9 +284,6 @@ class TranslationManager extends Plugin
             }
         );
 
-        // Register variables
-        $this->registerTemplateVariable();
-
         // Register message source for translation category
         if ($this->getSettings()->enableSiteTranslations) {
             $this->registerFileMessageSource(); // Use file-based translations
@@ -309,9 +309,8 @@ class TranslationManager extends Plugin
     /**
      * Register the translationManager Twig variable.
      *
-     * Some requests may initialize CraftVariable before this plugin finishes
-     * attaching its EVENT_INIT listener, so also register against the current
-     * Twig global when available.
+     * This should only attach the CraftVariable init listener. Forcing Twig
+     * globals during plugin init can instantiate Twig before Craft is ready.
      */
     private function registerTemplateVariable(): void
     {
@@ -323,11 +322,6 @@ class TranslationManager extends Plugin
                 $variable->set('translationManager', TranslationManagerVariable::class);
             }
         );
-
-        $craftVariable = Craft::$app->getView()->getTwig()->getGlobals()['craft'] ?? null;
-        if ($craftVariable instanceof CraftVariable) {
-            $craftVariable->set('translationManager', TranslationManagerVariable::class);
-        }
     }
 
     /**
