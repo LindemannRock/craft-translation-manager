@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.22.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.22.0...v5.22.1) (2026-03-17)
+
+
+### Bug Fixes
+
+* **TranslationManager:** improve Twig variable registration process ([21417b7](https://github.com/LindemannRock/craft-translation-manager/commit/21417b784183063536a963349b1096447009481f))
+
 ## [5.22.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.21.3...v5.22.0) (2026-03-17)
 
 
