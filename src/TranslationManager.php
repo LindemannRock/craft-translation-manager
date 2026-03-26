@@ -121,9 +121,9 @@ class TranslationManager extends Plugin
             ['translationManager:downloadSystemLogs'],
             [
                 'installExperience' => [
-                    'headline' => 'Translation Manager',
-                    'body' => 'Manage translations, exports, backups, and AI-assisted workflows from one control panel workspace.',
-                    'ctaLabel' => 'Open Translation Manager',
+                    'headline' => Craft::t('translation-manager', 'Translation Manager'),
+                    'body' => Craft::t('translation-manager', 'Manage translations, exports, backups, and AI-assisted workflows from one control panel workspace.'),
+                    'ctaLabel' => Craft::t('translation-manager', 'Open Translation Manager'),
                     'ctaUrl' => 'translation-manager',
                     'redirectUri' => 'translation-manager',
                     'confettiPreset' => 'surprise',
