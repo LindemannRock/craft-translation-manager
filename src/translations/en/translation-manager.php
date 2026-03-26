@@ -11,6 +11,8 @@
 
 return [
     'Translation Manager' => 'Translation Manager',
+    'Manage translations, exports, backups, and AI-assisted workflows from one control panel workspace.' => 'Manage translations, exports, backups, and AI-assisted workflows from one control panel workspace.',
+    'Open Translation Manager' => 'Open Translation Manager',
     'Translations' => 'Translations',
     'Settings' => 'Settings',
     'General Settings' => 'General Settings',
