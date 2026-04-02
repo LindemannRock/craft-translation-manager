@@ -71,6 +71,11 @@ class TranslationManager extends Plugin
     public bool $hasCpSettings = true;
 
     /**
+     * @var bool Whether the plugin settings page is accessible when allowAdminChanges is false
+     */
+    public bool $hasReadOnlyCpSettings = true;
+
+    /**
      * @var TranslationManager|null
      */
     public static ?TranslationManager $plugin = null;
@@ -447,6 +452,16 @@ class TranslationManager extends Plugin
      * @inheritdoc
      */
     public function getSettingsResponse(): mixed
+    {
+        return Craft::$app->getResponse()->redirect(
+            UrlHelper::cpUrl('translation-manager/settings')
+        );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getReadOnlySettingsResponse(): mixed
     {
         return Craft::$app->getResponse()->redirect(
             UrlHelper::cpUrl('translation-manager/settings')
