@@ -256,7 +256,7 @@ class TranslationsController extends Controller
         if (!$translation) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Translation not found',
+                'error' => Craft::t('translation-manager', 'Translation not found'),
             ]);
         }
 
@@ -285,14 +285,14 @@ class TranslationsController extends Controller
 
             return $this->asJson([
                 'success' => true,
-                'message' => 'Translation saved',
+                'message' => Craft::t('translation-manager', 'Translation saved'),
                 'status' => $translation->status,
             ]);
         }
 
         return $this->asJson([
             'success' => false,
-            'error' => 'Failed to save translation',
+            'error' => Craft::t('translation-manager', 'Failed to save translation'),
         ]);
     }
 
@@ -396,7 +396,7 @@ class TranslationsController extends Controller
         if (!is_array($ids)) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Invalid IDs provided',
+                'error' => Craft::t('translation-manager', 'Invalid IDs provided'),
             ]);
         }
 
@@ -427,7 +427,7 @@ class TranslationsController extends Controller
         if (!is_array($ids) || !in_array($targetStatus, ['draft', 'translated'], true)) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Invalid request payload.',
+                'error' => Craft::t('translation-manager', 'Invalid request payload.'),
             ]);
         }
 

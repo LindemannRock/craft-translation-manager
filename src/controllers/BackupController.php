@@ -178,7 +178,7 @@ class BackupController extends Controller
 
             return $this->asJson([
                 'success' => false,
-                'error' => 'Failed to load backups: ' . $e->getMessage(),
+                'error' => Craft::t('translation-manager', 'Failed to load backups: {error}', ['error' => $e->getMessage()]),
             ]);
         }
     }
@@ -203,7 +203,7 @@ class BackupController extends Controller
             if ($backupResult) {
                 return $this->asJson([
                     'success' => true,
-                    'message' => 'Backup created successfully',
+                    'message' => Craft::t('translation-manager', 'Backup created successfully'),
                     'path' => basename($backupResult),
                 ]);
             }
@@ -213,20 +213,20 @@ class BackupController extends Controller
             if (empty($translations)) {
                 return $this->asJson([
                     'success' => false,
-                    'error' => 'No translations to backup. Add some translations first.',
+                    'error' => Craft::t('translation-manager', 'No translations to backup. Add some translations first.'),
                     'isEmpty' => true,
                 ]);
             }
             
             return $this->asJson([
                 'success' => false,
-                'error' => 'Failed to create backup',
+                'error' => Craft::t('translation-manager', 'Failed to create backup'),
             ]);
         } catch (\Exception $e) {
             $this->logError('Backup creation failed', ['error' => $e->getMessage()]);
             return $this->asJson([
                 'success' => false,
-                'error' => 'Failed to create backup: ' . $e->getMessage(),
+                'error' => Craft::t('translation-manager', 'Failed to create backup: {error}', ['error' => $e->getMessage()]),
             ]);
         }
     }
@@ -246,7 +246,7 @@ class BackupController extends Controller
         if (!preg_match('/^([\w]+\/)?(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})$/', $backupName)) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Invalid backup name format',
+                'error' => Craft::t('translation-manager', 'Invalid backup name format'),
             ]);
         }
 
@@ -272,7 +272,7 @@ class BackupController extends Controller
             $this->logWarning("Invalid backup name format attempted", ['backup' => $backupName]);
             return $this->asJson([
                 'success' => false,
-                'error' => 'Invalid backup name format',
+                'error' => Craft::t('translation-manager', 'Invalid backup name format'),
             ]);
         }
 
@@ -283,14 +283,14 @@ class BackupController extends Controller
             $this->logInfo("Backup deletion completed successfully", ['backup' => $backupName]);
             return $this->asJson([
                 'success' => true,
-                'message' => 'Backup deleted successfully',
+                'message' => Craft::t('translation-manager', 'Backup deleted successfully'),
             ]);
         }
 
         $this->logWarning("Backup deletion failed", ['backup' => $backupName]);
         return $this->asJson([
             'success' => false,
-            'error' => 'Failed to delete backup',
+            'error' => Craft::t('translation-manager', 'Failed to delete backup'),
         ]);
     }
     

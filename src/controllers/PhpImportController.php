@@ -242,7 +242,7 @@ class PhpImportController extends Controller
             'imported' => $imported,
             'updated' => $updated,
             'errors' => $errors,
-            'message' => "Imported {$imported} new, updated {$updated} existing translations",
+            'message' => Craft::t('translation-manager', 'Imported {imported} new, updated {updated} existing translations', ['imported' => $imported, 'updated' => $updated]),
         ]);
     }
 

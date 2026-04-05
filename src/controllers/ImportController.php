@@ -70,7 +70,7 @@ class ImportController extends Controller
         if (!is_array($translations)) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Invalid data format',
+                'error' => Craft::t('translation-manager', 'Invalid data format'),
             ]);
         }
         
@@ -521,7 +521,7 @@ class ImportController extends Controller
                     'english' => '',
                     'arabic' => $translation['arabic'] ?? '',
                     'context' => $translation['context'] ?? 'site',
-                    'error' => 'Missing Translation Key',
+                    'error' => Craft::t('translation-manager', 'Missing Translation Key'),
                 ];
                 continue;
             }
@@ -542,7 +542,7 @@ class ImportController extends Controller
                         'context' => $translation['context'] ?? 'site',
                         'siteId' => $siteId,
                         'siteLanguage' => 'unknown',
-                        'error' => "Invalid site ID: {$siteId} does not exist",
+                        'error' => Craft::t('translation-manager', 'Invalid site ID: {siteId} does not exist', ['siteId' => $siteId]),
                     ];
                     $this->logWarning("Invalid site ID for translation", [
                         'siteId' => $siteId,
@@ -563,7 +563,7 @@ class ImportController extends Controller
                     'arabic' => $translation['arabic'] ?? '',
                     'context' => $translation['context'] ?? 'site',
                     'language' => $targetLanguage,
-                    'error' => "Language '{$targetLanguage}' is not allowed for import.",
+                    'error' => Craft::t('translation-manager', "Language '{language}' is not allowed for import.", ['language' => $targetLanguage]),
                 ];
                 continue;
             }
@@ -1306,7 +1306,7 @@ class ImportController extends Controller
         $currentUser = Craft::$app->getUser()->getIdentity();
         if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:clearImportHistory'))) {
             if ($this->request->getAcceptsJson()) {
-                return $this->asJson(['success' => false, 'error' => 'User is not authorized to clear import logs.']);
+                return $this->asJson(['success' => false, 'error' => Craft::t('translation-manager', 'User is not authorized to clear import logs.')]);
             }
             throw new ForbiddenHttpException('User is not authorized to clear import logs.');
         }
@@ -1333,7 +1333,7 @@ class ImportController extends Controller
             $this->logError('Failed to clear import logs', ['error' => $e->getMessage()]);
             
             if ($this->request->getAcceptsJson()) {
-                return $this->asJson(['success' => false, 'error' => 'Failed to clear import logs.']);
+                return $this->asJson(['success' => false, 'error' => Craft::t('translation-manager', 'Failed to clear import logs.')]);
             }
             
             Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Failed to clear import logs.'));

@@ -397,31 +397,31 @@ class ExportController extends Controller
             if ($formieCount > 0) {
                 $formieResult = $exportService->exportFormieTranslations();
                 if ($formieResult) {
-                    $messages[] = TranslationManager::getFormiePluginName() . " files ({$formieCount} translations)";
+                    $messages[] = Craft::t('translation-manager', '{name} files ({count} translations)', ['name' => TranslationManager::getFormiePluginName(), 'count' => $formieCount]);
                 }
             } else {
-                $warnings[] = 'No translated ' . TranslationManager::getFormiePluginName() . ' translations found';
+                $warnings[] = Craft::t('translation-manager', 'No translated {name} translations found', ['name' => TranslationManager::getFormiePluginName()]);
             }
-            
+
             if ($siteCount > 0) {
                 $siteResult = $exportService->exportSiteTranslations();
                 if ($siteResult) {
-                    $messages[] = "Site files ({$siteCount} translations)";
+                    $messages[] = Craft::t('translation-manager', 'Site files ({count} translations)', ['count' => $siteCount]);
                 }
             } else {
-                $warnings[] = 'No translated site translations found';
+                $warnings[] = Craft::t('translation-manager', 'No translated site translations found');
             }
-            
+
             // Build response message
             $parts = [];
             if (!empty($messages)) {
-                $parts[] = 'Generated: ' . implode(', ', $messages);
+                $parts[] = Craft::t('translation-manager', 'Generated:') . ' ' . implode(', ', $messages);
             }
             if (!empty($warnings)) {
                 $parts[] = implode('; ', $warnings);
             }
-            
-            $message = !empty($parts) ? implode('. ', $parts) : 'No translation files generated';
+
+            $message = !empty($parts) ? implode('. ', $parts) : Craft::t('translation-manager', 'No translation files generated');
 
             // Log the completion with results
             $this->logInfo("Export completed", ['message' => $message]);
@@ -447,7 +447,7 @@ class ExportController extends Controller
                 ]);
             }
             
-            Craft::$app->getSession()->setError('Failed to generate translation files: ' . $e->getMessage());
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Failed to generate translation files: {error}', ['error' => $e->getMessage()]));
             return $this->redirect('translation-manager');
         }
     }
@@ -468,14 +468,13 @@ class ExportController extends Controller
 
             $this->logInfo("Formie export preparation", ['formieCount' => $formieCount]);
 
+            $pluginName = TranslationManager::getFormiePluginName();
             if ($formieCount > 0) {
                 TranslationManager::getInstance()->export->exportFormieTranslations();
-                $pluginName = TranslationManager::getFormiePluginName();
-                $message = $pluginName . " translation files generated successfully ({$formieCount} translations)";
+                $message = Craft::t('translation-manager', '{name} translation files generated successfully ({count} translations)', ['name' => $pluginName, 'count' => $formieCount]);
                 $this->logInfo("Formie export completed", ['message' => $message]);
             } else {
-                $pluginName = TranslationManager::getFormiePluginName();
-                $message = "No translated {$pluginName} translations found. Add translations first.";
+                $message = Craft::t('translation-manager', 'No translated {name} translations found. Add translations first.', ['name' => $pluginName]);
             }
             
             if (Craft::$app->getRequest()->getAcceptsJson()) {
@@ -495,7 +494,7 @@ class ExportController extends Controller
                 ]);
             }
             
-            Craft::$app->getSession()->setError('Failed to generate translation files: ' . $e->getMessage());
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Failed to generate translation files: {error}', ['error' => $e->getMessage()]));
             return $this->redirect('translation-manager');
         }
     }
@@ -518,12 +517,10 @@ class ExportController extends Controller
 
             if ($siteCount > 0) {
                 TranslationManager::getInstance()->export->exportSiteTranslations();
-                $message = "Site translation files generated successfully ({$siteCount} translations)";
+                $message = Craft::t('translation-manager', 'Site translation files generated successfully ({count} translations)', ['count' => $siteCount]);
                 $this->logInfo("Site export completed", ['message' => $message]);
             } else {
-                $settings = TranslationManager::getInstance()->getSettings();
-                $category = $settings->translationCategory;
-                $message = "No translated site translations found. Add translations first.";
+                $message = Craft::t('translation-manager', 'No translated site translations found. Add translations first.');
             }
             
             if (Craft::$app->getRequest()->getAcceptsJson()) {
@@ -543,7 +540,7 @@ class ExportController extends Controller
                 ]);
             }
             
-            Craft::$app->getSession()->setError('Failed to generate site translation files: ' . $e->getMessage());
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Failed to generate site translation files: {error}', ['error' => $e->getMessage()]));
             return $this->redirect('translation-manager');
         }
     }
@@ -567,7 +564,7 @@ class ExportController extends Controller
             $enabledCategories = $settings->getEnabledCategories();
 
             if (!in_array($category, $enabledCategories, true)) {
-                throw new \Exception("Category '{$category}' is not enabled");
+                throw new \Exception(Craft::t('translation-manager', "Category '{category}' is not enabled.", ['category' => $category]));
             }
 
             $this->logInfo('User requested single category export', ['category' => $category]);
@@ -583,10 +580,10 @@ class ExportController extends Controller
 
             if ($count > 0) {
                 TranslationManager::getInstance()->export->exportCategoryTranslations($category);
-                $message = ucfirst($category) . " translation files generated successfully ({$count} translations)";
+                $message = Craft::t('translation-manager', '{name} translation files generated successfully ({count} translations)', ['name' => ucfirst($category), 'count' => $count]);
                 $this->logInfo("Category export completed", ['message' => $message]);
             } else {
-                $message = "No translated translations found for category '{$category}'. Add translations first.";
+                $message = Craft::t('translation-manager', "No translated translations found for category '{category}'. Add translations first.", ['category' => $category]);
             }
 
             if (Craft::$app->getRequest()->getAcceptsJson()) {
@@ -606,7 +603,7 @@ class ExportController extends Controller
                 ]);
             }
 
-            Craft::$app->getSession()->setError('Failed to generate category translation files: ' . $e->getMessage());
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Failed to generate category translation files: {error}', ['error' => $e->getMessage()]));
             return $this->redirect('translation-manager');
         }
     }

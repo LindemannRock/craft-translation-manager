@@ -192,7 +192,7 @@ class MaintenanceController extends Controller
         
         if (empty($searchTerm)) {
             return $this->asJson([
-                'error' => 'Please provide a search term',
+                'error' => Craft::t('translation-manager', 'Please provide a search term'),
             ]);
         }
         
@@ -319,7 +319,7 @@ class MaintenanceController extends Controller
                 if ($formieIntegration === null) {
                     return $this->asJson([
                         'success' => false,
-                        'error' => 'Formie integration is not available.',
+                        'error' => Craft::t('translation-manager', 'Formie integration is not available.'),
                     ]);
                 }
 
@@ -335,12 +335,12 @@ class MaintenanceController extends Controller
 
             return $this->asJson([
                 'success' => true,
-                'message' => "Recaptured {$pluginName} translations from {$count} form(s)",
+                'message' => Craft::t('translation-manager', 'Recaptured {name} translations from {count} form(s)', ['name' => $pluginName, 'count' => $count]),
             ]);
         } catch (\Exception $e) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Failed to recapture translations: ' . $e->getMessage(),
+                'error' => Craft::t('translation-manager', 'Failed to recapture translations: {error}', ['error' => $e->getMessage()]),
             ]);
         }
     }
@@ -370,7 +370,7 @@ class MaintenanceController extends Controller
         if (!in_array($type, ['all', 'category', 'formie'])) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Invalid type specified',
+                'error' => Craft::t('translation-manager', 'Invalid type specified'),
             ]);
         }
 
@@ -404,7 +404,7 @@ class MaintenanceController extends Controller
             if ($count === 0) {
                 return $this->asJson([
                     'success' => true,
-                    'message' => "No unused {$displayType} translations found.",
+                    'message' => Craft::t('translation-manager', 'No unused {type} translations found.', ['type' => $displayType]),
                 ]);
             }
 
@@ -429,12 +429,12 @@ class MaintenanceController extends Controller
 
             return $this->asJson([
                 'success' => true,
-                'message' => "Deleted {$deleted} unused {$displayType} translations.",
+                'message' => Craft::t('translation-manager', 'Deleted {count} unused {type} translations.', ['count' => $deleted, 'type' => $displayType]),
             ]);
         } catch (\Exception $e) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Failed to clean unused translations: ' . $e->getMessage(),
+                'error' => Craft::t('translation-manager', 'Failed to clean unused translations: {error}', ['error' => $e->getMessage()]),
             ]);
         }
     }
@@ -460,7 +460,7 @@ class MaintenanceController extends Controller
         if (empty($languages)) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'No languages selected.',
+                'error' => Craft::t('translation-manager', 'No languages selected.'),
             ]);
         }
 
@@ -478,7 +478,7 @@ class MaintenanceController extends Controller
         if (!empty($invalid)) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Invalid language selection: ' . implode(', ', $invalid),
+                'error' => Craft::t('translation-manager', 'Invalid language selection: {languages}', ['languages' => implode(', ', $invalid)]),
             ]);
         }
 
@@ -503,7 +503,7 @@ class MaintenanceController extends Controller
                 return $this->asJson([
                     'success' => true,
                     'deleted' => 0,
-                    'message' => 'No matching translations found for selected languages.',
+                    'message' => Craft::t('translation-manager', 'No matching translations found for selected languages.'),
                 ]);
             }
 
@@ -521,12 +521,12 @@ class MaintenanceController extends Controller
                 'success' => true,
                 'deleted' => $deleted,
                 'deletedByLanguage' => $counts,
-                'message' => "Deleted {$deleted} translations across " . count($counts) . " language(s).",
+                'message' => Craft::t('translation-manager', 'Deleted {count} translations across {langCount} language(s).', ['count' => $deleted, 'langCount' => count($counts)]),
             ]);
         } catch (\Exception $e) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Failed to clean languages: ' . $e->getMessage(),
+                'error' => Craft::t('translation-manager', 'Failed to clean languages: {error}', ['error' => $e->getMessage()]),
             ]);
         }
     }
@@ -552,7 +552,7 @@ class MaintenanceController extends Controller
         if (empty($categories)) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'No categories selected.',
+                'error' => Craft::t('translation-manager', 'No categories selected.'),
             ]);
         }
 
@@ -563,7 +563,7 @@ class MaintenanceController extends Controller
         if (!empty($invalid)) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Invalid category selection: ' . implode(', ', $invalid),
+                'error' => Craft::t('translation-manager', 'Invalid category selection: {categories}', ['categories' => implode(', ', $invalid)]),
             ]);
         }
 
@@ -588,7 +588,7 @@ class MaintenanceController extends Controller
                 return $this->asJson([
                     'success' => true,
                     'deleted' => 0,
-                    'message' => 'No matching translations found for selected categories.',
+                    'message' => Craft::t('translation-manager', 'No matching translations found for selected categories.'),
                 ]);
             }
 
@@ -606,12 +606,12 @@ class MaintenanceController extends Controller
                 'success' => true,
                 'deleted' => $deleted,
                 'deletedByCategory' => $counts,
-                'message' => "Deleted {$deleted} translations across " . count($counts) . " category(s).",
+                'message' => Craft::t('translation-manager', 'Deleted {count} translations across {catCount} category(s).', ['count' => $deleted, 'catCount' => count($counts)]),
             ]);
         } catch (\Exception $e) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Failed to clean categories: ' . $e->getMessage(),
+                'error' => Craft::t('translation-manager', 'Failed to clean categories: {error}', ['error' => $e->getMessage()]),
             ]);
         }
     }
@@ -631,12 +631,15 @@ class MaintenanceController extends Controller
         try {
             $results = TranslationManager::getInstance()->translations->scanTemplatesForUnused();
             
-            $message = "Template scan complete: {$results['scanned_files']} files scanned, {$results['marked_unused']} marked as unused";
+            $message = Craft::t('translation-manager', 'Template scan complete: {files} files scanned, {unused} marked as unused', [
+                'files' => $results['scanned_files'],
+                'unused' => $results['marked_unused'],
+            ]);
             if (isset($results['created']) && $results['created'] > 0) {
-                $message .= ", {$results['created']} created";
+                $message .= ', ' . Craft::t('translation-manager', '{count} created', ['count' => $results['created']]);
             }
             if ($results['reactivated'] > 0) {
-                $message .= ", {$results['reactivated']} reactivated";
+                $message .= ', ' . Craft::t('translation-manager', '{count} reactivated', ['count' => $results['reactivated']]);
             }
             
             return $this->asJson([
@@ -647,7 +650,7 @@ class MaintenanceController extends Controller
         } catch (\Exception $e) {
             return $this->asJson([
                 'success' => false,
-                'error' => 'Failed to scan templates: ' . $e->getMessage(),
+                'error' => Craft::t('translation-manager', 'Failed to scan templates: {error}', ['error' => $e->getMessage()]),
             ]);
         }
     }
