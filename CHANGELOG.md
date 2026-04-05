@@ -1,5 +1,21 @@
 # Changelog
 
+## [5.23.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.22.2...v5.23.0) (2026-04-05)
+
+
+### Features
+
+* Add 12-language translation support with 637 keys across EN, DE, FR, NL, ES, AR, IT, PT, JA, SV, DA, NO ([a3e3ee7](https://github.com/LindemannRock/craft-translation-manager/commit/a3e3ee76f3eb0a820edb658a4ea01a095a26a5fb))
+
+
+### Bug Fixes
+
+* **BackupController, ExportController, ImportController, MaintenanceController, PhpImportController, TranslationsController:** update error and success messages to use translation strings ([643a279](https://github.com/LindemannRock/craft-translation-manager/commit/643a2797f9c8826393b15f0c5e17fc9d19dec242))
+* **import-export, maintenance:** update error messages to use translation strings ([9ed8d38](https://github.com/LindemannRock/craft-translation-manager/commit/9ed8d388a8c3cd77a95ecf5e788394d5e93403a3))
+* **TranslationManager:** read-only settings page accessibility ([b589f55](https://github.com/LindemannRock/craft-translation-manager/commit/b589f557ba6f39eb9a77bdcbfe8dd3c3b48e8d04))
+* **TranslationManager:** update labels to use translation strings ([d2c2fb5](https://github.com/LindemannRock/craft-translation-manager/commit/d2c2fb569968b933bbc8a0a577a99cfdad39e58c))
+* update installation experience text to use translation strings ([1a03923](https://github.com/LindemannRock/craft-translation-manager/commit/1a0392399300fd213c3dcda1e8dcfa168d205470))
+
 ## [5.22.2](https://github.com/LindemannRock/craft-translation-manager/compare/v5.22.1...v5.22.2) (2026-03-17)
 
 
