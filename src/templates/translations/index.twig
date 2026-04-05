@@ -58,17 +58,17 @@
     type: 'status',
     param: 'status',
     current: status,
-    label: status == 'all' ? 'All' : (status == 'draft' ? 'Draft' : (status == 'unused' ? 'Unused' : status|capitalize)),
+    label: status == 'all' ? 'All'|t('translation-manager') : (status == 'draft' ? 'Draft'|t('translation-manager') : (status == 'unused' ? 'Unused'|t('translation-manager') : status|capitalize)),
     groups: [
         {
             param: 'status',
             current: status,
             options: [
-                { value: 'all', label: 'All', status: 'all' },
-                { value: 'pending', label: 'Pending', statusColor: '#f59e0b' },
-                { value: 'draft', label: 'Draft', statusColor: '#3b82f6' },
-                { value: 'translated', label: 'Translated', statusColor: '#14b8a6' },
-                { value: 'unused', label: 'Unused', statusColor: '#64748b' },
+                { value: 'all', label: 'All'|t('translation-manager'), status: 'all' },
+                { value: 'pending', label: 'Pending'|t('translation-manager'), statusColor: '#f59e0b' },
+                { value: 'draft', label: 'Draft'|t('translation-manager'), statusColor: '#3b82f6' },
+                { value: 'translated', label: 'Translated'|t('translation-manager'), statusColor: '#14b8a6' },
+                { value: 'unused', label: 'Unused'|t('translation-manager'), statusColor: '#64748b' },
             ],
         }
     ],
@@ -77,13 +77,13 @@
 {% if showTypeCol %}
     {% set groupedFilter = groupedFilter|merge({
         groups: groupedFilter.groups|merge([{
-            header: 'Type',
+            header: 'Type'|t('translation-manager'),
             param: 'type',
             current: type,
             options: [
-                { value: 'all', label: 'All Types', status: 'all' },
+                { value: 'all', label: 'All Types'|t('translation-manager'), status: 'all' },
                 { value: 'forms', label: craft.translationManager.getFormiePluginName(), statusColor: '#3b82f6' },
-                { value: 'site', label: 'Site', statusColor: '#14b8a6' },
+                { value: 'site', label: 'Site'|t('translation-manager'), statusColor: '#14b8a6' },
             ],
         }])
     }) %}
@@ -91,15 +91,15 @@
 
 {% set groupedFilter = groupedFilter|merge({
     groups: groupedFilter.groups|merge([{
-        header: 'Origin',
+        header: 'Origin'|t('translation-manager'),
         param: 'origin',
         current: origin,
         options: [
-            { value: 'all', label: 'All Origins', status: 'all' },
-            { value: 'ai', label: 'AI', statusColor: '#7c3aed' },
-            { value: 'manual', label: 'Manual', statusColor: '#16a34a' },
-            { value: 'import', label: 'Import', statusColor: '#dc2626' },
-            { value: 'system', label: 'System', statusColor: '#475569' },
+            { value: 'all', label: 'All Origins'|t('translation-manager'), status: 'all' },
+            { value: 'ai', label: 'AI'|t('translation-manager'), statusColor: '#7c3aed' },
+            { value: 'manual', label: 'Manual'|t('translation-manager'), statusColor: '#16a34a' },
+            { value: 'import', label: 'Import'|t('translation-manager'), statusColor: '#dc2626' },
+            { value: 'system', label: 'System'|t('translation-manager'), statusColor: '#475569' },
         ],
     }])
 }) %}
@@ -107,7 +107,7 @@
 {% set filters = [groupedFilter] %}
 
 {% if showCategoryCol %}
-    {% set categoryOptions = [{ value: 'all', label: 'All Categories' }] %}
+    {% set categoryOptions = [{ value: 'all', label: 'All Categories'|t('translation-manager') }] %}
     {% for cat in allCategories %}
         {% set categoryOptions = categoryOptions|merge([{ value: cat, label: cat|title }]) %}
     {% endfor %}
@@ -116,7 +116,7 @@
         type: 'dropdown',
         param: 'category',
         current: category,
-        label: category == 'all' ? 'All Categories' : category|title,
+        label: category == 'all' ? 'All Categories'|t('translation-manager') : category|title,
         icon: 'tag',
         options: categoryOptions,
     }]) %}
@@ -124,21 +124,21 @@
 
 {% set columns = [] %}
 {% if showTypeCol %}
-    {% set columns = columns|merge([{key: 'type', label: 'Type', sortable: true, width: '90px', hideable: true}]) %}
+    {% set columns = columns|merge([{key: 'type', label: 'Type'|t('translation-manager'), sortable: true, width: '90px', hideable: true}]) %}
 {% endif %}
 {% if showCategoryCol %}
-    {% set columns = columns|merge([{key: 'category', label: 'Category', sortable: true, width: '120px', hideable: true}]) %}
+    {% set columns = columns|merge([{key: 'category', label: 'Category'|t('translation-manager'), sortable: true, width: '120px', hideable: true}]) %}
 {% endif %}
 {% set columns = columns|merge([
-    {key: 'translationKey', label: 'Translation Key', sortable: true, width: '260px', hideable: true},
-    {key: 'translation', label: 'Translation (' ~ currentLanguage|upper ~ ')', sortable: true},
-    {key: 'status', label: 'Status', sortable: true, width: '110px', hideable: true},
-    {key: 'origin', label: 'Origin', width: '100px', hideable: true},
-    {key: 'createdBy', label: 'Created By', width: '150px', hideable: true},
-    {key: 'reviewedBy', label: 'Reviewed By', width: '150px', hideable: true},
-    {key: 'reviewedAt', label: 'Reviewed At', width: '170px', hideable: true},
+    {key: 'translationKey', label: 'Translation Key'|t('translation-manager'), sortable: true, width: '260px', hideable: true},
+    {key: 'translation', label: 'Translation ({language})'|t('translation-manager', {language: currentLanguage|upper}), sortable: true},
+    {key: 'status', label: 'Status'|t('translation-manager'), sortable: true, width: '110px', hideable: true},
+    {key: 'origin', label: 'Origin'|t('translation-manager'), width: '100px', hideable: true},
+    {key: 'createdBy', label: 'Created By'|t('translation-manager'), width: '150px', hideable: true},
+    {key: 'reviewedBy', label: 'Reviewed By'|t('translation-manager'), width: '150px', hideable: true},
+    {key: 'reviewedAt', label: 'Reviewed At'|t('translation-manager'), width: '170px', hideable: true},
 ]) %}
-{% set columns = columns|merge([{key: 'context', label: 'Context', width: '170px', hideable: true}]) %}
+{% set columns = columns|merge([{key: 'context', label: 'Context'|t('translation-manager'), width: '170px', hideable: true}]) %}
 
 {% set hasAnyGeneratePermission =
     currentUser.can('translationManager:generateTranslations') or
@@ -175,7 +175,7 @@
         page: page,
         limit: limit,
         totalCount: totalCount,
-        itemLabel: {singular: 'entry', plural: 'entries'},
+        itemLabel: {singular: 'entry'|t('translation-manager'), plural: 'entries'|t('translation-manager')},
     },
     checkboxes: canEditTranslations or canDeleteTranslations,
     rowActions: false,
@@ -234,7 +234,7 @@
             {% if item.context starts with 'formie.' %}
                 <span class="light">{{ craft.translationManager.getFormiePluginName() }}</span>
             {% else %}
-                <span class="light">Site</span>
+                <span class="light">{{ 'Site'|t('translation-manager') }}</span>
             {% endif %}
         </td>
     {% endif %}
@@ -246,19 +246,19 @@
     <td data-column="translationKey" class="lr-hideable-column">{{ item.translationKey|e }}</td>
 
     <td data-column="translation">
-        <textarea class="translation-text" placeholder="{% if currentLanguage starts with 'ar' %}أدخل الترجمة العربية هنا...{% else %}Enter translation for {{ currentLanguage|upper }}...{% endif %}">{{ item.translation|e }}</textarea>
+        <textarea class="translation-text" placeholder="{{ 'Enter translation for {language}…'|t('translation-manager', {language: currentLanguage|upper}) }}">{{ item.translation|e }}</textarea>
     </td>
 
     <td data-column="status" class="lr-hideable-column">
         {% set statusMap = {
-            'unused': { label: 'Unused', color: 'gray' },
-            'pending': { label: 'Pending', color: 'orange' },
-            'draft': { label: 'Draft', color: 'blue' },
-            'translated': { label: 'Translated', color: 'teal' },
+            'unused': { label: 'Unused'|t('translation-manager'), color: 'gray' },
+            'pending': { label: 'Pending'|t('translation-manager'), color: 'orange' },
+            'draft': { label: 'Draft'|t('translation-manager'), color: 'blue' },
+            'translated': { label: 'Translated'|t('translation-manager'), color: 'teal' },
         } %}
         {% set statusBadge = statusMap[item.status] ?? { label: item.status|title, color: 'gray' } %}
         {% if item.status == 'draft' and (item.translationOrigin ?? '') == 'ai' %}
-            {% set statusBadge = statusBadge|merge({ label: 'AI Draft' }) %}
+            {% set statusBadge = statusBadge|merge({ label: 'AI Draft'|t('translation-manager') }) %}
         {% endif %}
 
         {% include 'lindemannrock-base/_components/status-badge' with {
@@ -269,10 +269,10 @@
 
     <td data-column="origin" class="lr-hideable-column">
         {% set originMap = {
-            'ai': { label: 'AI', color: '#7c3aed', rgb: '124, 58, 237', text: '#4c1d95' },
-            'manual': { label: 'Manual', color: '#16a34a', rgb: '22, 163, 74', text: '#14532d' },
-            'import': { label: 'Import', color: '#dc2626', rgb: '220, 38, 38', text: '#7f1d1d' },
-            'system': { label: 'System', color: '#475569', rgb: '71, 85, 105', text: '#1e293b' },
+            'ai': { label: 'AI'|t('translation-manager'), color: '#7c3aed', rgb: '124, 58, 237', text: '#4c1d95' },
+            'manual': { label: 'Manual'|t('translation-manager'), color: '#16a34a', rgb: '22, 163, 74', text: '#14532d' },
+            'import': { label: 'Import'|t('translation-manager'), color: '#dc2626', rgb: '220, 38, 38', text: '#7f1d1d' },
+            'system': { label: 'System'|t('translation-manager'), color: '#475569', rgb: '71, 85, 105', text: '#1e293b' },
         } %}
         {% set originKey = item.translationOrigin ?? 'system' %}
         {% set originBadge = originMap[originKey] ?? originMap['system'] %}
@@ -323,17 +323,17 @@
 {% block extraFooter %}
     {% if not settings.autoExport and hasAnyGeneratePermission %}
         <form>
-            <button type="button" class="btn secondary menubtn" data-icon="settings" title="Generate translation files" id="generate-menu-btn"></button>
+            <button type="button" class="btn secondary menubtn" data-icon="settings" title="{{ 'Generate translation files'|t('translation-manager') }}" id="generate-menu-btn"></button>
             <div class="menu" data-align="right">
                 <ul>
                     {% if currentUser.can('translationManager:generateAllTranslations') %}
-                        <li><a href="#" id="generate-all-btn">Generate All Files</a></li>
+                        <li><a href="#" id="generate-all-btn">{{ 'Generate All Files'|t('translation-manager') }}</a></li>
                     {% endif %}
                     {% if settings.enableFormieIntegration and currentUser.can('translationManager:generateFormieTranslations') %}
-                        <li><a href="#" id="generate-formie-btn">Generate {{ craft.translationManager.getFormiePluginName() }} Files Only</a></li>
+                        <li><a href="#" id="generate-formie-btn">{{ 'Generate {name} Files Only'|t('translation-manager', {name: craft.translationManager.getFormiePluginName()}) }}</a></li>
                     {% endif %}
                     {% if settings.enableSiteTranslations and currentUser.can('translationManager:generateSiteTranslations') %}
-                        <li><a href="#" id="generate-site-btn">Generate {{ settings.translationCategory|title }} Files Only</a></li>
+                        <li><a href="#" id="generate-site-btn">{{ 'Generate {name} Files Only'|t('translation-manager', {name: settings.translationCategory|title}) }}</a></li>
                     {% endif %}
                 </ul>
             </div>
@@ -341,12 +341,12 @@
     {% endif %}
 
     {% if canExportTranslations %}
-        <button type="button" class="btn" id="export-btn" tabindex="0" aria-expanded="false" title="Export translations as CSV file">Export…</button>
+        <button type="button" class="btn" id="export-btn" tabindex="0" aria-expanded="false" title="{{ 'Export translations as CSV file'|t('translation-manager') }}">{{ 'Export…'|t('translation-manager') }}</button>
     {% endif %}
 
     {% if canEditTranslations %}
         <button type="button" class="btn submit" id="save-all-btn" tabindex="0">
-            <div class="gap-xs inline-flex"><div class="label">Save All Changes</div></div>
+            <div class="gap-xs inline-flex"><div class="label">{{ 'Save All Changes'|t('translation-manager') }}</div></div>
             <div class="spinner spinner-absolute"></div>
         </button>
     {% endif %}
@@ -461,11 +461,11 @@
 
             const data = await response.json();
             if (!data.success) {
-                throw new Error(data.error || 'Failed to update status');
+                throw new Error(data.error || {{ 'Failed to update status'|t('translation-manager')|json_encode|raw }});
             }
 
-            const label = status === 'translated' ? '{{ "translated"|t("translation-manager") }}' : '{{ "draft"|t("translation-manager") }}';
-            Craft.cp.displayNotice(`Updated ${data.updated} translation${data.updated === 1 ? '' : 's'} to ${label}.`);
+            const label = status === 'translated' ? {{ 'translated'|t('translation-manager')|json_encode|raw }} : {{ 'draft'|t('translation-manager')|json_encode|raw }};
+            Craft.cp.displayNotice({{ 'Updated {count} translation(s) to {status}.'|t('translation-manager')|json_encode|raw }}.replace('{count}', data.updated).replace('{status}', label));
             setTimeout(() => window.location.reload(), 600);
         }
 
@@ -475,7 +475,7 @@
                 await bulkSetStatus('draft');
             } catch (error) {
                 console.error(error);
-                Craft.cp.displayError(error.message || 'Failed to mark as draft');
+                Craft.cp.displayError(error.message || {{ 'Failed to mark as draft'|t('translation-manager')|json_encode|raw }});
             }
         });
         {% endif %}
@@ -486,7 +486,7 @@
                 await bulkSetStatus('translated');
             } catch (error) {
                 console.error(error);
-                Craft.cp.displayError(error.message || 'Failed to mark as translated');
+                Craft.cp.displayError(error.message || {{ 'Failed to mark as translated'|t('translation-manager')|json_encode|raw }});
             }
         });
         {% endif %}
@@ -499,7 +499,7 @@
                 return;
             }
 
-            if (!confirm(`Are you sure you want to delete ${ids.length} translation${ids.length > 1 ? 's' : ''}?`)) {
+            if (!confirm({{ 'Are you sure you want to delete {count} translation(s)?'|t('translation-manager')|json_encode|raw }}.replace('{count}', ids.length))) {
                 return;
             }
 
@@ -516,14 +516,14 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Craft.cp.displayNotice(`Deleted ${data.deleted} translations`);
+                    Craft.cp.displayNotice({{ 'Deleted {count} translation(s).'|t('translation-manager')|json_encode|raw }}.replace('{count}', data.deleted));
                     setTimeout(() => window.location.reload(), 800);
                 } else {
-                    Craft.cp.displayError(data.error || 'Failed to delete translations');
+                    Craft.cp.displayError(data.error || {{ 'Failed to delete translations'|t('translation-manager')|json_encode|raw }});
                 }
             })
             .catch(() => {
-                Craft.cp.displayError('Failed to delete translations');
+                Craft.cp.displayError({{ 'Failed to delete translations'|t('translation-manager')|json_encode|raw }});
             });
         });
         {% endif %}
@@ -581,26 +581,25 @@
         const tracker = new TranslationTracker();
         tracker.init();
 
+        const statusLabels = {
+            translated: {{ 'Translated'|t('translation-manager')|json_encode|raw }},
+            draft: {{ 'Draft'|t('translation-manager')|json_encode|raw }},
+            pending: {{ 'Pending'|t('translation-manager')|json_encode|raw }},
+            unused: {{ 'Unused'|t('translation-manager')|json_encode|raw }},
+        };
+
         function updateStatusDisplay(row, status) {
             const statusCell = row.querySelector('td[data-column="status"]');
             if (!statusCell) {
                 return;
             }
 
+            const colorMap = { translated: 'teal', draft: 'blue', pending: 'orange', unused: 'gray' };
+            const color = colorMap[status];
+            const label = statusLabels[status];
             let statusHtml = '';
-            switch (status) {
-                case 'translated':
-                    statusHtml = '<span class="status-label teal"><span class="status teal"></span><span class="status-label-text">Translated</span></span>';
-                    break;
-                case 'draft':
-                    statusHtml = '<span class="status-label blue"><span class="status blue"></span><span class="status-label-text">Draft</span></span>';
-                    break;
-                case 'pending':
-                    statusHtml = '<span class="status-label orange"><span class="status orange"></span><span class="status-label-text">Pending</span></span>';
-                    break;
-                case 'unused':
-                    statusHtml = '<span class="status-label gray"><span class="status gray"></span><span class="status-label-text">Unused</span></span>';
-                    break;
+            if (color && label) {
+                statusHtml = `<span class="status-label ${color}"><span class="status ${color}"></span><span class="status-label-text">${label}</span></span>`;
             }
 
             if (statusHtml) {
@@ -637,7 +636,7 @@
 
                 const data = await response.json();
                 if (!data.success) {
-                    throw new Error(data.error || 'Failed to save');
+                    throw new Error(data.error || {{ 'Failed to save'|t('translation-manager')|json_encode|raw }});
                 }
 
                 tracker.markSaved(id, translationText);
@@ -655,7 +654,7 @@
                 setTimeout(() => {
                     row.style.backgroundColor = '';
                 }, 1600);
-                Craft.cp.displayError('Failed to save translation');
+                Craft.cp.displayError({{ 'Failed to save translation'|t('translation-manager')|json_encode|raw }});
             } finally {
                 tracker.savingInProgress.delete(id);
                 textarea.style.opacity = '';
@@ -690,7 +689,7 @@
         document.getElementById('save-all-btn')?.addEventListener('click', async function() {
             const unsavedChanges = tracker.getUnsavedChanges();
             if (unsavedChanges.length === 0) {
-                Craft.cp.displayNotice('No changes to save');
+                Craft.cp.displayNotice({{ 'No changes to save'|t('translation-manager')|json_encode|raw }});
                 return;
             }
 
@@ -698,7 +697,7 @@
             btn.disabled = true;
             btn.classList.add('loading');
 
-            Craft.cp.displayNotice(`Saving ${unsavedChanges.length} translation${unsavedChanges.length > 1 ? 's' : ''}...`);
+            Craft.cp.displayNotice({{ 'Saving {count} translation(s)…'|t('translation-manager')|json_encode|raw }}.replace('{count}', unsavedChanges.length));
 
             let saved = 0;
             let failed = 0;
@@ -721,9 +720,9 @@
             }
 
             if (failed === 0) {
-                Craft.cp.displayNotice(`Successfully saved ${saved} translation${saved > 1 ? 's' : ''}`);
+                Craft.cp.displayNotice({{ 'Successfully saved {count} translation(s).'|t('translation-manager')|json_encode|raw }}.replace('{count}', saved));
             } else {
-                Craft.cp.displayError(`Saved ${saved} translation${saved > 1 ? 's' : ''}, ${failed} failed`);
+                Craft.cp.displayError({{ 'Saved {saved} translation(s), {failed} failed.'|t('translation-manager')|json_encode|raw }}.replace('{saved}', saved).replace('{failed}', failed));
             }
 
             btn.disabled = false;
@@ -741,7 +740,7 @@
         window.addEventListener('beforeunload', function(e) {
             if (tracker.hasUnsavedChanges()) {
                 e.preventDefault();
-                e.returnValue = 'You have unsaved translations. Are you sure you want to leave?';
+                e.returnValue = {{ 'You have unsaved translations. Are you sure you want to leave?'|t('translation-manager')|json_encode|raw }};
                 return e.returnValue;
             }
         });
@@ -769,13 +768,13 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Craft.cp.displayNotice(data.message || 'Translation files generated successfully');
+                    Craft.cp.displayNotice(data.message || {{ 'Translation files generated successfully.'|t('translation-manager')|json_encode|raw }});
                 } else {
-                    Craft.cp.displayError(data.error || 'Failed to generate translation files');
+                    Craft.cp.displayError(data.error || {{ 'Failed to generate translation files.'|t('translation-manager')|json_encode|raw }});
                 }
             })
             .catch(() => {
-                Craft.cp.displayError('Failed to generate translation files');
+                Craft.cp.displayError({{ 'Failed to generate translation files.'|t('translation-manager')|json_encode|raw }});
             });
         }
 

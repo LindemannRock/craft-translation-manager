@@ -354,7 +354,7 @@ class TranslationManager extends Plugin
 
             if (Craft::$app->getUser()->checkPermission('translationManager:editSettings')) {
                 $item['subnav']['settings'] = [
-                    'label' => 'Settings',
+                    'label' => Craft::t('translation-manager', 'Settings'),
                     'url' => 'translation-manager/settings',
                     'match' => 'translation-manager/settings*', // Match all settings pages
                 ];
