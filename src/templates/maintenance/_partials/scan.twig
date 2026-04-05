@@ -27,7 +27,7 @@
 {% if canRecaptureFormie %}
 <div class="field">
     <div class="heading">
-        <label>{{ craft.translationManager.getFormiePluginName() ~ " Scanner"|t('translation-manager') }}</label>
+        <label>{{ "{pluginName} Scanner"|t('translation-manager', {pluginName: craft.translationManager.getFormiePluginName()}) }}</label>
         <div class="instructions">
             <p>{{ "Rescan all forms to capture any missing translations"|t('translation-manager') }}</p>
         </div>

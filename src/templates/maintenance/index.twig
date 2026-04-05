@@ -223,13 +223,13 @@
                     } else {
                         btn.classList.remove('loading');
                         btn.disabled = false;
-                        Craft.cp.displayError(data.error || 'Failed to clean unused translations');
+                        Craft.cp.displayError(data.error || {{ 'Failed to clean unused translations'|t('translation-manager')|json_encode|raw }});
                     }
                 })
                 .catch(error => {
                     btn.classList.remove('loading');
                     btn.disabled = false;
-                    Craft.cp.displayError('Failed to clean unused translations: ' + error.message);
+                    Craft.cp.displayError({{ 'Failed to clean unused translations: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
                 });
             }
         });
@@ -300,18 +300,18 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Craft.cp.displayNotice(data.message || 'Language cleanup completed');
+                    Craft.cp.displayNotice(data.message || {{ 'Language cleanup completed'|t('translation-manager')|json_encode|raw }});
                     setTimeout(() => window.location.reload(), 1200);
                 } else {
                     btn.classList.remove('loading');
                     updateCleanLanguagesState();
-                    Craft.cp.displayError(data.error || 'Failed to clean languages');
+                    Craft.cp.displayError(data.error || {{ 'Failed to clean languages'|t('translation-manager')|json_encode|raw }});
                 }
             })
             .catch(error => {
                 btn.classList.remove('loading');
                 updateCleanLanguagesState();
-                Craft.cp.displayError('Failed to clean languages: ' + error.message);
+                Craft.cp.displayError({{ 'Failed to clean languages: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
             });
         });
     }
@@ -378,18 +378,18 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Craft.cp.displayNotice(data.message || 'Category cleanup completed');
+                    Craft.cp.displayNotice(data.message || {{ 'Category cleanup completed'|t('translation-manager')|json_encode|raw }});
                     setTimeout(() => window.location.reload(), 1200);
                 } else {
                     btn.classList.remove('loading');
                     updateCleanCategoriesState();
-                    Craft.cp.displayError(data.error || 'Failed to clean categories');
+                    Craft.cp.displayError(data.error || {{ 'Failed to clean categories'|t('translation-manager')|json_encode|raw }});
                 }
             })
             .catch(error => {
                 btn.classList.remove('loading');
                 updateCleanCategoriesState();
-                Craft.cp.displayError('Failed to clean categories: ' + error.message);
+                Craft.cp.displayError({{ 'Failed to clean categories: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
             });
         });
     }
@@ -421,13 +421,13 @@
                 } else {
                     button.classList.remove('loading');
                     button.disabled = false;
-                    Craft.cp.displayError(data.error || 'Failed to scan templates');
+                    Craft.cp.displayError(data.error || {{ 'Failed to scan templates'|t('translation-manager')|json_encode|raw }});
                 }
             })
             .catch(error => {
                 button.classList.remove('loading');
                 button.disabled = false;
-                Craft.cp.displayError('Failed to scan templates: ' + error.message);
+                Craft.cp.displayError({{ 'Failed to scan templates: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
             });
         });
     }
@@ -465,13 +465,13 @@
                 if (data.success) {
                     Craft.cp.displayNotice(data.message);
                 } else {
-                    Craft.cp.displayError(data.error || 'Failed to recapture form translations');
+                    Craft.cp.displayError(data.error || {{ 'Failed to recapture form translations'|t('translation-manager')|json_encode|raw }});
                 }
             })
             .catch(error => {
                 btn.classList.remove('loading');
                 btn.disabled = false;
-                Craft.cp.displayError('Failed to recapture form translations: ' + error.message);
+                Craft.cp.displayError({{ 'Failed to recapture form translations: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
             });
         });
     }
@@ -507,13 +507,13 @@
                     } else {
                         btn.classList.remove('loading');
                         btn.disabled = false;
-                        Craft.cp.displayError(data.error || 'Failed to clean unused translations');
+                        Craft.cp.displayError(data.error || {{ 'Failed to clean unused translations'|t('translation-manager')|json_encode|raw }});
                     }
                 })
                 .catch(error => {
                     btn.classList.remove('loading');
                     btn.disabled = false;
-                    Craft.cp.displayError('Failed to clean unused translations: ' + error.message);
+                    Craft.cp.displayError({{ 'Failed to clean unused translations: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
                 });
             }
         });

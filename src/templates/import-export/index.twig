@@ -486,7 +486,7 @@
         const category = document.getElementById('phpCategory').value;
 
         if (!file || !language || !category) {
-            Craft.cp.displayError('Please select a file, language, and category');
+            Craft.cp.displayError({{ 'Please select a file, language, and category'|t('translation-manager')|json_encode|raw }});
             return;
         }
 
@@ -517,10 +517,10 @@
                 phpPreviewData = { ...data, language, category };
                 showPhpPreview(data);
             } else {
-                Craft.cp.displayError(data.error || 'Failed to preview file');
+                Craft.cp.displayError(data.error || {{ 'Failed to preview file'|t('translation-manager')|json_encode|raw }});
             }
         } catch (error) {
-            Craft.cp.displayError('Error previewing file: ' + error.message);
+            Craft.cp.displayError({{ 'Error previewing file: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
         } finally {
             this.classList.remove('loading');
             this.disabled = false;
@@ -685,7 +685,7 @@
     // Handle PHP import - reusable function
     async function handlePhpConfirmImport() {
         if (!phpPreviewData) {
-            Craft.cp.displayError('No preview data available');
+            Craft.cp.displayError({{ 'No preview data available'|t('translation-manager')|json_encode|raw }});
             return;
         }
 
@@ -754,12 +754,12 @@
 
                 Craft.cp.displayNotice(data.message);
             } else {
-                errorDiv.textContent = data.error || 'Import failed';
+                errorDiv.textContent = data.error || {{ 'Import failed'|t('translation-manager')|json_encode|raw }};
                 errorDiv.style.display = 'block';
                 successDiv.style.display = 'none';
             }
         } catch (error) {
-            Craft.cp.displayError('Error importing: ' + error.message);
+            Craft.cp.displayError({{ 'Error importing: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
         } finally {
             if (btn) {
                 btn.classList.remove('loading');
