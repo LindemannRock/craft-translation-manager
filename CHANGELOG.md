@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.23.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.23.0...v5.23.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* **locale-mapping:** info message display for locale mapping availability ([570bd15](https://github.com/LindemannRock/craft-translation-manager/commit/570bd159cfa4ea372065acda46967694ad4d160c))
+
 ## [5.23.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.22.2...v5.23.0) (2026-04-05)
 
 
