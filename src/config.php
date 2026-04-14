@@ -81,8 +81,8 @@ return [
         // ========================================
         // PHP translation file generation settings
 
-        'autoExport' => true,          // Automatically generate translation files when translations are saved
-        'exportPath' => '@root/translations', // Path where PHP translation files should be generated
+        'autoGenerate' => true,          // Automatically generate translation files when translations are saved
+        'generationPath' => '@root/translations', // Path where PHP translation files should be generated
 
 
         // ========================================
@@ -153,7 +153,7 @@ return [
     // Dev environment settings
     'dev' => [
         'logLevel' => 'debug',         // More detailed logging in development
-        'autoExport' => false,         // Manual export in dev
+        'autoGenerate' => false,         // Manual generation in dev
         'backupSchedule' => 'manual',  // Manual backups in dev
         'aiProvider' => 'mock',        // Use mock provider by default in local dev
         // 'captureMissingTranslations' => true, // Uncomment to auto-capture in dev
@@ -162,14 +162,14 @@ return [
     // Staging environment settings
     'staging' => [
         'logLevel' => 'info',          // Moderate logging in staging
-        'autoExport' => true,
+        'autoGenerate' => true,
         'backupSchedule' => 'weekly',
     ],
 
     // Production environment settings
     'production' => [
         'logLevel' => 'warning',       // Less verbose logging in production
-        'autoExport' => true,
+        'autoGenerate' => true,
         'backupEnabled' => true,
         'backupSchedule' => 'daily',
         // 'backupVolumeUid' => 'your-volume-uid-here', // Use asset volume in production

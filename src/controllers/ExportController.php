@@ -365,7 +365,7 @@ class ExportController extends Controller
     }
 
     /**
-     * Export all translations to files (for auto-export)
+     * Export all translations to files (for auto-generate)
      *
      * @return Response
      */

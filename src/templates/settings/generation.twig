@@ -33,34 +33,34 @@
         {{ forms.lightswitchField({
             label: "Auto Generate"|t('translation-manager'),
             instructions: "Automatically generate translation files when translations are saved"|t('translation-manager'),
-            id: 'autoExport',
-            name: 'settings[autoExport]',
-            on: settings.autoExport,
-            errors: settings.getErrors('autoExport'),
-            disabled: settings.isOverriddenByConfig('autoExport'),
-            warning: settings.isOverriddenByConfig('autoExport') ?
-                "This is being overridden by the <code>autoExport</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+            id: 'autoGenerate',
+            name: 'settings[autoGenerate]',
+            on: settings.autoGenerate,
+            errors: settings.getErrors('autoGenerate'),
+            disabled: settings.isOverriddenByConfig('autoGenerate'),
+            warning: settings.isOverriddenByConfig('autoGenerate') ?
+                "This is being overridden by the <code>autoGenerate</code> setting in <code>config/translation-manager.php</code>."|raw : null,
         }) }}
 
         {{ forms.autosuggestField({
             label: "Generation Path"|t('translation-manager'),
             instructions: "The path where PHP translation files should be generated for Craft to read"|t('translation-manager'),
             tip: "Use Craft path aliases only: <code>@translations</code>, <code>@translations/translation-manager</code>, or <code>@root/translations/translation-manager</code>. Paths must be outside webroot for security."|t('translation-manager')|raw,
-            id: 'exportPath',
-            name: 'settings[exportPath]',
-            value: settings.exportPath,
-            errors: settings.getErrors('exportPath'),
+            id: 'generationPath',
+            name: 'settings[generationPath]',
+            value: settings.generationPath,
+            errors: settings.getErrors('generationPath'),
             required: true,
             suggestEnvVars: true,
-            disabled: settings.isOverriddenByConfig('exportPath'),
-            warning: settings.isOverriddenByConfig('exportPath') ?
-                "This is being overridden by the <code>exportPath</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+            disabled: settings.isOverriddenByConfig('generationPath'),
+            warning: settings.isOverriddenByConfig('generationPath') ?
+                "This is being overridden by the <code>generationPath</code> setting in <code>config/translation-manager.php</code>."|raw : null,
         }) }}
 
 	</form>
 
-    {% if not settings.getErrors('exportPath') %}
-	    {% set generationPath = settings.getExportPath() %}
+    {% if not settings.getErrors('generationPath') %}
+	    {% set generationPath = settings.getGenerationPath() %}
         {% include 'lindemannrock-base/_components/info-box' with {
 	        message: '<strong>' ~ "Generation Location:"|t('translation-manager') ~ '</strong> <code>' ~ generationPath ~ '</code>'
         } %}

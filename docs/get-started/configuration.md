@@ -29,12 +29,12 @@ Configure Translation Manager by creating a config file at `config/translation-m
 | `autoSaveDelay` | `int` | `2` | Auto-save delay in seconds (1–10) |
 | `enableSuggestions` | `bool` | `false` | Enable automatic translation suggestions (future feature) |
 
-### Export
+### Generation
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `autoExport` | `bool` | `true` | Automatically export PHP translation files when translations are saved |
-| `exportPath` | `string` | `'@root/translations'` | Export directory. Supports `$VARIABLE` env vars. Must be under `@root`, `@storage`, or `@translations` |
+| `autoGenerate` | `bool` | `true` | Automatically generate PHP translation files when translations are saved |
+| `generationPath` | `string` | `'@root/translations'` | Generation directory. Supports `$VARIABLE` env vars. Must be under `@root`, `@storage`, or `@translations` |
 
 ### Backup
 
@@ -71,8 +71,8 @@ return [
         'enableSiteTranslations' => true,
         'captureMissingTranslations' => false,
         'captureMissingOnlyDevMode' => true,
-        'autoExport' => true,
-        'exportPath' => '@root/translations',
+        'autoGenerate' => true,
+        'generationPath' => '@root/translations',
         'itemsPerPage' => 100,
         'autoSaveEnabled' => false,
         'autoSaveDelay' => 2,

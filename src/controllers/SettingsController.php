@@ -575,8 +575,8 @@ class SettingsController extends Controller
                 'logLevel',
             ],
             'generation' => [
-                'autoExport',
-                'exportPath',
+                'autoGenerate',
+                'generationPath',
             ],
             'backup' => [
                 'backupEnabled',

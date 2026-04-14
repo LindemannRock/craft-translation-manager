@@ -321,7 +321,7 @@
 {% endblock %}
 
 {% block extraFooter %}
-    {% if not settings.autoExport and hasAnyGeneratePermission %}
+    {% if not settings.autoGenerate and hasAnyGeneratePermission %}
         <form>
             <button type="button" class="btn secondary menubtn" data-icon="settings" title="{{ 'Generate translation files'|t('translation-manager') }}" id="generate-menu-btn"></button>
             <div class="menu" data-align="right">
@@ -745,7 +745,7 @@
             }
         });
 
-        {% if not settings.autoExport and hasAnyGeneratePermission %}
+        {% if not settings.autoGenerate and hasAnyGeneratePermission %}
         function generateTranslationFiles(type) {
             let url = '';
             if (type === 'all') {

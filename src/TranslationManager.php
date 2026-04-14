@@ -559,22 +559,22 @@ class TranslationManager extends Plugin
     private function normalizeLegacyPathSettings(Settings $settings): void
     {
         // Keep bootstrap resilient if a legacy value uses @root directly.
-        if ($this->isRootAliasValue($settings->exportPath)) {
-            $settings->exportPath = '@root/translations';
+        if ($this->isRootAliasValue($settings->generationPath)) {
+            $settings->generationPath = '@root/translations';
         }
         if ($this->isRootAliasValue($settings->backupPath)) {
             $settings->backupPath = '@root/backups/translation-manager';
         }
 
-        $normalizedExportPath = $this->normalizeAbsolutePathToAlias(
-            $settings->exportPath,
+        $normalizedGenerationPath = $this->normalizeAbsolutePathToAlias(
+            $settings->generationPath,
             ['@translations', '@root', '@storage']
         );
-        if ($normalizedExportPath !== null) {
-            $settings->exportPath = $normalizedExportPath;
+        if ($normalizedGenerationPath !== null) {
+            $settings->generationPath = $normalizedGenerationPath;
         }
-        if ($this->isRootAliasValue($settings->exportPath)) {
-            $settings->exportPath = '@root/translations';
+        if ($this->isRootAliasValue($settings->generationPath)) {
+            $settings->generationPath = '@root/translations';
         }
 
         $normalizedBackupPath = $this->normalizeAbsolutePathToAlias(
@@ -753,7 +753,7 @@ class TranslationManager extends Plugin
         $i18n = Craft::$app->getI18n();
         $settings = $this->getSettings();
         $categories = $settings->getEnabledCategories();
-        $basePath = $settings->getExportPath(); // Use the configured export path
+        $basePath = $settings->getGenerationPath(); // Use the configured generation path
 
         // Use the configured source language (language your template strings are written in)
         // This should NOT be based on primary site - it's the language of your source strings

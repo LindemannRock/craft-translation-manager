@@ -25,14 +25,14 @@ use lindemannrock\translationmanager\TranslationManager;
 class PhpTranslationsHelper
 {
     /**
-     * Find all PHP translation files in the configured export path
+     * Find all PHP translation files in the configured generation path
      *
      * @return array<string, array<string, array{value: string, label: string, language: string, category: string}>>
      */
     public static function findFiles(): array
     {
         $settings = TranslationManager::getInstance()->getSettings();
-        $basePath = $settings->getExportPath();
+        $basePath = $settings->getGenerationPath();
 
         if (!is_dir($basePath)) {
             return [];
@@ -144,7 +144,7 @@ class PhpTranslationsHelper
      *
      * Uses token_get_all() to validate that the file only contains a simple
      * `return ['key' => 'value'];` array structure. No code execution occurs.
-     * Path must be within the configured export path.
+     * Path must be within the configured generation path.
      *
      * @param string $filePath
      * @return array<string, string>|null
@@ -158,7 +158,7 @@ class PhpTranslationsHelper
      * Safely parse a PHP translation file for console commands
      *
      * Same as safeParseFile() but skips path validation for console use
-     * where files may be outside the configured export path.
+     * where files may be outside the configured generation path.
      *
      * @param string $filePath
      * @return array<string, string>|null
@@ -193,7 +193,7 @@ class PhpTranslationsHelper
         // Path validation (skipped for console commands with trusted paths)
         if (!$skipPathValidation) {
             $settings = TranslationManager::getInstance()->getSettings();
-            $allowedBasePath = realpath($settings->getExportPath());
+            $allowedBasePath = realpath($settings->getGenerationPath());
 
             if ($allowedBasePath === false) {
                 Craft::warning("PHP import: Invalid base path", 'translation-manager');

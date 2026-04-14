@@ -235,7 +235,7 @@ class TranslationsController extends Controller
         $this->stdout("Importing existing Formie translation files...\n", Console::FG_YELLOW);
         
         $settings = TranslationManager::getInstance()->getSettings();
-        $translationPath = $settings->getExportPath();
+        $translationPath = $settings->getGenerationPath();
         $files = [];
         
         // Find all formie.php files in language directories

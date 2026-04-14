@@ -76,7 +76,7 @@ class ExportService extends Component
             $this->logInfo('No Formie translations to export');
             
             // Delete existing files if they exist to prevent stale translations
-            $basePath = $settings->getExportPath();
+            $basePath = $settings->getGenerationPath();
             
             // Get actual site languages dynamically
             $sites = TranslationManager::getInstance()->getAllowedSites();
@@ -108,7 +108,7 @@ class ExportService extends Component
         }
 
         // Create translation files for each site
-        $basePath = $settings->getExportPath();
+        $basePath = $settings->getGenerationPath();
         
         foreach ($translationsBySite as $siteId => $siteTranslations) {
             $site = Craft::$app->getSites()->getSiteById($siteId);
@@ -152,7 +152,7 @@ class ExportService extends Component
 
         $this->logInfo('Found site translations to export', ['count' => count($translations)]);
 
-        $basePath = $settings->getExportPath();
+        $basePath = $settings->getGenerationPath();
         $sites = TranslationManager::getInstance()->getAllowedSites();
 
         if (empty($translations)) {
@@ -255,7 +255,7 @@ class ExportService extends Component
 
         $this->logInfo('Found translations to export', ['count' => count($translations), 'category' => $category]);
 
-        $basePath = $settings->getExportPath();
+        $basePath = $settings->getGenerationPath();
         $sites = TranslationManager::getInstance()->getAllowedSites();
         $filename = $category . '.php';
 

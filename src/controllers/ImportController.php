@@ -311,7 +311,7 @@ class ImportController extends Controller
             $results = $this->processCsv($tempCsvPath, false);
             @unlink($tempCsvPath);
 
-            if ($settings->autoExport) {
+            if ($settings->autoGenerate) {
                 TranslationManager::getInstance()->export->exportAll();
             }
             

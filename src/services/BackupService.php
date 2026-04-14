@@ -331,7 +331,7 @@ class BackupService extends Component
     private function backupGeneratedFiles(string $backupDir): void
     {
         $settings = TranslationManager::getInstance()->getSettings();
-        $exportPath = $settings->getExportPath();
+        $generationPath = $settings->getGenerationPath();
 
         // Get all site languages for backup
         $sites = TranslationManager::getInstance()->getAllowedSites();
@@ -347,7 +347,7 @@ class BackupService extends Component
         FileHelper::createDirectory($phpDir);
 
         foreach ($filesToBackup as $file) {
-            $sourcePath = $exportPath . '/' . $file;
+            $sourcePath = $generationPath . '/' . $file;
             if (file_exists($sourcePath)) {
                 $destPath = $phpDir . '/' . str_replace('/', '_', $file);
                 copy($sourcePath, $destPath);
@@ -362,7 +362,7 @@ class BackupService extends Component
     private function backupGeneratedFilesToVolume(string $backupPath): void
     {
         $settings = TranslationManager::getInstance()->getSettings();
-        $exportPath = $settings->getExportPath();
+        $generationPath = $settings->getGenerationPath();
 
         // Get all site languages for backup
         $sites = TranslationManager::getInstance()->getAllowedSites();
@@ -381,7 +381,7 @@ class BackupService extends Component
         }
 
         foreach ($filesToBackup as $file) {
-            $sourcePath = $exportPath . '/' . $file;
+            $sourcePath = $generationPath . '/' . $file;
             if (file_exists($sourcePath)) {
                 $destPath = $phpDir . '/' . str_replace('/', '_', $file);
                 $content = file_get_contents($sourcePath);

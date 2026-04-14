@@ -87,19 +87,19 @@ class Settings extends Model
     public bool $captureMissingOnlyDevMode = true;
 
     /**
-     * @var bool Whether to automatically export translations when saved
+     * @var bool Whether to automatically generate translation files when translations are saved
      */
-    public bool $autoExport = true;
+    public bool $autoGenerate = true;
 
     /**
-     * @var string The path where translation files should be exported
+     * @var string The path where translation files should be generated
      */
-    public string $exportPath = '@root/translations';
+    public string $generationPath = '@root/translations';
     
     /**
-     * @var string The raw export path before parsing
+     * @var string The raw generation path before parsing
      */
-    private ?string $_rawExportPath = null;
+    private ?string $_rawGenerationPath = null;
 
     /**
      * @var int Number of items to show per page in the translation manager
@@ -239,7 +239,7 @@ class Settings extends Model
     public function rules(): array
     {
         return [
-            [['pluginName', 'exportPath', 'sourceLanguage'], 'required'],
+            [['pluginName', 'generationPath', 'sourceLanguage'], 'required'],
             [['pluginName'], 'string', 'max' => 100],
             [['translationCategory'], 'string', 'max' => 50],
             [['sourceLanguage'], 'string', 'max' => 10],
@@ -250,14 +250,14 @@ class Settings extends Model
             [['translationCategory'], 'validateTranslationCategory'],
             [['translationCategories'], 'validateTranslationCategories'],
             [
-                ['exportPath'],
+                ['generationPath'],
                 StoragePathValidator::class,
                 'translationCategory' => static::pluginHandle(),
                 'allowedAliases' => ['@translations', '@root', '@storage'],
                 'requireAlias' => true,
                 'preventWebroot' => true,
             ],
-            [['exportPath'], 'validateExportPathRootSubfolder'],
+            [['generationPath'], 'validateGenerationPathRootSubfolder'],
             [
                 ['backupPath'],
                 StoragePathValidator::class,
@@ -272,7 +272,7 @@ class Settings extends Model
             [['openAiModel', 'geminiModel', 'anthropicModel'], 'string', 'max' => 100],
             [['itemsPerPage'], 'integer', 'min' => 10, 'max' => 500],
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
-            [['enableFormieIntegration', 'enableSiteTranslations', 'autoExport',
+            [['enableFormieIntegration', 'enableSiteTranslations', 'autoGenerate',
               'enableSuggestions', 'autoSaveEnabled', 'backupEnabled',
               'backupOnImport', 'enableAiTranslations', 'requireApproval', ], 'boolean'],
             [['skipPatterns', 'excludeFormHandlePatterns', 'translationCategories', 'localeMapping'], 'safe'],
@@ -294,8 +294,8 @@ class Settings extends Model
             'sourceLanguage' => 'Source Language',
             'enableFormieIntegration' => 'Enable Formie Integration',
             'enableSiteTranslations' => 'Enable Site Translations',
-            'autoExport' => 'Auto Export',
-            'exportPath' => 'Export Path',
+            'autoGenerate' => 'Auto Generate',
+            'generationPath' => 'Generation Path',
             'itemsPerPage' => 'Items Per Page',
             'autoSaveEnabled' => 'Enable Auto-Save',
             'autoSaveDelay' => 'Auto-Save Delay',
@@ -650,7 +650,7 @@ class Settings extends Model
     }
 
     /**
-     * Validates the export path to prevent directory traversal attacks
+     * Validates the generation path to prevent directory traversal attacks
      */
     public function validateExportPath($attribute, $params, $validator)
     {
@@ -782,9 +782,9 @@ class Settings extends Model
     }
 
     /**
-     * Require a subfolder when using @root for exportPath.
+     * Require a subfolder when using @root for generationPath.
      */
-    public function validateExportPathRootSubfolder($attribute): void
+    public function validateGenerationPathRootSubfolder($attribute): void
     {
         $value = trim((string)$this->$attribute);
         if ($value === '') {
@@ -820,17 +820,17 @@ class Settings extends Model
     }
 
     /**
-     * Returns the full export path
+     * Returns the full generation path
      *
      * @return string
      */
-    public function getExportPath(): string
+    public function getGenerationPath(): string
     {
-        $path = Craft::getAlias($this->exportPath);
+        $path = Craft::getAlias($this->generationPath);
         
         // Additional safety check
         if (strpos($path, '..') !== false) {
-            throw new \Exception('Invalid export path');
+            throw new \Exception('Invalid generation path');
         }
         
         // Real path resolution to prevent symlink attacks
@@ -840,7 +840,7 @@ class Settings extends Model
             $parentDir = dirname($path);
             $realParent = realpath($parentDir);
             if ($realParent === false) {
-                throw new \Exception('Invalid export path or parent directory');
+                throw new \Exception('Invalid generation path or parent directory');
             }
             // Return the intended path if parent is valid
             return $path;
@@ -998,7 +998,7 @@ class Settings extends Model
         return [
             'enableFormieIntegration',
             'enableSiteTranslations',
-            'autoExport',
+            'autoGenerate',
             'requireApproval',
             'enableSuggestions',
             'autoSaveEnabled',

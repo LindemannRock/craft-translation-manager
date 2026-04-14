@@ -1057,7 +1057,7 @@ class TranslationsService extends Component
     private function deleteFormieTranslationFiles(): void
     {
         $settings = TranslationManager::getInstance()->getSettings();
-        $basePath = $settings->getExportPath();
+        $basePath = $settings->getGenerationPath();
 
         // Get actual site languages dynamically
         $sites = TranslationManager::getInstance()->getAllowedSites();
@@ -1076,7 +1076,7 @@ class TranslationsService extends Component
     private function deleteSiteTranslationFiles(): void
     {
         $settings = TranslationManager::getInstance()->getSettings();
-        $basePath = $settings->getExportPath();
+        $basePath = $settings->getGenerationPath();
 
         // Get all enabled categories
         $categories = $settings->getEnabledCategories();
@@ -1101,7 +1101,7 @@ class TranslationsService extends Component
     private function deleteCategoryTranslationFiles(string $category): void
     {
         $settings = TranslationManager::getInstance()->getSettings();
-        $basePath = $settings->getExportPath();
+        $basePath = $settings->getGenerationPath();
         $filename = $category . '.php';
 
         // Get actual site languages dynamically
