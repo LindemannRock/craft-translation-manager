@@ -100,11 +100,12 @@
                     "This is being overridden by the <code>localeMapping</code> setting in <code>config/translation-manager.php</code>."|raw : null,
             }) }}
         {% else %}
-            <div class="field">
-                <p class="light">
-                    {{ "Locale mapping is not available because your sites need both regional locales (e.g., en-US, fr-CA) and base locales (e.g., en, fr) to create mappings."|t('translation-manager') }}
-                </p>
-            </div>
+            {% include 'lindemannrock-base/_components/info-box' with {
+                message: "Locale mapping is not available because your sites need both regional locales (e.g., en-US, fr-CA) and base locales (e.g., en, fr) to create mappings."|t('translation-manager'),
+                type: 'info',
+                variant: 'subtle',
+                margin: 'none',
+            } %}
         {% endif %}
 
         {% include 'lindemannrock-base/_components/info-box' with {
