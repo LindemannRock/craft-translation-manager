@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.23.2](https://github.com/LindemannRock/craft-translation-manager/compare/v5.23.1...v5.23.2) (2026-04-14)
+
+
+### Code Refactoring
+
+* **settings:** rename exportPath to generationPath and update related logic ([fa3efa4](https://github.com/LindemannRock/craft-translation-manager/commit/fa3efa49b5d53ecc399315ea7160045bcafcb883))
+
 ## [5.23.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.23.0...v5.23.1) (2026-04-14)
 
 
