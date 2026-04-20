@@ -490,16 +490,7 @@ class TranslationManager extends Plugin
             // Load database values
             $settings = Settings::loadFromDatabase($settings);
 
-            // Override with config file values using Craft's native multi-environment handling
-            // This properly merges '*' with environment-specific configs (e.g., 'production')
-            $config = Craft::$app->getConfig()->getConfigFromFile('translation-manager');
-            if (!empty($config) && is_array($config)) {
-                foreach ($config as $key => $value) {
-                    if (property_exists($settings, $key)) {
-                        $settings->$key = $value;
-                    }
-                }
-            }
+            PluginHelper::applyConfigOverridesToSettings($settings, 'translation-manager');
 
             // Normalize legacy absolute paths to aliases before strict validation.
             $this->normalizeLegacyPathSettings($settings);
