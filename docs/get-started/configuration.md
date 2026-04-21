@@ -137,3 +137,7 @@ return [
 - **Validation**: The source and destination must be valid locale codes (e.g., `en`, `en-US`, `fr-CA`). You cannot map a locale to itself.
 
 - **No duplicate sources**: Each source locale can only be mapped once. If you have duplicate source entries, validation will fail.
+
+## Translations
+
+Translation Manager includes translations for 12 languages. See [Translations](../resources/translations.md) for the full list and override instructions.
