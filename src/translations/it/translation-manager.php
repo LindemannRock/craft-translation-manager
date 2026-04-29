@@ -265,7 +265,7 @@ return [
     // Settings: General
     'General Settings' => 'Impostazioni generali',
     'General' => 'Generale',
-    'Plugin Name' => 'Nome plugin',
+    'Plugin Name' => 'Nome del plugin',
     'The display name for the plugin in the Control Panel menu and breadcrumbs' => 'Il nome visualizzato per il plugin nel menu e nelle breadcrumb del pannello di controllo',
     'Workflow Settings' => 'Impostazioni flusso di lavoro',
     'Require Approval Before Publish' => 'Richiedi approvazione prima della pubblicazione',

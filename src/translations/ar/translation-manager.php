@@ -265,7 +265,7 @@ return [
     // Settings: General
     'General Settings' => 'الإعدادات العامة',
     'General' => 'عام',
-    'Plugin Name' => 'اسم Plugin',
+    'Plugin Name' => 'اسم الإضافة',
     'The display name for the plugin in the Control Panel menu and breadcrumbs' => 'اسم العرض للـ Plugin في قائمة لوحة التحكم ومسار التنقل',
     'Workflow Settings' => 'إعدادات سير العمل',
     'Require Approval Before Publish' => 'اشتراط الموافقة قبل النشر',
@@ -341,7 +341,7 @@ return [
     // Settings: Interface
     'Interface Settings' => 'إعدادات الواجهة',
     'Interface' => 'الواجهة',
-    'Items Per Page' => 'العناصر لكل صفحة',
+    'Items Per Page' => 'العناصر في الصفحة',
     'Number of translations to show per page' => 'عدد الترجمات التي يتم عرضها لكل صفحة',
     'Enable Auto-Save' => 'تفعيل الحفظ التلقائي',
     'Automatically save each translation when you click outside the field (blur)' => 'حفظ كل ترجمة تلقائياً عند النقر خارج الحقل (فقدان التركيز)',

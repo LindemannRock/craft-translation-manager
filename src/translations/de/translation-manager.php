@@ -340,7 +340,7 @@ return [
 
     // Settings: Interface
     'Interface Settings' => 'Interface-Einstellungen',
-    'Interface' => 'Interface',
+    'Interface' => 'Oberfläche',
     'Items Per Page' => 'Einträge pro Seite',
     'Number of translations to show per page' => 'Anzahl der Übersetzungen, die pro Seite angezeigt werden sollen',
     'Enable Auto-Save' => 'Auto-Speichern aktivieren',

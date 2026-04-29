@@ -59,7 +59,7 @@ return [
     'Save Settings' => 'Enregistrer les paramètres',
     'Cancel' => 'Annuler',
     'Delete' => 'Supprimer',
-    'View' => 'Voir',
+    'View' => 'Afficher',
     'Search' => 'Rechercher',
     'Date' => 'Date',
     'File' => 'Fichier',

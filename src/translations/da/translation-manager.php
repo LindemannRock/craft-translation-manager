@@ -340,7 +340,7 @@ return [
 
     // Settings: Interface
     'Interface Settings' => 'Grænsefladeindstillinger',
-    'Interface' => 'Grænseflade',
+    'Interface' => 'Brugerflade',
     'Items Per Page' => 'Elementer pr. side',
     'Number of translations to show per page' => 'Antal oversættelser, der vises pr. side',
     'Enable Auto-Save' => 'Aktivér automatisk gemning',

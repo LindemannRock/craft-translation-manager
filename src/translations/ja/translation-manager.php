@@ -341,7 +341,7 @@ return [
     // Settings: Interface
     'Interface Settings' => 'インターフェース設定',
     'Interface' => 'インターフェース',
-    'Items Per Page' => '1 ページあたりのアイテム数',
+    'Items Per Page' => '1 ページあたりの件数',
     'Number of translations to show per page' => '1 ページに表示する翻訳数',
     'Enable Auto-Save' => '自動保存を有効にする',
     'Automatically save each translation when you click outside the field (blur)' => 'フィールドの外をクリックしたとき（フォーカスが外れたとき）に各翻訳を自動保存',
