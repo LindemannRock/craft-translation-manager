@@ -23,7 +23,10 @@ composer require lindemannrock/craft-translation-manager && php craft plugin/ins
 ddev composer require lindemannrock/craft-translation-manager && ddev craft plugin/install translation-manager
 ```
 
-3. **Optional** — Install [Logging Library](https://github.com/LindemannRock/craft-logging-library) for log viewing:
+3. **Optional** — Enable [Logging Library](https://github.com/LindemannRock/craft-logging-library) for log viewing:
+
+> [!NOTE]
+> Logging Library is included as a Composer dependency and downloaded automatically. Activate it in Craft to enable log viewing.
 
 ```bash title="PHP"
 php craft plugin/install logging-library
