@@ -23,11 +23,9 @@
 {% block content %}
     {% set formiePluginName = craft.translationManager.getFormiePluginName() %}
 
-    <form method="post" accept-charset="UTF-8">
-        {{ csrfInput() }}
-        {{ actionInput('translation-manager/settings/save') }}
-        {{ redirectInput('translation-manager/settings/integrations') }}
-        {{ hiddenInput('section', 'integrations') }}
+    {{ actionInput('translation-manager/settings/save') }}
+    {{ redirectInput('translation-manager/settings/integrations') }}
+    {{ hiddenInput('section', 'integrations') }}
 
         <h2 class="first">{{ "Plugin Integrations"|t('translation-manager') }}</h2>
 
@@ -72,8 +70,6 @@
                 message: '<strong>' ~ "Note:"|t('translation-manager') ~ '</strong> ' ~ "Text containing non-source-language characters (based on Source Language setting) will also be automatically skipped."|t('translation-manager')
             } %}
         </div>
-
-    </form>
 
     {% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}

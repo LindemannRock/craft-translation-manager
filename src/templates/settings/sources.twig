@@ -23,11 +23,9 @@
 {% block content %}
     {% set formiePluginName = craft.translationManager.getFormiePluginName() %}
 
-    <form method="post" accept-charset="UTF-8">
-        {{ csrfInput() }}
-        {{ actionInput('translation-manager/settings/save') }}
-        {{ redirectInput('translation-manager/settings/sources') }}
-        {{ hiddenInput('section', 'sources') }}
+    {{ actionInput('translation-manager/settings/save') }}
+    {{ redirectInput('translation-manager/settings/sources') }}
+    {{ hiddenInput('section', 'sources') }}
 
         <h2 class="first">{{ "Site Translations"|t('translation-manager') }}</h2>
 
@@ -146,8 +144,6 @@
                 </div>
             {% endif %}
         </div>
-
-    </form>
 
     {% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}

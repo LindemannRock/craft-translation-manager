@@ -1,6 +1,5 @@
 {% extends "translation-manager/_layouts/settings" %}
 {% set title = "AI Translation"|t('translation-manager') %}
-{% set fullPageForm = true %}
 {% set selectedSettingsItem = 'ai' %}
 
 {% set crumbs = [
@@ -210,6 +209,10 @@
                     {{ "Mock Provider runs local deterministic translations for workflow testing. No API key or model configuration is required."|t('translation-manager') }}
                 </p>
             </div>
+        </div>
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">{{ "Save"|t('app') }}</button>
         </div>
 
     </form>

@@ -21,11 +21,9 @@
 {% import "_includes/forms" as forms %}
 
 {% block content %}
-    <form method="post" accept-charset="UTF-8">
-        {{ csrfInput() }}
-        {{ actionInput('translation-manager/settings/save') }}
-        {{ redirectInput('translation-manager/settings/capture') }}
-        {{ hiddenInput('section', 'capture') }}
+    {{ actionInput('translation-manager/settings/save') }}
+    {{ redirectInput('translation-manager/settings/capture') }}
+    {{ hiddenInput('section', 'capture') }}
 
         <h2 class="first">{{ "Auto-Capture (Runtime)"|t('translation-manager') }}</h2>
 
@@ -65,8 +63,6 @@
 • ' ~ "Only translations for your enabled categories will be captured. System categories (app, craft, yii, site) are ignored."|t('translation-manager')
             } %}
         </div>
-
-    </form>
 
     {% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}

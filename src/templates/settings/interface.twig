@@ -22,11 +22,9 @@
 {% import "_includes/forms" as forms %}
 
 {% block content %}
-	<form method="post" accept-charset="UTF-8">
-		{{ csrfInput() }}
-		{{ actionInput('translation-manager/settings/save') }}
-		{{ redirectInput('translation-manager/settings/interface') }}
-		{{ hiddenInput('section', 'interface') }}
+	{{ actionInput('translation-manager/settings/save') }}
+	{{ redirectInput('translation-manager/settings/interface') }}
+	{{ hiddenInput('section', 'interface') }}
 
 		<h2 class="first">{{ "Interface Settings"|t('translation-manager') }}</h2>
 
@@ -56,8 +54,6 @@
             warning: settings.isOverriddenByConfig('autoSaveEnabled') ?
                 "This is being overridden by the <code>autoSaveEnabled</code> setting in <code>config/translation-manager.php</code>."|raw : null,
         }) }}
-
-	</form>
 
 	{% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}

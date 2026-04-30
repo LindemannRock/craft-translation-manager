@@ -22,11 +22,9 @@
 {% import "_includes/forms" as forms %}
 
 {% block content %}
-	<form method="post" accept-charset="UTF-8">
-		{{ csrfInput() }}
-		{{ actionInput('translation-manager/settings/save') }}
-		{{ redirectInput('translation-manager/settings/general') }}
-		{{ hiddenInput('section', 'general') }}
+	{{ actionInput('translation-manager/settings/save') }}
+	{{ redirectInput('translation-manager/settings/general') }}
+	{{ hiddenInput('section', 'general') }}
 
 		<h2 class="first">{{ "General Settings"|t('translation-manager') }}</h2>
 
@@ -87,8 +85,6 @@
             warning: settings.isOverriddenByConfig('logLevel') ?
                 "This is being overridden by the <code>logLevel</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
         }) }}
-
-	</form>
 
 	{% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}
