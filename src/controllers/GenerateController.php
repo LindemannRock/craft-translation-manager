@@ -20,7 +20,7 @@ use yii\web\Response;
 /**
  * Generate Controller
  *
- * @since 1.0.0
+ * @since 5.0.0
  */
 class GenerateController extends Controller
 {
