@@ -1,5 +1,16 @@
 # Changelog
 
+## [5.23.3](https://github.com/LindemannRock/craft-translation-manager/compare/v5.23.2...v5.23.3) (2026-05-06)
+
+
+### Bug Fixes
+
+* apply config overrides through shared settings helper ([0ab7d81](https://github.com/LindemannRock/craft-translation-manager/commit/0ab7d817837f05e255d560ada4f600a40d423259))
+* drop PAT requirement for release-please — use built-in GITHUB_TOKEN ([c6249a2](https://github.com/LindemannRock/craft-translation-manager/commit/c6249a2cccc6e36a22571936f77b5b5cb3830c50))
+* **translations:** correct translation strings in multiple languages ([35c6465](https://github.com/LindemannRock/craft-translation-manager/commit/35c646589b9c0675ae7336dde1d7069a3fb4166d))
+* update copyright year in translation-manager.php ([578052f](https://github.com/LindemannRock/craft-translation-manager/commit/578052f5d1be91010d3fb4ec1ff5252a64d3da10))
+* update version annotation for Generate and ImportExport controllers ([ba37d88](https://github.com/LindemannRock/craft-translation-manager/commit/ba37d88bdcff569410ab04707430dbff29b57b87))
+
 ## [5.23.2](https://github.com/LindemannRock/craft-translation-manager/compare/v5.23.1...v5.23.2) (2026-04-14)
 
 
