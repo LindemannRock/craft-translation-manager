@@ -66,35 +66,69 @@ class TranslationsController extends Controller
     {
         $request = Craft::$app->getRequest();
         $settings = TranslationManager::getInstance()->getSettings();
-        
-        // Get query parameters
-        $page = (int) $request->getParam('page', 1);
-        $status = $request->getParam('status', 'all');
-        $search = $request->getParam('search', '');
-        $sort = $request->getParam('sort', 'translationKey');
+        $user = Craft::$app->getUser();
 
-        // Get language selection
-        $language = $request->getParam('language');
+        // ---- Param parsing + allowlist validation ------------------------
+        // Every parameter that controls filtering or sorting goes through an
+        // explicit allowlist. Anything off-list snaps to the default — never
+        // pass user input through to a query or template literal.
 
-        if (!$language) {
-            // Default to current site's language
-            $language = Craft::$app->getSites()->getCurrentSite()->language;
+        $status = (string) $request->getParam('status', 'all');
+        $validStatuses = ['all', 'pending', 'draft', 'translated', 'unused'];
+        if (!in_array($status, $validStatuses, true)) {
+            $status = 'all';
         }
 
-        // Always normalize selected language to canonical mapped target.
+        $type = (string) $request->getParam('type', 'all');
+        $validTypes = ['all', 'forms', 'site'];
+        if (!in_array($type, $validTypes, true)) {
+            $type = 'all';
+        }
+
+        $origin = (string) $request->getParam('origin', 'all');
+        $validOrigins = ['all', 'ai', 'manual', 'import', 'system'];
+        if (!in_array($origin, $validOrigins, true)) {
+            $origin = 'all';
+        }
+
+        // Category allowlist depends on enabled categories at request time
+        // (categories are operator-configured), so build it dynamically.
+        $allCategories = $settings->getAllCategories();
+        $category = (string) $request->getParam('category', 'all');
+        $validCategories = array_merge(['all'], $allCategories);
+        if (!in_array($category, $validCategories, true)) {
+            $category = 'all';
+        }
+
+        // 64-char defensive clamp on free-text search.
+        $search = trim((string) $request->getParam('search', ''));
+        if (mb_strlen($search) > 64) {
+            $search = mb_substr($search, 0, 64);
+        }
+
+        // Sort field allowlist mirrors the service's sortMap.
+        $validSortFields = ['translationKey', 'translation', 'type', 'status'];
+        $sort = (string) $request->getParam('sort', 'translationKey');
+        if (!in_array($sort, $validSortFields, true)) {
+            $sort = 'translationKey';
+        }
+        $dir = strtolower((string) $request->getParam('dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+
+        // Language selection — normalize to canonical mapped target.
+        $language = (string) $request->getParam('language', '');
+        if ($language === '') {
+            $language = Craft::$app->getSites()->getCurrentSite()->language;
+        }
         $language = $settings->mapLanguage($language);
 
-        // Get unique languages for the selector
         $uniqueLanguages = TranslationManager::getInstance()->getUniqueLanguages();
-        $dir = $request->getParam('dir', 'asc');
-        $type = $request->getParam('type', 'all');
-        $origin = $request->getParam('origin', 'all');
-        $category = $request->getParam('category', 'all');
 
-        $limit = $settings->itemsPerPage;
+        // ---- Pagination ---------------------------------------------------
+        $page = max(1, (int) $request->getParam('page', 1));
+        $limit = max(1, (int) $settings->itemsPerPage);
         $offset = ($page - 1) * $limit;
 
-        // Get translations with filters
+        // ---- Load + filter (delegated to service) -------------------------
         $criteria = [
             'language' => $language,
             'status' => $status,
@@ -109,19 +143,26 @@ class TranslationsController extends Controller
 
         $allTranslations = TranslationManager::getInstance()->translations->getTranslations($criteria);
 
-        // Calculate pagination
+        // totalCount is computed *after* filtering so the pager reflects what
+        // the user can actually see, not the underlying table size.
         $totalCount = count($allTranslations);
-        $totalPages = ceil($totalCount / $limit);
+        $totalPages = (int) ceil($totalCount / $limit);
 
-        // Slice for current page
         $translations = array_slice($allTranslations, $offset, $limit);
         $translations = $this->hydrateAuditFields($translations);
 
-        // Get statistics
         $stats = TranslationManager::getInstance()->translations->getStatistics();
 
-        // Get all available categories for the filter dropdown
-        $allCategories = $settings->getAllCategories();
+        // ---- Permission booleans (computed once, passed to template) -----
+        $canEdit = $user->checkPermission('translationManager:editTranslations');
+        $canApprove = $user->checkPermission('translationManager:approveTranslations');
+        $canDelete = $user->checkPermission('translationManager:deleteTranslations');
+        $canExport = $user->checkPermission('translationManager:exportTranslations');
+        $canGenerateAll = $user->checkPermission('translationManager:generateAllTranslations');
+        $canGenerateFormie = $user->checkPermission('translationManager:generateFormieTranslations');
+        $canGenerateSite = $user->checkPermission('translationManager:generateSiteTranslations');
+        $canGenerate = $user->checkPermission('translationManager:generateTranslations');
+        $hasAnyGeneratePermission = $canGenerate || $canGenerateAll || $canGenerateFormie || $canGenerateSite;
 
         return $this->renderTemplate('translation-manager/translations/index', [
             'translations' => $translations,
@@ -140,11 +181,19 @@ class TranslationsController extends Controller
             'category' => $category,
             'allCategories' => $allCategories,
             'settings' => $settings,
-            // Language-based variables
             'currentLanguage' => $language,
             'uniqueLanguages' => $uniqueLanguages,
             // Legacy support (keeping for backwards compatibility)
             'allSites' => TranslationManager::getInstance()->getAllowedSites(),
+            // Pre-computed permission booleans — avoid currentUser.can() in Twig.
+            'canEdit' => $canEdit,
+            'canApprove' => $canApprove,
+            'canDelete' => $canDelete,
+            'canExport' => $canExport,
+            'canGenerateAll' => $canGenerateAll,
+            'canGenerateFormie' => $canGenerateFormie,
+            'canGenerateSite' => $canGenerateSite,
+            'hasAnyGeneratePermission' => $hasAnyGeneratePermission,
         ]);
     }
 

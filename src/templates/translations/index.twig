@@ -1,12 +1,8 @@
 {% extends 'lindemannrock-base/_layouts/cp-table' %}
 
-{% set plugin = craft.app.plugins.getPlugin('translation-manager') %}
-{% set settings = plugin.settings %}
-
-{% set canEditTranslations = currentUser.can('translationManager:editTranslations') %}
-{% set canApproveTranslations = currentUser.can('translationManager:approveTranslations') %}
-{% set canDeleteTranslations = currentUser.can('translationManager:deleteTranslations') %}
-{% set canExportTranslations = currentUser.can('translationManager:exportTranslations') %}
+{# Permission booleans (canEdit, canApprove, canDelete, canExport, canGenerate*,
+   hasAnyGeneratePermission) and `settings` arrive pre-computed from the
+   controller. Filter values arrive pre-validated — no re-validation here. #}
 
 {% set showTypeCol = settings.enableFormieIntegration and settings.enableSiteTranslations %}
 {% set showCategoryCol = allCategories|length > 1 %}
@@ -140,13 +136,6 @@
 ]) %}
 {% set columns = columns|merge([{key: 'context', label: 'Context'|t('translation-manager'), width: '170px', hideable: true}]) %}
 
-{% set hasAnyGeneratePermission =
-    currentUser.can('translationManager:generateTranslations') or
-    currentUser.can('translationManager:generateAllTranslations') or
-    currentUser.can('translationManager:generateFormieTranslations') or
-    currentUser.can('translationManager:generateSiteTranslations')
-%}
-
 {% set tableConfig = {
     plugin: {
         handle: 'translation-manager',
@@ -177,7 +166,7 @@
         totalCount: totalCount,
         itemLabel: {singular: 'entry'|t('translation-manager'), plural: 'entries'|t('translation-manager')},
     },
-    checkboxes: canEditTranslations or canDeleteTranslations,
+    checkboxes: canEdit or canDelete,
     rowActions: false,
 } %}
 
@@ -301,19 +290,19 @@
 {% endblock %}
 
 {% block bulkActions %}
-    {% if canEditTranslations %}
+    {% if canEdit %}
         <button type="button" class="btn secondary" id="mark-draft-btn">
             <span id="mark-draft-label">{{ 'Mark Draft'|t('translation-manager') }}</span>
         </button>
     {% endif %}
 
-    {% if canApproveTranslations or (canEditTranslations and not settings.requireApproval) %}
+    {% if canApprove or (canEdit and not settings.requireApproval) %}
         <button type="button" class="btn secondary" id="mark-translated-btn">
             <span id="mark-translated-label">{{ 'Mark Translated'|t('translation-manager') }}</span>
         </button>
     {% endif %}
 
-    {% if status == 'unused' and canDeleteTranslations %}
+    {% if status == 'unused' and canDelete %}
         <button type="button" class="btn secondary" id="delete-selected-btn">
             <span id="delete-label">{{ 'Delete'|t('translation-manager') }}</span>
         </button>
@@ -326,13 +315,13 @@
             <button type="button" class="btn secondary menubtn" data-icon="settings" title="{{ 'Generate translation files'|t('translation-manager') }}" id="generate-menu-btn"></button>
             <div class="menu" data-align="right">
                 <ul>
-                    {% if currentUser.can('translationManager:generateAllTranslations') %}
+                    {% if canGenerateAll %}
                         <li><a href="#" id="generate-all-btn">{{ 'Generate All Files'|t('translation-manager') }}</a></li>
                     {% endif %}
-                    {% if settings.enableFormieIntegration and currentUser.can('translationManager:generateFormieTranslations') %}
+                    {% if settings.enableFormieIntegration and canGenerateFormie %}
                         <li><a href="#" id="generate-formie-btn">{{ 'Generate {name} Files Only'|t('translation-manager', {name: craft.translationManager.getFormiePluginName()}) }}</a></li>
                     {% endif %}
-                    {% if settings.enableSiteTranslations and currentUser.can('translationManager:generateSiteTranslations') %}
+                    {% if settings.enableSiteTranslations and canGenerateSite %}
                         <li><a href="#" id="generate-site-btn">{{ 'Generate {name} Files Only'|t('translation-manager', {name: settings.translationCategory|title}) }}</a></li>
                     {% endif %}
                 </ul>
@@ -340,11 +329,11 @@
         </form>
     {% endif %}
 
-    {% if canExportTranslations %}
+    {% if canExport %}
         <button type="button" class="btn" id="export-btn" tabindex="0" aria-expanded="false" title="{{ 'Export translations as CSV file'|t('translation-manager') }}">{{ 'Export…'|t('translation-manager') }}</button>
     {% endif %}
 
-    {% if canEditTranslations %}
+    {% if canEdit %}
         <button type="button" class="btn submit" id="save-all-btn" tabindex="0">
             <div class="gap-xs inline-flex"><div class="label">{{ 'Save All Changes'|t('translation-manager') }}</div></div>
             <div class="spinner spinner-absolute"></div>
@@ -354,6 +343,32 @@
 
 {% block scripts %}
     <script>
+        // Pre-translated strings — keep |t() in Twig (translatable) and emit
+        // as JSON-encoded JS literals via |json_encode|raw.
+        const T = {
+            markDraft: {{ 'Mark Draft'|t('translation-manager')|json_encode|raw }},
+            markTranslated: {{ 'Mark Translated'|t('translation-manager')|json_encode|raw }},
+            deleteLabel: {{ 'Delete'|t('translation-manager')|json_encode|raw }},
+            updateStatusFailed: {{ 'Failed to update status'|t('translation-manager')|json_encode|raw }},
+            markDraftFailed: {{ 'Failed to mark as draft'|t('translation-manager')|json_encode|raw }},
+            markTranslatedFailed: {{ 'Failed to mark as translated'|t('translation-manager')|json_encode|raw }},
+            updatedTemplate: {{ 'Updated {count} translation(s) to {status}.'|t('translation-manager')|json_encode|raw }},
+            translatedLabel: {{ 'translated'|t('translation-manager')|json_encode|raw }},
+            draftLabel: {{ 'draft'|t('translation-manager')|json_encode|raw }},
+            deleteConfirmTemplate: {{ 'Are you sure you want to delete {count} translation(s)?'|t('translation-manager')|json_encode|raw }},
+            deletedTemplate: {{ 'Deleted {count} translation(s).'|t('translation-manager')|json_encode|raw }},
+            deleteFailed: {{ 'Failed to delete translations'|t('translation-manager')|json_encode|raw }},
+            saveFailed: {{ 'Failed to save'|t('translation-manager')|json_encode|raw }},
+            saveTranslationFailed: {{ 'Failed to save translation'|t('translation-manager')|json_encode|raw }},
+            noChanges: {{ 'No changes to save'|t('translation-manager')|json_encode|raw }},
+            savingTemplate: {{ 'Saving {count} translation(s)…'|t('translation-manager')|json_encode|raw }},
+            successTemplate: {{ 'Successfully saved {count} translation(s).'|t('translation-manager')|json_encode|raw }},
+            partialSuccessTemplate: {{ 'Saved {saved} translation(s), {failed} failed.'|t('translation-manager')|json_encode|raw }},
+            unsavedConfirm: {{ 'You have unsaved translations. Are you sure you want to leave?'|t('translation-manager')|json_encode|raw }},
+            generateSuccess: {{ 'Translation files generated successfully.'|t('translation-manager')|json_encode|raw }},
+            generateFailed: {{ 'Failed to generate translation files.'|t('translation-manager')|json_encode|raw }},
+        };
+
         function getSelectedIds() {
             if (window.lrTableSelection && typeof window.lrTableSelection.getSelectedIds === 'function') {
                 return window.lrTableSelection.getSelectedIds();
@@ -362,30 +377,24 @@
         }
 
         function updateActionButtons(count) {
-            {% if canEditTranslations %}
+            {% if canEdit %}
             const markDraftLabel = document.getElementById('mark-draft-label');
             if (markDraftLabel) {
-                markDraftLabel.textContent = count > 0
-                    ? `{{ 'Mark Draft'|t('translation-manager') }} (${count})`
-                    : `{{ 'Mark Draft'|t('translation-manager') }}`;
+                markDraftLabel.textContent = count > 0 ? `${T.markDraft} (${count})` : T.markDraft;
             }
             {% endif %}
 
-            {% if canApproveTranslations or (canEditTranslations and not settings.requireApproval) %}
+            {% if canApprove or (canEdit and not settings.requireApproval) %}
             const markTranslatedLabel = document.getElementById('mark-translated-label');
             if (markTranslatedLabel) {
-                markTranslatedLabel.textContent = count > 0
-                    ? `{{ 'Mark Translated'|t('translation-manager') }} (${count})`
-                    : `{{ 'Mark Translated'|t('translation-manager') }}`;
+                markTranslatedLabel.textContent = count > 0 ? `${T.markTranslated} (${count})` : T.markTranslated;
             }
             {% endif %}
 
-            {% if status == 'unused' and canDeleteTranslations %}
+            {% if status == 'unused' and canDelete %}
             const deleteLabel = document.getElementById('delete-label');
             if (deleteLabel) {
-                deleteLabel.textContent = count > 0
-                    ? `{{ 'Delete'|t('translation-manager') }} (${count})`
-                    : `{{ 'Delete'|t('translation-manager') }}`;
+                deleteLabel.textContent = count > 0 ? `${T.deleteLabel} (${count})` : T.deleteLabel;
             }
             {% endif %}
         }
@@ -395,7 +404,10 @@
         });
         updateActionButtons(0);
 
-        {% if canExportTranslations %}
+        {% if canExport %}
+        // Export uses a hand-rolled form because the response is a CSV file
+        // download — Craft.sendActionRequest is for AJAX/JSON exchanges, not
+        // streamed file downloads.
         document.getElementById('export-btn')?.addEventListener('click', function(e) {
             e.preventDefault();
 
@@ -442,88 +454,58 @@
         });
         {% endif %}
 
-        async function bulkSetStatus(status) {
+        function bulkSetStatus(targetStatus, errorFallback) {
             const ids = getSelectedIds();
-            if (ids.length === 0) {
-                return;
-            }
+            if (!ids.length) return;
 
-            const response = await fetch('{{ actionUrl('translation-manager/translations/set-status') }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ ids, status })
+            Craft.sendActionRequest('POST', 'translation-manager/translations/set-status', {
+                data: { ids: ids, status: targetStatus },
+            }).then(function(response) {
+                if (response.data.success) {
+                    const label = targetStatus === 'translated' ? T.translatedLabel : T.draftLabel;
+                    Craft.cp.displayNotice(
+                        T.updatedTemplate.replace('{count}', response.data.updated).replace('{status}', label)
+                    );
+                    setTimeout(function() { window.location.reload(); }, 600);
+                } else {
+                    Craft.cp.displayError(response.data.error || errorFallback);
+                }
+            }).catch(function() {
+                Craft.cp.displayError(errorFallback);
             });
-
-            const data = await response.json();
-            if (!data.success) {
-                throw new Error(data.error || {{ 'Failed to update status'|t('translation-manager')|json_encode|raw }});
-            }
-
-            const label = status === 'translated' ? {{ 'translated'|t('translation-manager')|json_encode|raw }} : {{ 'draft'|t('translation-manager')|json_encode|raw }};
-            Craft.cp.displayNotice({{ 'Updated {count} translation(s) to {status}.'|t('translation-manager')|json_encode|raw }}.replace('{count}', data.updated).replace('{status}', label));
-            setTimeout(() => window.location.reload(), 600);
         }
 
-        {% if canEditTranslations %}
-        document.getElementById('mark-draft-btn')?.addEventListener('click', async function() {
-            try {
-                await bulkSetStatus('draft');
-            } catch (error) {
-                console.error(error);
-                Craft.cp.displayError(error.message || {{ 'Failed to mark as draft'|t('translation-manager')|json_encode|raw }});
-            }
+        {% if canEdit %}
+        document.getElementById('mark-draft-btn')?.addEventListener('click', function() {
+            bulkSetStatus('draft', T.markDraftFailed);
         });
         {% endif %}
 
-        {% if canApproveTranslations or (canEditTranslations and not settings.requireApproval) %}
-        document.getElementById('mark-translated-btn')?.addEventListener('click', async function() {
-            try {
-                await bulkSetStatus('translated');
-            } catch (error) {
-                console.error(error);
-                Craft.cp.displayError(error.message || {{ 'Failed to mark as translated'|t('translation-manager')|json_encode|raw }});
-            }
+        {% if canApprove or (canEdit and not settings.requireApproval) %}
+        document.getElementById('mark-translated-btn')?.addEventListener('click', function() {
+            bulkSetStatus('translated', T.markTranslatedFailed);
         });
         {% endif %}
 
-        {% if status == 'unused' and canDeleteTranslations %}
+        {% if status == 'unused' and canDelete %}
         document.getElementById('delete-selected-btn')?.addEventListener('click', function(e) {
             e.preventDefault();
             const ids = getSelectedIds();
-            if (ids.length === 0) {
-                return;
-            }
+            if (!ids.length) return;
 
-            if (!confirm({{ 'Are you sure you want to delete {count} translation(s)?'|t('translation-manager')|json_encode|raw }}.replace('{count}', ids.length))) {
-                return;
-            }
+            if (!confirm(T.deleteConfirmTemplate.replace('{count}', ids.length))) return;
 
-            fetch('{{ actionUrl('translation-manager/translations/delete') }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ ids })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Craft.cp.displayNotice({{ 'Deleted {count} translation(s).'|t('translation-manager')|json_encode|raw }}.replace('{count}', data.deleted));
-                    setTimeout(() => window.location.reload(), 800);
+            Craft.sendActionRequest('POST', 'translation-manager/translations/delete', {
+                data: { ids: ids },
+            }).then(function(response) {
+                if (response.data.success) {
+                    Craft.cp.displayNotice(T.deletedTemplate.replace('{count}', response.data.deleted));
+                    setTimeout(function() { window.location.reload(); }, 800);
                 } else {
-                    Craft.cp.displayError(data.error || {{ 'Failed to delete translations'|t('translation-manager')|json_encode|raw }});
+                    Craft.cp.displayError(response.data.error || T.deleteFailed);
                 }
-            })
-            .catch(() => {
-                Craft.cp.displayError({{ 'Failed to delete translations'|t('translation-manager')|json_encode|raw }});
+            }).catch(function() {
+                Craft.cp.displayError(T.deleteFailed);
             });
         });
         {% endif %}
@@ -623,20 +605,13 @@
             textarea.style.opacity = '0.6';
 
             try {
-                const response = await fetch('{{ actionUrl('translation-manager/translations/save') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({ id, translation: translationText })
+                const response = await Craft.sendActionRequest('POST', 'translation-manager/translations/save', {
+                    data: { id: id, translation: translationText },
                 });
 
-                const data = await response.json();
+                const data = response.data;
                 if (!data.success) {
-                    throw new Error(data.error || {{ 'Failed to save'|t('translation-manager')|json_encode|raw }});
+                    throw new Error(data.error || T.saveFailed);
                 }
 
                 tracker.markSaved(id, translationText);
@@ -654,7 +629,7 @@
                 setTimeout(() => {
                     row.style.backgroundColor = '';
                 }, 1600);
-                Craft.cp.displayError({{ 'Failed to save translation'|t('translation-manager')|json_encode|raw }});
+                Craft.cp.displayError(T.saveTranslationFailed);
             } finally {
                 tracker.savingInProgress.delete(id);
                 textarea.style.opacity = '';
@@ -685,11 +660,11 @@
             });
         });
 
-        {% if canEditTranslations %}
+        {% if canEdit %}
         document.getElementById('save-all-btn')?.addEventListener('click', async function() {
             const unsavedChanges = tracker.getUnsavedChanges();
             if (unsavedChanges.length === 0) {
-                Craft.cp.displayNotice({{ 'No changes to save'|t('translation-manager')|json_encode|raw }});
+                Craft.cp.displayNotice(T.noChanges);
                 return;
             }
 
@@ -697,7 +672,7 @@
             btn.disabled = true;
             btn.classList.add('loading');
 
-            Craft.cp.displayNotice({{ 'Saving {count} translation(s)…'|t('translation-manager')|json_encode|raw }}.replace('{count}', unsavedChanges.length));
+            Craft.cp.displayNotice(T.savingTemplate.replace('{count}', unsavedChanges.length));
 
             let saved = 0;
             let failed = 0;
@@ -720,9 +695,9 @@
             }
 
             if (failed === 0) {
-                Craft.cp.displayNotice({{ 'Successfully saved {count} translation(s).'|t('translation-manager')|json_encode|raw }}.replace('{count}', saved));
+                Craft.cp.displayNotice(T.successTemplate.replace('{count}', saved));
             } else {
-                Craft.cp.displayError({{ 'Saved {saved} translation(s), {failed} failed.'|t('translation-manager')|json_encode|raw }}.replace('{saved}', saved).replace('{failed}', failed));
+                Craft.cp.displayError(T.partialSuccessTemplate.replace('{saved}', saved).replace('{failed}', failed));
             }
 
             btn.disabled = false;
@@ -740,41 +715,31 @@
         window.addEventListener('beforeunload', function(e) {
             if (tracker.hasUnsavedChanges()) {
                 e.preventDefault();
-                e.returnValue = {{ 'You have unsaved translations. Are you sure you want to leave?'|t('translation-manager')|json_encode|raw }};
+                e.returnValue = T.unsavedConfirm;
                 return e.returnValue;
             }
         });
 
         {% if not settings.autoGenerate and hasAnyGeneratePermission %}
         function generateTranslationFiles(type) {
-            let url = '';
+            let endpoint = '';
             if (type === 'all') {
-                url = '{{ actionUrl('translation-manager/export/files') }}';
+                endpoint = 'translation-manager/export/files';
             } else if (type === 'formie') {
-                url = '{{ actionUrl('translation-manager/export/formie-files') }}';
+                endpoint = 'translation-manager/export/formie-files';
             } else if (type === 'site') {
-                url = '{{ actionUrl('translation-manager/export/site-files') }}';
+                endpoint = 'translation-manager/export/site-files';
             }
 
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
+            Craft.sendActionRequest('POST', endpoint).then(function(response) {
+                const data = response.data;
                 if (data.success) {
-                    Craft.cp.displayNotice(data.message || {{ 'Translation files generated successfully.'|t('translation-manager')|json_encode|raw }});
+                    Craft.cp.displayNotice(data.message || T.generateSuccess);
                 } else {
-                    Craft.cp.displayError(data.error || {{ 'Failed to generate translation files.'|t('translation-manager')|json_encode|raw }});
+                    Craft.cp.displayError(data.error || T.generateFailed);
                 }
-            })
-            .catch(() => {
-                Craft.cp.displayError({{ 'Failed to generate translation files.'|t('translation-manager')|json_encode|raw }});
+            }).catch(function() {
+                Craft.cp.displayError(T.generateFailed);
             });
         }
 
