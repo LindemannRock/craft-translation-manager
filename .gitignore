@@ -37,6 +37,13 @@ yarn-error.log*
 /.internal/
 /CLAUDE.md
 
+# PHPUnit
+/.phpunit.cache/
+/.phpunit.result.cache
+/phpunit.xml
+/coverage/
+/coverage.xml
+
 # Plugin releases
 *.zip
 /releases/
