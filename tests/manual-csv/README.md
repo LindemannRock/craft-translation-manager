@@ -1,6 +1,6 @@
-# Translation Manager Test Files
+# Translation Manager — Manual CSV Fixtures
 
-This directory contains test CSV files for various scenarios including multi-site support and security testing.
+This directory contains **manual QA CSV fixtures** for exercising the CSV import flow through the CP UI. They are not loaded by PHPUnit. Automated integration tests live in `../Integration/`.
 
 ## Test Files
 
