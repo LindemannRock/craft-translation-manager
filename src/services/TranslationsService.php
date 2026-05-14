@@ -1159,75 +1159,39 @@ class TranslationsService extends Component
     public function applySkipPatternsToExisting(): int
     {
         $settings = TranslationManager::getInstance()->getSettings();
-        
-        $this->logInfo('Starting applySkipPatternsToExisting', [
-            'skipPatterns' => $settings->skipPatterns,
-            'skipPatternsCount' => count($settings->skipPatterns ?? []),
-        ]);
-        
-        if (empty($settings->skipPatterns)) {
-            $this->logInfo('No skip patterns configured');
+        $patterns = array_filter(array_map('trim', $settings->skipPatterns ?? []));
+
+        if (!$patterns) {
+            $this->logInfo('applySkipPatternsToExisting: no skip patterns configured');
             return 0;
         }
-        
-        $deleted = 0;
-        
-        // Get all site translations (context NOT LIKE 'formie.%')
-        $siteTranslations = $this->getTranslations(['type' => 'site']);
-        
-        $this->logInfo('Found site translations', ['count' => count($siteTranslations)]);
-        
+
+        // allSites: true so we scan every language, not just the CP user's
+        // current site. Without this the cleanup would silently miss matches
+        // in other languages.
+        $siteTranslations = $this->getTranslations(['type' => 'site', 'allSites' => true]);
+
+        $idsToDelete = [];
         foreach ($siteTranslations as $translation) {
-            $translationKey = $translation['translationKey'];
-            
-            $this->logInfo("Checking translation", [
-                'text' => $translationKey,
-                'id' => $translation['id'],
-            ]);
-            
-            // Check if this translation matches any skip pattern
-            foreach ($settings->skipPatterns as $pattern) {
-                $pattern = trim($pattern); // Trim whitespace
-                
-                $this->logInfo("Checking pattern", [
-                    'pattern' => $pattern,
-                    'text' => $translationKey,
-                    'contains_check' => str_contains($translationKey, $pattern) ? 'YES' : 'NO',
-                ]);
-                
-                if (!empty($pattern) && str_contains($translationKey, $pattern)) {
-                    $this->logInfo("Found matching translation", [
-                        'pattern' => $pattern,
-                        'text' => $translationKey,
-                        'translationId' => $translation['id'],
-                    ]);
-                    
-                    // Delete this translation
-                    $translationRecord = TranslationRecord::findOne($translation['id']);
-                    if ($translationRecord) {
-                        $translationRecord->delete();
-                        $deleted++;
-                        $this->logInfo("Successfully deleted translation", [
-                            'pattern' => $pattern,
-                            'text' => $translationKey,
-                            'id' => $translation['id'],
-                        ]);
-                        break; // Stop checking other patterns for this translation
-                    } else {
-                        $this->logWarning("Translation record not found for deletion", [
-                            'id' => $translation['id'],
-                        ]);
-                    }
+            foreach ($patterns as $pattern) {
+                if (str_contains($translation['translationKey'], $pattern)) {
+                    $idsToDelete[] = (int) $translation['id'];
+                    break; // matched — stop checking other patterns for this row
                 }
             }
         }
-        
-        $this->logInfo('Completed applying skip patterns to existing translations', [
-            'patterns' => $settings->skipPatterns,
+
+        $deleted = 0;
+        if ($idsToDelete) {
+            $deleted = TranslationRecord::deleteAll(['id' => $idsToDelete]);
+        }
+
+        $this->logInfo('Applied skip patterns to existing translations', [
+            'patterns' => array_values($patterns),
+            'scanned' => count($siteTranslations),
             'deleted' => $deleted,
-            'totalSiteTranslations' => count($siteTranslations),
         ]);
-        
+
         return $deleted;
     }
     
