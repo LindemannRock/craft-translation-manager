@@ -1212,19 +1212,11 @@ class TranslationsService extends Component
      */
     public function cleanUnusedTranslations(): int
     {
-        // Get all unused Formie translations
-        $unusedTranslations = TranslationRecord::find()
-            ->where(['like', 'context', 'formie.%', false])
-            ->andWhere(['status' => 'unused'])
-            ->all();
-        
-        $deleted = 0;
-        
-        foreach ($unusedTranslations as $translation) {
-            if ($translation->delete()) {
-                $deleted++;
-            }
-        }
+        $deleted = TranslationRecord::deleteAll([
+            'and',
+            ['like', 'context', 'formie.%', false],
+            ['status' => 'unused'],
+        ]);
         
         // If we deleted any translations, regenerate the Formie translation files
         if ($deleted > 0) {
