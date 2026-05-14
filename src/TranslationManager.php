@@ -716,8 +716,6 @@ class TranslationManager extends Plugin
             // Maintenance routes
             'translation-manager/maintenance' => 'translation-manager/maintenance/index',
             'translation-manager/maintenance/clean-unused' => 'translation-manager/maintenance/clean-unused',
-            'translation-manager/maintenance/debug-search-page' => 'translation-manager/maintenance/debug-search-page',
-            'translation-manager/maintenance/debug-search' => 'translation-manager/maintenance/debug-search',
             'translation-manager/maintenance/recapture-formie' => 'translation-manager/maintenance/recapture-formie',
 
             // Backup routes
