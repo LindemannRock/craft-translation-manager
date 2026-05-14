@@ -14,12 +14,10 @@ use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\console\Application as ConsoleApplication;
-use craft\events\ElementEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\UrlHelper;
-use craft\services\Elements;
 use craft\services\UserPermissions;
 use craft\services\Utilities;
 use craft\web\twig\variables\Cp;
@@ -31,7 +29,6 @@ use lindemannrock\logginglibrary\LoggingLibrary;
 
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\i18n\LocaleMappingPhpMessageSource;
-use lindemannrock\translationmanager\jobs\RecheckUsageJob;
 use lindemannrock\translationmanager\listeners\MissingTranslationListener;
 use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\translationmanager\services\AiTranslationService;
@@ -312,10 +309,6 @@ class TranslationManager extends Plugin
 
         // Schedule backup job if enabled
         $this->scheduleBackupJob();
-
-        // Schedule recurring translation usage recheck + on-form-save trigger
-        $this->scheduleRecheckUsageJob();
-        $this->installFormieUsageListener();
     }
 
     /**
@@ -832,90 +825,6 @@ class TranslationManager extends Plugin
     }
 
     /**
-     * Schedule the recurring usage recheck job.
-     *
-     * Runs on every plugin init so a missing job (e.g. after a manual
-     * "Release All Jobs" or a crashed worker that lost the row) is
-     * automatically restored on the next CP page load. Same pattern as
-     * search-manager's CleanupAnalyticsJob bootstrap. The cost is one
-     * SELECT EXISTS against the small {{%queue}} table per request.
-     *
-     * @since 5.24.0
-     */
-    private function scheduleRecheckUsageJob(): void
-    {
-        $settings = $this->getSettings();
-
-        if (!$settings->enableScheduledUsageRecheck || $settings->usageRecheckSchedule === 'disabled') {
-            return;
-        }
-
-        $existingJob = (new \craft\db\Query())
-            ->from('{{%queue}}')
-            ->where(['like', 'job', 'translationmanager'])
-            ->andWhere(['like', 'job', 'RecheckUsageJob'])
-            ->exists();
-
-        if ($existingJob) {
-            return;
-        }
-
-        Craft::$app->getQueue()->delay(5 * 60)->push(new RecheckUsageJob([
-            'reschedule' => true,
-        ]));
-
-        $this->logInfo('Scheduled initial usage recheck job', [
-            'schedule' => $settings->usageRecheckSchedule,
-        ]);
-    }
-
-    /**
-     * Listen for Formie form saves and enqueue an immediate one-shot
-     * usage recheck. Filters by Formie's Form element class via FQCN
-     * string check so this plugin keeps no hard dependency on Formie.
-     *
-     * @since 5.24.0
-     */
-    private function installFormieUsageListener(): void
-    {
-        Event::on(
-            Elements::class,
-            Elements::EVENT_AFTER_SAVE_ELEMENT,
-            function(ElementEvent $event): void {
-                $element = $event->element;
-
-                // Skip drafts, revisions, and propagating saves
-                if ($element->getIsDraft() || $element->getIsRevision() || $element->propagating) {
-                    return;
-                }
-
-                if (!$element instanceof \verbb\formie\elements\Form) {
-                    return;
-                }
-
-                // Dedup: skip if a recheck job is already queued
-                $existingJob = (new \craft\db\Query())
-                    ->from('{{%queue}}')
-                    ->where(['like', 'job', 'translationmanager'])
-                    ->andWhere(['like', 'job', 'RecheckUsageJob'])
-                    ->exists();
-
-                if ($existingJob) {
-                    return;
-                }
-
-                Craft::$app->getQueue()->push(new RecheckUsageJob([
-                    'reschedule' => false,
-                ]));
-
-                $this->logDebug('Queued one-shot usage recheck after Formie form save', [
-                    'formId' => $element->id,
-                ]);
-            }
-        );
-    }
-
-    /**
      * Handle backup schedule changes when settings are saved
      */
     public function handleBackupScheduleChange(Settings $settings): void
@@ -975,46 +884,5 @@ class TranslationManager extends Plugin
                 ['like', 'job', 'CreateBackupJob'],
             ])
             ->execute();
-    }
-
-    /**
-     * Handle usage recheck schedule changes when settings are saved.
-     *
-     * Always cancels any pending `RecheckUsageJob` first so the new
-     * schedule takes effect immediately — otherwise the previously
-     * queued job would still fire on its old delay.
-     *
-     * @since 5.24.0
-     */
-    public function handleUsageRecheckScheduleChange(Settings $settings): void
-    {
-        // Always cancel pending jobs so schedule changes apply now,
-        // not after the previously-queued job fires
-        Craft::$app->getDb()->createCommand()
-            ->delete('{{%queue}}', [
-                'and',
-                ['like', 'job', 'translationmanager'],
-                ['like', 'job', 'RecheckUsageJob'],
-            ])
-            ->execute();
-
-        if (!$settings->enableScheduledUsageRecheck || $settings->usageRecheckSchedule === 'disabled') {
-            $this->logInfo('Usage recheck scheduling disabled — pending jobs cancelled');
-            return;
-        }
-
-        $delay = \lindemannrock\base\helpers\ScheduleHelper::calculateDelaySeconds($settings->usageRecheckSchedule);
-        if ($delay <= 0) {
-            return;
-        }
-
-        Craft::$app->getQueue()->delay($delay)->push(new RecheckUsageJob([
-            'reschedule' => true,
-        ]));
-
-        $this->logInfo('Usage recheck rescheduled', [
-            'schedule' => $settings->usageRecheckSchedule,
-            'delaySeconds' => $delay,
-        ]);
     }
 }

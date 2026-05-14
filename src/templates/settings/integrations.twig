@@ -71,41 +71,5 @@
             } %}
         </div>
 
-        <hr>
-
-        <h3>{{ "Usage Recheck"|t('translation-manager') }}</h3>
-
-        <p class="light" style="margin-bottom: 24px;">
-            {{ "Recheck which form translations are still in use across enabled providers. The job runs in the background on the chosen schedule and immediately after a form is saved."|t('translation-manager') }}
-        </p>
-
-        {{ forms.lightswitchField({
-            label: "Enable Scheduled Usage Recheck"|t('translation-manager'),
-            instructions: "When off, only on-form-save rechecks run. Disable this to fully manage rechecks via console commands."|t('translation-manager'),
-            id: 'enableScheduledUsageRecheck',
-            name: 'settings[enableScheduledUsageRecheck]',
-            on: settings.enableScheduledUsageRecheck,
-            toggle: 'usage-recheck-schedule-wrapper',
-            errors: settings.getErrors('enableScheduledUsageRecheck'),
-            disabled: settings.isOverriddenByConfig('enableScheduledUsageRecheck'),
-            warning: settings.isOverriddenByConfig('enableScheduledUsageRecheck') ?
-                "This is being overridden by the <code>enableScheduledUsageRecheck</code> setting in <code>config/translation-manager.php</code>."|raw : null,
-        }) }}
-
-        <div id="usage-recheck-schedule-wrapper" class="{{ not settings.enableScheduledUsageRecheck ? 'hidden' }}">
-            {{ forms.selectField({
-                label: "Usage Recheck Schedule"|t('translation-manager'),
-                instructions: "How often the recurring recheck runs. The job also fires immediately after any form save."|t('translation-manager'),
-                id: 'usageRecheckSchedule',
-                name: 'settings[usageRecheckSchedule]',
-                value: settings.usageRecheckSchedule,
-                options: scheduleOptions,
-                errors: settings.getErrors('usageRecheckSchedule'),
-                disabled: settings.isOverriddenByConfig('usageRecheckSchedule'),
-                warning: settings.isOverriddenByConfig('usageRecheckSchedule') ?
-                    "This is being overridden by the <code>usageRecheckSchedule</code> setting in <code>config/translation-manager.php</code>."|raw : null,
-            }) }}
-        </div>
-
     {% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}

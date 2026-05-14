@@ -257,9 +257,10 @@ class TranslationsService extends Component
             $query->orderBy([$sortMap[$sort] => $dir === 'desc' ? SORT_DESC : SORT_ASC]);
         }
 
-        // Get all translations. The "unused" status is maintained by
-        // RecheckUsageJob (scheduled + on Formie form save), so this read
-        // path no longer pays a per-request traversal cost.
+        // Get all translations. The "unused" status is maintained
+        // synchronously by FormieIntegration on form save and by the
+        // "Rescan all forms" maintenance action, so this read path
+        // no longer pays a per-request Formie-traversal cost.
         return $query->all();
     }
 
@@ -748,7 +749,8 @@ class TranslationsService extends Component
      * Recompute "unused" status for all Formie translations and persist
      * the result with batched UPDATEs.
      *
-     * Runs out-of-band via RecheckUsageJob — never on the read path.
+     * Called synchronously by FormieIntegration on form save and by the
+     * maintenance "Rescan all forms" action — never on the read path.
      * Handles both directions: marks newly-orphaned strings unused, and
      * restores the appropriate non-unused status when a previously
      * orphaned string becomes active again.

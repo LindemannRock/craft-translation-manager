@@ -12,7 +12,6 @@ namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
 use craft\web\Controller;
-use lindemannrock\base\helpers\ScheduleHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\translationmanager\TranslationManager;
@@ -168,7 +167,6 @@ class SettingsController extends Controller
 
         return $this->renderTemplate('translation-manager/settings/integrations', [
             'settings' => $settings,
-            'scheduleOptions' => ScheduleHelper::getOptions(),
         ]);
     }
 
@@ -273,10 +271,6 @@ class SettingsController extends Controller
         $oldBackupEnabled = $settings->backupEnabled;
         $oldBackupSchedule = $settings->backupSchedule;
 
-        // Same capture for usage recheck schedule
-        $oldRecheckEnabled = $settings->enableScheduledUsageRecheck;
-        $oldRecheckSchedule = $settings->usageRecheckSchedule;
-
         // Get only the posted settings (fields from the current page)
         $settingsData = Craft::$app->getRequest()->getBodyParam('settings', []);
 
@@ -315,12 +309,6 @@ class SettingsController extends Controller
 
         // Save settings to database (same scoped attributes)
         if ($settings->saveToDatabase($attributesToValidate)) {
-            // Reset cached settings BEFORE running schedule-change handlers,
-            // so any code path that calls $plugin->getSettings() inside
-            // those handlers (e.g. job::init()) sees the freshly-saved
-            // values instead of the stale cache.
-            $plugin->setSettings([]);
-
             // Detect backup schedule changes and update queue jobs
             if ($oldBackupEnabled !== $settings->backupEnabled ||
                 $oldBackupSchedule !== $settings->backupSchedule
@@ -328,12 +316,8 @@ class SettingsController extends Controller
                 $plugin->handleBackupScheduleChange($settings);
             }
 
-            // Detect usage recheck schedule changes and update queue jobs
-            if ($oldRecheckEnabled !== $settings->enableScheduledUsageRecheck ||
-                $oldRecheckSchedule !== $settings->usageRecheckSchedule
-            ) {
-                $plugin->handleUsageRecheckScheduleChange($settings);
-            }
+            // Reset cached settings so next request loads fresh from DB
+            $plugin->setSettings([]);
 
             Craft::$app->getSession()->setNotice(Craft::t('translation-manager', 'Settings saved.'));
         } else {
@@ -619,8 +603,6 @@ class SettingsController extends Controller
             'integrations' => [
                 'enableFormieIntegration',
                 'excludeFormHandlePatterns',
-                'enableScheduledUsageRecheck',
-                'usageRecheckSchedule',
             ],
             'ai' => [
                 'enableAiTranslations',

@@ -172,16 +172,13 @@ class FormieIntegration extends BaseIntegration
      */
     public function checkUsage(): void
     {
-        $this->logInfo('Checking Formie translation usage');
+        // Builds the active-text map from every Formie form, batches
+        // status updates for newly-unused / re-activated rows. Runs
+        // synchronously — fast enough on the form-save and "Rescan all
+        // forms" paths (the only callers).
+        $result = $this->getTranslationsService()->recheckUsage();
 
-        // Use the existing working logic with includeUsageCheck
-        // Note: formie.defaults.* translations are automatically marked as used in TranslationsService
-        $translations = $this->getTranslationsService()->getTranslations([
-            'type' => 'forms',
-            'includeUsageCheck' => true,
-        ]);
-
-        $this->logInfo('Checked Formie translations for usage', ['count' => count($translations)]);
+        $this->logInfo('Checked Formie translation usage', $result);
     }
 
     /**
