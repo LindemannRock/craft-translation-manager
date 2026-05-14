@@ -149,7 +149,6 @@ return [
 
     // Jobs
     '{pluginName}: Scheduled auto backup' => '{pluginName} : Sauvegarde automatique planifiée',
-    '{pluginName}: Rechecking translation usage' => '{pluginName} : Vérification de l\'utilisation des traductions en cours',
 
     // Controller messages
     'Invalid AI provider selected.' => 'Fournisseur IA sélectionné non valide.',
@@ -374,12 +373,6 @@ return [
     'Example:\n(Ar)\n(ar)\nAr1\n-ar' => 'Exemple :\n(Ar)\n(ar)\nAr1\n-ar',
     'Note:' => 'Remarque :',
     'Text containing non-source-language characters (based on Source Language setting) will also be automatically skipped.' => 'Le texte contenant des caractères n\'appartenant pas à la langue source (basé sur le paramètre de langue source) sera également automatiquement ignoré.',
-    'Usage Recheck' => 'Revérification de l\'utilisation',
-    'Recheck which form translations are still in use across enabled providers. The job runs in the background on the chosen schedule and immediately after a form is saved.' => 'Vérifie quelles traductions de formulaires sont encore utilisées par les fournisseurs activés. La tâche s\'exécute en arrière-plan selon le calendrier choisi et immédiatement après l\'enregistrement d\'un formulaire.',
-    'Enable Scheduled Usage Recheck' => 'Activer la revérification planifiée de l\'utilisation',
-    'When off, only on-form-save rechecks run. Disable this to fully manage rechecks via console commands.' => 'Si désactivé, seules les revérifications lors de l\'enregistrement d\'un formulaire sont exécutées. Désactivez cette option pour gérer entièrement les revérifications via des commandes console.',
-    'Usage Recheck Schedule' => 'Calendrier de revérification de l\'utilisation',
-    'How often the recurring recheck runs. The job also fires immediately after any form save.' => 'Fréquence d\'exécution de la revérification récurrente. La tâche se déclenche également immédiatement après l\'enregistrement de tout formulaire.',
 
     // Settings: AI Translation
     'AI Translation' => 'Traduction IA',

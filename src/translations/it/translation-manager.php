@@ -149,7 +149,6 @@ return [
 
     // Jobs
     '{pluginName}: Scheduled auto backup' => '{pluginName}: Backup automatico pianificato',
-    '{pluginName}: Rechecking translation usage' => '{pluginName}: Verifica dell\'utilizzo delle traduzioni in corso',
 
     // Controller messages
     'Invalid AI provider selected.' => 'Provider IA selezionato non valido.',
@@ -374,12 +373,6 @@ return [
     'Example:\n(Ar)\n(ar)\nAr1\n-ar' => 'Esempio:\n(Ar)\n(ar)\nAr1\n-ar',
     'Note:' => 'Nota:',
     'Text containing non-source-language characters (based on Source Language setting) will also be automatically skipped.' => 'Il testo contenente caratteri non appartenenti alla lingua sorgente (in base all\'impostazione della lingua sorgente) verrà ignorato automaticamente.',
-    'Usage Recheck' => 'Riverifica dell\'utilizzo',
-    'Recheck which form translations are still in use across enabled providers. The job runs in the background on the chosen schedule and immediately after a form is saved.' => 'Riverifica quali traduzioni dei moduli sono ancora in uso nei provider abilitati. Il processo viene eseguito in background secondo la pianificazione scelta e immediatamente dopo il salvataggio di un modulo.',
-    'Enable Scheduled Usage Recheck' => 'Abilita riverifica dell\'utilizzo pianificata',
-    'When off, only on-form-save rechecks run. Disable this to fully manage rechecks via console commands.' => 'Se disabilitato, vengono eseguite solo le riverifiche al salvataggio dei moduli. Disabilitate questa opzione per gestire completamente le riverifiche tramite comandi console.',
-    'Usage Recheck Schedule' => 'Pianificazione riverifica dell\'utilizzo',
-    'How often the recurring recheck runs. The job also fires immediately after any form save.' => 'Con quale frequenza viene eseguita la riverifica ricorrente. Il processo viene avviato anche immediatamente dopo il salvataggio di qualsiasi modulo.',
 
     // Settings: AI Translation
     'AI Translation' => 'Traduzione IA',

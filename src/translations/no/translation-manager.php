@@ -149,7 +149,6 @@ return [
 
     // Jobs
     '{pluginName}: Scheduled auto backup' => '{pluginName}: Planlagt automatisk sikkerhetskopi',
-    '{pluginName}: Rechecking translation usage' => '{pluginName}: Sjekker oversettelsesbruk på nytt',
 
     // Controller messages
     'Invalid AI provider selected.' => 'Ugyldig AI-leverandør valgt.',
@@ -374,12 +373,6 @@ return [
     'Example:\n(Ar)\n(ar)\nAr1\n-ar' => 'Eksempel:\n(Ar)\n(ar)\nAr1\n-ar',
     'Note:' => 'Merk:',
     'Text containing non-source-language characters (based on Source Language setting) will also be automatically skipped.' => 'Tekst som inneholder tegn som ikke tilhører kildespråket (basert på innstillingen for kildespråk), hoppes også automatisk over.',
-    'Usage Recheck' => 'Brukskontroll',
-    'Recheck which form translations are still in use across enabled providers. The job runs in the background on the chosen schedule and immediately after a form is saved.' => 'Sjekker hvilke skjemaoversettelelser som fortsatt er i bruk hos aktiverte leverandører. Jobben kjøres i bakgrunnen ifølge den valgte tidsplanen og umiddelbart etter at et skjema lagres.',
-    'Enable Scheduled Usage Recheck' => 'Aktiver planlagt brukskontroll',
-    'When off, only on-form-save rechecks run. Disable this to fully manage rechecks via console commands.' => 'Når slått av, kjøres bare kontroller ved skjemalagring. Deaktiver dette for å styre kontroller fullstendig via konsolkommandoer.',
-    'Usage Recheck Schedule' => 'Tidsplan for brukskontroll',
-    'How often the recurring recheck runs. The job also fires immediately after any form save.' => 'Hvor ofte den gjentakende kontrollen kjøres. Jobben utløses også umiddelbart etter at et skjema lagres.',
 
     // Settings: AI Translation
     'AI Translation' => 'AI-oversettelse',
