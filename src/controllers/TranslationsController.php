@@ -138,7 +138,6 @@ class TranslationsController extends Controller
             'type' => $type,
             'origin' => $origin,
             'category' => $category,
-            'includeUsageCheck' => true,
         ];
 
         $allTranslations = TranslationManager::getInstance()->translations->getTranslations($criteria);

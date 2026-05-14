@@ -257,15 +257,10 @@ class TranslationsService extends Component
             $query->orderBy([$sortMap[$sort] => $dir === 'desc' ? SORT_DESC : SORT_ASC]);
         }
 
-        // Get all translations
-        $translations = $query->all();
-
-        // Always check usage to update database status
-        if (!empty($criteria['includeUsageCheck'])) {
-            $translations = $this->checkUsage($translations);
-        }
-
-        return $translations;
+        // Get all translations. The "unused" status is maintained by
+        // RecheckUsageJob (scheduled + on Formie form save), so this read
+        // path no longer pays a per-request traversal cost.
+        return $query->all();
     }
 
     /**
@@ -750,148 +745,154 @@ class TranslationsService extends Component
     }
 
     /**
-     * Check which translations are still in use
+     * Recompute "unused" status for all Formie translations and persist
+     * the result with batched UPDATEs.
+     *
+     * Runs out-of-band via RecheckUsageJob — never on the read path.
+     * Handles both directions: marks newly-orphaned strings unused, and
+     * restores the appropriate non-unused status when a previously
+     * orphaned string becomes active again.
+     *
+     * @return array{checked:int,markedUnused:int,markedTranslated:int,markedPending:int}
+     * @since 5.24.0
      */
-    private function checkUsage(array $translations): array
+    public function recheckUsage(): array
     {
-        $this->logInfo('Starting usage check', ['count' => count($translations)]);
-        
-        // For generic contexts, we need to check if the text is used anywhere
-        $activeTexts = [];
-        
-        if (PluginHelper::isPluginEnabled('formie')) {
-            $forms = \verbb\formie\Formie::getInstance()->getForms()->getAllForms();
-            
-            foreach ($forms as $form) {
-                // Collect form title
-                if ($form->title) {
-                    $activeTexts[$form->title] = true;
-                }
-                
-                // Collect button labels from page settings
-                foreach ($form->getPages() as $page) {
-                    $pageSettings = $page->getPageSettings();
+        $this->logInfo('Starting usage recheck');
 
-                    if ($pageSettings->submitButtonLabel ?? false) {
-                        $activeTexts[$pageSettings->submitButtonLabel] = true;
-                        $this->logDebug("Form submit button", [
-                            'form' => $form->handle,
-                            'label' => $pageSettings->submitButtonLabel,
-                        ]);
-                    }
+        $activeTexts = $this->buildActiveTextsMap();
 
-                    if ($pageSettings->backButtonLabel ?? false) {
-                        $activeTexts[$pageSettings->backButtonLabel] = true;
-                    }
+        $rows = (new Query())
+            ->select(['id', 'context', 'translationKey', 'translation', 'status'])
+            ->from(TranslationRecord::tableName())
+            ->where(['or',
+                ['context' => 'formie'],
+                new \yii\db\Expression('[[context]] LIKE :formiePrefix', [':formiePrefix' => 'formie.%']),
+            ])
+            ->all();
 
-                    if ($pageSettings->saveButtonLabel ?? false) {
-                        $activeTexts[$pageSettings->saveButtonLabel] = true;
-                    }
-                }
-                
-                // Collect submission message (both HTML and plain text versions)
-                // IMPORTANT: Use RAW property, NOT getter - getter returns translated content
-                if ($form->settings->submitActionMessage ?? false) {
-                    $htmlMessage = $this->convertTipTapToHtml($form->settings->submitActionMessage);
-                    if ($htmlMessage) {
-                        // Store both HTML and plain text versions
-                        $activeTexts[$htmlMessage] = true;
-                        $plainMessage = $this->extractPlainTextFromFormie($htmlMessage);
-                        if ($plainMessage && $plainMessage !== $htmlMessage) {
-                            $activeTexts[$plainMessage] = true;
-                        }
-                        $this->logDebug("Form submit message (using raw property)", [
-                            'form' => $form->handle,
-                            'message' => substr($htmlMessage, 0, 80),
-                            'length' => strlen($htmlMessage),
-                        ]);
-                    }
-                }
-                
-                // Collect error message (both HTML and plain text versions)
-                // IMPORTANT: Use RAW property, NOT getter - getter returns translated content
-                if ($form->settings->errorMessage ?? false) {
-                    $htmlMessage = $this->convertTipTapToHtml($form->settings->errorMessage);
-                    if ($htmlMessage) {
-                        // Store both HTML and plain text versions
-                        $activeTexts[$htmlMessage] = true;
-                        $plainMessage = $this->extractTextFromTipTap($htmlMessage);
-                        if ($plainMessage && $plainMessage !== $htmlMessage) {
-                            $activeTexts[$plainMessage] = true;
-                        }
-                        $this->logDebug("Form error message (using raw property)", [
-                            'form' => $form->handle,
-                            'message' => substr($htmlMessage, 0, 80),
-                            'length' => strlen($htmlMessage),
-                        ]);
-                    }
-                }
-                
-                // Collect all field texts (including nested fields in groups)
-                foreach ($form->getCustomFields() as $field) {
-                    $this->collectFieldTexts($field, $activeTexts);
-                }
-            }
-            
-            $this->logInfo('Found active texts in forms', ['count' => count($activeTexts)]);
-        }
+        $shouldBeUnused = [];
+        $shouldBeTranslated = [];
+        $shouldBePending = [];
 
-        foreach ($translations as &$translation) {
-            $isUsed = false;
+        foreach ($rows as $row) {
+            // formie.defaults.* are validation messages — always considered used
+            $isDefault = str_starts_with($row['context'], 'formie.defaults.');
+            $isActive = $isDefault || isset($activeTexts[$row['translationKey']]);
 
-            // For Formie translations
-            if (str_starts_with($translation['context'], 'formie.') || $translation['context'] === 'formie') {
-                // Default Formie translations (validation messages) are always considered used
-                if (str_starts_with($translation['context'], 'formie.defaults.')) {
-                    $isUsed = true;
+            $currentStatus = (string) $row['status'];
+
+            if (!$isActive && $currentStatus !== 'unused') {
+                $shouldBeUnused[] = (int) $row['id'];
+            } elseif ($isActive && $currentStatus === 'unused') {
+                if ((string) $row['translation'] !== '') {
+                    $shouldBeTranslated[] = (int) $row['id'];
                 } else {
-                    // Check if the English text is still used in any form
-                    $isUsed = isset($activeTexts[$translation['translationKey']]);
-                }
-
-                $usedStatus = $isUsed ? 'used' : 'unused';
-                $this->logDebug("Checking formie translation", [
-                    'key' => $translation['translationKey'],
-                    'context' => $translation['context'],
-                    'status' => $usedStatus,
-                ]);
-            } else {
-                // For site translations, we can't check if they're used
-                // So we always consider them as "in use"
-                $isUsed = true;
-            }
-
-            $translation['isUsed'] = $isUsed;
-            $translation['formCount'] = $isUsed ? 1 : 0;
-
-            // Update status in database if it's a Formie translation that's not used
-            // Skip default Formie translations - they're always used
-            if (!$isUsed && str_starts_with($translation['context'], 'formie.') && !str_starts_with($translation['context'], 'formie.defaults.')) {
-                // Update the record's status to 'unused' if it's not already
-                if ($translation['status'] !== 'unused') {
-                    $this->logInfo('Marking translation as unused', [
-                        'id' => $translation['id'],
-                        'context' => $translation['context'],
-                        'translationKey' => $translation['translationKey'],
-                    ]);
-                    
-                    // Use direct DB update for better performance
-                    $updated = Db::update(TranslationRecord::tableName(),
-                        ['status' => 'unused'],
-                        ['id' => $translation['id']]
-                    );
-                    
-                    if ($updated) {
-                        $translation['status'] = 'unused';
-                        $this->logInfo('Successfully marked as unused');
-                    } else {
-                        $this->logError('Failed to update unused status');
-                    }
+                    $shouldBePending[] = (int) $row['id'];
                 }
             }
         }
 
-        return $translations;
+        $result = [
+            'checked' => count($rows),
+            'markedUnused' => 0,
+            'markedTranslated' => 0,
+            'markedPending' => 0,
+        ];
+
+        $table = TranslationRecord::tableName();
+
+        if ($shouldBeUnused) {
+            $result['markedUnused'] = Db::update($table, ['status' => 'unused'], ['id' => $shouldBeUnused]);
+        }
+        if ($shouldBeTranslated) {
+            $result['markedTranslated'] = Db::update($table, ['status' => 'translated'], ['id' => $shouldBeTranslated]);
+        }
+        if ($shouldBePending) {
+            $result['markedPending'] = Db::update($table, ['status' => 'pending'], ['id' => $shouldBePending]);
+        }
+
+        $this->logInfo('Usage recheck finished', $result);
+
+        return $result;
+    }
+
+    /**
+     * Build the set of currently-active text strings across every
+     * enabled form provider. Add additional providers (e.g. Freeform)
+     * here as they are integrated.
+     *
+     * @return array<string,true> Map keyed by translation source string
+     */
+    private function buildActiveTextsMap(): array
+    {
+        $activeTexts = [];
+
+        if (PluginHelper::isPluginEnabled('formie')) {
+            $this->collectFormieActiveTexts($activeTexts);
+        }
+
+        return $activeTexts;
+    }
+
+    /**
+     * Walk every Formie form and collect translatable strings into the
+     * shared active-text map.
+     *
+     * @param array<string,true> $activeTexts Reference accumulator
+     */
+    private function collectFormieActiveTexts(array &$activeTexts): void
+    {
+        $forms = \verbb\formie\Formie::getInstance()->getForms()->getAllForms();
+
+        foreach ($forms as $form) {
+            if ($form->title) {
+                $activeTexts[$form->title] = true;
+            }
+
+            foreach ($form->getPages() as $page) {
+                $pageSettings = $page->getPageSettings();
+
+                if ($pageSettings->submitButtonLabel ?? false) {
+                    $activeTexts[$pageSettings->submitButtonLabel] = true;
+                }
+                if ($pageSettings->backButtonLabel ?? false) {
+                    $activeTexts[$pageSettings->backButtonLabel] = true;
+                }
+                if ($pageSettings->saveButtonLabel ?? false) {
+                    $activeTexts[$pageSettings->saveButtonLabel] = true;
+                }
+            }
+
+            // IMPORTANT: read RAW properties — getters return translated content
+            if ($form->settings->submitActionMessage ?? false) {
+                $htmlMessage = $this->convertTipTapToHtml($form->settings->submitActionMessage);
+                if ($htmlMessage) {
+                    $activeTexts[$htmlMessage] = true;
+                    $plainMessage = $this->extractPlainTextFromFormie($htmlMessage);
+                    if ($plainMessage && $plainMessage !== $htmlMessage) {
+                        $activeTexts[$plainMessage] = true;
+                    }
+                }
+            }
+
+            if ($form->settings->errorMessage ?? false) {
+                $htmlMessage = $this->convertTipTapToHtml($form->settings->errorMessage);
+                if ($htmlMessage) {
+                    $activeTexts[$htmlMessage] = true;
+                    $plainMessage = $this->extractTextFromTipTap($htmlMessage);
+                    if ($plainMessage && $plainMessage !== $htmlMessage) {
+                        $activeTexts[$plainMessage] = true;
+                    }
+                }
+            }
+
+            foreach ($form->getCustomFields() as $field) {
+                $this->collectFieldTexts($field, $activeTexts);
+            }
+        }
+
+        $this->logDebug('Collected Formie active texts', ['count' => count($activeTexts)]);
     }
 
     /**

@@ -122,6 +122,8 @@ class Install extends Migration
                 'backupSchedule' => $this->string(20)->defaultValue('manual'),
                 'backupPath' => $this->string()->defaultValue('@storage/translation-manager/backups'),
                 'backupVolumeUid' => $this->string()->null(),
+                'enableScheduledUsageRecheck' => $this->boolean()->notNull()->defaultValue(true),
+                'usageRecheckSchedule' => $this->string(32)->notNull()->defaultValue('daily2am'),
                 'skipPatterns' => $this->text()->null(),
                 'excludeFormHandlePatterns' => $this->text()->null(),
                 'logLevel' => $this->string(20)->notNull()->defaultValue('error'),

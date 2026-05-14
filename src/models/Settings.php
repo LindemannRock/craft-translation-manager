@@ -13,6 +13,7 @@ namespace lindemannrock\translationmanager\models;
 use Craft;
 use craft\base\Model;
 use craft\behaviors\EnvAttributeParserBehavior;
+use lindemannrock\base\helpers\ScheduleHelper;
 use lindemannrock\base\traits\SettingsConfigTrait;
 use lindemannrock\base\traits\SettingsDisplayNameTrait;
 use lindemannrock\base\traits\SettingsPersistenceTrait;
@@ -226,6 +227,19 @@ class Settings extends Model
      */
     public ?string $backupVolumeUid = null;
 
+    /**
+     * @var bool Whether the recurring usage-recheck job is enabled
+     * @since 5.24.0
+     */
+    public bool $enableScheduledUsageRecheck = true;
+
+    /**
+     * @var string Schedule identifier for the usage-recheck job
+     * (see ScheduleHelper for valid values)
+     * @since 5.24.0
+     */
+    public string $usageRecheckSchedule = 'daily2am';
+
     public function behaviors(): array
     {
         return [
@@ -274,11 +288,13 @@ class Settings extends Model
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
             [['enableFormieIntegration', 'enableSiteTranslations', 'autoGenerate',
               'enableSuggestions', 'autoSaveEnabled', 'backupEnabled',
-              'backupOnImport', 'enableAiTranslations', 'requireApproval', ], 'boolean'],
+              'backupOnImport', 'enableAiTranslations', 'requireApproval',
+              'enableScheduledUsageRecheck', ], 'boolean'],
             [['skipPatterns', 'excludeFormHandlePatterns', 'translationCategories', 'localeMapping'], 'safe'],
             [['localeMapping'], 'validateLocaleMapping'],
             [['backupRetentionDays'], 'integer', 'min' => 0, 'max' => 365],
             [['backupSchedule'], 'in', 'range' => ['manual', 'daily', 'weekly']],
+            [['usageRecheckSchedule'], 'in', 'range' => ScheduleHelper::getValidValues()],
             [['aiProvider'], 'in', 'range' => ['openai', 'gemini', 'anthropic', 'mock']],
             [['logLevel'], 'in', 'range' => ['debug', 'info', 'warning', 'error']],
             [['logLevel'], 'validateLogLevel'],
@@ -317,6 +333,8 @@ class Settings extends Model
             'backupSchedule' => 'Backup Schedule',
             'backupPath' => 'Backup Path',
             'backupVolumeUid' => 'Backup Volume',
+            'enableScheduledUsageRecheck' => 'Enable Scheduled Usage Recheck',
+            'usageRecheckSchedule' => 'Usage Recheck Schedule',
             'logLevel' => 'Log Level',
             'localeMapping' => 'Locale Mapping',
         ];
@@ -1007,6 +1025,7 @@ class Settings extends Model
             'captureMissingTranslations',
             'captureMissingOnlyDevMode',
             'enableAiTranslations',
+            'enableScheduledUsageRecheck',
         ];
     }
 
