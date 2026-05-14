@@ -244,6 +244,7 @@ class TranslationsService extends Component
 
         // Apply sorting
         $sortMap = [
+            'category' => 'category',
             'translationKey' => 'translationKey',
             'translation' => 'translation',
             'type' => 'context',
