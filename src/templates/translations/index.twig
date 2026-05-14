@@ -591,7 +591,7 @@
 
         async function saveTranslation(id, translationText) {
             if (tracker.savingInProgress.has(id)) {
-                return;
+                return false;
             }
 
             tracker.savingInProgress.add(id);
@@ -599,7 +599,7 @@
             const textarea = row?.querySelector('.translation-text');
             if (!row || !textarea) {
                 tracker.savingInProgress.delete(id);
-                return;
+                return false;
             }
 
             textarea.style.opacity = '0.6';
@@ -623,6 +623,7 @@
                 setTimeout(() => {
                     row.style.backgroundColor = '';
                 }, 700);
+                return true;
             } catch (error) {
                 console.error('Save error:', error);
                 row.style.backgroundColor = '#fee';
@@ -630,6 +631,7 @@
                     row.style.backgroundColor = '';
                 }, 1600);
                 Craft.cp.displayError(T.saveTranslationFailed);
+                return false;
             } finally {
                 tracker.savingInProgress.delete(id);
                 textarea.style.opacity = '';
@@ -681,15 +683,14 @@
             for (let i = 0; i < unsavedChanges.length; i += batchSize) {
                 const batch = unsavedChanges.slice(i, i + batchSize);
                 const promises = batch.map(({ id, translation }) =>
-                    saveTranslation(id, translation)
-                        .then(() => {
+                    saveTranslation(id, translation).then(success => {
+                        if (success) {
                             saved++;
-                            return true;
-                        })
-                        .catch(() => {
+                        } else {
                             failed++;
-                            return false;
-                        })
+                        }
+                        return success;
+                    })
                 );
                 await Promise.all(promises);
             }
