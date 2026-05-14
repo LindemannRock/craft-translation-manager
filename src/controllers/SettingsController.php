@@ -511,7 +511,9 @@ class SettingsController extends Controller
             $skipPatternsCount = count($skipPatterns);
             
             // Debug: Check site translations
-            $siteTranslations = $translationsService->getTranslations(['type' => 'site']);
+            // allSites: true so the count covers every language, matching what
+            // applySkipPatternsToExisting() will actually scan + delete.
+            $siteTranslations = $translationsService->getTranslations(['type' => 'site', 'allSites' => true]);
             $siteTranslationsCount = count($siteTranslations);
             
             if ($skipPatternsCount === 0) {
