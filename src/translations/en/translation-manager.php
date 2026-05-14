@@ -146,6 +146,7 @@ return [
 
     // Jobs
     '{pluginName}: Scheduled auto backup' => '{pluginName}: Scheduled auto backup',
+    '{pluginName}: Rechecking translation usage' => '{pluginName}: Rechecking translation usage',
 
     // Controller messages
     'Invalid AI provider selected.' => 'Invalid AI provider selected.',
@@ -370,6 +371,12 @@ return [
     'Example:\n(Ar)\n(ar)\nAr1\n-ar' => 'Example:\n(Ar)\n(ar)\nAr1\n-ar',
     'Note:' => 'Note:',
     'Text containing non-source-language characters (based on Source Language setting) will also be automatically skipped.' => 'Text containing non-source-language characters (based on Source Language setting) will also be automatically skipped.',
+    'Usage Recheck' => 'Usage Recheck',
+    'Recheck which form translations are still in use across enabled providers. The job runs in the background on the chosen schedule and immediately after a form is saved.' => 'Recheck which form translations are still in use across enabled providers. The job runs in the background on the chosen schedule and immediately after a form is saved.',
+    'Enable Scheduled Usage Recheck' => 'Enable Scheduled Usage Recheck',
+    'When off, only on-form-save rechecks run. Disable this to fully manage rechecks via console commands.' => 'When off, only on-form-save rechecks run. Disable this to fully manage rechecks via console commands.',
+    'Usage Recheck Schedule' => 'Usage Recheck Schedule',
+    'How often the recurring recheck runs. The job also fires immediately after any form save.' => 'How often the recurring recheck runs. The job also fires immediately after any form save.',
 
     // Settings: AI Translation
     'AI Translation' => 'AI Translation',

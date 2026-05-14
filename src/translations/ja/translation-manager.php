@@ -149,6 +149,7 @@ return [
 
     // Jobs
     '{pluginName}: Scheduled auto backup' => '{pluginName}: スケジュール済み自動バックアップ',
+    '{pluginName}: Rechecking translation usage' => '{pluginName}: 翻訳の使用状況を再確認しています',
 
     // Controller messages
     'Invalid AI provider selected.' => '無効な AI プロバイダーが選択されました。',
@@ -373,6 +374,12 @@ return [
     'Example:\n(Ar)\n(ar)\nAr1\n-ar' => '例:\n(Ar)\n(ar)\nAr1\n-ar',
     'Note:' => '注意:',
     'Text containing non-source-language characters (based on Source Language setting) will also be automatically skipped.' => 'ソース言語設定に基づき、ソース言語以外の文字を含むテキストも自動的にスキップされます。',
+    'Usage Recheck' => '使用状況の再確認',
+    'Recheck which form translations are still in use across enabled providers. The job runs in the background on the chosen schedule and immediately after a form is saved.' => '有効なプロバイダー全体で、どのフォーム翻訳がまだ使用されているかを再確認します。ジョブは選択したスケジュールに従ってバックグラウンドで実行され、フォームの保存直後にも実行されます。',
+    'Enable Scheduled Usage Recheck' => 'スケジュール済み使用状況再確認を有効にする',
+    'When off, only on-form-save rechecks run. Disable this to fully manage rechecks via console commands.' => 'オフの場合、フォーム保存時の再確認のみ実行されます。コンソールコマンドで再確認を完全に管理する場合は無効にしてください。',
+    'Usage Recheck Schedule' => '使用状況再確認のスケジュール',
+    'How often the recurring recheck runs. The job also fires immediately after any form save.' => '定期的な再確認の実行頻度です。ジョブはフォームの保存直後にも起動されます。',
 
     // Settings: AI Translation
     'AI Translation' => 'AI 翻訳',

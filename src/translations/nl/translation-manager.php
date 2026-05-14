@@ -149,6 +149,7 @@ return [
 
     // Jobs
     '{pluginName}: Scheduled auto backup' => '{pluginName}: Geplande automatische back-up',
+    '{pluginName}: Rechecking translation usage' => '{pluginName}: Vertaalgebruik wordt opnieuw gecontroleerd',
 
     // Controller messages
     'Invalid AI provider selected.' => 'Ongeldige AI-provider geselecteerd.',
@@ -373,6 +374,12 @@ return [
     'Example:\n(Ar)\n(ar)\nAr1\n-ar' => 'Voorbeeld:\n(Ar)\n(ar)\nAr1\n-ar',
     'Note:' => 'Opmerking:',
     'Text containing non-source-language characters (based on Source Language setting) will also be automatically skipped.' => 'Tekst met tekens die niet tot de brontaal behoren (gebaseerd op de instelling voor brontaal) wordt ook automatisch overgeslagen.',
+    'Usage Recheck' => 'Gebruikshercontrole',
+    'Recheck which form translations are still in use across enabled providers. The job runs in the background on the chosen schedule and immediately after a form is saved.' => 'Controleert opnieuw welke formuliervertalingen nog in gebruik zijn bij de ingeschakelde providers. De taak wordt uitgevoerd op de achtergrond volgens het gekozen schema en direct nadat een formulier is opgeslagen.',
+    'Enable Scheduled Usage Recheck' => 'Geplande gebruikshercontrole inschakelen',
+    'When off, only on-form-save rechecks run. Disable this to fully manage rechecks via console commands.' => 'Als uitgeschakeld, worden alleen hercontroles bij het opslaan van formulieren uitgevoerd. Schakel dit uit om hercontroles volledig via consoleopdrachten te beheren.',
+    'Usage Recheck Schedule' => 'Schema voor gebruikshercontrole',
+    'How often the recurring recheck runs. The job also fires immediately after any form save.' => 'Hoe vaak de terugkerende hercontrole wordt uitgevoerd. De taak wordt ook direct geactiveerd na het opslaan van een formulier.',
 
     // Settings: AI Translation
     'AI Translation' => 'AI-vertaling',

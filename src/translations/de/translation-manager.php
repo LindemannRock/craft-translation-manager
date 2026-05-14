@@ -149,6 +149,7 @@ return [
 
     // Jobs
     '{pluginName}: Scheduled auto backup' => '{pluginName}: Geplantes automatisches Backup',
+    '{pluginName}: Rechecking translation usage' => '{pluginName}: Nutzung von Übersetzungen wird erneut geprüft',
 
     // Controller messages
     'Invalid AI provider selected.' => 'Ungültiger KI-Anbieter ausgewählt.',
@@ -373,6 +374,12 @@ return [
     'Example:\n(Ar)\n(ar)\nAr1\n-ar' => 'Beispiel:\n(Ar)\n(ar)\nAr1\n-ar',
     'Note:' => 'Hinweis:',
     'Text containing non-source-language characters (based on Source Language setting) will also be automatically skipped.' => 'Text, der Zeichen enthält, die nicht zur Quellsprache gehören (basierend auf der Einstellung für die Quellsprache), wird ebenfalls automatisch übersprungen.',
+    'Usage Recheck' => 'Nutzungsprüfung',
+    'Recheck which form translations are still in use across enabled providers. The job runs in the background on the chosen schedule and immediately after a form is saved.' => 'Prüft erneut, welche Formularübersetzungen bei den aktivierten Anbietern noch in Verwendung sind. Der Job läuft im Hintergrund gemäß dem gewählten Zeitplan und unmittelbar nach dem Speichern eines Formulars.',
+    'Enable Scheduled Usage Recheck' => 'Geplante Nutzungsprüfung aktivieren',
+    'When off, only on-form-save rechecks run. Disable this to fully manage rechecks via console commands.' => 'Wenn deaktiviert, werden nur Prüfungen beim Speichern von Formularen ausgeführt. Deaktivieren Sie diese Option, um Prüfungen vollständig über Konsolenbefehle zu verwalten.',
+    'Usage Recheck Schedule' => 'Zeitplan für Nutzungsprüfung',
+    'How often the recurring recheck runs. The job also fires immediately after any form save.' => 'Wie oft die regelmäßige Prüfung ausgeführt wird. Der Job wird auch unmittelbar nach dem Speichern eines Formulars ausgelöst.',
 
     // Settings: AI Translation
     'AI Translation' => 'KI-Übersetzung',

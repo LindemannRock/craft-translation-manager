@@ -148,6 +148,7 @@ return [
 
     // Jobs
     '{pluginName}: Scheduled auto backup' => '{pluginName}: Backup automático agendado',
+    '{pluginName}: Rechecking translation usage' => '{pluginName}: A verificar novamente a utilização de traduções',
 
     // Controller messages
     'Invalid AI provider selected.' => 'Fornecedor de IA selecionado inválido.',
@@ -372,6 +373,12 @@ return [
     'Example:\n(Ar)\n(ar)\nAr1\n-ar' => 'Exemplo:\n(Ar)\n(ar)\nAr1\n-ar',
     'Note:' => 'Nota:',
     'Text containing non-source-language characters (based on Source Language setting) will also be automatically skipped.' => 'O texto que contém caracteres que não pertencem ao idioma de origem (baseado na definição de Idioma de Origem) também será automaticamente ignorado.',
+    'Usage Recheck' => 'Reverificação de utilização',
+    'Recheck which form translations are still in use across enabled providers. The job runs in the background on the chosen schedule and immediately after a form is saved.' => 'Verifica novamente quais as traduções de formulários ainda em uso nos fornecedores ativados. A tarefa é executada em segundo plano de acordo com o agendamento escolhido e imediatamente após guardar um formulário.',
+    'Enable Scheduled Usage Recheck' => 'Ativar reverificação de utilização agendada',
+    'When off, only on-form-save rechecks run. Disable this to fully manage rechecks via console commands.' => 'Se desativado, apenas as reverificações ao guardar formulários são executadas. Desative esta opção para gerir completamente as reverificações através de comandos de consola.',
+    'Usage Recheck Schedule' => 'Agendamento de reverificação de utilização',
+    'How often the recurring recheck runs. The job also fires immediately after any form save.' => 'Com que frequência a reverificação recorrente é executada. A tarefa também é acionada imediatamente após guardar qualquer formulário.',
 
     // Settings: AI Translation
     'AI Translation' => 'Tradução IA',

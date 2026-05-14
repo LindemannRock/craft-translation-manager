@@ -149,6 +149,7 @@ return [
 
     // Jobs
     '{pluginName}: Scheduled auto backup' => '{pluginName}: نسخ احتياطي تلقائي مجدول',
+    '{pluginName}: Rechecking translation usage' => '{pluginName}: جارٍ إعادة فحص استخدام الترجمات',
 
     // Controller messages
     'Invalid AI provider selected.' => 'تم اختيار مزوّد ذكاء اصطناعي غير صالح.',
@@ -373,6 +374,12 @@ return [
     'Example:\n(Ar)\n(ar)\nAr1\n-ar' => 'مثال:\n(Ar)\n(ar)\nAr1\n-ar',
     'Note:' => 'ملاحظة:',
     'Text containing non-source-language characters (based on Source Language setting) will also be automatically skipped.' => 'سيتم أيضاً تخطي النصوص التي تحتوي على أحرف لا تنتمي إلى اللغة المصدر (بناءً على إعداد اللغة المصدر) تلقائياً.',
+    'Usage Recheck' => 'إعادة فحص الاستخدام',
+    'Recheck which form translations are still in use across enabled providers. The job runs in the background on the chosen schedule and immediately after a form is saved.' => 'يُعيد فحص ترجمات النماذج التي لا تزال مستخدمة لدى المزوّدين المُفعَّلين. تعمل المهمة في الخلفية وفق الجدول الزمني المحدد وفور حفظ أي نموذج.',
+    'Enable Scheduled Usage Recheck' => 'تفعيل إعادة الفحص المجدولة للاستخدام',
+    'When off, only on-form-save rechecks run. Disable this to fully manage rechecks via console commands.' => 'عند التعطيل، تُنفَّذ عمليات إعادة الفحص عند حفظ النماذج فحسب. عطِّل هذا الخيار لإدارة عمليات إعادة الفحص بالكامل عبر أوامر وحدة التحكم.',
+    'Usage Recheck Schedule' => 'جدول إعادة فحص الاستخدام',
+    'How often the recurring recheck runs. The job also fires immediately after any form save.' => 'مدى تكرار تشغيل إعادة الفحص المتكررة. تُطلَق المهمة أيضاً فور حفظ أي نموذج.',
 
     // Settings: AI Translation
     'AI Translation' => 'الترجمة بالذكاء الاصطناعي',
