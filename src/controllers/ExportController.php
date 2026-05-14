@@ -15,6 +15,7 @@ use craft\elements\User;
 use craft\web\Controller;
 use lindemannrock\base\helpers\ExportHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
@@ -288,17 +289,22 @@ class ExportController extends Controller
             'Updated At',
         ];
 
-        $translationsService = TranslationManager::getInstance()->translations;
+        /** @var array<int,TranslationRecord> $translationsById */
+        $translationsById = TranslationRecord::find()
+            ->where(['id' => $ids])
+            ->indexBy('id')
+            ->all();
+
         $rows = [];
         $languages = [];
         $types = [];
         $userIds = [];
 
         foreach ($ids as $id) {
-            $translation = $translationsService->getTranslationById($id);
-            if (!$translation) {
+            if (!isset($translationsById[$id])) {
                 continue;
             }
+            $translation = $translationsById[$id];
 
             if (!empty($translation->createdByUserId)) {
                 $userIds[] = (int) $translation->createdByUserId;
@@ -311,10 +317,10 @@ class ExportController extends Controller
         $userEmailMap = $this->getUserEmailMap($userIds);
 
         foreach ($ids as $id) {
-            $translation = $translationsService->getTranslationById($id);
-            if (!$translation) {
+            if (!isset($translationsById[$id])) {
                 continue;
             }
+            $translation = $translationsById[$id];
 
             $context = $translation->context ?? '';
             $isFormie = str_starts_with($context, 'formie.') || $context === 'formie';
