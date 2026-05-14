@@ -364,96 +364,128 @@ class TranslationsService extends Component
     }
     
     /**
-     * Create or update translations for all unique languages
+     * Create or update translations for all unique languages.
+     *
+     * Batched to keep the hot capture path cheap: one SELECT to load
+     * existing rows for every language at once, one batch INSERT for
+     * any newly-needed rows, one bulk UPDATE for counter/lastUsed/
+     * context across all existing rows, and one CASE-based UPDATE for
+     * `unused` reactivation. ~3-4 queries per call instead of N×2.
+     *
+     * Behaviors preserved from the per-row implementation:
+     * - `translation`, `translationOrigin`, `createdByUserId`,
+     *   `reviewedByUserId`, `reviewedAt` are never overwritten on
+     *   existing rows (manual / import / AI translations stay intact).
+     * - Reactivation only fires for rows whose status is currently
+     *   `unused`. Rule: non-empty `translation` → `translated`,
+     *   else → `pending`.
      */
     private function createOrUpdateMultiSiteTranslation(string $text, string $hash, string $context, string $category): ?TranslationRecord
     {
         $languages = TranslationManager::getInstance()->getUniqueLanguages();
-        $primaryTranslation = null;
+        if (!$languages) {
+            return null;
+        }
 
-        foreach ($languages as $language) {
-            // Check if translation already exists for this language AND category
-            $translation = TranslationRecord::findOne([
+        $now = Db::prepareDateForDb(new \DateTime());
+
+        // 1. Single SELECT for every language in this category.
+        /** @var TranslationRecord[] $existing */
+        $existing = TranslationRecord::find()
+            ->where([
                 'sourceHash' => $hash,
-                'language' => $language,
                 'category' => $category,
-            ]);
+                'language' => $languages,
+            ])
+            ->indexBy('language')
+            ->all();
 
-            if (!$translation) {
-                // Get a siteId for this language (for backwards compatibility)
-                $siteId = $this->getSiteIdForLanguage($language);
+        $existingIds = array_map(
+            static fn(TranslationRecord $r): int => (int) $r->id,
+            array_values($existing),
+        );
 
-                // Create new translation for this language
-                $translation = new TranslationRecord([
-                    'source' => $text,
-                    'sourceHash' => $hash,
-                    'context' => $context,
-                    'category' => $category,
-                    'siteId' => $siteId,
-                    'language' => $language,
-                    'translationKey' => $text,
-                    'translation' => $this->getDefaultTranslationForLanguage($text, $language),
-                    'status' => $this->getDefaultStatusForLanguage($language),
-                    'translationOrigin' => 'system',
-                    'usageCount' => 1,
-                    'lastUsed' => new \DateTime(),
-                    'dateCreated' => new \DateTime(),
-                    'dateUpdated' => new \DateTime(),
-                    'uid' => StringHelper::UUID(),
-                ]);
-                $translation->save();
-                $this->logInfo("Created new translation for language", [
-                    'text' => $text,
-                    'language' => $language,
-                    'category' => $category,
-                ]);
-            } else {
-                // Update existing translation
-                $translation->usageCount++;
-                $translation->lastUsed = Db::prepareDateForDb(new \DateTime());
-
-                // Update context to the most recent usage (for unused tracking)
-                $translation->context = $context;
-
-                // Reactivate if marked as unused
-                if ($translation->status === 'unused') {
-                    if ($translation->translation) {
-                        $translation->status = 'translated';
-                    } else {
-                        $translation->status = 'pending';
-                    }
-                    $this->logInfo("Reactivated translation", [
-                        'text' => $text,
-                        'language' => $language,
-                        'category' => $category,
-                    ]);
-                }
-
-                $translation->save();
-            }
-
-            // Return the first translation created (for compatibility)
-            if ($primaryTranslation === null) {
-                $primaryTranslation = $translation;
+        // 2. Collect rows for any languages we don't have yet.
+        // Pre-build language => siteId map so we don't iterate all
+        // sites once per missing language. First-match-wins to mirror
+        // the old per-language helper's behavior in multi-site setups
+        // where two sites share the same language code.
+        $siteIdByLanguage = [];
+        foreach (Craft::$app->getSites()->getAllSites() as $site) {
+            if (!isset($siteIdByLanguage[$site->language])) {
+                $siteIdByLanguage[$site->language] = $site->id;
             }
         }
+        $fallbackSiteId = Craft::$app->getSites()->getPrimarySite()->id;
 
-        return $primaryTranslation;
-    }
-
-    /**
-     * Get a site ID for a given language (for backwards compatibility)
-     */
-    private function getSiteIdForLanguage(string $language): int
-    {
-        $sites = Craft::$app->getSites()->getAllSites();
-        foreach ($sites as $site) {
-            if ($site->language === $language) {
-                return $site->id;
+        $newRows = [];
+        foreach ($languages as $language) {
+            if (isset($existing[$language])) {
+                continue;
             }
+            $newRows[] = [
+                'source' => $text,
+                'sourceHash' => $hash,
+                'context' => $context,
+                'category' => $category,
+                'siteId' => $siteIdByLanguage[$language] ?? $fallbackSiteId,
+                'language' => $language,
+                'translationKey' => $text,
+                'translation' => $this->getDefaultTranslationForLanguage($text, $language),
+                'status' => $this->getDefaultStatusForLanguage($language),
+                'translationOrigin' => 'system',
+                'usageCount' => 1,
+                'lastUsed' => $now,
+                'dateCreated' => $now,
+                'dateUpdated' => $now,
+                'uid' => StringHelper::UUID(),
+            ];
         }
-        // Fallback to primary site
-        return Craft::$app->getSites()->getPrimarySite()->id;
+
+        $createdCount = 0;
+        if ($newRows) {
+            Craft::$app->getDb()->createCommand()
+                ->batchInsert(TranslationRecord::tableName(), array_keys($newRows[0]), $newRows)
+                ->execute();
+            $createdCount = count($newRows);
+        }
+
+        // 3. Bulk increment + refresh on any pre-existing rows.
+        $updatedCount = 0;
+        $reactivatedCount = 0;
+        if ($existingIds) {
+            $updatedCount = TranslationRecord::updateAll([
+                'usageCount' => new \yii\db\Expression('[[usageCount]] + 1'),
+                'lastUsed' => $now,
+                'context' => $context,
+                'dateUpdated' => $now,
+            ], ['id' => $existingIds]);
+
+            // 4. Reactivation in one query — CASE picks the right destination
+            // status based on whether the row already has a translation.
+            $reactivatedCount = TranslationRecord::updateAll([
+                'status' => new \yii\db\Expression(
+                    "CASE WHEN [[translation]] IS NULL OR [[translation]] = '' THEN 'pending' ELSE 'translated' END"
+                ),
+            ], ['id' => $existingIds, 'status' => 'unused']);
+        }
+
+        $this->logInfo('Captured multi-site translation', [
+            'text' => $text,
+            'category' => $category,
+            'created' => $createdCount,
+            'updated' => $updatedCount,
+            'reactivated' => $reactivatedCount,
+        ]);
+
+        // Always refetch the primary row — any AR objects in $existing are
+        // stale after the bulk UPDATEs above (usageCount/lastUsed/context/
+        // dateUpdated/status no longer reflect DB state).
+        return TranslationRecord::findOne([
+            'sourceHash' => $hash,
+            'language' => $languages[0],
+            'category' => $category,
+        ]);
     }
 
     /**
