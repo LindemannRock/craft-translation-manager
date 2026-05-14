@@ -7,7 +7,6 @@ Solutions to common issues and debugging tips.
 - Check the **Type** filter is set to "All Types"
 - Check the **Status** filter is set to "All"
 - Try searching for partial text instead of the full phrase
-- Use the debug search tool: `/cms/translation-manager/maintenance/debug-search-page`
 - Common issues: leading/trailing spaces, text marked as "unused", text contains Twig syntax
 
 ## Scheduled Backups Not Running
