@@ -463,6 +463,8 @@ return [
     'Before Cleanup All' => 'Prima di pulire tutto',
     'Before Cleanup Formie' => 'Prima di pulire Formie',
     'Before Cleanup Site' => 'Prima di pulire il sito',
+    'Before Cleanup Languages' => 'Prima di pulire le lingue',
+    'Before Cleanup Categories' => 'Prima di pulire le categorie',
     'Before Clear' => 'Prima di cancellare',
 
     // Maintenance

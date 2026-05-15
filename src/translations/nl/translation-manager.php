@@ -463,6 +463,8 @@ return [
     'Before Cleanup All' => 'Voor alles opruimen',
     'Before Cleanup Formie' => 'Voor Formie opruimen',
     'Before Cleanup Site' => 'Voor site opruimen',
+    'Before Cleanup Languages' => 'Voor talen opruimen',
+    'Before Cleanup Categories' => 'Voor categorieën opruimen',
     'Before Clear' => 'Voor wissen',
 
     // Maintenance

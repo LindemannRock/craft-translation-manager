@@ -463,6 +463,8 @@ return [
     'Before Cleanup All' => 'Innan rensa allt',
     'Before Cleanup Formie' => 'Innan rensa Formie',
     'Before Cleanup Site' => 'Innan rensa webbplats',
+    'Before Cleanup Languages' => 'Innan rensa språk',
+    'Before Cleanup Categories' => 'Innan rensa kategorier',
     'Before Clear' => 'Innan rensning',
 
     // Maintenance

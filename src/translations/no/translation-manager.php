@@ -464,6 +464,8 @@ return [
     'Before Cleanup All' => 'Før opprydding av alt',
     'Before Cleanup Formie' => 'Før opprydding av Formie',
     'Before Cleanup Site' => 'Før opprydding av nettsted',
+    'Before Cleanup Languages' => 'Før opprydding av språk',
+    'Before Cleanup Categories' => 'Før opprydding av kategorier',
     'Before Clear' => 'Før tømming',
 
     // Maintenance

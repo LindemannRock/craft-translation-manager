@@ -459,6 +459,8 @@ return [
     'Before Cleanup All' => 'Before Cleanup All',
     'Before Cleanup Formie' => 'Before Cleanup Formie',
     'Before Cleanup Site' => 'Before Cleanup Site',
+    'Before Cleanup Languages' => 'Before Cleanup Languages',
+    'Before Cleanup Categories' => 'Before Cleanup Categories',
     'Before Clear' => 'Before Clear',
 
     // Maintenance

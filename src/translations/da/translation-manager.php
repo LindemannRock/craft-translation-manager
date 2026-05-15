@@ -464,6 +464,8 @@ return [
     'Before Cleanup All' => 'Inden oprydning af alt',
     'Before Cleanup Formie' => 'Inden oprydning af Formie',
     'Before Cleanup Site' => 'Inden oprydning af websted',
+    'Before Cleanup Languages' => 'Inden oprydning af sprog',
+    'Before Cleanup Categories' => 'Inden oprydning af kategorier',
     'Before Clear' => 'Inden rydning',
 
     // Maintenance

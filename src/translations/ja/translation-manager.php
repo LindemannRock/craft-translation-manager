@@ -463,6 +463,8 @@ return [
     'Before Cleanup All' => 'すべて整理前',
     'Before Cleanup Formie' => 'Formie 整理前',
     'Before Cleanup Site' => 'サイト整理前',
+    'Before Cleanup Languages' => '言語整理前',
+    'Before Cleanup Categories' => 'カテゴリー整理前',
     'Before Clear' => 'クリア前',
 
     // Maintenance
