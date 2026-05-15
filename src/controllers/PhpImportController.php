@@ -18,6 +18,7 @@ use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\helpers\PhpTranslationsHelper;
 use lindemannrock\translationmanager\helpers\SiteLanguageHelper;
 use lindemannrock\translationmanager\models\Settings;
+use lindemannrock\translationmanager\records\ImportHistoryRecord;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
@@ -121,6 +122,7 @@ class PhpImportController extends Controller
         $translations = $request->getRequiredBodyParam('translations');
         $importLanguage = $request->getRequiredBodyParam('language');
         $category = $request->getRequiredBodyParam('category');
+        $file = (string)$request->getBodyParam('file', '');
 
         $settings = TranslationManager::getInstance()->getSettings();
         $sourceLanguage = $settings->sourceLanguage;
@@ -143,9 +145,10 @@ class PhpImportController extends Controller
         }
 
         $createBackup = (bool)$request->getBodyParam('createBackup', true);
+        $backupPath = null;
         // Create backup before import if enabled
         if ($settings->backupEnabled && $settings->backupOnImport && $createBackup) {
-            TranslationManager::getInstance()->backup->createBackup('before_php_import');
+            $backupPath = TranslationManager::getInstance()->backup->createBackup('before_php_import');
         }
 
         // Get ALL unique site languages (like scan does)
@@ -265,6 +268,8 @@ class PhpImportController extends Controller
             'languages_created' => $allLanguages,
         ]);
 
+        $this->saveImportHistory($file, $imported, $updated, $errors, $backupPath);
+
         return $this->asJson([
             'success' => true,
             'imported' => $imported,
@@ -288,6 +293,30 @@ class PhpImportController extends Controller
         $sourceBase = explode('-', $sourceLanguage)[0];
 
         return $languageBase === $sourceBase;
+    }
+
+    /**
+     * Save PHP import history for the shared Import/Export history table.
+     *
+     * @param string[] $errors
+     */
+    private function saveImportHistory(string $file, int $imported, int $updated, array $errors, ?string $backupPath): void
+    {
+        $userId = Craft::$app->getUser()->getId();
+        if (!$userId) {
+            return;
+        }
+
+        $history = new ImportHistoryRecord();
+        $history->userId = $userId;
+        $history->filename = $file !== '' ? $file : 'PHP import';
+        $history->filesize = 0;
+        $history->imported = $imported;
+        $history->updated = $updated;
+        $history->skipped = 0;
+        $history->errors = !empty($errors) ? json_encode($errors) : null;
+        $history->backupPath = $backupPath ? basename($backupPath) : null;
+        $history->save();
     }
 
     /**
