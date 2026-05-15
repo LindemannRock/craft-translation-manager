@@ -5,7 +5,7 @@
  * Interface for AI translation providers
  *
  * @link      https://lindemannrock.com
- * @copyright Copyright (c) 2025 LindemannRock
+ * @copyright Copyright (c) 2026 LindemannRock
  */
 
 namespace lindemannrock\translationmanager\interfaces;

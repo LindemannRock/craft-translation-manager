@@ -5,7 +5,7 @@
  * AI translation service with provider adapters
  *
  * @link      https://lindemannrock.com
- * @copyright Copyright (c) 2025 LindemannRock
+ * @copyright Copyright (c) 2026 LindemannRock
  */
 
 namespace lindemannrock\translationmanager\services;

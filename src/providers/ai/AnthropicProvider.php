@@ -5,7 +5,7 @@
  * Anthropic provider adapter
  *
  * @link      https://lindemannrock.com
- * @copyright Copyright (c) 2025 LindemannRock
+ * @copyright Copyright (c) 2026 LindemannRock
  */
 
 namespace lindemannrock\translationmanager\providers\ai;

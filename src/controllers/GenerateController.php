@@ -5,7 +5,7 @@
  * Controller for generating translation files
  *
  * @link      https://lindemannrock.com
- * @copyright Copyright (c) 2025 LindemannRock
+ * @copyright Copyright (c) 2025-2026 LindemannRock
  */
 
 namespace lindemannrock\translationmanager\controllers;
