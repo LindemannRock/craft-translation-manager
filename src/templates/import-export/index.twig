@@ -444,11 +444,13 @@
             const language = selectedOption.dataset.language || '';
             const category = selectedOption.dataset.category || '';
 
-            // Update language dropdown with all site languages
+            // Update language dropdown with canonical site languages
             let languageHtml = '';
-            const allSiteLanguages = Object.values({{ craft.app.sites.allSites|map(s => s.language)|unique|json_encode|raw }});
+            const allSiteLanguages = {{ uniqueLanguages|json_encode|raw }};
+            const localeMapping = {{ settings.getActiveLocaleMapping()|json_encode|raw }};
+            const selectedLanguage = localeMapping[language] || language;
             allSiteLanguages.forEach(lang => {
-                const selected = lang === language ? 'selected' : '';
+                const selected = lang === selectedLanguage ? 'selected' : '';
                 languageHtml += `<option value="${lang}" ${selected}>${lang}</option>`;
             });
             languageSelect.innerHTML = languageHtml;

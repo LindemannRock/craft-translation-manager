@@ -638,19 +638,24 @@ class TranslationManager extends Plugin
     }
 
     /**
-     * Get unique language codes from all sites
+     * Get unique canonical language codes from all sites
      *
-     * @return array<string> Array of unique language codes (e.g., ['en-US', 'ar', 'fr'])
+     * Locale mappings are applied so regional source locales share the
+     * configured destination language instead of creating duplicate rows.
+     *
+     * @return array<string> Array of unique language codes (e.g., ['en', 'ar', 'fr'])
      * @since 5.15.0
      */
     public function getUniqueLanguages(): array
     {
         $languages = [];
         $sites = Craft::$app->getSites()->getAllSites();
+        $settings = $this->getSettings();
 
         foreach ($sites as $site) {
-            if (!in_array($site->language, $languages, true)) {
-                $languages[] = $site->language;
+            $language = $settings->mapLanguage($site->language);
+            if (!in_array($language, $languages, true)) {
+                $languages[] = $language;
             }
         }
 
