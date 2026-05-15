@@ -197,7 +197,7 @@
                             }) }}
                         </div>
                         {% if phpBackupEnabled and phpBackupOnImport %}
-                            <div id="php-create-backup-field">
+                            <div id="php-create-backup-field" style="margin-top: 24px;">
                                 {{ forms.lightswitchField({
                                     label: 'Create Backup Before Import'|t('translation-manager'),
                                     instructions: 'Automatically backup existing translations before importing (recommended)'|t('translation-manager'),
