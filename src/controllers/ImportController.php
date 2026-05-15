@@ -307,9 +307,7 @@ class ImportController extends Controller
                 $backupPath = TranslationManager::getInstance()->backup->createBackup('before_import');
             }
 
-            $tempCsvPath = $this->writeTranslationsCsv($translations);
-            $results = $this->processCsv($tempCsvPath, false);
-            @unlink($tempCsvPath);
+            $results = $this->importTranslations($translations, false);
 
             if ($settings->autoGenerate) {
                 TranslationManager::getInstance()->export->exportAll();
@@ -389,12 +387,12 @@ class ImportController extends Controller
             }
 
             $translation = [
-                'english' => '',
-                'arabic' => '',
+                'translationKey' => '',
+                'translation' => '',
                 'context' => '',
                 'category' => '',
                 'siteId' => '',
-                'siteLanguage' => '',
+                'language' => '',
                 'type' => '',
                 'status' => '',
                 'origin' => '',
@@ -410,13 +408,13 @@ class ImportController extends Controller
 
                 switch ($fieldName) {
                     case 'translationKey':
-                        $translation['english'] = $value;
+                        $translation['translationKey'] = $value;
                         break;
                     case 'translation':
-                        $translation['arabic'] = $value;
+                        $translation['translation'] = $value;
                         break;
                     case 'language':
-                        $translation['siteLanguage'] = $value;
+                        $translation['language'] = $value;
                         break;
                     case 'siteId':
                         $translation['siteId'] = $value;
@@ -446,61 +444,6 @@ class ImportController extends Controller
     }
 
     /**
-     * Write mapped translations to a temporary CSV file for import.
-     *
-     * @param array $translations
-     * @return string
-     */
-    private function writeTranslationsCsv(array $translations): string
-    {
-        $tempPath = Craft::$app->getPath()->getTempPath() . '/translation-import-' . uniqid() . '.csv';
-        $handle = fopen($tempPath, 'w');
-
-        if ($handle === false) {
-            throw new \RuntimeException('Failed to create temporary CSV file.');
-        }
-
-        $headers = [
-            'Translation Key',
-            'Translation',
-            'Language',
-            'Category',
-            'Context',
-            'Type',
-            'Status',
-            'Origin',
-            'Site ID',
-        ];
-
-        fputcsv($handle, $headers);
-
-        foreach ($translations as $translation) {
-            $key = $translation['english'] ?? '';
-            if ($key === '') {
-                continue;
-            }
-
-            $language = $translation['siteLanguage'] ?? $translation['language'] ?? '';
-
-            fputcsv($handle, [
-                $key,
-                $translation['arabic'] ?? '',
-                $language,
-                $translation['category'] ?? '',
-                $translation['context'] ?? '',
-                $translation['type'] ?? '',
-                $translation['status'] ?? '',
-                $translation['origin'] ?? '',
-                $translation['siteId'] ?? '',
-            ]);
-        }
-
-        fclose($handle);
-
-        return $tempPath;
-    }
-
-    /**
      * Analyze translations for preview and existing checks.
      *
      * @param array $translations
@@ -515,11 +458,11 @@ class ImportController extends Controller
         $errors = [];
 
         foreach ($translations as $translation) {
-            if (!isset($translation['english']) || $translation['english'] === '') {
+            if (!isset($translation['translationKey']) || $translation['translationKey'] === '') {
                 $errors[] = [
                     'rowNumber' => $translation['_rowNumber'] ?? null,
-                    'english' => '',
-                    'arabic' => $translation['arabic'] ?? '',
+                    'translationKey' => '',
+                    'translation' => $translation['translation'] ?? '',
                     'context' => $translation['context'] ?? 'site',
                     'error' => Craft::t('translation-manager', 'Missing Translation Key'),
                 ];
@@ -527,8 +470,8 @@ class ImportController extends Controller
             }
 
             $targetLanguage = null;
-            if (!empty($translation['siteLanguage'])) {
-                $targetLanguage = $translation['siteLanguage'];
+            if (!empty($translation['language'])) {
+                $targetLanguage = $translation['language'];
             } elseif (!empty($translation['siteId'])) {
                 $siteId = (int)$translation['siteId'];
                 $site = Craft::$app->getSites()->getSiteById($siteId);
@@ -537,16 +480,16 @@ class ImportController extends Controller
                 } else {
                     $errors[] = [
                         'rowNumber' => $translation['_rowNumber'] ?? null,
-                        'english' => $translation['english'],
-                        'arabic' => $translation['arabic'] ?? '',
+                        'translationKey' => $translation['translationKey'],
+                        'translation' => $translation['translation'] ?? '',
                         'context' => $translation['context'] ?? 'site',
                         'siteId' => $siteId,
-                        'siteLanguage' => 'unknown',
+                        'language' => 'unknown',
                         'error' => Craft::t('translation-manager', 'Invalid site ID: {siteId} does not exist', ['siteId' => $siteId]),
                     ];
                     $this->logWarning("Invalid site ID for translation", [
                         'siteId' => $siteId,
-                        'english' => $translation['english'],
+                        'translationKey' => $translation['translationKey'],
                     ]);
                     continue;
                 }
@@ -559,8 +502,8 @@ class ImportController extends Controller
             if (!$this->isAllowedImportLanguage($targetLanguage)) {
                 $errors[] = [
                     'rowNumber' => $translation['_rowNumber'] ?? null,
-                    'english' => $translation['english'] ?? '',
-                    'arabic' => $translation['arabic'] ?? '',
+                    'translationKey' => $translation['translationKey'] ?? '',
+                    'translation' => $translation['translation'] ?? '',
                     'context' => $translation['context'] ?? 'site',
                     'language' => $targetLanguage,
                     'error' => Craft::t('translation-manager', "Language '{language}' is not allowed for import.", ['language' => $targetLanguage]),
@@ -568,14 +511,14 @@ class ImportController extends Controller
                 continue;
             }
 
-            $originalEnglish = $translation['english'];
-            $originalTranslation = $translation['arabic'] ?? '';
+            $originalKey = $translation['translationKey'];
+            $originalTranslation = $translation['translation'] ?? '';
             $originalContext = $translation['context'] ?? 'site';
 
             $isMalicious = false;
             $detectedThreats = [];
             $fieldsToCheck = [
-                'English' => $originalEnglish,
+                'Translation Key' => $originalKey,
                 'Translation' => $originalTranslation,
                 'Context' => $originalContext,
             ];
@@ -590,20 +533,20 @@ class ImportController extends Controller
             if ($isMalicious) {
                 $maliciousRows[] = [
                     'rowNumber' => $translation['_rowNumber'] ?? null,
-                    'english' => $originalEnglish,
-                    'arabic' => $originalTranslation,
+                    'translationKey' => $originalKey,
+                    'translation' => $originalTranslation,
                     'context' => $originalContext,
                     'threats' => $detectedThreats,
                 ];
                 $this->logWarning("Malicious content detected in translation", [
-                    'english' => $originalEnglish,
+                    'translationKey' => $originalKey,
                     'threats' => array_keys($detectedThreats),
                 ]);
                 continue;
             }
 
-            $keyText = $translation['english'];
-            $translationText = $translation['arabic'] ?? '';
+            $keyText = $translation['translationKey'];
+            $translationText = $translation['translation'] ?? '';
             $context = isset($translation['context']) ? StringHelper::stripHtml($translation['context']) : 'site';
 
             $keyText = CsvImportHelper::stripFormulaEscapePrefix($keyText);
@@ -659,39 +602,48 @@ class ImportController extends Controller
                 if ($dbNormalized === $csvNormalized) {
                     $unchanged[] = [
                         'rowNumber' => $translation['_rowNumber'] ?? null,
-                        'english' => $keyText,
-                        'arabic' => $translationText,
+                        'translationKey' => $keyText,
+                        'translation' => $translationText,
                         'context' => $context,
                         'category' => $category,
                         'currentTranslation' => $existing->translation,
                         'currentStatus' => $existing->status,
                         'existingContext' => $existing->context,
                         'language' => $targetLanguage,
+                        'type' => $type,
                         'status' => $translation['status'] ?? '',
+                        'origin' => $translation['origin'] ?? '',
+                        'siteId' => $translation['siteId'] ?? '',
                     ];
                 } else {
                     $toUpdate[] = [
                         'rowNumber' => $translation['_rowNumber'] ?? null,
-                        'english' => $keyText,
-                        'arabic' => $translationText,
+                        'translationKey' => $keyText,
+                        'translation' => $translationText,
                         'currentTranslation' => $existing->translation ?? '',
                         'context' => $context,
                         'category' => $category,
                         'currentStatus' => $existing->status,
                         'existingContext' => $existing->context,
                         'language' => $targetLanguage,
+                        'type' => $type,
                         'status' => $translation['status'] ?? '',
+                        'origin' => $translation['origin'] ?? '',
+                        'siteId' => $translation['siteId'] ?? '',
                     ];
                 }
             } else {
                 $toImport[] = [
                     'rowNumber' => $translation['_rowNumber'] ?? null,
-                    'english' => $keyText,
-                    'arabic' => $translationText,
+                    'translationKey' => $keyText,
+                    'translation' => $translationText,
                     'context' => $context,
                     'category' => $category,
                     'language' => $targetLanguage,
+                    'type' => $type,
                     'status' => $translation['status'] ?? '',
+                    'origin' => $translation['origin'] ?? '',
+                    'siteId' => $translation['siteId'] ?? '',
                 ];
             }
         }
@@ -706,155 +658,72 @@ class ImportController extends Controller
     }
     
     /**
-     * Process CSV file
+     * Import normalized translation rows from the preview flow.
+     *
+     * @param array<int,array<string,mixed>> $translations
      */
-    private function processCsv(string $filePath, bool $includeDetails = false): array
+    private function importTranslations(array $translations, bool $includeDetails = false): array
     {
-        $handle = fopen($filePath, 'r');
-        if (!$handle) {
-            throw new \Exception('Could not open file');
-        }
-        
-        // Detect delimiter
-        $firstLine = fgets($handle);
-        rewind($handle);
-        $delimiter = $this->detectDelimiter($firstLine);
-        
-        // Read headers
-        $headers = fgetcsv($handle, 0, $delimiter);
-        if (!$headers) {
-            fclose($handle);
-            throw new \Exception('Could not read CSV headers');
-        }
-        
-        // Clean headers (remove BOM, trim whitespace)
-        $headers = array_map(function($header) {
-            return trim(str_replace("\xEF\xBB\xBF", '', $header));
-        }, $headers);
-        
-        // Find column indexes
-        $keyIndex = $this->findColumnIndex($headers, ['Translation Key', 'English Text', 'English', 'En', 'EN', 'en', 'Source', 'Original']);
-        $translationIndex = $this->findColumnIndex($headers, ['Translation', 'Arabic Translation', 'Arabic', 'Ar', 'AR', 'ar', 'Translated']);
-        $siteIdIndex = $this->findColumnIndex($headers, ['Site ID', 'SiteID', 'Site_ID']);
-        $siteLanguageIndex = $this->findColumnIndex($headers, ['Site Language', 'Site_Language', 'Language', 'Site']);
-        $contextIndex = $this->findColumnIndex($headers, ['Context']);
-        $categoryIndex = $this->findColumnIndex($headers, ['Category']);
-        $typeIndex = $this->findColumnIndex($headers, ['Type']);
-        $statusIndex = $this->findColumnIndex($headers, ['Status']);
-        $originIndex = $this->findColumnIndex($headers, ['Origin', 'Translation Origin', 'TranslationOrigin', 'translationOrigin']);
-        
-        
-        if ($keyIndex === false) {
-            fclose($handle);
-            throw new \Exception('Could not find Translation Key column');
-        }
-        
-        // Process rows
         $imported = 0;
         $updated = 0;
         $skipped = 0;
         $errors = [];
-        $rowNumber = 1;
-        
-        // Detailed results
         $details = $includeDetails ? [
             'imported' => [],
             'updated' => [],
         ] : null;
-        
-        while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
-            $rowNumber++;
-            
-            // Debug first few rows to see what fgetcsv returns
-            if ($rowNumber <= 3 && isset($row[$keyIndex])) {
-                $this->logDebug("CSV DEBUG: Row data", [
-                    'rowNumber' => $rowNumber,
-                    'raw' => $row[$keyIndex],
-                    'length' => strlen($row[$keyIndex]),
-                ]);
-            }
-            
-            // Skip empty rows
-            if (empty(array_filter($row))) {
-                continue;
-            }
-            
-            try {
-                // Extract data - preserve exact CSV values including all spacing
-                $keyText = isset($row[$keyIndex]) ? $row[$keyIndex] : '';
-                $translationText = ($translationIndex !== false && isset($row[$translationIndex])) ? $row[$translationIndex] : '';
-                $context = ($contextIndex !== false && isset($row[$contextIndex])) ? $row[$contextIndex] : 'site';
-                $category = ($categoryIndex !== false && isset($row[$categoryIndex])) ? $row[$categoryIndex] : '';
-                $type = ($typeIndex !== false && isset($row[$typeIndex])) ? strtolower(trim($row[$typeIndex])) : '';
-                $importedStatus = null;
-                if ($statusIndex !== false && isset($row[$statusIndex])) {
-                    $importedStatus = $this->normalizeImportedStatus($row[$statusIndex]);
-                }
-                $importedOrigin = null;
-                if ($originIndex !== false && isset($row[$originIndex])) {
-                    $importedOrigin = $this->normalizeImportedOrigin($row[$originIndex]);
-                }
+        $translationService = TranslationManager::getInstance()->translations;
+        $userId = Craft::$app->getUser()->getId();
 
-                // Strip CSV formula-escape prefix (apostrophe followed by formula character)
-                // This restores original values that were escaped during export
+        foreach ($translations as $translation) {
+            $rowNumber = (int)($translation['rowNumber'] ?? $translation['_rowNumber'] ?? 0);
+
+            try {
+                $keyText = (string)($translation['translationKey'] ?? '');
+                $translationText = (string)($translation['translation'] ?? '');
+                $context = (string)($translation['context'] ?? 'site');
+                $category = (string)($translation['category'] ?? '');
+                $type = strtolower(trim((string)($translation['type'] ?? '')));
+                $language = (string)($translation['language'] ?? '');
+
                 $keyText = CsvImportHelper::stripFormulaEscapePrefix($keyText);
                 $translationText = CsvImportHelper::stripFormulaEscapePrefix($translationText);
                 $context = CsvImportHelper::stripFormulaEscapePrefix($context);
                 $category = CsvImportHelper::stripFormulaEscapePrefix($category);
 
-                // Check for malicious content (same checks as preview)
                 $threats = [];
                 if ($this->containsMaliciousContent($keyText, $threats)
                     || $this->containsMaliciousContent($translationText, $threats)
                     || $this->containsMaliciousContent($context, $threats)) {
                     $errors[] = Craft::t('translation-manager', 'Row {row}: Malicious content blocked ({threats})', [
-                        'row' => $rowNumber,
+                        'row' => $rowNumber ?: '?',
                         'threats' => implode(', ', $threats),
                     ]);
                     $skipped++;
                     continue;
                 }
 
-                // Only skip truly empty keys
                 if ($keyText === '') {
                     $skipped++;
                     continue;
                 }
-                
-                // Extract language (preferred) or fall back to siteId
-                $language = null;
-                if ($siteLanguageIndex !== false && isset($row[$siteLanguageIndex])) {
-                    $language = trim($row[$siteLanguageIndex]);
-                } elseif ($siteIdIndex !== false && isset($row[$siteIdIndex])) {
-                    // Legacy: get language from siteId
-                    $siteId = (int) trim($row[$siteIdIndex]);
-                    $site = Craft::$app->getSites()->getSiteById($siteId);
-                    $language = $site ? $site->language : null;
-                }
 
-                // Default to primary site's language if no language info provided
-                if (!$language) {
+                if ($language === '' && !empty($translation['siteId'])) {
+                    $site = Craft::$app->getSites()->getSiteById((int)$translation['siteId']);
+                    $language = $site ? $site->language : '';
+                }
+                if ($language === '') {
                     $language = Craft::$app->getSites()->getPrimarySite()->language;
                 }
                 $language = TranslationManager::getInstance()->getSettings()->mapLanguage($language);
                 if (!$this->isAllowedImportLanguage($language)) {
-                    $errors[] = "Row $rowNumber: Language '{$language}' is not allowed for import";
+                    $errors[] = "Row {$rowNumber}: Language '{$language}' is not allowed for import";
                     $skipped++;
                     continue;
                 }
 
-                // Get a siteId for backwards compatibility (used when creating new records)
                 $siteId = $this->getSiteIdForLanguage($language);
-                
-                
-                // Validate required fields
-                if (empty($keyText)) {
-                    $skipped++;
-                    continue;
-                }
-                
-                // Minimal sanitization - preserve original formatting for re-import compatibility
-                // Only remove truly dangerous executable content, preserve HTML formatting
+
                 $dangerousPatterns = [
                     '/<script[^>]*>.*?<\/script>/si',
                     '/javascript:/i',
@@ -865,216 +734,150 @@ class ImportController extends Controller
                     '/data:text\/html/i',
                     '/vbscript:/i',
                 ];
-                
+
                 foreach ($dangerousPatterns as $pattern) {
-                    $keyText = preg_replace($pattern, '', $keyText);
-                    $translationText = preg_replace($pattern, '', $translationText);
-                    $context = preg_replace($pattern, '', $context);
+                    $keyText = preg_replace($pattern, '', $keyText) ?? '';
+                    $translationText = preg_replace($pattern, '', $translationText) ?? '';
+                    $context = preg_replace($pattern, '', $context) ?? '';
                 }
-                
-                // Only sanitize context and category fields (should be simple text)
+
                 $context = StringHelper::stripHtml($context);
                 $category = StringHelper::stripHtml($category);
 
-                // Default empty context to 'site'
-                if (empty($context)) {
+                if ($context === '') {
                     $context = 'site';
                 }
-
-                // Default empty category to 'messages'
-                if (empty($category)) {
+                if ($category === '') {
                     $category = 'messages';
                 }
-
-                // Protection: if type is 'forms' or context indicates formie, category must be 'formie'
                 if ($type === 'forms' || $context === 'formie' || str_starts_with($context, 'formie.')) {
                     $category = 'formie';
                 }
 
-                // Use context exactly as provided in CSV (don't normalize for re-import)
-                // This preserves the exact context from the export
-                
-                // Validate length
                 if (strlen($keyText) > 5000 || strlen($translationText) > 5000) {
-                    $errors[] = "Row $rowNumber: Text too long (max 5000 characters)";
-                    $this->logWarning("Import validation failed: Text too long", [
+                    $errors[] = "Row {$rowNumber}: Text too long (max 5000 characters)";
+                    $this->logWarning('Import validation failed: Text too long', [
                         'rowNumber' => $rowNumber,
                         'keyLength' => strlen($keyText),
                         'translationLength' => strlen($translationText),
                     ]);
+                    $skipped++;
                     continue;
                 }
-                
-                // Use the service method which handles deduplication
-                $translationService = TranslationManager::getInstance()->translations;
-                $sourceHash = md5($keyText);
-                
-                // Check if translation exists (match unique constraint: sourceHash + language + category)
-                $existingTranslation = TranslationRecord::findOne([
-                    'sourceHash' => $sourceHash,
+
+                $importedStatus = $this->normalizeImportedStatus(isset($translation['status']) ? (string)$translation['status'] : null);
+                $importedOrigin = $this->normalizeImportedOrigin(isset($translation['origin']) ? (string)$translation['origin'] : null);
+
+                $translationRecord = TranslationRecord::findOne([
+                    'sourceHash' => md5($keyText),
                     'language' => $language,
                     'category' => $category,
                 ]);
-                
-                if ($existingTranslation) {
-                    // Check if there's actually a change (handle NULL vs empty string)
-                    $dbNormalized = $existingTranslation->translation === null ? '' : $existingTranslation->translation;
-                    $csvNormalized = $translationText === null ? '' : $translationText;
-                    
-                    if ($dbNormalized === $csvNormalized) {
-                        // No change, skip
+
+                $isNew = false;
+                $previousTranslation = '';
+                if ($translationRecord) {
+                    $previousTranslation = $translationRecord->translation ?? '';
+                    if ($previousTranslation === $translationText) {
                         $skipped++;
                         continue;
                     }
-                    
-                    // Update existing
-                    $existingTranslation->translation = $translationText;
-                    
-                    // Respect explicitly imported status if provided and valid.
-                    if ($importedStatus !== null) {
-                        $existingTranslation->status = $importedStatus;
-                    } elseif (!in_array($existingTranslation->status, ['unused', 'draft'], true)) {
-                        // Auto-determine status based on content for non-review/system rows.
-                        $existingTranslation->status = $translationText ? 'translated' : 'pending';
-                    }
-                    $existingTranslation->translationOrigin = $importedOrigin ?? 'import';
-                    $existingTranslation->createdByUserId = Craft::$app->getUser()->getId();
-                    if ($existingTranslation->status === 'translated') {
-                        $existingTranslation->reviewedByUserId = Craft::$app->getUser()->getId();
-                        $existingTranslation->reviewedAt = Db::prepareDateForDb(new \DateTime());
-                    } else {
-                        $existingTranslation->reviewedByUserId = null;
-                        $existingTranslation->reviewedAt = null;
-                    }
-                    
-                    // Update context if the imported one is more specific
-                    if (str_starts_with($context, 'formie.') && $existingTranslation->context !== $context) {
-                        if (substr_count($context, '.') > substr_count($existingTranslation->context, '.')) {
-                            $existingTranslation->context = $context;
-                        }
-                    }
-                    
-                    if ($translationService->saveTranslation($existingTranslation)) {
-                        $updated++;
-                        
-                        // Add to details if requested
-                        if ($includeDetails && count($details['updated']) < 50) {
-                            $details['updated'][] = [
-                                'key' => $keyText,
-                                'translation' => $translationText,
-                                'context' => $context,
-                                'previousTranslation' => $existingTranslation->getOldAttribute('translation'),
-                            ];
-                        }
-                    } else {
-                        $validationErrors = $existingTranslation->getFirstErrors();
-                        $errorMsg = !empty($validationErrors) ? implode(', ', $validationErrors) : 'Failed to update translation';
-                        $errors[] = "Row $rowNumber: $errorMsg (Key: " . substr($keyText, 0, 50) . "...)";
-                    }
                 } else {
-                    // Find or create translation for this language + category
-                    try {
-                        // Look for existing translation (match unique constraint)
-                        $translation = TranslationRecord::findOne([
-                            'sourceHash' => md5($keyText),
-                            'language' => $language,
-                            'category' => $category,
-                        ]);
-                        
-                        $isNew = false;
-                        if (!$translation) {
-                            // Create new translation for this language + category
-                            $translation = new TranslationRecord();
-                            $translation->source = $keyText;
-                            $translation->sourceHash = md5($keyText);
-                            $translation->siteId = $siteId; // Backwards compatibility
-                            $translation->language = $language;
-                            $translation->context = $context;
-                            $translation->category = $category;
-                            $translation->translationKey = $keyText;
-                            $translation->usageCount = 1;
-                            $translation->lastUsed = Db::prepareDateForDb(new \DateTime());
-                            $translation->dateCreated = Db::prepareDateForDb(new \DateTime());
-                            $isNew = true;
-                        }
+                    $translationRecord = new TranslationRecord();
+                    $translationRecord->source = $keyText;
+                    $translationRecord->sourceHash = md5($keyText);
+                    $translationRecord->siteId = $siteId;
+                    $translationRecord->language = $language;
+                    $translationRecord->context = $context;
+                    $translationRecord->category = $category;
+                    $translationRecord->translationKey = $keyText;
+                    $translationRecord->usageCount = 1;
+                    $translationRecord->lastUsed = Db::prepareDateForDb(new \DateTime());
+                    $translationRecord->dateCreated = Db::prepareDateForDb(new \DateTime());
+                    $isNew = true;
+                }
 
-                        // Update translation and status (ensure source is set)
-                        if (!$translation->source) {
-                            $translation->source = $keyText; // Fix missing source field
-                        }
-                        $translation->translation = $translationText;
-                        $translation->status = $importedStatus ?? ($translationText ? 'translated' : 'pending');
-                        $translation->translationOrigin = $importedOrigin ?? 'import';
-                        $translation->createdByUserId = Craft::$app->getUser()->getId();
-                        if ($translation->status === 'translated') {
-                            $translation->reviewedByUserId = Craft::$app->getUser()->getId();
-                            $translation->reviewedAt = Db::prepareDateForDb(new \DateTime());
-                        } else {
-                            $translation->reviewedByUserId = null;
-                            $translation->reviewedAt = null;
-                        }
-                        // Update category if provided in CSV
-                        if ($categoryIndex !== false) {
-                            $translation->category = $category;
-                        }
-                        $translation->dateUpdated = Db::prepareDateForDb(new \DateTime());
-                        
-                        if ($translation->save()) {
-                            if ($isNew) {
-                                $imported++;
-                                $this->logInfo("Import: Created new translation", [
-                                    'key' => $keyText,
-                                    'siteId' => $siteId,
-                                ]);
-                            } else {
-                                $updated++;
-                                $this->logInfo("Import: Updated translation", [
-                                    'key' => $keyText,
-                                    'siteId' => $siteId,
-                                ]);
-                            }
-                            
-                            // Add to details if requested
-                            if ($includeDetails && count($details[$isNew ? 'imported' : 'updated']) < 50) {
-                                $details[$isNew ? 'imported' : 'updated'][] = [
-                                    'key' => $keyText,
-                                    'translation' => $translationText,
-                                    'context' => $context,
-                                    'siteId' => $siteId,
-                                ];
-                            }
-                        } else {
-                            $validationErrors = $translation->getFirstErrors();
-                            $errorMsg = !empty($validationErrors) ? implode(', ', $validationErrors) : 'Failed to save translation';
-                            $errors[] = "Row $rowNumber: $errorMsg (Key: " . substr($keyText, 0, 50) . "...)";
-                            $this->logWarning("Import: Failed to save translation", [
-                                'key' => $keyText,
-                                'siteId' => $siteId,
-                                'error' => $errorMsg,
-                            ]);
-                        }
-                    } catch (\Exception $e) {
-                        $errors[] = "Row $rowNumber: " . $e->getMessage();
+                if (!$translationRecord->source) {
+                    $translationRecord->source = $keyText;
+                }
+                $translationRecord->translation = $translationText;
+                if ($importedStatus !== null) {
+                    $translationRecord->status = $importedStatus;
+                } elseif ($isNew) {
+                    $translationRecord->status = $translationText ? 'translated' : 'pending';
+                } elseif (!in_array($translationRecord->status, ['unused', 'draft'], true)) {
+                    $translationRecord->status = $translationText ? 'translated' : 'pending';
+                }
+                $translationRecord->translationOrigin = $importedOrigin ?? 'import';
+                $translationRecord->createdByUserId = $userId;
+
+                if ($translationRecord->status === 'translated') {
+                    $translationRecord->reviewedByUserId = $userId;
+                    $translationRecord->reviewedAt = Db::prepareDateForDb(new \DateTime());
+                } else {
+                    $translationRecord->reviewedByUserId = null;
+                    $translationRecord->reviewedAt = null;
+                }
+
+                if (str_starts_with($context, 'formie.') && $translationRecord->context !== $context) {
+                    if (substr_count($context, '.') > substr_count($translationRecord->context, '.')) {
+                        $translationRecord->context = $context;
                     }
                 }
+
+                $translationRecord->dateUpdated = Db::prepareDateForDb(new \DateTime());
+
+                $saved = $isNew ? $translationRecord->save() : $translationService->saveTranslation($translationRecord);
+                if ($saved) {
+                    if ($isNew) {
+                        $imported++;
+                        $this->logInfo('Import: Created new translation', [
+                            'key' => $keyText,
+                            'siteId' => $siteId,
+                        ]);
+                    } else {
+                        $updated++;
+                        $this->logInfo('Import: Updated translation', [
+                            'key' => $keyText,
+                            'siteId' => $siteId,
+                        ]);
+                    }
+
+                    if ($includeDetails && $details !== null && count($details[$isNew ? 'imported' : 'updated']) < 50) {
+                        $details[$isNew ? 'imported' : 'updated'][] = [
+                            'key' => $keyText,
+                            'translation' => $translationText,
+                            'context' => $context,
+                            'siteId' => $siteId,
+                            'previousTranslation' => $previousTranslation,
+                        ];
+                    }
+                } else {
+                    $validationErrors = $translationRecord->getFirstErrors();
+                    $errorMsg = !empty($validationErrors) ? implode(', ', $validationErrors) : 'Failed to save translation';
+                    $errors[] = "Row {$rowNumber}: {$errorMsg} (Key: " . substr($keyText, 0, 50) . '...)';
+                    $this->logWarning('Import: Failed to save translation', [
+                        'key' => $keyText,
+                        'siteId' => $siteId,
+                        'error' => $errorMsg,
+                    ]);
+                }
             } catch (\Exception $e) {
-                $errors[] = "Row $rowNumber: " . $e->getMessage();
+                $errors[] = "Row {$rowNumber}: " . $e->getMessage();
             }
         }
-        
-        fclose($handle);
-        
+
         $result = [
             'imported' => $imported,
             'updated' => $updated,
             'skipped' => $skipped,
-            'errors' => array_slice($errors, 0, 10), // Limit errors to prevent huge responses
+            'errors' => array_slice($errors, 0, 10),
         ];
-        
+
         if ($includeDetails) {
             $result['details'] = $details;
         }
-        
+
         return $result;
     }
 
@@ -1120,43 +923,6 @@ class ImportController extends Controller
 
         $allowed = ['ai', 'manual', 'import', 'system'];
         return in_array($origin, $allowed, true) ? $origin : null;
-    }
-    
-    /**
-     * Detect CSV delimiter
-     */
-    private function detectDelimiter(string $line): string
-    {
-        $delimiters = [',', ';', "\t", '|'];
-        $counts = [];
-        
-        foreach ($delimiters as $delimiter) {
-            $counts[$delimiter] = substr_count($line, $delimiter);
-        }
-        
-        return array_search(max($counts), $counts) ?: ',';
-    }
-    
-    /**
-     * Find column index by possible names
-     */
-    private function findColumnIndex(array $headers, array $possibleNames): int|false
-    {
-        foreach ($possibleNames as $name) {
-            $index = array_search($name, $headers);
-            if ($index !== false) {
-                return $index;
-            }
-            
-            // Case-insensitive search
-            foreach ($headers as $i => $header) {
-                if (strcasecmp($header, $name) === 0) {
-                    return $i;
-                }
-            }
-        }
-        
-        return false;
     }
     
     /**
@@ -1217,7 +983,7 @@ class ImportController extends Controller
         $maliciousRows = Craft::$app->getRequest()->getBodyParam('maliciousRows', []);
         
         foreach ($maliciousRows as $row) {
-            $english = $row['english'] ?? '';
+            $translationKey = $row['translationKey'] ?? '';
             $threats = $row['threats'] ?? [];
             $threatList = [];
             
@@ -1226,7 +992,7 @@ class ImportController extends Controller
             }
             
             $this->logWarning("Malicious content blocked in import", [
-                'english' => $english,
+                'translationKey' => $translationKey,
                 'threats' => $threatList,
             ]);
         }

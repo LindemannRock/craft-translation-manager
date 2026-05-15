@@ -436,7 +436,7 @@
 
             // Update language dropdown with all site languages
             let languageHtml = '';
-            const allSiteLanguages = {{ craft.app.sites.allSites|map(s => s.language)|unique|json_encode|raw }};
+            const allSiteLanguages = Object.values({{ craft.app.sites.allSites|map(s => s.language)|unique|json_encode|raw }});
             allSiteLanguages.forEach(lang => {
                 const selected = lang === language ? 'selected' : '';
                 languageHtml += `<option value="${lang}" ${selected}>${lang}</option>`;
