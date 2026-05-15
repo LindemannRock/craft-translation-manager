@@ -16,6 +16,7 @@ use craft\helpers\StringHelper;
 use craft\web\Controller;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\helpers\PhpTranslationsHelper;
+use lindemannrock\translationmanager\helpers\SiteLanguageHelper;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
@@ -185,7 +186,7 @@ class PhpImportController extends Controller
                         $record->language = $language;
                         $record->category = $category;
                         $record->context = ($category === 'formie') ? 'formie.php-import' : 'site.php-import';
-                        $record->siteId = $this->getSiteIdForLanguage($language);
+                        $record->siteId = SiteLanguageHelper::getSiteIdForLanguage($language);
                         $record->usageCount = 1;
                         $record->dateCreated = Db::prepareDateForDb(new \DateTime());
                         $record->dateUpdated = Db::prepareDateForDb(new \DateTime());
@@ -260,20 +261,5 @@ class PhpImportController extends Controller
         $sourceBase = explode('-', $sourceLanguage)[0];
 
         return $languageBase === $sourceBase;
-    }
-
-    /**
-     * Get a site ID for a given language (for backwards compatibility)
-     */
-    private function getSiteIdForLanguage(string $language): int
-    {
-        $sites = Craft::$app->getSites()->getAllSites();
-        foreach ($sites as $site) {
-            if ($site->language === $language) {
-                return $site->id;
-            }
-        }
-        // Fallback to primary site
-        return Craft::$app->getSites()->getPrimarySite()->id;
     }
 }

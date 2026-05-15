@@ -18,6 +18,7 @@ use craft\helpers\Db;
 use craft\helpers\FileHelper;
 use craft\helpers\Json;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\helpers\SiteLanguageHelper;
 use lindemannrock\translationmanager\TranslationManager;
 
 /**
@@ -1026,7 +1027,7 @@ class BackupService extends Component
                     if (isset($data['siteId'])) {
                         $translation->siteId = $data['siteId'];
                     } else {
-                        $translation->siteId = $this->getSiteIdForLanguage($language);
+                        $translation->siteId = SiteLanguageHelper::getSiteIdForLanguage($language);
                     }
 
                     // Restore category with fallbacks for backward compatibility
@@ -1273,30 +1274,5 @@ class BackupService extends Component
             'before_clear' => Craft::t('translation-manager', 'Before Clear'),
             default => Craft::t('translation-manager', ucfirst(str_replace('_', ' ', $reason)))
         };
-    }
-
-    /**
-     * Get a site ID for a given language
-     *
-     * Used to derive siteId from language when restoring backups that have
-     * language but no siteId (maintains consistency between language and siteId).
-     */
-    private function getSiteIdForLanguage(string $language): int
-    {
-        $sites = Craft::$app->getSites()->getAllSites();
-
-        foreach ($sites as $site) {
-            // Exact match
-            if ($site->language === $language) {
-                return $site->id;
-            }
-            // Case insensitive match
-            if (strcasecmp($site->language, $language) === 0) {
-                return $site->id;
-            }
-        }
-
-        // Fallback to primary site
-        return Craft::$app->getSites()->getPrimarySite()->id;
     }
 }

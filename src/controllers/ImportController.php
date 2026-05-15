@@ -18,6 +18,7 @@ use craft\web\UploadedFile;
 use lindemannrock\base\helpers\CsvImportHelper;
 use lindemannrock\base\helpers\DateFormatHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\helpers\SiteLanguageHelper;
 use lindemannrock\translationmanager\records\ImportHistoryRecord;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\TranslationManager;
@@ -722,7 +723,7 @@ class ImportController extends Controller
                     continue;
                 }
 
-                $siteId = $this->getSiteIdForLanguage($language);
+                $siteId = SiteLanguageHelper::getSiteIdForLanguage($language);
 
                 $dangerousPatterns = [
                     '/<script[^>]*>.*?<\/script>/si',
@@ -1107,41 +1108,6 @@ class ImportController extends Controller
         }
     }
     
-    /**
-     * Find site by language code (helper for multi-site import)
-     */
-    private function findSiteByLanguage(string $language): ?\craft\models\Site
-    {
-        $sites = Craft::$app->getSites()->getAllSites();
-        
-        foreach ($sites as $site) {
-            // Exact match
-            if ($site->language === $language) {
-                return $site;
-            }
-            // Case insensitive match
-            if (strcasecmp($site->language, $language) === 0) {
-                return $site;
-            }
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Get a site ID for a given language (for backwards compatibility)
-     */
-    private function getSiteIdForLanguage(string $language): int
-    {
-        $site = $this->findSiteByLanguage($language);
-        if ($site) {
-            return $site->id;
-        }
-
-        // Fallback to primary site
-        return Craft::$app->getSites()->getPrimarySite()->id;
-    }
-
     /**
      * Check whether a language is allowed for import.
      */

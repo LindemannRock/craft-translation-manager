@@ -13,6 +13,7 @@ namespace lindemannrock\translationmanager\listeners;
 use Craft;
 use craft\helpers\Db;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\helpers\SiteLanguageHelper;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\i18n\MissingTranslationEvent;
@@ -132,7 +133,7 @@ class MissingTranslationListener
             $translation->category = $category;
             $translation->context = 'runtime';
             $translation->status = 'pending';
-            $translation->siteId = self::getSiteIdForLanguage($language);
+            $translation->siteId = SiteLanguageHelper::getSiteIdForLanguage($language);
             $translation->usageCount = 1;
             $translation->lastUsed = Db::prepareDateForDb(new \DateTime());
             $translation->dateCreated = Db::prepareDateForDb(new \DateTime());
@@ -223,22 +224,6 @@ class MissingTranslationListener
         }
 
         return false;
-    }
-
-    /**
-     * Get site ID for a language (for backwards compatibility)
-     */
-    private static function getSiteIdForLanguage(string $language): int
-    {
-        $sites = Craft::$app->getSites()->getAllSites();
-
-        foreach ($sites as $site) {
-            if ($site->language === $language || strcasecmp($site->language, $language) === 0) {
-                return $site->id;
-            }
-        }
-
-        return Craft::$app->getSites()->getPrimarySite()->id;
     }
 
     /**
