@@ -45,7 +45,7 @@
                     message: '',
                     type: settings.backupEnabled ? 'warning' : 'error',
                     variant: 'colored',
-                    margin: 'top',
+                    margin: 'both',
                     boxId: 'unusedDescription',
                     messageId: 'unusedDescriptionText',
                     hidden: true,
@@ -55,7 +55,7 @@
                     message: "No unused translations found for the selected type."|t('translation-manager'),
                     type: 'info',
                     variant: 'subtle',
-                    margin: 'top',
+                    margin: 'both',
                     boxId: 'unusedNoItemsDescription',
                     hidden: true,
                     allowHtml: false,
@@ -172,15 +172,18 @@
                     message: '',
                     type: settings.backupEnabled ? 'warning' : 'error',
                     variant: 'colored',
-                    margin: 'top',
+                    margin: 'both',
                     boxId: 'languageCleanupDescription',
                     messageId: 'languageCleanupDescriptionText',
                     hidden: true,
                     allowHtml: false,
                 } %}
                 <div style="margin-top: 8px;">
+                    <button type="button" class="btn submit" id="migrate-clean-languages-btn" disabled style="display: none;">
+                        {{ "Migrate & Delete"|t('translation-manager') }}
+                    </button>
                     <button type="button" class="btn secondary" id="clean-languages-btn" disabled>
-                        {{ "Clean Up Language"|t('translation-manager') }}
+                        {{ "Delete Only"|t('translation-manager') }}
                     </button>
                 </div>
             </div>

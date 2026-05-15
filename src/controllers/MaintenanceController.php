@@ -11,9 +11,13 @@
 namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
+use craft\helpers\Db;
+use craft\helpers\StringHelper;
 use craft\web\Controller;
 use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\helpers\SiteLanguageHelper;
+use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\Response;
@@ -324,6 +328,11 @@ class MaintenanceController extends Controller
         }
 
         $languages = array_values(array_unique(array_filter(array_map(static fn($value) => trim((string)$value), $languages))));
+        $mode = (string)$request->getBodyParam('mode', 'delete');
+        if (!in_array($mode, ['delete', 'migrate'], true)) {
+            $mode = 'delete';
+        }
+
         if (empty($languages)) {
             return $this->asJson([
                 'success' => false,
@@ -333,8 +342,11 @@ class MaintenanceController extends Controller
 
         $candidates = $this->getLanguageCleanupCandidates();
         $allowed = [];
+        $mappedTargets = [];
         foreach ($candidates['mappedSource'] as $row) {
-            $allowed[] = (string)($row['language'] ?? '');
+            $language = (string)($row['language'] ?? '');
+            $allowed[] = $language;
+            $mappedTargets[$language] = (string)($row['mappedTo'] ?? '');
         }
         foreach ($candidates['ghost'] as $row) {
             $allowed[] = (string)($row['language'] ?? '');
@@ -349,6 +361,16 @@ class MaintenanceController extends Controller
             ]);
         }
 
+        if ($mode === 'migrate') {
+            $unmapped = array_values(array_filter($languages, static fn(string $language): bool => !isset($mappedTargets[$language]) || $mappedTargets[$language] === ''));
+            if (!empty($unmapped)) {
+                return $this->asJson([
+                    'success' => false,
+                    'error' => Craft::t('translation-manager', 'Migration is only available for mapped-source languages: {languages}', ['languages' => implode(', ', $unmapped)]),
+                ]);
+            }
+        }
+
         try {
             $settings = TranslationManager::getInstance()->getSettings();
             if ($settings->backupEnabled) {
@@ -361,7 +383,26 @@ class MaintenanceController extends Controller
             }
 
             $rows = (new \craft\db\Query())
-                ->select(['id', 'language'])
+                ->select([
+                    'id',
+                    'source',
+                    'sourceHash',
+                    'context',
+                    'category',
+                    'siteId',
+                    'language',
+                    'translationKey',
+                    'translation',
+                    'status',
+                    'translationOrigin',
+                    'createdByUserId',
+                    'reviewedByUserId',
+                    'reviewedAt',
+                    'usageCount',
+                    'lastUsed',
+                    'dateCreated',
+                    'dateUpdated',
+                ])
                 ->from('{{%translationmanager_translations}}')
                 ->where(['language' => $languages])
                 ->all();
@@ -372,6 +413,11 @@ class MaintenanceController extends Controller
                     'deleted' => 0,
                     'message' => Craft::t('translation-manager', 'No matching translations found for selected languages.'),
                 ]);
+            }
+
+            $migrated = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'conflicts' => 0];
+            if ($mode === 'migrate') {
+                $migrated = $this->migrateMappedSourceLanguageRows($rows, $mappedTargets);
             }
 
             $ids = array_values(array_unique(array_map(static fn($row) => (int)$row['id'], $rows)));
@@ -388,7 +434,16 @@ class MaintenanceController extends Controller
                 'success' => true,
                 'deleted' => $deleted,
                 'deletedByLanguage' => $counts,
-                'message' => Craft::t('translation-manager', 'Deleted {count} translations across {langCount} language(s).', ['count' => $deleted, 'langCount' => count($counts)]),
+                'migrated' => $migrated,
+                'message' => $mode === 'migrate'
+                    ? Craft::t('translation-manager', 'Migrated {created} new and {updated} existing translation(s), skipped {skipped}, found {conflicts} conflict(s), then deleted {deleted} mapped-source row(s).', [
+                        'created' => $migrated['created'],
+                        'updated' => $migrated['updated'],
+                        'skipped' => $migrated['skipped'],
+                        'conflicts' => $migrated['conflicts'],
+                        'deleted' => $deleted,
+                    ])
+                    : Craft::t('translation-manager', 'Deleted {count} translations across {langCount} language(s).', ['count' => $deleted, 'langCount' => count($counts)]),
             ]);
         } catch (\Exception $e) {
             return $this->asJson([
@@ -589,6 +644,123 @@ class MaintenanceController extends Controller
         }
 
         return $result;
+    }
+
+    /**
+     * Copy mapped-source language rows into their canonical target before deletion.
+     *
+     * Existing canonical translation text is never overwritten. If the target row
+     * exists but its translation is empty, useful source text is copied over.
+     *
+     * @param array<int, array<string,mixed>> $sourceRows
+     * @param array<string,string> $mappedTargets
+     * @return array{created:int, updated:int, skipped:int, conflicts:int}
+     */
+    private function migrateMappedSourceLanguageRows(array $sourceRows, array $mappedTargets): array
+    {
+        $sourceRows = array_values(array_filter($sourceRows, static fn(array $row): bool => isset($mappedTargets[(string)($row['language'] ?? '')])));
+        if (empty($sourceRows)) {
+            return ['created' => 0, 'updated' => 0, 'skipped' => 0, 'conflicts' => 0];
+        }
+
+        $sourceHashes = array_values(array_unique(array_filter(array_map(static fn(array $row): string => (string)($row['sourceHash'] ?? ''), $sourceRows))));
+        $targetLanguages = array_values(array_unique(array_filter(array_map(static fn(array $row): string => $mappedTargets[(string)$row['language']] ?? '', $sourceRows))));
+
+        /** @var array<string, TranslationRecord> $existingTargets */
+        $existingTargets = TranslationRecord::find()
+            ->where(['sourceHash' => $sourceHashes])
+            ->andWhere(['language' => $targetLanguages])
+            ->indexBy(static fn(TranslationRecord $record): string => self::languageMigrationKey($record->sourceHash, (string)$record->language, $record->category))
+            ->all();
+
+        $now = Db::prepareDateForDb(new \DateTime());
+        $counts = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'conflicts' => 0];
+
+        foreach ($sourceRows as $sourceRow) {
+            $targetLanguage = $mappedTargets[(string)$sourceRow['language']] ?? '';
+            if ($targetLanguage === '') {
+                $counts['skipped']++;
+                continue;
+            }
+
+            $key = self::languageMigrationKey((string)$sourceRow['sourceHash'], $targetLanguage, (string)$sourceRow['category']);
+            $sourceTranslation = (string)($sourceRow['translation'] ?? '');
+            $target = $existingTargets[$key] ?? null;
+
+            if (!$target) {
+                $target = new TranslationRecord();
+                $target->source = (string)$sourceRow['source'];
+                $target->sourceHash = (string)$sourceRow['sourceHash'];
+                $target->context = (string)$sourceRow['context'];
+                $target->category = (string)$sourceRow['category'];
+                $target->translationKey = (string)$sourceRow['translationKey'];
+                $target->translation = $sourceRow['translation'] !== null ? (string)$sourceRow['translation'] : null;
+                $target->siteId = SiteLanguageHelper::getSiteIdForLanguage($targetLanguage);
+                $target->language = $targetLanguage;
+                $target->status = (string)$sourceRow['status'];
+                $target->translationOrigin = (string)$sourceRow['translationOrigin'];
+                $target->createdByUserId = $sourceRow['createdByUserId'] !== null ? (int)$sourceRow['createdByUserId'] : null;
+                $target->reviewedByUserId = $sourceRow['reviewedByUserId'] !== null ? (int)$sourceRow['reviewedByUserId'] : null;
+                $target->reviewedAt = $sourceRow['reviewedAt'] ?? null;
+                $target->usageCount = (int)$sourceRow['usageCount'];
+                $target->lastUsed = $sourceRow['lastUsed'] ?? null;
+                $target->dateCreated = $sourceRow['dateCreated'] ?? $now;
+                $target->dateUpdated = $now;
+                $target->uid = StringHelper::UUID();
+                if ($target->save()) {
+                    $existingTargets[$key] = $target;
+                    $counts['created']++;
+                } else {
+                    $counts['skipped']++;
+                    $this->logError('Failed to migrate mapped-source translation row', [
+                        'language' => $sourceRow['language'] ?? null,
+                        'targetLanguage' => $targetLanguage,
+                        'sourceHash' => $sourceRow['sourceHash'] ?? null,
+                        'category' => $sourceRow['category'] ?? null,
+                        'errors' => $target->getErrors(),
+                    ]);
+                }
+                continue;
+            }
+
+            $targetTranslation = (string)($target->translation ?? '');
+            if ($targetTranslation === '' && $sourceTranslation !== '') {
+                $target->translation = $sourceTranslation;
+                $target->status = (string)$sourceRow['status'];
+                $target->translationOrigin = (string)$sourceRow['translationOrigin'];
+                $target->createdByUserId = $sourceRow['createdByUserId'] !== null ? (int)$sourceRow['createdByUserId'] : null;
+                $target->reviewedByUserId = $sourceRow['reviewedByUserId'] !== null ? (int)$sourceRow['reviewedByUserId'] : null;
+                $target->reviewedAt = $sourceRow['reviewedAt'] ?? null;
+                $target->dateUpdated = $now;
+                if ($target->save()) {
+                    $counts['updated']++;
+                } else {
+                    $counts['skipped']++;
+                    $this->logError('Failed to update canonical translation during mapped-source migration', [
+                        'language' => $sourceRow['language'] ?? null,
+                        'targetLanguage' => $targetLanguage,
+                        'sourceHash' => $sourceRow['sourceHash'] ?? null,
+                        'category' => $sourceRow['category'] ?? null,
+                        'errors' => $target->getErrors(),
+                    ]);
+                }
+                continue;
+            }
+
+            if ($targetTranslation !== '' && $sourceTranslation !== '' && $targetTranslation !== $sourceTranslation) {
+                $counts['conflicts']++;
+                continue;
+            }
+
+            $counts['skipped']++;
+        }
+
+        return $counts;
+    }
+
+    private static function languageMigrationKey(string $sourceHash, string $language, string $category): string
+    {
+        return $sourceHash . "\n" . $language . "\n" . $category;
     }
 
     /**

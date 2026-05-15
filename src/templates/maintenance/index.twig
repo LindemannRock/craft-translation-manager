@@ -106,6 +106,7 @@
 
 {% css %}
     #clean-unused-enhanced-btn:disabled,
+    #migrate-clean-languages-btn:disabled,
     #clean-languages-btn:disabled,
     #clean-categories-btn:disabled {
         opacity: 0.45;
@@ -121,6 +122,7 @@
     const unusedNoItemsDescription = document.getElementById('unusedNoItemsDescription');
     const cleanUnusedEnhancedBtn = document.getElementById('clean-unused-enhanced-btn');
     const cleanLanguagesBtn = document.getElementById('clean-languages-btn');
+    const migrateCleanLanguagesBtn = document.getElementById('migrate-clean-languages-btn');
     const cleanCategoriesBtn = document.getElementById('clean-categories-btn');
     const cleanLanguageSelect = document.getElementById('cleanLanguage');
     const cleanCategorySelect = document.getElementById('cleanCategory');
@@ -237,9 +239,19 @@
 
     if (cleanLanguagesBtn && cleanLanguageSelect) {
         const languageCleanupBackupDescriptionSuffix = '{{ settings.backupEnabled ? " A backup will be created automatically before deleting."|t('translation-manager')|e('js') : '' }}';
+        const mappedSourceLanguages = new Set([
+            {% for row in languageCleanup.mappedSource %}
+            '{{ row.language|e('js') }}',
+            {% endfor %}
+        ]);
+        const mappedLanguageTargets = {
+            {% for row in languageCleanup.mappedSource %}
+            '{{ row.language|e('js') }}': '{{ row.mappedTo|e('js') }}',
+            {% endfor %}
+        };
         const languageDescriptions = {
             {% for row in languageCleanup.mappedSource %}
-            '{{ row.language }}': '{{ "This will permanently delete all rows for"|t('translation-manager')|e('js') }} {{ row.language }} {{ "(mapped to"|t('translation-manager')|e('js') }} {{ row.mappedTo }}).',
+            '{{ row.language }}': '{{ "Migrate & Delete copies useful translations into the mapped target without overwriting existing translations, then deletes the mapped-source rows. Delete Only permanently removes the mapped-source rows without copying."|t('translation-manager')|e('js') }}',
             {% endfor %}
             {% for row in languageCleanup.ghost %}
             '{{ row.language }}': '{{ "This will permanently delete all rows for ghost language"|t('translation-manager')|e('js') }} {{ row.language }}.',
@@ -254,8 +266,14 @@
         function updateCleanLanguagesState() {
             const selected = cleanLanguageSelect.value;
             const hasSelection = !!selected;
+            const isMappedSource = mappedSourceLanguages.has(selected);
             cleanLanguagesBtn.disabled = !hasSelection;
             cleanLanguagesBtn.classList.toggle('disabled', !hasSelection);
+            if (migrateCleanLanguagesBtn) {
+                migrateCleanLanguagesBtn.disabled = !hasSelection || !isMappedSource;
+                migrateCleanLanguagesBtn.classList.toggle('disabled', !hasSelection || !isMappedSource);
+                migrateCleanLanguagesBtn.style.display = isMappedSource ? 'inline-block' : 'none';
+            }
 
             if (hasSelection) {
                 const description = languageDescriptions[selected] || (
@@ -273,17 +291,22 @@
         cleanLanguageSelect.addEventListener('change', updateCleanLanguagesState);
         updateCleanLanguagesState();
 
-        cleanLanguagesBtn.addEventListener('click', function() {
+        function runLanguageCleanup(mode, btn) {
             const selected = cleanLanguageSelect.value;
             if (!selected) {
                 return;
             }
 
-            if (!confirm(`{{ "Delete all translations for selected language?"|t('translation-manager')|e('js') }}\\n\\n${selected}`)) {
+            const target = mappedLanguageTargets[selected] || '';
+            const confirmMessage = mode === 'migrate' && target
+                ? `{{ "Migrate useful {source} translations into {target}, then delete {source} rows?"|t('translation-manager', {source: '__SOURCE__', target: '__TARGET__'})|e('js') }}`
+                    .replaceAll('__SOURCE__', selected)
+                    .replaceAll('__TARGET__', target)
+                : `{{ "Delete all translations for selected language without copying?"|t('translation-manager')|e('js') }}\n\n${selected}`;
+            if (!confirm(confirmMessage)) {
                 return;
             }
 
-            const btn = this;
             btn.classList.add('loading');
             btn.disabled = true;
 
@@ -295,7 +318,7 @@
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({languages: [selected]})
+                body: JSON.stringify({languages: [selected], mode})
             })
             .then(response => response.json())
             .then(data => {
@@ -313,6 +336,13 @@
                 updateCleanLanguagesState();
                 Craft.cp.displayError({{ 'Failed to clean languages: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
             });
+        }
+
+        cleanLanguagesBtn.addEventListener('click', function() {
+            runLanguageCleanup('delete', this);
+        });
+        migrateCleanLanguagesBtn?.addEventListener('click', function() {
+            runLanguageCleanup('migrate', this);
         });
     }
 
