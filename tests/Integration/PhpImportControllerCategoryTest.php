@@ -6,6 +6,7 @@ namespace lindemannrock\translationmanager\tests\Integration;
 
 use lindemannrock\translationmanager\controllers\PhpImportController;
 use lindemannrock\translationmanager\models\Settings;
+use lindemannrock\translationmanager\records\ImportHistoryRecord;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
 
@@ -62,6 +63,45 @@ final class PhpImportControllerCategoryTest extends TestCase
             $settings->translationCategories = $originalCategories;
             $settings->saveToDatabase(['translationCategories']);
             TranslationManager::getInstance()->setSettings([]);
+        }
+    }
+
+    public function testSaveImportHistoryRecordsPhpImport(): void
+    {
+        $controller = $this->createPhpImportController();
+        $file = 'ar/test-history.php';
+        $user = \Craft::$app->getUsers()->getUserByUsernameOrEmail('admin');
+        if ($user === null) {
+            self::markTestSkipped('Test requires an admin user.');
+        }
+        $originalIdentity = \Craft::$app->getUser()->getIdentity();
+        \Craft::$app->getUser()->setIdentity($user);
+
+        try {
+            $this->invokePrivate($controller, 'saveImportHistory', [
+                $file,
+                2,
+                1,
+                ['Example error'],
+                'before_php_import_2026-05-15',
+            ]);
+
+            /** @var ImportHistoryRecord|null $record */
+            $record = ImportHistoryRecord::find()
+                ->where(['filename' => $file])
+                ->orderBy(['id' => SORT_DESC])
+                ->one();
+
+            self::assertInstanceOf(ImportHistoryRecord::class, $record);
+            self::assertSame(0, (int)$record->filesize);
+            self::assertSame(2, (int)$record->imported);
+            self::assertSame(1, (int)$record->updated);
+            self::assertSame(0, (int)$record->skipped);
+            self::assertSame('before_php_import_2026-05-15', $record->backupPath);
+            self::assertNotEmpty($record->errors);
+        } finally {
+            \Craft::$app->getUser()->setIdentity($originalIdentity);
+            ImportHistoryRecord::deleteAll(['filename' => $file]);
         }
     }
 
