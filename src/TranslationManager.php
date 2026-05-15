@@ -23,6 +23,7 @@ use craft\services\Utilities;
 use craft\web\twig\variables\Cp;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
+use lindemannrock\base\helpers\ColorHelper;
 use lindemannrock\base\helpers\CpNavHelper;
 use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\logginglibrary\LoggingLibrary;
@@ -132,6 +133,22 @@ class TranslationManager extends Plugin
                     'ctaUrl' => 'translation-manager',
                     'redirectUri' => 'translation-manager',
                     'confettiPreset' => 'surprise',
+                ],
+                'colorSets' => [
+                    // Type filter — must NOT clash with status colors
+                    // (draft=blue, translated=teal, pending=orange, unused=gray)
+                    'translationTypes' => [
+                        'forms' => ColorHelper::getPaletteColor('indigo'),
+                        'site' => ColorHelper::getPaletteColor('cyan'),
+                    ],
+                    // Origin filter + badge — must NOT clash with status or type
+                    // (above) and must avoid green/red (reserved for active/no)
+                    'translationOrigins' => [
+                        'ai' => ColorHelper::getPaletteColor('purple'),
+                        'manual' => ColorHelper::getPaletteColor('pink'),
+                        'import' => ColorHelper::getPaletteColor('fuchsia'),
+                        'system' => ColorHelper::getPaletteColor('sky'),
+                    ],
                 ],
             ]
         );
