@@ -135,9 +135,11 @@
 
             {% if settings.skipPatterns|length > 0 %}
                 <div class="field">
-                    <p class="instructions">
-                        {{ "Note: Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below."|t('translation-manager') }}
-                    </p>
+                    {% include 'lindemannrock-base/_components/info-box' with {
+                        message: '<strong>' ~ "Note:"|t('translation-manager') ~ '</strong> ' ~ "Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below."|t('translation-manager'),
+                        type: 'info',
+                        margin: 'bottom',
+                    } only %}
                     <button type="button" class="btn" id="applySkipPatternsBtn">
                         {{ "Apply Skip Patterns to Existing Translations"|t('translation-manager') }}
                     </button>
