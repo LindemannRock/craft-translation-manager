@@ -226,6 +226,16 @@
                             boxId: 'php-backup-notice',
                             hidden: true
                         } %}
+                        {% include 'lindemannrock-base/_components/info-box' with {
+                            message: '',
+                            type: 'warning',
+                            variant: 'colored',
+                            margin: 'bottom',
+                            boxId: 'php-category-notice',
+                            messageId: 'php-category-notice-message',
+                            hidden: true,
+                            allowHtml: false
+                        } %}
                         <div id="php-preview-summary" style="margin-bottom: 12px; padding: 12px; background: #f3f4f6; border-radius: 4px;"></div>
                         <div id="php-preview-content" style="max-height: 400px; overflow-y: auto;"></div>
                         <div id="php-preview-buttons" style="margin-top: 12px;">
@@ -533,6 +543,8 @@
         const contentDiv = document.getElementById('php-preview-content');
         const buttonsDiv = document.getElementById('php-preview-buttons');
         const backupNotice = document.getElementById('php-backup-notice');
+        const categoryNotice = document.getElementById('php-category-notice');
+        const categoryNoticeMessage = document.getElementById('php-category-notice-message');
         const backupToggle = document.querySelector('input[name="phpCreateBackup"]');
         const backupEnabled = {{ (settings.backupEnabled and settings.backupOnImport) ? 'true' : 'false' }};
 
@@ -663,6 +675,12 @@
         if (backupNotice) {
             const shouldShow = backupEnabled && (backupToggle?.value === '1');
             backupNotice.style.display = shouldShow ? 'block' : 'none';
+        }
+
+        if (categoryNotice && categoryNoticeMessage) {
+            const message = data.categoryStatus?.message || '';
+            categoryNoticeMessage.textContent = message;
+            categoryNotice.style.display = message ? 'block' : 'none';
         }
     }
 
