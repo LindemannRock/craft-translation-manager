@@ -17,6 +17,7 @@ use craft\web\Controller;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\helpers\PhpTranslationsHelper;
 use lindemannrock\translationmanager\helpers\SiteLanguageHelper;
+use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
@@ -82,6 +83,14 @@ class PhpImportController extends Controller
         $language = $request->getRequiredBodyParam('language');
         $category = $request->getRequiredBodyParam('category');
 
+        $categoryStatus = $this->getImportCategoryStatus($category);
+        if (isset($categoryStatus['error'])) {
+            return $this->asJson([
+                'success' => false,
+                'error' => $categoryStatus['error'],
+            ]);
+        }
+
         $results = PhpTranslationsHelper::parseAndCompare($filePath, $language, $category);
 
         return $this->asJson([
@@ -89,6 +98,7 @@ class PhpImportController extends Controller
             'new' => $results['new'],
             'existing' => $results['existing'],
             'unchanged' => $results['unchanged'],
+            'categoryStatus' => $categoryStatus,
             'counts' => [
                 'new' => count($results['new']),
                 'existing' => count($results['existing']),
@@ -114,6 +124,23 @@ class PhpImportController extends Controller
 
         $settings = TranslationManager::getInstance()->getSettings();
         $sourceLanguage = $settings->sourceLanguage;
+        $categoryStatus = $this->getImportCategoryStatus($category);
+
+        if (isset($categoryStatus['error'])) {
+            return $this->asJson([
+                'success' => false,
+                'error' => $categoryStatus['error'],
+            ]);
+        }
+
+        if (($categoryStatus['requiresRegistration'] ?? false) && !$this->registerImportCategory($category)) {
+            return $this->asJson([
+                'success' => false,
+                'error' => Craft::t('translation-manager', 'Category "{category}" is not enabled and cannot be added automatically because Translation Categories are configured in config/translation-manager.php.', [
+                    'category' => $category,
+                ]),
+            ]);
+        }
 
         $createBackup = (bool)$request->getBodyParam('createBackup', true);
         // Create backup before import if enabled
@@ -261,5 +288,102 @@ class PhpImportController extends Controller
         $sourceBase = explode('-', $sourceLanguage)[0];
 
         return $languageBase === $sourceBase;
+    }
+
+    /**
+     * Get the configuration status for the selected import category.
+     *
+     * @return array<string, bool|string>
+     */
+    private function getImportCategoryStatus(string $category): array
+    {
+        $category = trim($category);
+
+        if (!preg_match('/^[a-zA-Z][a-zA-Z0-9_-]*$/', $category)) {
+            return [
+                'error' => Craft::t('translation-manager', 'Category "{category}" must start with a letter and contain only letters, numbers, hyphens, and underscores.', [
+                    'category' => $category,
+                ]),
+            ];
+        }
+
+        if (in_array(strtolower($category), Settings::RESERVED_CATEGORIES, true)) {
+            return [
+                'error' => Craft::t('translation-manager', 'Category "{category}" is reserved and cannot be imported.', [
+                    'category' => $category,
+                ]),
+            ];
+        }
+
+        $settings = TranslationManager::getInstance()->getSettings();
+        $enabledCategories = $settings->getEnabledCategories();
+        $isConfigured = in_array($category, $enabledCategories, true)
+            || ($category === 'formie' && $settings->enableFormieIntegration);
+
+        if ($isConfigured) {
+            return [
+                'requiresRegistration' => false,
+                'canAutoRegister' => false,
+            ];
+        }
+
+        $canAutoRegister = !$settings->isOverriddenByConfig('translationCategories');
+
+        return [
+            'requiresRegistration' => true,
+            'canAutoRegister' => $canAutoRegister,
+            'message' => Craft::t('translation-manager', $canAutoRegister
+                ? 'Category "{category}" is not enabled. It will be added to Translation Categories when imported.'
+                : 'Category "{category}" is not enabled and cannot be added automatically because Translation Categories are configured in config/translation-manager.php.', [
+                    'category' => $category,
+                ]),
+        ];
+    }
+
+    /**
+     * Add or enable a PHP import category before creating translations.
+     */
+    private function registerImportCategory(string $category): bool
+    {
+        $settings = Settings::loadFromDatabase();
+
+        if ($settings->isOverriddenByConfig('translationCategories')) {
+            return false;
+        }
+
+        $categories = $settings->translationCategories;
+        if (empty($categories)) {
+            $categories[] = [
+                'key' => $settings->translationCategory ?: 'messages',
+                'enabled' => true,
+            ];
+        }
+        $found = false;
+
+        foreach ($categories as &$categoryConfig) {
+            if (($categoryConfig['key'] ?? null) === $category) {
+                $categoryConfig['enabled'] = true;
+                $found = true;
+                break;
+            }
+        }
+        unset($categoryConfig);
+
+        if (!$found) {
+            $categories[] = [
+                'key' => $category,
+                'enabled' => true,
+            ];
+        }
+
+        $settings->translationCategories = $categories;
+
+        if (!$settings->saveToDatabase(['translationCategories'])) {
+            return false;
+        }
+
+        TranslationManager::getInstance()->setSettings([]);
+
+        return true;
     }
 }
