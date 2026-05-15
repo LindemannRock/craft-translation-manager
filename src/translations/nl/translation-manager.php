@@ -569,6 +569,7 @@ return [
     'Only available in devMode' => 'Alleen beschikbaar in devMode',
     'Import from PHP Files' => 'Importeren vanuit PHP-bestanden',
     'Import existing translations from PHP files in your translations folder' => 'Bestaande vertalingen importeren vanuit PHP-bestanden in uw vertalingenmap',
+    'Select PHP file' => 'Selecteer een PHP-bestand',
     'Select a file' => 'Selecteer een bestand',
     'Select file first' => 'Selecteer eerst een bestand',
     'Create Backup Before Import' => 'Back-up maken voor import',

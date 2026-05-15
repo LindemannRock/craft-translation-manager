@@ -569,6 +569,7 @@ return [
     'Only available in devMode' => 'devMode でのみ利用可能',
     'Import from PHP Files' => 'PHP ファイルからインポート',
     'Import existing translations from PHP files in your translations folder' => '翻訳フォルダーの PHP ファイルから既存の翻訳をインポート',
+    'Select PHP file' => 'PHP ファイルを選択',
     'Select a file' => 'ファイルを選択',
     'Select file first' => '先にファイルを選択してください',
     'Create Backup Before Import' => 'インポート前にバックアップを作成',

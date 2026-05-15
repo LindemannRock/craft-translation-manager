@@ -571,6 +571,7 @@ return [
     'Only available in devMode' => 'Kun tilgjengelig i devMode',
     'Import from PHP Files' => 'Importer fra PHP-filer',
     'Import existing translations from PHP files in your translations folder' => 'Importer eksisterende oversettelser fra PHP-filer i oversettelsesmappen din',
+    'Select PHP file' => 'Velg en PHP-fil',
     'Select a file' => 'Velg en fil',
     'Select file first' => 'Velg en fil først',
     'Create Backup Before Import' => 'Opprett sikkerhetskopi før import',
