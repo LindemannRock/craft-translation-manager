@@ -180,19 +180,19 @@
                             {{ forms.select({
                                 id: 'phpFile',
                                 name: 'phpFile',
-                                options: [{value: '', label: 'Select a file'|t('translation-manager')}],
+                                options: [{value: '', label: 'Select PHP file'|t('translation-manager')}],
                                 value: ''
                             }) }}
                             {{ forms.select({
                                 id: 'phpLanguage',
                                 name: 'phpLanguage',
-                                options: [{value: '', label: 'Select file first'|t('translation-manager')}],
+                                options: [{value: '', label: 'Language'|t('translation-manager')}],
                                 value: ''
                             }) }}
                             {{ forms.select({
                                 id: 'phpCategory',
                                 name: 'phpCategory',
-                                options: [{value: '', label: 'Select file first'|t('translation-manager')}],
+                                options: [{value: '', label: 'Category'|t('translation-manager')}],
                                 value: ''
                             }) }}
                         </div>
@@ -416,7 +416,7 @@
         const select = document.getElementById('phpFile');
         if (!select) return;
 
-        let html = '<option value="">{{ "Select a file"|t('translation-manager') }}</option>';
+        let html = '<option value="">{{ "Select PHP file"|t('translation-manager') }}</option>';
 
         for (const [language, files] of Object.entries(phpFiles)) {
             html += `<optgroup label="${language}">`;
@@ -481,8 +481,8 @@
 
             previewBtn.disabled = false;
         } else {
-            languageSelect.innerHTML = '<option value="">{{ "Select file first"|t('translation-manager') }}</option>';
-            categorySelect.innerHTML = '<option value="">{{ "Select file first"|t('translation-manager') }}</option>';
+            languageSelect.innerHTML = '<option value="">{{ "Language"|t('translation-manager') }}</option>';
+            categorySelect.innerHTML = '<option value="">{{ "Category"|t('translation-manager') }}</option>';
             previewBtn.disabled = true;
         }
 
@@ -652,8 +652,8 @@
             document.getElementById('php-select-different-btn')?.addEventListener('click', function() {
                 document.getElementById('php-preview-section').style.display = 'none';
                 document.getElementById('phpFile').value = '';
-                document.getElementById('phpLanguage').innerHTML = '<option value="">{{ "Select file first"|t('translation-manager') }}</option>';
-                document.getElementById('phpCategory').innerHTML = '<option value="">{{ "Select file first"|t('translation-manager') }}</option>';
+                document.getElementById('phpLanguage').innerHTML = '<option value="">{{ "Language"|t('translation-manager') }}</option>';
+                document.getElementById('phpCategory').innerHTML = '<option value="">{{ "Category"|t('translation-manager') }}</option>';
                 document.getElementById('php-preview-btn').disabled = true;
                 phpPreviewData = null;
                 window.phpImportData = [];
@@ -768,8 +768,8 @@
 
                 // Reset file selection
                 document.getElementById('phpFile').value = '';
-                document.getElementById('phpLanguage').innerHTML = '<option value="">{{ "Select file first"|t('translation-manager') }}</option>';
-                document.getElementById('phpCategory').innerHTML = '<option value="">{{ "Select file first"|t('translation-manager') }}</option>';
+                document.getElementById('phpLanguage').innerHTML = '<option value="">{{ "Language"|t('translation-manager') }}</option>';
+                document.getElementById('phpCategory').innerHTML = '<option value="">{{ "Category"|t('translation-manager') }}</option>';
                 document.getElementById('php-preview-btn').disabled = true;
 
                 Craft.cp.displayNotice(data.message);
