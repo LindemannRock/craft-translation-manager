@@ -196,15 +196,17 @@
                                 value: ''
                             }) }}
                         </div>
-                        {{ forms.lightswitchField({
-                            label: 'Create Backup Before Import'|t('translation-manager'),
-                            instructions: 'Automatically backup existing translations before importing (recommended)'|t('translation-manager'),
-                            id: 'phpCreateBackup',
-                            name: 'phpCreateBackup',
-                            on: phpBackupEnabled and phpBackupOnImport,
-                            disabled: not phpBackupEnabled,
-                            warning: not phpBackupEnabled ? 'Backups are disabled in settings.'|t('translation-manager') : null,
-                        }) }}
+                        {% if phpBackupEnabled and phpBackupOnImport %}
+                            <div id="php-create-backup-field">
+                                {{ forms.lightswitchField({
+                                    label: 'Create Backup Before Import'|t('translation-manager'),
+                                    instructions: 'Automatically backup existing translations before importing (recommended)'|t('translation-manager'),
+                                    id: 'phpCreateBackup',
+                                    name: 'phpCreateBackup',
+                                    on: true,
+                                }) }}
+                            </div>
+                        {% endif %}
                         {% include 'lindemannrock-base/_components/info-box' with {
                             message: 'Only import PHP files from trusted sources. Files are parsed safely without code execution, but only standard return array syntax is supported.'|t('translation-manager'),
                             type: 'warning',
@@ -276,7 +278,7 @@
             "\t": 'Tab'|t('translation-manager'),
             '|': 'Pipe (|)'|t('translation-manager'),
         },
-        showBackupToggle: true,
+        showBackupToggle: settings.backupEnabled and settings.backupOnImport,
         backupLabel: 'Create Backup Before Import'|t('translation-manager'),
         backupInstructions: 'Automatically backup existing translations before importing (recommended)'|t('translation-manager'),
         backupEnabled: settings.backupEnabled,
@@ -387,6 +389,30 @@
     let phpFiles = {};
     let phpPreviewData = null;
     window.phpImportData = []; // Store all items for import
+    const phpBackupAvailable = {{ (settings.backupEnabled and settings.backupOnImport) ? 'true' : 'false' }};
+
+    function getPhpCreateBackup() {
+        if (!phpBackupAvailable) {
+            return false;
+        }
+
+        const backupField = document.getElementById('php-create-backup-field');
+        const switchEl = backupField?.querySelector('.lightswitch');
+        if (switchEl) {
+            return switchEl.classList.contains('on') || switchEl.getAttribute('aria-checked') === 'true';
+        }
+
+        return document.querySelector('input[name="phpCreateBackup"]')?.value === '1';
+    }
+
+    function updatePhpBackupNotice() {
+        const backupNotice = document.getElementById('php-backup-notice');
+        if (!backupNotice) {
+            return;
+        }
+
+        backupNotice.style.display = getPhpCreateBackup() ? 'block' : 'none';
+    }
 
     // Load available PHP files on page load
     async function loadPhpFiles() {
@@ -518,7 +544,7 @@
                     file,
                     language,
                     category,
-                    createBackup: document.querySelector('input[name="phpCreateBackup"]')?.value === '1',
+                    createBackup: getPhpCreateBackup(),
                     '{{ craft.app.config.general.csrfTokenName }}': '{{ craft.app.request.csrfToken }}'
                 })
             });
@@ -526,7 +552,7 @@
             const data = await response.json();
 
             if (data.success) {
-                phpPreviewData = { ...data, language, category };
+                phpPreviewData = { ...data, file, language, category };
                 showPhpPreview(data);
             } else {
                 Craft.cp.displayError(data.error || {{ 'Failed to preview file'|t('translation-manager')|json_encode|raw }});
@@ -544,11 +570,8 @@
         const summaryDiv = document.getElementById('php-preview-summary');
         const contentDiv = document.getElementById('php-preview-content');
         const buttonsDiv = document.getElementById('php-preview-buttons');
-        const backupNotice = document.getElementById('php-backup-notice');
         const categoryNotice = document.getElementById('php-category-notice');
         const categoryNoticeMessage = document.getElementById('php-category-notice-message');
-        const backupToggle = document.querySelector('input[name="phpCreateBackup"]');
-        const backupEnabled = {{ (settings.backupEnabled and settings.backupOnImport) ? 'true' : 'false' }};
 
         // Clear and rebuild items array
         window.phpImportData = [];
@@ -673,11 +696,7 @@
         }
 
         previewSection.style.display = 'block';
-
-        if (backupNotice) {
-            const shouldShow = backupEnabled && (backupToggle?.value === '1');
-            backupNotice.style.display = shouldShow ? 'block' : 'none';
-        }
+        updatePhpBackupNotice();
 
         if (categoryNotice && categoryNoticeMessage) {
             const message = data.categoryStatus?.message || '';
@@ -743,7 +762,8 @@
                     translations: translations,
                     language: phpPreviewData.language,
                     category: phpPreviewData.category,
-                    createBackup: document.querySelector('input[name="phpCreateBackup"]')?.value === '1',
+                    file: phpPreviewData.file || document.getElementById('phpFile').value,
+                    createBackup: getPhpCreateBackup(),
                     '{{ craft.app.config.general.csrfTokenName }}': '{{ craft.app.request.csrfToken }}'
                 })
             });
@@ -790,6 +810,11 @@
 
     // Initial attachment for static buttons (will be re-attached dynamically)
     attachPhpImportHandlers();
+
+    document.getElementById('php-create-backup-field')?.addEventListener('click', function() {
+        window.setTimeout(updatePhpBackupNotice, 0);
+    });
+    document.getElementById('php-create-backup-field')?.addEventListener('change', updatePhpBackupNotice);
 
     // Load PHP files on page load
     loadPhpFiles();
