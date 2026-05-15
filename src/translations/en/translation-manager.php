@@ -3,7 +3,7 @@
  * Translation Manager plugin for Craft CMS 5.x
  *
  * @link      https://lindemannrock.com
- * @copyright Copyright (c) 2026 LindemannRock
+ * @copyright Copyright (c) 2025-2026 LindemannRock
  */
 
 return [
@@ -294,7 +294,7 @@ return [
     'Skip Patterns' => 'Skip Patterns',
     'Text patterns to skip when capturing site translations (one per line). Does not affect {formiePluginName} fields.' => 'Text patterns to skip when capturing site translations (one per line). Does not affect {formiePluginName} fields.',
     'Example:\nID\nTitle\nStatus' => 'Example:\nID\nTitle\nStatus',
-    'Note: Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.' => 'Note: Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.',
+    'Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.' => 'Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.',
     'Apply Skip Patterns to Existing Translations' => 'Apply Skip Patterns to Existing Translations',
     'Reserved category - cannot use: site, app, yii, craft' => 'Reserved category - cannot use: site, app, yii, craft',
     'Are you sure you want to remove existing translations that match the skip patterns? This action cannot be undone.' => 'Are you sure you want to remove existing translations that match the skip patterns? This action cannot be undone.',

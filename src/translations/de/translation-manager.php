@@ -297,7 +297,7 @@ return [
     'Skip Patterns' => 'Ausschlussmuster',
     'Text patterns to skip when capturing site translations (one per line). Does not affect {formiePluginName} fields.' => 'Textmuster, die beim Erfassen von Website-Übersetzungen übersprungen werden sollen (eines pro Zeile). Betrifft keine {formiePluginName} Felder.',
     'Example:\nID\nTitle\nStatus' => 'Beispiel:\nID\nTitle\nStatus',
-    'Note: Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.' => 'Hinweis: Ausschlussmuster verhindern nur, dass NEUE Übersetzungen erfasst werden. Um vorhandene Übersetzungen zu entfernen, die diesen Mustern entsprechen, verwenden Sie die Schaltfläche unten.',
+    'Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.' => 'Ausschlussmuster verhindern nur, dass NEUE Übersetzungen erfasst werden. Um vorhandene Übersetzungen zu entfernen, die diesen Mustern entsprechen, verwenden Sie die Schaltfläche unten.',
     'Apply Skip Patterns to Existing Translations' => 'Ausschlussmuster auf vorhandene Übersetzungen anwenden',
     'Reserved category - cannot use: site, app, yii, craft' => 'Reservierte Kategorie – kann nicht verwendet werden: site, app, yii, craft',
     'Are you sure you want to remove existing translations that match the skip patterns? This action cannot be undone.' => 'Möchten Sie wirklich vorhandene Übersetzungen entfernen, die den Ausschlussmustern entsprechen? Diese Aktion kann nicht rückgängig gemacht werden.',

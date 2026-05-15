@@ -297,7 +297,7 @@ return [
     'Skip Patterns' => 'Springsmønstre',
     'Text patterns to skip when capturing site translations (one per line). Does not affect {formiePluginName} fields.' => 'Tekstmønstre, der skal springes over ved optagelse af webstedsoversættelser (ét pr. linje). Påvirker ikke {formiePluginName}-felter.',
     'Example:\nID\nTitle\nStatus' => 'Eksempel:\nID\nTitle\nStatus',
-    'Note: Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.' => 'Bemærk: Springsmønstre forhindrer kun, at NYE oversættelser optages. Brug knappen nedenfor for at fjerne eksisterende oversættelser, der matcher disse mønstre.',
+    'Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.' => 'Springsmønstre forhindrer kun, at NYE oversættelser optages. Brug knappen nedenfor for at fjerne eksisterende oversættelser, der matcher disse mønstre.',
     'Apply Skip Patterns to Existing Translations' => 'Anvend springsmønstre på eksisterende oversættelser',
     'Reserved category - cannot use: site, app, yii, craft' => 'Reserveret kategori – kan ikke bruges: site, app, yii, craft',
     'Are you sure you want to remove existing translations that match the skip patterns? This action cannot be undone.' => 'Er du sikker på, at du vil fjerne eksisterende oversættelser, der matcher springsmønstrene? Denne handling kan ikke fortrydes.',

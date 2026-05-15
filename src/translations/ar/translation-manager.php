@@ -297,7 +297,7 @@ return [
     'Skip Patterns' => 'أنماط الاستبعاد',
     'Text patterns to skip when capturing site translations (one per line). Does not affect {formiePluginName} fields.' => 'أنماط نصية يتم تخطيها عند التقاط ترجمات الموقع (نمط واحد في كل سطر). لا تؤثر على حقول {formiePluginName}.',
     'Example:\nID\nTitle\nStatus' => 'مثال:\nID\nTitle\nStatus',
-    'Note: Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.' => 'ملاحظة: أنماط الاستبعاد تمنع فقط التقاط الترجمات الجديدة. لإزالة الترجمات الحالية التي تطابق هذه الأنماط، استخدم الزر أدناه.',
+    'Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.' => 'أنماط الاستبعاد تمنع فقط التقاط الترجمات الجديدة. لإزالة الترجمات الحالية التي تطابق هذه الأنماط، استخدم الزر أدناه.',
     'Apply Skip Patterns to Existing Translations' => 'تطبيق أنماط الاستبعاد على الترجمات الحالية',
     'Reserved category - cannot use: site, app, yii, craft' => 'فئة محجوزة - لا يمكن استخدامها: site وapp وyii وcraft',
     'Are you sure you want to remove existing translations that match the skip patterns? This action cannot be undone.' => 'هل أنت متأكد من رغبتك في إزالة الترجمات الحالية التي تطابق أنماط الاستبعاد؟ لا يمكن التراجع عن هذا الإجراء.',

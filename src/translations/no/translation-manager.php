@@ -297,7 +297,7 @@ return [
     'Skip Patterns' => 'Hoppmønstre',
     'Text patterns to skip when capturing site translations (one per line). Does not affect {formiePluginName} fields.' => 'Tekstmønstre som skal hoppes over ved opptak av nettstedsoversettelser (ett per linje). Påvirker ikke {formiePluginName}-felter.',
     'Example:\nID\nTitle\nStatus' => 'Eksempel:\nID\nTitle\nStatus',
-    'Note: Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.' => 'Merk: Hoppmønstre forhindrer bare at NYE oversettelser fanges opp. Bruk knappen nedenfor for å fjerne eksisterende oversettelser som samsvarer med disse mønstrene.',
+    'Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.' => 'Hoppmønstre forhindrer bare at NYE oversettelser fanges opp. Bruk knappen nedenfor for å fjerne eksisterende oversettelser som samsvarer med disse mønstrene.',
     'Apply Skip Patterns to Existing Translations' => 'Bruk hoppmønstre på eksisterende oversettelser',
     'Reserved category - cannot use: site, app, yii, craft' => 'Reservert kategori – kan ikke brukes: site, app, yii, craft',
     'Are you sure you want to remove existing translations that match the skip patterns? This action cannot be undone.' => 'Er du sikker på at du vil fjerne eksisterende oversettelser som samsvarer med hoppmønstrene? Denne handlingen kan ikke angres.',

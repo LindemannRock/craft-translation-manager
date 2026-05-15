@@ -297,7 +297,7 @@ return [
     'Skip Patterns' => 'スキップパターン',
     'Text patterns to skip when capturing site translations (one per line). Does not affect {formiePluginName} fields.' => 'サイト翻訳取得時にスキップするテキストパターン（1 行に 1 つ）。{formiePluginName} フィールドには影響しません。',
     'Example:\nID\nTitle\nStatus' => '例:\nID\nTitle\nStatus',
-    'Note: Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.' => '注意: スキップパターンは新しい翻訳の取得のみを防ぎます。パターンに一致する既存の翻訳を削除するには、下のボタンを使用してください。',
+    'Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.' => 'スキップパターンは新しい翻訳の取得のみを防ぎます。パターンに一致する既存の翻訳を削除するには、下のボタンを使用してください。',
     'Apply Skip Patterns to Existing Translations' => '既存の翻訳にスキップパターンを適用',
     'Reserved category - cannot use: site, app, yii, craft' => '予約済みカテゴリー - 使用不可: site、app、yii、craft',
     'Are you sure you want to remove existing translations that match the skip patterns? This action cannot be undone.' => 'スキップパターンに一致する既存の翻訳を削除しますか？この操作は元に戻せません。',

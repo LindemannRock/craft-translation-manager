@@ -297,7 +297,7 @@ return [
     'Skip Patterns' => 'Uitsluitingspatronen',
     'Text patterns to skip when capturing site translations (one per line). Does not affect {formiePluginName} fields.' => 'Tekstpatronen die worden overgeslagen bij het vastleggen van sitevertalingen (één per regel). Heeft geen invloed op {formiePluginName} velden.',
     'Example:\nID\nTitle\nStatus' => 'Voorbeeld:\nID\nTitle\nStatus',
-    'Note: Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.' => 'Opmerking: Uitsluitingspatronen voorkomen alleen dat NIEUWE vertalingen worden vastgelegd. Gebruik de knop hieronder om bestaande vertalingen te verwijderen die overeenkomen met deze patronen.',
+    'Skip patterns only prevent NEW translations from being captured. To remove existing translations that match these patterns, use the button below.' => 'Uitsluitingspatronen voorkomen alleen dat NIEUWE vertalingen worden vastgelegd. Gebruik de knop hieronder om bestaande vertalingen te verwijderen die overeenkomen met deze patronen.',
     'Apply Skip Patterns to Existing Translations' => 'Uitsluitingspatronen toepassen op bestaande vertalingen',
     'Reserved category - cannot use: site, app, yii, craft' => 'Gereserveerde categorie - kan niet worden gebruikt: site, app, yii, craft',
     'Are you sure you want to remove existing translations that match the skip patterns? This action cannot be undone.' => 'Weet u zeker dat u bestaande vertalingen wilt verwijderen die overeenkomen met de uitsluitingspatronen? Deze actie kan niet ongedaan worden gemaakt.',
