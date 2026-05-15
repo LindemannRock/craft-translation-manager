@@ -1254,7 +1254,14 @@ class BackupService extends Component
     }
 
     /**
-     * Convert internal reason code to user-friendly display text
+     * Convert internal reason code to user-friendly display text.
+     *
+     * The default branch handles dynamic reason values (e.g. user
+     * category names from `before_clear_{$category}`) — those can't
+     * be statically translated, so we return a humanized English
+     * fallback rather than wrapping in `Craft::t()` (which would
+     * silently no-op since translation extraction tools can't see
+     * the dynamic key anyway).
      */
     private function getDisplayReason(string $reason): string
     {
@@ -1271,8 +1278,10 @@ class BackupService extends Component
             'before_cleanup_all' => Craft::t('translation-manager', 'Before Cleanup All'),
             'before_cleanup_formie' => Craft::t('translation-manager', 'Before Cleanup Formie'),
             'before_cleanup_site' => Craft::t('translation-manager', 'Before Cleanup Site'),
+            'before_cleanup_languages' => Craft::t('translation-manager', 'Before Cleanup Languages'),
+            'before_cleanup_categories' => Craft::t('translation-manager', 'Before Cleanup Categories'),
             'before_clear' => Craft::t('translation-manager', 'Before Clear'),
-            default => Craft::t('translation-manager', ucfirst(str_replace('_', ' ', $reason)))
+            default => ucfirst(str_replace('_', ' ', $reason)),
         };
     }
 }

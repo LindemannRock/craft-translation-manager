@@ -309,6 +309,7 @@ class MaintenanceController extends Controller
      * Remove translations for selected language codes (mapped-source and ghost locales).
      *
      * @return Response
+     * @since 5.22.0
      */
     public function actionCleanLanguages(): Response
     {
@@ -401,6 +402,7 @@ class MaintenanceController extends Controller
      * Remove translations for selected removed/disabled categories.
      *
      * @return Response
+     * @since 5.22.0
      */
     public function actionCleanCategories(): Response
     {

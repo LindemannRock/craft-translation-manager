@@ -976,11 +976,13 @@ class ImportController extends Controller
      */
     public function actionLogMalicious(): Response
     {
+        $this->requirePostRequest();
+
         // Require permission to import translations
         if (!Craft::$app->getUser()->checkPermission('translationManager:importTranslations')) {
             throw new ForbiddenHttpException('User is not authorized to import translations.');
         }
-        
+
         $maliciousRows = Craft::$app->getRequest()->getBodyParam('maliciousRows', []);
         
         foreach ($maliciousRows as $row) {

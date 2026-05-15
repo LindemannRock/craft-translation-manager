@@ -107,7 +107,7 @@ class TranslationsController extends Controller
         }
 
         // Sort field allowlist mirrors the service's sortMap.
-        $validSortFields = ['translationKey', 'translation', 'type', 'status'];
+        $validSortFields = ['translationKey', 'translation', 'type', 'status', 'category'];
         $sort = (string) $request->getParam('sort', 'translationKey');
         if (!in_array($sort, $validSortFields, true)) {
             $sort = 'translationKey';
@@ -366,41 +366,57 @@ class TranslationsController extends Controller
         $hasFormie = false;
         $hasSite = false;
 
+        // Pre-fetch every referenced row in a single SELECT, indexed by id.
+        // Same shape as ExportController::actionSelected (audit 2.8) — replaces
+        // the previous per-row findOne() loop (audit 3.2).
+        $validIds = [];
         foreach ($translations as $data) {
-            // Validate ID is numeric
+            if (isset($data['id']) && is_numeric($data['id'])) {
+                $validIds[] = (int) $data['id'];
+            }
+        }
+
+        /** @var array<int, TranslationRecord> $records */
+        $records = $validIds
+            ? TranslationRecord::find()->where(['id' => $validIds])->indexBy('id')->all()
+            : [];
+
+        foreach ($translations as $data) {
             if (!isset($data['id']) || !is_numeric($data['id'])) {
                 continue;
             }
 
-            $translation = TranslationRecord::findOne($data['id']);
-            if ($translation) {
-                $translationText = $data['translation'] ?? '';
+            $translation = $records[(int) $data['id']] ?? null;
+            if (!$translation instanceof TranslationRecord) {
+                continue;
+            }
 
-                // Validate input length to prevent DoS
-                if (strlen($translationText) > 5000) {
-                    continue;
-                }
+            $translationText = $data['translation'] ?? '';
 
-                $translation->translation = $translationText;
-                $translation->status = $this->resolveStatusForSave($translation, $translationText);
-                $translation->translationOrigin = 'manual';
-                $translation->createdByUserId = Craft::$app->getUser()->getId();
-                if ($translation->status === 'draft' || $translationText === '') {
-                    $translation->reviewedByUserId = null;
-                    $translation->reviewedAt = null;
+            // Validate input length to prevent DoS
+            if (strlen($translationText) > 5000) {
+                continue;
+            }
+
+            $translation->translation = $translationText;
+            $translation->status = $this->resolveStatusForSave($translation, $translationText);
+            $translation->translationOrigin = 'manual';
+            $translation->createdByUserId = Craft::$app->getUser()->getId();
+            if ($translation->status === 'draft' || $translationText === '') {
+                $translation->reviewedByUserId = null;
+                $translation->reviewedAt = null;
+            } else {
+                $translation->reviewedByUserId = Craft::$app->getUser()->getId();
+                $translation->reviewedAt = Db::prepareDateForDb(new \DateTime());
+            }
+            if (TranslationManager::getInstance()->translations->saveTranslation($translation)) {
+                $saved++;
+
+                // Track what types we're saving
+                if (str_starts_with($translation->context, 'formie.')) {
+                    $hasFormie = true;
                 } else {
-                    $translation->reviewedByUserId = Craft::$app->getUser()->getId();
-                    $translation->reviewedAt = Db::prepareDateForDb(new \DateTime());
-                }
-                if (TranslationManager::getInstance()->translations->saveTranslation($translation)) {
-                    $saved++;
-                    
-                    // Track what types we're saving
-                    if (str_starts_with($translation->context, 'formie.')) {
-                        $hasFormie = true;
-                    } else {
-                        $hasSite = true;
-                    }
+                    $hasSite = true;
                 }
             }
         }
@@ -458,6 +474,8 @@ class TranslationsController extends Controller
 
     /**
      * Bulk set status for selected translations.
+     *
+     * @since 5.22.0
      */
     public function actionSetStatus(): Response
     {
