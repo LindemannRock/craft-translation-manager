@@ -78,8 +78,8 @@
             current: type,
             options: [
                 { value: 'all', label: 'All Types'|t('translation-manager'), status: 'all' },
-                { value: 'forms', label: craft.translationManager.getFormiePluginName(), statusColor: '#3b82f6' },
-                { value: 'site', label: 'Site'|t('translation-manager'), statusColor: '#14b8a6' },
+                { value: 'forms', label: craft.translationManager.getFormiePluginName(), statusColor: lrSetColor('translationTypes', 'forms').color },
+                { value: 'site', label: 'Site'|t('translation-manager'), statusColor: lrSetColor('translationTypes', 'site').color },
             ],
         }])
     }) %}
@@ -92,10 +92,10 @@
         current: origin,
         options: [
             { value: 'all', label: 'All Origins'|t('translation-manager'), status: 'all' },
-            { value: 'ai', label: 'AI'|t('translation-manager'), statusColor: '#7c3aed' },
-            { value: 'manual', label: 'Manual'|t('translation-manager'), statusColor: '#16a34a' },
-            { value: 'import', label: 'Import'|t('translation-manager'), statusColor: '#dc2626' },
-            { value: 'system', label: 'System'|t('translation-manager'), statusColor: '#475569' },
+            { value: 'ai', label: 'AI'|t('translation-manager'), statusColor: lrSetColor('translationOrigins', 'ai').color },
+            { value: 'manual', label: 'Manual'|t('translation-manager'), statusColor: lrSetColor('translationOrigins', 'manual').color },
+            { value: 'import', label: 'Import'|t('translation-manager'), statusColor: lrSetColor('translationOrigins', 'import').color },
+            { value: 'system', label: 'System'|t('translation-manager'), statusColor: lrSetColor('translationOrigins', 'system').color },
         ],
     }])
 }) %}
@@ -257,20 +257,23 @@
     </td>
 
     <td data-column="origin" class="lr-hideable-column">
-        {% set originMap = {
-            'ai': { label: 'AI'|t('translation-manager'), color: '#7c3aed', rgb: '124, 58, 237', text: '#4c1d95' },
-            'manual': { label: 'Manual'|t('translation-manager'), color: '#16a34a', rgb: '22, 163, 74', text: '#14532d' },
-            'import': { label: 'Import'|t('translation-manager'), color: '#dc2626', rgb: '220, 38, 38', text: '#7f1d1d' },
-            'system': { label: 'System'|t('translation-manager'), color: '#475569', rgb: '71, 85, 105', text: '#1e293b' },
+        {% set originLabels = {
+            'ai': 'AI'|t('translation-manager'),
+            'manual': 'Manual'|t('translation-manager'),
+            'import': 'Import'|t('translation-manager'),
+            'system': 'System'|t('translation-manager'),
         } %}
         {% set originKey = item.translationOrigin ?? 'system' %}
-        {% set originBadge = originMap[originKey] ?? originMap['system'] %}
+        {% if originLabels[originKey] is not defined %}
+            {% set originKey = 'system' %}
+        {% endif %}
+        {% set originColor = lrSetColor('translationOrigins', originKey) %}
 
         {% include 'lindemannrock-base/_components/status-badge' with {
-            label: originBadge.label,
-            color: originBadge.color,
-            rgb: originBadge.rgb,
-            textColor: originBadge.text,
+            label: originLabels[originKey],
+            color: originColor.color,
+            rgb: originColor.rgb,
+            textColor: originColor.text,
         } only %}
     </td>
 
