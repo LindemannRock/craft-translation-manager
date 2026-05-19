@@ -250,7 +250,7 @@
             {% set statusBadge = statusBadge|merge({ label: 'AI Draft'|t('translation-manager') }) %}
         {% endif %}
 
-        {% include 'lindemannrock-base/_components/status-badge' with {
+        {% include 'lindemannrock-base/_components/badge' with {
             label: statusBadge.label,
             status: statusBadge.color,
         } only %}
@@ -269,7 +269,7 @@
         {% endif %}
         {% set originColor = lrSetColor('translationOrigins', originKey) %}
 
-        {% include 'lindemannrock-base/_components/status-badge' with {
+        {% include 'lindemannrock-base/_components/badge' with {
             label: originLabels[originKey],
             color: originColor.color,
             rgb: originColor.rgb,
