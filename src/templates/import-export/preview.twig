@@ -24,30 +24,30 @@
     <h2 class="first">{{ "Import Preview"|t('translation-manager') }}</h2>
 
     <div class="lr-unified-cards cols-5" style="margin: 30px 0;">
-        {% include 'lindemannrock-base/_components/cards/unified-card' with {
+        {% include 'lindemannrock-base/_components/unified-card' with {
             value: summary.totalRows,
             description: 'Total Rows'|t('translation-manager'),
             align: 'center',
         } only %}
-        {% include 'lindemannrock-base/_components/cards/unified-card' with {
+        {% include 'lindemannrock-base/_components/unified-card' with {
             value: summary.toImport,
             description: 'New'|t('translation-manager'),
             palette: 'green',
             align: 'center',
         } only %}
-        {% include 'lindemannrock-base/_components/cards/unified-card' with {
+        {% include 'lindemannrock-base/_components/unified-card' with {
             value: summary.toUpdate,
             description: 'Updates'|t('translation-manager'),
             palette: 'amber',
             align: 'center',
         } only %}
-        {% include 'lindemannrock-base/_components/cards/unified-card' with {
+        {% include 'lindemannrock-base/_components/unified-card' with {
             value: summary.unchanged,
             description: 'Unchanged'|t('translation-manager'),
             palette: 'gray',
             align: 'center',
         } only %}
-        {% include 'lindemannrock-base/_components/cards/unified-card' with {
+        {% include 'lindemannrock-base/_components/unified-card' with {
             value: summary.errors + summary.malicious,
             description: 'Blocked'|t('translation-manager'),
             palette: 'red',

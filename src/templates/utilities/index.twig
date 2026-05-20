@@ -40,7 +40,7 @@
 
 {% block overview %}
     {# Translation Coverage Card #}
-    {% include 'lindemannrock-base/_components/cards/unified-card' with {
+    {% include 'lindemannrock-base/_components/unified-card' with {
         title: 'Translation Coverage'|t('translation-manager'),
         color: coverageColor,
         value: translatedPercentage ~ '%',
@@ -55,7 +55,7 @@
     } only %}
 
     {# Work Queue Card #}
-    {% include 'lindemannrock-base/_components/cards/unified-card' with {
+    {% include 'lindemannrock-base/_components/unified-card' with {
         title: 'Work Queue'|t('translation-manager'),
         color: lrPaletteColor('amber').color,
         value: stats.pending,
@@ -66,7 +66,7 @@
     } only %}
 
     {# Translation Types Card #}
-    {% include 'lindemannrock-base/_components/cards/unified-card' with {
+    {% include 'lindemannrock-base/_components/unified-card' with {
         title: 'Translation Types'|t('translation-manager'),
         color: lrPaletteColor('violet').color,
         value: stats.formie + stats.site,
