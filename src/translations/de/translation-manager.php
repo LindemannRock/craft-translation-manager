@@ -21,7 +21,7 @@ return [
     'Import/Export' => 'Import/Export',
     'Maintenance' => 'Wartung',
     'Backups' => 'Backups',
-    'Logs' => 'Logs',
+    'Logs' => 'Protokolle',
     'Settings' => 'Einstellungen',
 
     // Permissions
@@ -50,9 +50,9 @@ return [
     'Clear {name} {plural}' => '{name} {plural} löschen',
     'Clear site {plural}' => 'Website-{plural} löschen',
     'Clear all {plural}' => 'Alle {plural} löschen',
-    'View logs' => 'Logs anzeigen',
-    'View system logs' => 'System-Logs anzeigen',
-    'Download system logs' => 'System-Logs herunterladen',
+    'View logs' => 'Protokolle anzeigen',
+    'View system logs' => 'Systemprotokolle anzeigen',
+    'Download system logs' => 'Systemprotokolle herunterladen',
     'Edit plugin settings' => 'Plugin-Einstellungen bearbeiten',
 
     // Common
@@ -273,8 +273,8 @@ return [
     'Require Approval' => 'Genehmigung erforderlich',
     'Require Approval Before Publish' => 'Genehmigung vor Veröffentlichung erforderlich',
     'When enabled, users without approval permission can only save drafts. Approvers can publish as translated.' => 'Wenn aktiviert, können Benutzer ohne Genehmigungsberechtigung nur Entwürfe speichern. Genehmigende können als übersetzt veröffentlichen.',
-    'Logging Settings' => 'Log-Einstellungen',
-    'Log Level' => 'Log-Ebene',
+    'Logging Settings' => 'Protokollierungseinstellungen',
+    'Log Level' => 'Protokollierungsstufe',
     'Choose what types of messages to log. Debug level requires devMode to be enabled.' => 'Wählen Sie, welche Arten von Meldungen protokolliert werden sollen. Die Debug-Ebene erfordert aktivierten devMode.',
     'Error (Critical errors only)' => 'Fehler (nur kritische Fehler)',
     'Warning (Errors and warnings)' => 'Warnung (Fehler und Warnungen)',
@@ -343,7 +343,7 @@ return [
     'Generation Location:' => 'Generierungsort:',
 
     // Settings: Interface
-    'Interface Settings' => 'Interface-Einstellungen',
+    'Interface Settings' => 'Oberflächen-Einstellungen',
     'Interface' => 'Oberfläche',
     'Items Per Page' => 'Einträge pro Seite',
     'Number of translations to show per page' => 'Anzahl der Übersetzungen, die pro Seite angezeigt werden sollen',
@@ -600,7 +600,7 @@ return [
     'View backup' => 'Backup anzeigen',
     'No imports found yet.' => 'Noch keine Importe gefunden.',
     'Clear history' => 'Verlauf löschen',
-    'Are you sure you want to clear all import logs? This action cannot be undone.' => 'Möchten Sie wirklich alle Import-Logs löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
+    'Are you sure you want to clear all import logs? This action cannot be undone.' => 'Möchten Sie wirklich alle Import-Protokolle löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
     'Failed to clear history.' => 'Verlauf konnte nicht gelöscht werden.',
     'Select a Different File' => 'Eine andere Datei auswählen',
     'No PHP files found in translations folder' => 'Keine PHP-Dateien im Übersetzungsordner gefunden',
@@ -624,10 +624,10 @@ return [
     'Select a CSV file to import translations' => 'CSV-Datei zum Importieren von Übersetzungen auswählen',
     'CSV Delimiter' => 'CSV-Trennzeichen',
     'Character used to separate values in your CSV (auto-detect is default)' => 'Zeichen zum Trennen von Werten in Ihrer CSV (automatische Erkennung ist Standard)',
-    'Auto (detect)' => 'Automatisch (erkennen)',
+    'Auto (detect)' => 'Auto (erkennen)',
     'Comma (,)' => 'Komma (,)',
     'Semicolon (;)' => 'Semikolon (;)',
-    'Tab' => 'Tabulator',
+    'Tab' => 'Tab',
     'Pipe (|)' => 'Pipe (|)',
     'Upload & Map Columns' => 'Hochladen und Spalten zuordnen',
     'CSV Import' => 'CSV-Import',

@@ -626,7 +626,7 @@ return [
     'Select a CSV file to import translations' => 'Seleccionar un archivo CSV para importar traducciones',
     'CSV Delimiter' => 'Delimitador CSV',
     'Character used to separate values in your CSV (auto-detect is default)' => 'Carácter usado para separar valores en su CSV (la detección automática es el valor predeterminado)',
-    'Auto (detect)' => 'Automático (detectar)',
+    'Auto (detect)' => 'Auto (detectar)',
     'Comma (,)' => 'Coma (,)',
     'Semicolon (;)' => 'Punto y coma (;)',
     'Tab' => 'Tabulador',

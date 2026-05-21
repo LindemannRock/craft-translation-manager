@@ -626,7 +626,7 @@ return [
     'Select a CSV file to import translations' => 'Selecteer een CSV-bestand om vertalingen te importeren',
     'CSV Delimiter' => 'CSV-scheidingsteken',
     'Character used to separate values in your CSV (auto-detect is default)' => 'Teken dat wordt gebruikt om waarden in uw CSV te scheiden (automatische detectie is standaard)',
-    'Auto (detect)' => 'Automatisch (detecteren)',
+    'Auto (detect)' => 'Auto (detecteren)',
     'Comma (,)' => 'Komma (,)',
     'Semicolon (;)' => 'Puntkomma (;)',
     'Tab' => 'Tab',
