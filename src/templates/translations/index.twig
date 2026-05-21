@@ -728,11 +728,11 @@
         function generateTranslationFiles(type) {
             let endpoint = '';
             if (type === 'all') {
-                endpoint = 'translation-manager/export/files';
+                endpoint = 'translation-manager/generate/files';
             } else if (type === 'formie') {
-                endpoint = 'translation-manager/export/formie-files';
+                endpoint = 'translation-manager/generate/formie-files';
             } else if (type === 'site') {
-                endpoint = 'translation-manager/export/site-files';
+                endpoint = 'translation-manager/generate/site-files';
             }
 
             Craft.sendActionRequest('POST', endpoint).then(function(response) {

@@ -825,7 +825,7 @@ class BackupService extends Component
             }
 
             // Regenerate translation files
-            TranslationManager::getInstance()->export->exportAll();
+            TranslationManager::getInstance()->generate->generateAll();
 
             $errorCount = count($errors);
             $this->logInfo("Volume backup restored successfully", [
@@ -967,7 +967,7 @@ class BackupService extends Component
             }
 
             // Regenerate translation files
-            TranslationManager::getInstance()->export->exportAll();
+            TranslationManager::getInstance()->generate->generateAll();
 
             $errorCount = count($errors);
             $this->logInfo("Local backup restored successfully", [

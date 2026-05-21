@@ -146,84 +146,84 @@ class TranslationsController extends Controller
     }
 
     /**
-     * Export Formie translations to PHP files
+     * Generate Formie translation files
      */
-    public function actionExportFormie(): int
+    public function actionGenerateFormie(): int
     {
-        $this->stdout("Exporting Formie translations...\n", Console::FG_YELLOW);
+        $this->stdout("Generating Formie translation files...\n", Console::FG_YELLOW);
 
         try {
-            $exportService = TranslationManager::getInstance()->export;
-            $success = $exportService->exportFormieTranslations();
+            $generationService = TranslationManager::getInstance()->generate;
+            $success = $generationService->generateFormieTranslations();
 
             if ($success) {
-                // Get count matching actual export criteria (translated only, all sites)
+                // Get count matching actual generation criteria (translated only, all sites)
                 $translations = TranslationManager::getInstance()->translations->getTranslations([
                     'type' => 'forms',
                     'status' => 'translated',
                     'allSites' => true,
                 ]);
                 $count = count($translations);
-                $this->stdout("Exported {$count} translated entries to Formie translation files\n", Console::FG_GREEN);
+                $this->stdout("Generated {$count} translated entries into Formie translation files\n", Console::FG_GREEN);
                 return ExitCode::OK;
             } else {
-                $this->stderr("Export failed\n", Console::FG_RED);
+                $this->stderr("Generation failed\n", Console::FG_RED);
                 return ExitCode::UNSPECIFIED_ERROR;
             }
         } catch (\Exception $e) {
-            $this->stderr("Error exporting Formie translations: {$e->getMessage()}\n", Console::FG_RED);
+            $this->stderr("Error generating Formie translation files: {$e->getMessage()}\n", Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;
         }
     }
 
     /**
-     * Export site translations to PHP files
+     * Generate site translation files
      */
-    public function actionExportSite(): int
+    public function actionGenerateSite(): int
     {
-        $this->stdout("Exporting site translations...\n", Console::FG_YELLOW);
-        
+        $this->stdout("Generating site translation files...\n", Console::FG_YELLOW);
+
         try {
-            $exportService = TranslationManager::getInstance()->export;
+            $generationService = TranslationManager::getInstance()->generate;
             $category = TranslationManager::getInstance()->getSettings()->translationCategory;
-            $result = $exportService->exportSiteTranslations();
-            
-            $this->stdout("Exported site translations to per-language files\n", Console::FG_GREEN);
-            
+            $result = $generationService->generateSiteTranslations();
+
+            $this->stdout("Generated site translation files per language\n", Console::FG_GREEN);
+
             return ExitCode::OK;
         } catch (\Exception $e) {
-            $this->stderr("Error exporting site translations: {$e->getMessage()}\n", Console::FG_RED);
+            $this->stderr("Error generating site translation files: {$e->getMessage()}\n", Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;
         }
     }
 
     /**
-     * Export all translations (Formie + site)
+     * Generate all translation files (Formie + site)
      */
-    public function actionExportAll(): int
+    public function actionGenerateAll(): int
     {
-        $this->stdout("Exporting all translations...\n\n", Console::FG_YELLOW);
-        
-        // Export Formie
-        $this->stdout("1. Exporting Formie translations...\n", Console::FG_CYAN);
-        $formieResult = $this->actionExportFormie();
-        
+        $this->stdout("Generating all translation files...\n\n", Console::FG_YELLOW);
+
+        // Generate Formie
+        $this->stdout("1. Generating Formie translation files...\n", Console::FG_CYAN);
+        $formieResult = $this->actionGenerateFormie();
+
         if ($formieResult !== ExitCode::OK) {
             return $formieResult;
         }
-        
+
         $this->stdout("\n");
-        
-        // Export site
-        $this->stdout("2. Exporting site translations...\n", Console::FG_CYAN);
-        $siteResult = $this->actionExportSite();
-        
+
+        // Generate site
+        $this->stdout("2. Generating site translation files...\n", Console::FG_CYAN);
+        $siteResult = $this->actionGenerateSite();
+
         if ($siteResult !== ExitCode::OK) {
             return $siteResult;
         }
-        
-        $this->stdout("\nAll translations exported successfully!\n", Console::FG_GREEN);
-        
+
+        $this->stdout("\nAll translation files generated successfully!\n", Console::FG_GREEN);
+
         return ExitCode::OK;
     }
 

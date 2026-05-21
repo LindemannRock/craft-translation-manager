@@ -325,9 +325,9 @@ class TranslationsController extends Controller
             if (TranslationManager::getInstance()->getSettings()->autoGenerate) {
                 $isFormie = str_starts_with($translation->context, 'formie.');
                 if ($isFormie) {
-                    TranslationManager::getInstance()->export->exportFormieTranslations();
+                    TranslationManager::getInstance()->generate->generateFormieTranslations();
                 } else {
-                    TranslationManager::getInstance()->export->exportSiteTranslations();
+                    TranslationManager::getInstance()->generate->generateSiteTranslations();
                 }
             }
 
@@ -424,10 +424,10 @@ class TranslationsController extends Controller
         // Generate files if auto-generate is enabled
         if (TranslationManager::getInstance()->getSettings()->autoGenerate && $saved > 0) {
             if ($hasFormie) {
-                TranslationManager::getInstance()->export->exportFormieTranslations();
+                TranslationManager::getInstance()->generate->generateFormieTranslations();
             }
             if ($hasSite) {
-                TranslationManager::getInstance()->export->exportSiteTranslations();
+                TranslationManager::getInstance()->generate->generateSiteTranslations();
             }
         }
 
@@ -548,7 +548,7 @@ class TranslationsController extends Controller
 
         // Generate files if auto-generate is enabled and rows were marked translated.
         if ($updated > 0 && $targetStatus === 'translated' && $settings->autoGenerate) {
-            TranslationManager::getInstance()->export->exportAll();
+            TranslationManager::getInstance()->generate->generateAll();
         }
 
         return $this->asJson([

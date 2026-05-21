@@ -2,7 +2,8 @@
 /**
  * Translation Manager plugin for Craft CMS 5.x
  *
- * Service for exporting translations to various formats
+ * Service for generating PHP translation files that Craft CMS uses for
+ * multi-language support
  *
  * @link      https://lindemannrock.com
  * @copyright Copyright (c) 2025-2026 LindemannRock
@@ -17,51 +18,52 @@ use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\TranslationManager;
 
 /**
- * Export Service
+ * Generation Service
  *
  * @since 1.0.0
  */
-class ExportService extends Component
+class GenerationService extends Component
 {
     use LoggingTrait;
 
     /**
-     * Get the export language for a site (applies locale mapping)
+     * Get the generation language for a site (applies locale mapping)
      */
-    private function getExportLanguage(\craft\models\Site $site): string
+    private function getGenerationLanguage(\craft\models\Site $site): string
     {
         $settings = TranslationManager::getInstance()->getSettings();
         return $settings->mapLanguage($site->language);
     }
+
     /**
-     * Export all translations
+     * Generate all translation files (Formie + site)
      */
-    public function exportAll(): array
+    public function generateAll(): array
     {
-        $this->logInfo('Starting exportAll()');
+        $this->logInfo('Starting generateAll()');
         $results = [];
 
-        $this->logInfo('About to export Formie translations');
-        $results['formie'] = $this->exportFormieTranslations();
-        $this->logInfo('Formie export result', ['success' => $results['formie']]);
+        $this->logInfo('About to generate Formie translations');
+        $results['formie'] = $this->generateFormieTranslations();
+        $this->logInfo('Formie generation result', ['success' => $results['formie']]);
 
-        $this->logInfo('About to export site translations');
-        $results['site'] = $this->exportSiteTranslations();
-        $this->logInfo('Site export result', ['success' => $results['site']]);
+        $this->logInfo('About to generate site translations');
+        $results['site'] = $this->generateSiteTranslations();
+        $this->logInfo('Site generation result', ['success' => $results['site']]);
 
-        $this->logInfo('exportAll() completed');
+        $this->logInfo('generateAll() completed');
         return $results;
     }
 
     /**
-     * Export Formie translations to translation files
+     * Generate Formie translation files
      */
-    public function exportFormieTranslations(): bool
+    public function generateFormieTranslations(): bool
     {
         $settings = TranslationManager::getInstance()->getSettings();
         $translationsService = TranslationManager::getInstance()->translations;
-        
-        $this->logInfo('Starting Formie translation export');
+
+        $this->logInfo('Starting Formie translation generation');
 
         // NEW: Get Formie translations for ALL sites
         $translations = $translationsService->getTranslations([
@@ -70,37 +72,37 @@ class ExportService extends Component
             'allSites' => true,  // Get from all sites
         ]);
 
-        $this->logInfo('Found Formie translations to export', ['count' => count($translations)]);
+        $this->logInfo('Found Formie translations to generate', ['count' => count($translations)]);
 
         if (empty($translations)) {
-            $this->logInfo('No Formie translations to export');
-            
+            $this->logInfo('No Formie translations to generate');
+
             // Delete existing files if they exist to prevent stale translations
             $basePath = $settings->getGenerationPath();
-            
+
             // Get actual site languages dynamically
             $sites = TranslationManager::getInstance()->getAllowedSites();
             foreach ($sites as $site) {
-                $exportLanguage = $this->getExportLanguage($site);
-                $file = $basePath . '/' . $exportLanguage . '/formie.php';
+                $generationLanguage = $this->getGenerationLanguage($site);
+                $file = $basePath . '/' . $generationLanguage . '/formie.php';
                 if (file_exists($file)) {
                     @unlink($file);
                     $this->logInfo("Deleted stale Formie file", ['file' => $file]);
                 }
             }
-            
+
             return true;
         }
 
         // NEW: Group translations by actual sites (not hardcoded languages)
         $translationsBySite = [];
-        
+
         foreach ($translations as $translation) {
             $siteId = $translation['siteId'];
             if (!isset($translationsBySite[$siteId])) {
                 $translationsBySite[$siteId] = [];
             }
-            
+
             // Only include if there's a translation (not empty)
             if (!empty($translation['translation'])) {
                 $translationsBySite[$siteId][$translation['translationKey']] = $translation['translation'];
@@ -109,20 +111,20 @@ class ExportService extends Component
 
         // Create translation files for each site
         $basePath = $settings->getGenerationPath();
-        
+
         foreach ($translationsBySite as $siteId => $siteTranslations) {
             $site = Craft::$app->getSites()->getSiteById($siteId);
             if ($site) {
-                $exportLanguage = $this->getExportLanguage($site);
-                $sitePath = $basePath . '/' . $exportLanguage;
+                $generationLanguage = $this->getGenerationLanguage($site);
+                $sitePath = $basePath . '/' . $generationLanguage;
                 FileHelper::createDirectory($sitePath);
 
                 // Write translation file for this site
                 $this->writeTranslationFile($sitePath . '/formie.php', $siteTranslations, $site->name);
-                $this->logInfo("Exported Formie translations", [
+                $this->logInfo("Generated Formie translations", [
                     'count' => count($siteTranslations),
                     'site' => $site->name,
-                    'language' => $exportLanguage,
+                    'language' => $generationLanguage,
                 ]);
             }
         }
@@ -133,15 +135,15 @@ class ExportService extends Component
     }
 
     /**
-     * Export site translations to translation files (per category)
+     * Generate site translation files (per category)
      */
-    public function exportSiteTranslations(): bool
+    public function generateSiteTranslations(): bool
     {
         $settings = TranslationManager::getInstance()->getSettings();
         $translationsService = TranslationManager::getInstance()->translations;
         $categories = $settings->getEnabledCategories();
 
-        $this->logInfo('Starting site translation export', ['categories' => $categories]);
+        $this->logInfo('Starting site translation generation', ['categories' => $categories]);
 
         // Get site translations for ALL sites and ALL enabled categories
         $translations = $translationsService->getTranslations([
@@ -150,20 +152,20 @@ class ExportService extends Component
             'allSites' => true,  // Get from all sites
         ]);
 
-        $this->logInfo('Found site translations to export', ['count' => count($translations)]);
+        $this->logInfo('Found site translations to generate', ['count' => count($translations)]);
 
         $basePath = $settings->getGenerationPath();
         $sites = TranslationManager::getInstance()->getAllowedSites();
 
         if (empty($translations)) {
-            $this->logInfo('No site translations to export');
+            $this->logInfo('No site translations to generate');
 
             // Delete existing files for all categories to prevent stale translations
             foreach ($categories as $category) {
                 $filename = $category . '.php';
                 foreach ($sites as $site) {
-                    $exportLanguage = $this->getExportLanguage($site);
-                    $file = $basePath . '/' . $exportLanguage . '/' . $filename;
+                    $generationLanguage = $this->getGenerationLanguage($site);
+                    $file = $basePath . '/' . $generationLanguage . '/' . $filename;
                     if (file_exists($file)) {
                         @unlink($file);
                         $this->logInfo("Deleted stale file", ['file' => $file, 'category' => $category]);
@@ -175,7 +177,7 @@ class ExportService extends Component
         }
 
         // Group translations by category, then by MAPPED language (not siteId)
-        // This ensures translations saved under mapped language (e.g., 'en') are exported correctly
+        // This ensures translations saved under mapped language (e.g., 'en') are generated correctly
         $translationsByCategoryAndLanguage = [];
 
         foreach ($translations as $translation) {
@@ -201,15 +203,15 @@ class ExportService extends Component
         foreach ($translationsByCategoryAndLanguage as $category => $translationsByLanguage) {
             $filename = $category . '.php';
 
-            foreach ($translationsByLanguage as $exportLanguage => $langTranslations) {
-                $sitePath = $basePath . '/' . $exportLanguage;
+            foreach ($translationsByLanguage as $generationLanguage => $langTranslations) {
+                $sitePath = $basePath . '/' . $generationLanguage;
                 FileHelper::createDirectory($sitePath);
 
                 // Write translation file for this language and category
-                $this->writeTranslationFile($sitePath . '/' . $filename, $langTranslations, $exportLanguage);
-                $this->logInfo("Exported site translations", [
+                $this->writeTranslationFile($sitePath . '/' . $filename, $langTranslations, $generationLanguage);
+                $this->logInfo("Generated site translations", [
                     'count' => count($langTranslations),
-                    'language' => $exportLanguage,
+                    'language' => $generationLanguage,
                     'category' => $category,
                 ]);
             }
@@ -220,8 +222,8 @@ class ExportService extends Component
             if (!isset($translationsByCategoryAndLanguage[$category])) {
                 $filename = $category . '.php';
                 foreach ($sites as $site) {
-                    $exportLanguage = $this->getExportLanguage($site);
-                    $file = $basePath . '/' . $exportLanguage . '/' . $filename;
+                    $generationLanguage = $this->getGenerationLanguage($site);
+                    $file = $basePath . '/' . $generationLanguage . '/' . $filename;
                     if (file_exists($file)) {
                         @unlink($file);
                         $this->logInfo("Deleted stale file (no translations)", ['file' => $file, 'category' => $category]);
@@ -234,16 +236,16 @@ class ExportService extends Component
     }
 
     /**
-     * Export a single category's translations to translation files
+     * Generate a single category's translation files
      *
      * @since 5.0.0
      */
-    public function exportCategoryTranslations(string $category): bool
+    public function generateCategoryTranslations(string $category): bool
     {
         $settings = TranslationManager::getInstance()->getSettings();
         $translationsService = TranslationManager::getInstance()->translations;
 
-        $this->logInfo('Starting single category translation export', ['category' => $category]);
+        $this->logInfo('Starting single category translation generation', ['category' => $category]);
 
         // Get translations for this specific category across ALL sites
         $translations = $translationsService->getTranslations([
@@ -253,19 +255,19 @@ class ExportService extends Component
             'allSites' => true,
         ]);
 
-        $this->logInfo('Found translations to export', ['count' => count($translations), 'category' => $category]);
+        $this->logInfo('Found translations to generate', ['count' => count($translations), 'category' => $category]);
 
         $basePath = $settings->getGenerationPath();
         $sites = TranslationManager::getInstance()->getAllowedSites();
         $filename = $category . '.php';
 
         if (empty($translations)) {
-            $this->logInfo('No translations to export for category', ['category' => $category]);
+            $this->logInfo('No translations to generate for category', ['category' => $category]);
 
             // Delete existing files for this category to prevent stale translations
             foreach ($sites as $site) {
-                $exportLanguage = $this->getExportLanguage($site);
-                $file = $basePath . '/' . $exportLanguage . '/' . $filename;
+                $generationLanguage = $this->getGenerationLanguage($site);
+                $file = $basePath . '/' . $generationLanguage . '/' . $filename;
                 if (file_exists($file)) {
                     @unlink($file);
                     $this->logInfo("Deleted stale file", ['file' => $file, 'category' => $category]);
@@ -295,61 +297,22 @@ class ExportService extends Component
         foreach ($translationsBySite as $siteId => $siteTranslations) {
             $site = Craft::$app->getSites()->getSiteById($siteId);
             if ($site) {
-                $exportLanguage = $this->getExportLanguage($site);
-                $sitePath = $basePath . '/' . $exportLanguage;
+                $generationLanguage = $this->getGenerationLanguage($site);
+                $sitePath = $basePath . '/' . $generationLanguage;
                 FileHelper::createDirectory($sitePath);
 
                 // Write translation file for this site and category
                 $this->writeTranslationFile($sitePath . '/' . $filename, $siteTranslations, $site->name);
-                $this->logInfo("Exported category translations", [
+                $this->logInfo("Generated category translations", [
                     'count' => count($siteTranslations),
                     'site' => $site->name,
-                    'language' => $exportLanguage,
+                    'language' => $generationLanguage,
                     'category' => $category,
                 ]);
             }
         }
 
         return true;
-    }
-
-    /**
-     * Export selected translations
-     */
-    public function exportSelected(array $ids): string
-    {
-        $translationsService = TranslationManager::getInstance()->translations;
-
-        $count = count($ids);
-        $this->logInfo("Exporting selected translations", ['count' => $count]);
-
-        // Build CSV content with UTF-8 BOM for Excel compatibility
-        $csv = "\xEF\xBB\xBF"; // UTF-8 BOM
-
-        $csv .= "Translation Key,Translation,Category,Type,Context,Status,Origin,Language,Created By User ID,Reviewed By User ID,Reviewed At,Updated At\n";
-
-        foreach ($ids as $id) {
-            $translation = $translationsService->getTranslationById($id);
-            if ($translation) {
-                // Sanitize for CSV injection - preserve original spacing
-                $translationKey = $this->sanitizeForCsv($translation->translationKey);
-                $translationText = $this->sanitizeForCsv($translation->translation ?? '');
-                $category = $this->sanitizeForCsv($translation->category ?? 'messages');
-                $type = strpos($translation->context, 'formie.') === 0 ? TranslationManager::getFormiePluginName() : 'Site';
-                $status = $this->sanitizeForCsv($translation->status ?? '');
-                $origin = $this->sanitizeForCsv($translation->translationOrigin ?? 'system');
-                $language = $translation->language ?? 'unknown';
-                $createdByUserId = $this->sanitizeForCsv($translation->createdByUserId ?? '');
-                $reviewedByUserId = $this->sanitizeForCsv($translation->reviewedByUserId ?? '');
-                $reviewedAt = $this->sanitizeForCsv($translation->reviewedAt ?? '');
-                $updatedAt = $this->sanitizeForCsv($translation->dateUpdated ?? '');
-
-                $context = $this->sanitizeForCsv($translation->context);
-                $csv .= "\"{$translationKey}\",\"{$translationText}\",\"{$category}\",\"{$type}\",\"{$context}\",\"{$status}\",\"{$origin}\",\"{$language}\",\"{$createdByUserId}\",\"{$reviewedByUserId}\",\"{$reviewedAt}\",\"{$updatedAt}\"\n";
-            }
-        }
-
-        return $csv;
     }
 
     /**
@@ -362,9 +325,9 @@ class ExportService extends Component
             'path' => $path,
             'count' => count($translations),
         ]);
-        
+
         $content = "<?php\n/**\n * {$language} translations\n * Auto-generated: " . date('Y-m-d H:i:s') . "\n */\nreturn [\n";
-        
+
         foreach ($translations as $key => $value) {
             // Force keys to always be strings (especially important for numeric strings)
             // to prevent PHP from treating them as integer keys
@@ -372,12 +335,12 @@ class ExportService extends Component
             $exportedValue = var_export($value, true);
             $content .= "    {$exportedKey} => {$exportedValue},\n";
         }
-        
+
         $content .= "];\n";
-        
+
         // Secure file writing with atomic operation
         $tempFile = $path . '.tmp';
-        
+
         if (file_put_contents($tempFile, $content, LOCK_EX) === false) {
             $this->logError("Failed to write translation file", ['tempFile' => $tempFile]);
             throw new \Exception('Failed to write translation file');
@@ -393,25 +356,5 @@ class ExportService extends Component
         }
 
         $this->logInfo("Successfully wrote translation file", ['path' => $path]);
-    }
-
-
-    /**
-     * Sanitize value for CSV
-     *
-     * Protects against CSV formula injection and escapes special characters.
-     * Excel/Sheets can evaluate formulas starting with =, +, -, @ even when quoted.
-     */
-    private function sanitizeForCsv(string $value): string
-    {
-        // Protect against CSV formula injection
-        // Prefix with apostrophe to prevent formula execution in spreadsheets
-        $trimmed = ltrim($value);
-        if ($trimmed !== '' && preg_match('/^[=+\-@]/', $trimmed)) {
-            $value = "'" . $value;
-        }
-
-        // Escape double quotes by doubling them (CSV standard)
-        return str_replace('"', '""', $value);
     }
 }

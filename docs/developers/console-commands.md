@@ -16,40 +16,40 @@ php craft translation-manager/translations/capture-formie
 ddev craft translation-manager/translations/capture-formie
 ```
 
-### `translation-manager/translations/export-all`
+### `translation-manager/translations/generate-all`
 
-Export all translations (Formie + site) to PHP translation files.
+Generate all PHP translation files (Formie + site) from the database.
 
 ```bash title="PHP"
-php craft translation-manager/translations/export-all
+php craft translation-manager/translations/generate-all
 ```
 
 ```bash title="DDEV"
-ddev craft translation-manager/translations/export-all
+ddev craft translation-manager/translations/generate-all
 ```
 
-### `translation-manager/translations/export-formie`
+### `translation-manager/translations/generate-formie`
 
-Export Formie translations only to PHP translation files.
+Generate Formie PHP translation files only.
 
 ```bash title="PHP"
-php craft translation-manager/translations/export-formie
+php craft translation-manager/translations/generate-formie
 ```
 
 ```bash title="DDEV"
-ddev craft translation-manager/translations/export-formie
+ddev craft translation-manager/translations/generate-formie
 ```
 
-### `translation-manager/translations/export-site`
+### `translation-manager/translations/generate-site`
 
-Export site translations only to PHP translation files.
+Generate site PHP translation files only.
 
 ```bash title="PHP"
-php craft translation-manager/translations/export-site
+php craft translation-manager/translations/generate-site
 ```
 
 ```bash title="DDEV"
-ddev craft translation-manager/translations/export-site
+ddev craft translation-manager/translations/generate-site
 ```
 
 ### `translation-manager/translations/import-formie`

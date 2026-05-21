@@ -103,13 +103,13 @@
         };
 
         if (type === 'all') {
-            url = '{{ cpUrl('translation-manager/export/files') }}';
+            url = '{{ cpUrl('translation-manager/generate/files') }}';
         } else if (type === 'formie') {
-            url = '{{ cpUrl('translation-manager/export/formie-files') }}';
+            url = '{{ cpUrl('translation-manager/generate/formie-files') }}';
         } else if (type.startsWith('category:')) {
             // Handle per-category generation
             const category = type.substring(9); // Remove 'category:' prefix
-            url = '{{ cpUrl('translation-manager/export/category-files') }}';
+            url = '{{ cpUrl('translation-manager/generate/category-files') }}';
             bodyData.category = category;
         }
 

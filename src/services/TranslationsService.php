@@ -1224,9 +1224,9 @@ class TranslationsService extends Component
             $this->logInfo("Cleaned up unused translations", ['deleted' => $deleted]);
             
             // Regenerate Formie translation files
-            $exportService = TranslationManager::getInstance()->export;
-            $exportService->exportFormieTranslations();
-            
+            $generationService = TranslationManager::getInstance()->generate;
+            $generationService->generateFormieTranslations();
+
             $this->logInfo("Regenerated Formie translation files after cleanup");
         }
         

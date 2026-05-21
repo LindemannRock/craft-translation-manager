@@ -34,7 +34,7 @@ use lindemannrock\translationmanager\listeners\MissingTranslationListener;
 use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\translationmanager\services\AiTranslationService;
 use lindemannrock\translationmanager\services\BackupService;
-use lindemannrock\translationmanager\services\ExportService;
+use lindemannrock\translationmanager\services\GenerationService;
 use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\services\TranslationsService;
 use lindemannrock\translationmanager\utilities\TranslationStatsUtility;
@@ -52,7 +52,7 @@ use yii\i18n\MessageSource;
  *
  * @property-read TranslationsService $translations
  * @property-read AiTranslationService $ai
- * @property-read ExportService $export
+ * @property-read GenerationService $generate
  * @property-read BackupService $backup
  * @property-read Settings $settings
  * @method Settings getSettings()
@@ -101,7 +101,7 @@ class TranslationManager extends Plugin
             'components' => [
                 'translations' => TranslationsService::class,
                 'ai' => AiTranslationService::class,
-                'export' => ExportService::class,
+                'generate' => GenerationService::class,
                 'backup' => BackupService::class,
                 'integrations' => IntegrationService::class,
             ],
@@ -158,7 +158,7 @@ class TranslationManager extends Plugin
         $this->setComponents([
             'translations' => TranslationsService::class,
             'ai' => AiTranslationService::class,
-            'export' => ExportService::class,
+            'generate' => GenerationService::class,
             'backup' => BackupService::class,
             'integrations' => IntegrationService::class,
         ]);
@@ -715,10 +715,14 @@ class TranslationManager extends Plugin
             'translation-manager/translations/save-all' => 'translation-manager/translations/save-all',
             'translation-manager/translations/delete' => 'translation-manager/translations/delete',
 
-            // Generate routes
+            // Generate routes (write PHP translation files to disk)
             'translation-manager/generate' => 'translation-manager/generate/index',
+            'translation-manager/generate/files' => 'translation-manager/generate/files',
+            'translation-manager/generate/formie-files' => 'translation-manager/generate/formie-files',
+            'translation-manager/generate/site-files' => 'translation-manager/generate/site-files',
+            'translation-manager/generate/category-files' => 'translation-manager/generate/category-files',
 
-            // Import/Export routes
+            // Import/Export routes (CSV/XLSX/JSON download for the user)
             'translation-manager/import-export' => 'translation-manager/import-export/index',
             'translation-manager/import' => 'translation-manager/import/index',
             'translation-manager/import/upload' => 'translation-manager/import/upload',
@@ -730,10 +734,6 @@ class TranslationManager extends Plugin
             'translation-manager/export' => 'translation-manager/export/index',
             'translation-manager/export/download' => 'translation-manager/export/download',
             'translation-manager/export/selected' => 'translation-manager/export/selected',
-            'translation-manager/export/files' => 'translation-manager/export/files',
-            'translation-manager/export/formie-files' => 'translation-manager/export/formie-files',
-            'translation-manager/export/site-files' => 'translation-manager/export/site-files',
-            'translation-manager/export/category-files' => 'translation-manager/export/category-files',
 
             // Maintenance routes
             'translation-manager/maintenance' => 'translation-manager/maintenance/index',

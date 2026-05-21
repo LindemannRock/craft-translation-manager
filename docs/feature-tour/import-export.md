@@ -101,14 +101,14 @@ Enable auto-generation in settings to automatically update PHP files when transl
 ### Console Commands
 
 ```bash
-# Export all translations
-php craft translation-manager/translations/export-all
+# Generate all translation files
+php craft translation-manager/translations/generate-all
 
-# Export site translations only
-php craft translation-manager/translations/export-site
+# Generate site translation files only
+php craft translation-manager/translations/generate-site
 
-# Export Formie translations only
-php craft translation-manager/translations/export-formie
+# Generate Formie translation files only
+php craft translation-manager/translations/generate-formie
 ```
 
 ## PHP File Import

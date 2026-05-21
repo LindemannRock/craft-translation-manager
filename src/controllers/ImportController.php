@@ -311,7 +311,7 @@ class ImportController extends Controller
             $results = $this->importTranslations($translations, false);
 
             if ($settings->autoGenerate) {
-                TranslationManager::getInstance()->export->exportAll();
+                TranslationManager::getInstance()->generate->generateAll();
             }
             
             // Save import history
