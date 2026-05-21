@@ -321,15 +321,7 @@ class TranslationsController extends Controller
         }
         
         if (TranslationManager::getInstance()->translations->saveTranslation($translation)) {
-            // Generate files if auto-generate is enabled
-            if (TranslationManager::getInstance()->getSettings()->autoGenerate) {
-                $isFormie = str_starts_with($translation->context, 'formie.');
-                if ($isFormie) {
-                    TranslationManager::getInstance()->generate->generateFormieTranslations();
-                } else {
-                    TranslationManager::getInstance()->generate->generateSiteTranslations();
-                }
-            }
+            TranslationManager::getInstance()->generate->triggerAutoGenerate();
 
             return $this->asJson([
                 'success' => true,
@@ -363,8 +355,6 @@ class TranslationsController extends Controller
         $translations = $request->getRequiredBodyParam('translations');
         
         $saved = 0;
-        $hasFormie = false;
-        $hasSite = false;
 
         // Pre-fetch every referenced row in a single SELECT, indexed by id.
         // Same shape as ExportController::actionSelected (audit 2.8) — replaces
@@ -411,24 +401,11 @@ class TranslationsController extends Controller
             }
             if (TranslationManager::getInstance()->translations->saveTranslation($translation)) {
                 $saved++;
-
-                // Track what types we're saving
-                if (str_starts_with($translation->context, 'formie.')) {
-                    $hasFormie = true;
-                } else {
-                    $hasSite = true;
-                }
             }
         }
 
-        // Generate files if auto-generate is enabled
-        if (TranslationManager::getInstance()->getSettings()->autoGenerate && $saved > 0) {
-            if ($hasFormie) {
-                TranslationManager::getInstance()->generate->generateFormieTranslations();
-            }
-            if ($hasSite) {
-                TranslationManager::getInstance()->generate->generateSiteTranslations();
-            }
+        if ($saved > 0) {
+            TranslationManager::getInstance()->generate->triggerAutoGenerate();
         }
 
         return $this->asJson([
@@ -546,9 +523,9 @@ class TranslationsController extends Controller
             }
         }
 
-        // Generate files if auto-generate is enabled and rows were marked translated.
-        if ($updated > 0 && $targetStatus === 'translated' && $settings->autoGenerate) {
-            TranslationManager::getInstance()->generate->generateAll();
+        // Re-generate files when rows are marked translated (autoGenerate gated inside).
+        if ($updated > 0 && $targetStatus === 'translated') {
+            TranslationManager::getInstance()->generate->triggerAutoGenerate();
         }
 
         return $this->asJson([

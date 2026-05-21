@@ -310,10 +310,8 @@ class ImportController extends Controller
 
             $results = $this->importTranslations($translations, false);
 
-            if ($settings->autoGenerate) {
-                TranslationManager::getInstance()->generate->generateAll();
-            }
-            
+            TranslationManager::getInstance()->generate->triggerAutoGenerate();
+
             // Save import history
             $history = new ImportHistoryRecord();
             $history->userId = $currentUser->id;

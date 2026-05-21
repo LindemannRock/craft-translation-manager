@@ -36,6 +36,26 @@ class GenerationService extends Component
     }
 
     /**
+     * Run generateAll() iff the autoGenerate setting is enabled.
+     *
+     * Single funnel for the "regenerate files automatically on save/import"
+     * behavior. Callers don't gate themselves on the setting — they always
+     * call this method, and the gate decision lives in one place.
+     *
+     * @return bool true if generation ran, false if the setting is off
+     * @since 5.24.0
+     */
+    public function triggerAutoGenerate(): bool
+    {
+        if (!TranslationManager::getInstance()->getSettings()->autoGenerate) {
+            return false;
+        }
+
+        $this->generateAll();
+        return true;
+    }
+
+    /**
      * Generate all translation files (Formie + site)
      */
     public function generateAll(): array
