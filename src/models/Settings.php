@@ -299,6 +299,8 @@ class Settings extends Model
             'itemsPerPage' => Craft::t('translation-manager', 'Items Per Page'),
             'autoSaveEnabled' => Craft::t('translation-manager', 'Enable Auto-Save'),
             'autoSaveDelay' => Craft::t('translation-manager', 'Auto-Save Delay'),
+            'captureMissingTranslations' => Craft::t('translation-manager', 'Capture Missing Translations'),
+            'captureMissingOnlyDevMode' => Craft::t('translation-manager', 'Only in devMode'),
             'requireApproval' => Craft::t('translation-manager', 'Require Approval'),
             'skipPatterns' => Craft::t('translation-manager', 'Skip Patterns'),
             'excludeFormHandlePatterns' => Craft::t('translation-manager', 'Exclude Form Handle Patterns'),
