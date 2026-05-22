@@ -1,5 +1,64 @@
 # Changelog
 
+## [5.24.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.23.3...v5.24.0) (2026-05-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename ExportService → GenerationService and split file generation from CSV downloads
+
+### Added
+
+* add backup option for PHP imports with user feedback ([c6900ff](https://github.com/LindemannRock/craft-translation-manager/commit/c6900fff18bfe3110879f9771c0f4e7f48293211))
+* add margin to backup option field in import/export template ([b03b80d](https://github.com/LindemannRock/craft-translation-manager/commit/b03b80de79a02d7755bc5804b358d2cbed6c13bf))
+* add scheduled usage recheck functionality and settings ([dbb9cd0](https://github.com/LindemannRock/craft-translation-manager/commit/dbb9cd06b46fbb2aea08be1546a4942e9ba2ee10))
+* add SiteLanguageHelper for resolving Craft site IDs from language codes ([cba5dcd](https://github.com/LindemannRock/craft-translation-manager/commit/cba5dcdb20d452fd25100061fa0aca64cbbab979))
+* add test for saving import history records in PHP import ([4bc856a](https://github.com/LindemannRock/craft-translation-manager/commit/4bc856a272b850ba5fe2a6cd99b11dc2366e6ee8))
+* enhance skip patterns instructions with info box component ([1a0db76](https://github.com/LindemannRock/craft-translation-manager/commit/1a0db7695298c49abc5ca940504a4e8a71d2cb0a))
+* **i18n:** add "Select PHP file" translations for multiple languages ([85a28a4](https://github.com/LindemannRock/craft-translation-manager/commit/85a28a478013c1e718cde51accaf67f63b856a00))
+* **i18n:** add category sorting and improve translation validation ([44db73c](https://github.com/LindemannRock/craft-translation-manager/commit/44db73ce89b0b85733e0381878749d34f24a86a7))
+* **i18n:** add category validation messages in multiple languages ([1bb7310](https://github.com/LindemannRock/craft-translation-manager/commit/1bb7310bf3a8f370022e54e69f8696ffbe85f16c))
+* **i18n:** add color sets for translation types and origins ([64d78a8](https://github.com/LindemannRock/craft-translation-manager/commit/64d78a813612ab0bb80ef208baa17891c168d229))
+* **i18n:** add migration and deletion messages for mapped-source languages ([c4719cc](https://github.com/LindemannRock/craft-translation-manager/commit/c4719cc7056d8d79a679faa730a52d179d99e0f9))
+* **i18n:** add migration and deletion messages for multiple languages ([faead1d](https://github.com/LindemannRock/craft-translation-manager/commit/faead1d11b28f9ae793a7c77bcffada43f9b79f3))
+* **i18n:** add new cleanup messages for languages and categories in multiple translations ([605000e](https://github.com/LindemannRock/craft-translation-manager/commit/605000e9efae7740722dd6e62a7a2a167d563f51))
+* **i18n:** add new translation keys for approval and backup settings ([abee5c6](https://github.com/LindemannRock/craft-translation-manager/commit/abee5c60b730e6ed911d802400bd5fb3257941fc))
+* **i18n:** add translation issue template for reporting problems ([351537c](https://github.com/LindemannRock/craft-translation-manager/commit/351537c85b80ee6398bf159901e3ae1533848d19))
+* **i18n:** add translation keys for capture missing translations settings ([f7d7dcb](https://github.com/LindemannRock/craft-translation-manager/commit/f7d7dcb70bef5aa301906155992e04dedec08125))
+* **i18n:** update German, Spanish, Italian, Dutch, and Portuguese translations ([0e614b0](https://github.com/LindemannRock/craft-translation-manager/commit/0e614b02f948e5a58b94c48bc319cb0f3f8420bb))
+* **i18n:** update translation types and origins with dynamic colors ([d0e58df](https://github.com/LindemannRock/craft-translation-manager/commit/d0e58df3995e22e853b0c68ecaec810652beff77))
+* **i18n:** update translations for Dutch, Norwegian, Portuguese, and Swedish ([072de7c](https://github.com/LindemannRock/craft-translation-manager/commit/072de7ceaa218c103177bb35a53b0ae451698775))
+* implement import history logging for PHP imports ([c6346e5](https://github.com/LindemannRock/craft-translation-manager/commit/c6346e558daff111137e6627f6e4c19a94c353d9))
+* implement migration and deletion for mapped-source languages ([7471dda](https://github.com/LindemannRock/craft-translation-manager/commit/7471dda65f2642342857d8de110f87454e83c6ee))
+* **import:** add warning info box for category import status ([9356cfe](https://github.com/LindemannRock/craft-translation-manager/commit/9356cfe4f3f88a18d94f5211477efb38629be2f2))
+* **import:** enhance category import validation and registration process ([0b2e9e4](https://github.com/LindemannRock/craft-translation-manager/commit/0b2e9e42628f1a44e42cc007b78fe9909d97ab0d))
+* **import:** streamline translation import process and update data handling ([f90b789](https://github.com/LindemannRock/craft-translation-manager/commit/f90b7897478884a9a76056bbd09f0f1e3109f89c))
+* **import:** update file selection labels for clarity ([45214d2](https://github.com/LindemannRock/craft-translation-manager/commit/45214d2bbbf9505603622ddd9bd6e25ba956e8f7))
+* **languages:** update unique language retrieval to use canonical mappings ([25a6d67](https://github.com/LindemannRock/craft-translation-manager/commit/25a6d67acdebb4aab7cf3a8cb13d5c1cd6e09a86))
+* **tests:** add integration tests for translation management functionality ([7065f4b](https://github.com/LindemannRock/craft-translation-manager/commit/7065f4b4cd27ab316c183ed3183262ef3fbd4e88))
+* **tests:** add manual CSV fixtures for multi-site import/export testing ([94176d3](https://github.com/LindemannRock/craft-translation-manager/commit/94176d3747ee4bdf9c476f9428bf58ca30cdce6e))
+* **translations:** add usage recheck messages for multiple languages ([13a981f](https://github.com/LindemannRock/craft-translation-manager/commit/13a981fc20c7608ab5d20a120e0ab2b5355126dd))
+* **translations:** enhance parameter validation and permission handling in translations index ([efdd573](https://github.com/LindemannRock/craft-translation-manager/commit/efdd5734bf5824e0a3776dada0339aeb8a732496))
+* **translations:** optimize multi-site translation creation and updates ([33d3bae](https://github.com/LindemannRock/craft-translation-manager/commit/33d3bae9b1a588683bd550903824cf4d1cc0111f))
+
+
+### Fixed
+
+* **i18n:** correct translation placeholders for user prompts ([48fa0fa](https://github.com/LindemannRock/craft-translation-manager/commit/48fa0fa11f02974afd4b3a28cea9d4f851b10d52))
+* **i18n:** correct translation strings for skip patterns in multiple languages ([dcd1ef9](https://github.com/LindemannRock/craft-translation-manager/commit/dcd1ef915c37b010fc79ee8e6281f2a0930b1838))
+* **phpstan:** replace relative path with rootDir for PHPStan config ([1df1f5c](https://github.com/LindemannRock/craft-translation-manager/commit/1df1f5c533b428bacfb6d0110b4b1b35d24033fb))
+* return boolean values for translation save function ([28d25a7](https://github.com/LindemannRock/craft-translation-manager/commit/28d25a7366ca6ef616447d40871f9b87998dda59))
+
+
+### Miscellaneous Chores
+
+* **release:** force next release version ([01a108c](https://github.com/LindemannRock/craft-translation-manager/commit/01a108c914dad9015ec968fd72c1b3cd335138d0))
+
+
+### Code Refactoring
+
+* rename ExportService → GenerationService and split file generation from CSV downloads ([4b28f08](https://github.com/LindemannRock/craft-translation-manager/commit/4b28f08e7e9970684aa5ad12e97a52e872225325))
+
 ## [5.23.3](https://github.com/LindemannRock/craft-translation-manager/compare/v5.23.2...v5.23.3) (2026-05-06)
 
 
