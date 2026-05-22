@@ -28,20 +28,10 @@
 
 		<h2 class="first">{{ "Interface Settings"|t('translation-manager') }}</h2>
 
-		{{ forms.textField({
-            label: "Items Per Page"|t('translation-manager'),
-            instructions: "Number of translations to show per page"|t('translation-manager'),
-            id: 'itemsPerPage',
-            name: 'settings[itemsPerPage]',
-            value: settings.itemsPerPage,
-            errors: settings.getErrors('itemsPerPage'),
-            type: 'number',
-            min: 10,
-            max: 500,
-            disabled: settings.isOverriddenByConfig('itemsPerPage'),
-            warning: settings.isOverriddenByConfig('itemsPerPage') ?
-                "This is being overridden by the <code>itemsPerPage</code> setting in <code>config/translation-manager.php</code>."|raw : null,
-        }) }}
+		{% include 'lindemannrock-base/_partials/field-items-per-page' with {
+            settings: settings,
+            pluginHandle: 'translation-manager',
+        } only %}
 
         {{ forms.lightswitchField({
             label: "Enable Auto-Save"|t('translation-manager'),
@@ -54,6 +44,17 @@
             warning: settings.isOverriddenByConfig('autoSaveEnabled') ?
                 "This is being overridden by the <code>autoSaveEnabled</code> setting in <code>config/translation-manager.php</code>."|raw : null,
         }) }}
+
+        <hr>
+
+        {% include 'lindemannrock-base/_partials/cascade-base-overrides' with {
+            settings: settings,
+            pluginHandle: 'translation-manager',
+            sections: {
+                dateFormat: {},
+                exports: {},
+            },
+        } only %}
 
 	{% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}

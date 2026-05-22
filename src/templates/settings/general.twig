@@ -28,18 +28,10 @@
 
 		<h2 class="first">{{ "General Settings"|t('translation-manager') }}</h2>
 
-		{{ forms.textField({
-            label: "Plugin Name"|t('translation-manager'),
-            instructions: "The display name for the plugin in the Control Panel menu and breadcrumbs"|t('translation-manager'),
-            id: 'pluginName',
-            name: 'settings[pluginName]',
-            value: settings.pluginName,
-            errors: settings.getErrors('pluginName'),
-            required: true,
-            disabled: settings.isOverriddenByConfig('pluginName'),
-            warning: settings.isOverriddenByConfig('pluginName') ?
-                "This is being overridden by the <code>pluginName</code> setting in <code>config/translation-manager.php</code>."|raw : null,
-        }) }}
+		{% include 'lindemannrock-base/_partials/field-plugin-name' with {
+            settings: settings,
+            pluginHandle: 'translation-manager',
+        } only %}
 
 		<hr>
 
@@ -61,30 +53,10 @@
 
 		<h2>{{ "Logging Settings"|t('translation-manager') }}</h2>
 
-		{% set logOptions = [
-            {value: 'error', label: 'Error (Critical errors only)'|t('translation-manager')},
-            {value: 'warning', label: 'Warning (Errors and warnings)'|t('translation-manager')},
-            {value: 'info', label: 'Info (General information)'|t('translation-manager')},
-        ] %}
-
-		{% if craft.app.config.general.devMode %}
-			{% set logOptions = logOptions|merge([
-                {value: 'debug', label: 'Debug (Detailed debugging)'|t('translation-manager')}
-            ]) %}
-		{% endif %}
-
-		{{ forms.selectField({
-            label: 'Log Level'|t('translation-manager'),
-            instructions: 'Choose what types of messages to log. Debug level requires devMode to be enabled.'|t('translation-manager'),
-            id: 'logLevel',
-            name: 'settings[logLevel]',
-            value: settings.logLevel,
-            options: logOptions,
-            errors: settings.getErrors('logLevel'),
-            disabled: settings.isOverriddenByConfig('logLevel'),
-            warning: settings.isOverriddenByConfig('logLevel') ?
-                "This is being overridden by the <code>logLevel</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
-        }) }}
+		{% include 'lindemannrock-base/_partials/field-log-level' with {
+            settings: settings,
+            pluginHandle: 'translation-manager',
+        } only %}
 
 	{% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}
