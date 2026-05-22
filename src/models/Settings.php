@@ -13,6 +13,11 @@ namespace lindemannrock\translationmanager\models;
 use Craft;
 use craft\base\Model;
 use craft\behaviors\EnvAttributeParserBehavior;
+use lindemannrock\base\traits\DateFormatSettingsTrait;
+use lindemannrock\base\traits\ExportFormatSettingsTrait;
+use lindemannrock\base\traits\ItemsPerPageSettingsTrait;
+use lindemannrock\base\traits\LogLevelSettingsTrait;
+use lindemannrock\base\traits\PluginNameSettingsTrait;
 use lindemannrock\base\traits\SettingsConfigTrait;
 use lindemannrock\base\traits\SettingsDisplayNameTrait;
 use lindemannrock\base\traits\SettingsPersistenceTrait;
@@ -26,7 +31,12 @@ use lindemannrock\logginglibrary\traits\LoggingTrait;
  */
 class Settings extends Model
 {
+    use DateFormatSettingsTrait;
+    use ExportFormatSettingsTrait;
+    use ItemsPerPageSettingsTrait;
+    use LogLevelSettingsTrait;
     use LoggingTrait;
+    use PluginNameSettingsTrait;
     use SettingsConfigTrait;
     use SettingsDisplayNameTrait;
     use SettingsPersistenceTrait;
@@ -102,11 +112,6 @@ class Settings extends Model
     private ?string $_rawGenerationPath = null;
 
     /**
-     * @var int Number of items to show per page in the translation manager
-     */
-    public int $itemsPerPage = 100;
-    
-    /**
      * @var bool Whether to enable auto-save after typing stops
      */
     public bool $autoSaveEnabled = false;
@@ -121,11 +126,6 @@ class Settings extends Model
      * @var bool Whether translation changes require an approver before becoming translated
      */
     public bool $requireApproval = false;
-
-    /**
-     * @var string The logging level for the plugin
-     */
-    public string $logLevel = 'error';
 
     /**
      * @var array List of text patterns to skip when capturing translations
@@ -238,9 +238,8 @@ class Settings extends Model
 
     public function rules(): array
     {
-        return [
-            [['pluginName', 'generationPath', 'sourceLanguage'], 'required'],
-            [['pluginName'], 'string', 'max' => 100],
+        return array_merge([
+            [['generationPath', 'sourceLanguage'], 'required'],
             [['translationCategory'], 'string', 'max' => 50],
             [['sourceLanguage'], 'string', 'max' => 10],
             [['sourceLanguage'], 'match', 'pattern' => '/^[a-z]{2}(-[A-Z]{2})?$/',
@@ -270,7 +269,6 @@ class Settings extends Model
             [['backupVolumeUid'], 'string'],
             [['openAiApiKey', 'geminiApiKey', 'anthropicApiKey'], 'string'],
             [['openAiModel', 'geminiModel', 'anthropicModel'], 'string', 'max' => 100],
-            [['itemsPerPage'], 'integer', 'min' => 10, 'max' => 500],
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
             [['enableFormieIntegration', 'enableSiteTranslations', 'autoGenerate',
               'enableSuggestions', 'autoSaveEnabled', 'backupEnabled',
@@ -280,15 +278,12 @@ class Settings extends Model
             [['backupRetentionDays'], 'integer', 'min' => 0, 'max' => 365],
             [['backupSchedule'], 'in', 'range' => ['manual', 'daily', 'weekly']],
             [['aiProvider'], 'in', 'range' => ['openai', 'gemini', 'anthropic', 'mock']],
-            [['logLevel'], 'in', 'range' => ['debug', 'info', 'warning', 'error']],
-            [['logLevel'], 'validateLogLevel'],
-        ];
+        ], $this->pluginNameSettingsRules(), $this->logLevelSettingsRules(), $this->dateFormatSettingsRules(), $this->exportFormatSettingsRules(), $this->itemsPerPageSettingsRules());
     }
 
     public function attributeLabels(): array
     {
-        return [
-            'pluginName' => Craft::t('translation-manager', 'Plugin Name'),
+        return array_merge([
             'translationCategory' => Craft::t('translation-manager', 'Translation Category (Deprecated)'),
             'translationCategories' => Craft::t('translation-manager', 'Translation Categories'),
             'sourceLanguage' => Craft::t('translation-manager', 'Source Language'),
@@ -296,7 +291,6 @@ class Settings extends Model
             'enableSiteTranslations' => Craft::t('translation-manager', 'Enable Site Translations'),
             'autoGenerate' => Craft::t('translation-manager', 'Auto Generate'),
             'generationPath' => Craft::t('translation-manager', 'Generation Path'),
-            'itemsPerPage' => Craft::t('translation-manager', 'Items Per Page'),
             'autoSaveEnabled' => Craft::t('translation-manager', 'Enable Auto-Save'),
             'autoSaveDelay' => Craft::t('translation-manager', 'Auto-Save Delay'),
             'captureMissingTranslations' => Craft::t('translation-manager', 'Capture Missing Translations'),
@@ -319,9 +313,8 @@ class Settings extends Model
             'backupSchedule' => Craft::t('translation-manager', 'Backup Schedule'),
             'backupPath' => Craft::t('translation-manager', 'Backup Path'),
             'backupVolumeUid' => Craft::t('translation-manager', 'Backup Volume'),
-            'logLevel' => Craft::t('translation-manager', 'Log Level'),
             'localeMapping' => Craft::t('translation-manager', 'Locale Mapping'),
-        ];
+        ], $this->pluginNameSettingsLabel(), $this->logLevelSettingsLabel(), $this->dateFormatSettingsLabels(), $this->exportFormatSettingsLabels(), $this->itemsPerPageSettingsLabel());
     }
 
     /**
@@ -609,46 +602,6 @@ class Settings extends Model
     {
         $mapping = $this->getActiveLocaleMapping();
         return $mapping[$language] ?? $language;
-    }
-
-    /**
-     * Validates the log level
-     */
-    public function validateLogLevel($attribute, $params, $validator)
-    {
-        $logLevel = $this->$attribute;
-
-        // Reset session warning when devMode is true - allows warning to show again if devMode changes
-        if (Craft::$app->getConfig()->getGeneral()->devMode && !Craft::$app->getRequest()->getIsConsoleRequest()) {
-            Craft::$app->getSession()->remove('tm_debug_config_warning');
-        }
-
-        // Debug level is only allowed when devMode is enabled - auto-fallback to info
-        if ($logLevel === 'debug' && !Craft::$app->getConfig()->getGeneral()->devMode) {
-            $this->$attribute = 'info';
-
-            // Only log warning once per session for config overrides
-            if ($this->isOverriddenByConfig('logLevel')) {
-                if (!Craft::$app->getRequest()->getIsConsoleRequest()) {
-                    // Web request - use session to prevent duplicate warnings
-                    if (Craft::$app->getSession()->get('tm_debug_config_warning') === null) {
-                        $this->logWarning('Log level "debug" from config file changed to "info" because devMode is disabled', [
-                            'configFile' => 'config/translation-manager.php',
-                        ]);
-                        Craft::$app->getSession()->set('tm_debug_config_warning', true);
-                    }
-                } else {
-                    // Console request - just log without session
-                    $this->logWarning('Log level "debug" from config file changed to "info" because devMode is disabled', [
-                        'configFile' => 'config/translation-manager.php',
-                    ]);
-                }
-            } else {
-                // Database setting - save the correction
-                $this->logWarning('Log level automatically changed from "debug" to "info" because devMode is disabled');
-                $this->saveToDatabase();
-            }
-        }
     }
 
     /**
@@ -1009,6 +962,10 @@ class Settings extends Model
             'captureMissingTranslations',
             'captureMissingOnlyDevMode',
             'enableAiTranslations',
+            'showSeconds',
+            'exportsCsv',
+            'exportsJson',
+            'exportsExcel',
         ];
     }
 
