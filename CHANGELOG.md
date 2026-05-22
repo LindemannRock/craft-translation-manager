@@ -2,11 +2,6 @@
 
 ## [5.24.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.23.3...v5.24.0) - 2026-05-22
 
-
-### ⚠ BREAKING CHANGES
-
-* rename ExportService → GenerationService and split file generation from CSV downloads
-
 ### Added
 
 * add backup option for PHP imports with user feedback ([c6900ff](https://github.com/LindemannRock/craft-translation-manager/commit/c6900fff18bfe3110879f9771c0f4e7f48293211))
