@@ -277,6 +277,15 @@ class SettingsController extends Controller
         // Only update fields that were posted and are not overridden by config
         foreach ($settingsData as $key => $value) {
             if (!$settings->isOverriddenByConfig($key) && property_exists($settings, $key)) {
+                // Multi-state selects (e.g. "Use global default" = '') need '' → null
+                // so nullable properties hold null, not a coerced false / 0.
+                if ($value === '') {
+                    $type = (new \ReflectionProperty($settings, $key))->getType();
+                    if ($type instanceof \ReflectionNamedType && $type->allowsNull()) {
+                        $value = null;
+                    }
+                }
+
                 // Check for setter method first (handles array conversions, etc.)
                 $setterMethod = 'set' . ucfirst($key);
                 if (method_exists($settings, $setterMethod)) {
@@ -598,6 +607,14 @@ class SettingsController extends Controller
                 'itemsPerPage',
                 'autoSaveEnabled',
                 'autoSaveDelay',
+                'timeFormat',
+                'monthFormat',
+                'dateOrder',
+                'dateSeparator',
+                'showSeconds',
+                'exportsCsv',
+                'exportsJson',
+                'exportsExcel',
             ],
             'locale-mapping' => [
                 'localeMapping',
