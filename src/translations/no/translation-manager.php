@@ -267,20 +267,11 @@ return [
     // Settings: General
     'General Settings' => 'Generelle innstillinger',
     'General' => 'Generelt',
-    'Plugin Name' => 'Plugin-navn',
-    'The display name for the plugin in the Control Panel menu and breadcrumbs' => 'Visningsnavnet for plugin i kontrollpanelmenyen og brødsmulene',
     'Workflow Settings' => 'Arbeidsflytsinnstillinger',
     'Require Approval' => 'Godkjenning påkrevd',
     'Require Approval Before Publish' => 'Krev godkjenning før publisering',
     'When enabled, users without approval permission can only save drafts. Approvers can publish as translated.' => 'Når aktivert kan brukere uten godkjenningstillatelse kun lagre utkast. Godkjennere kan publisere som oversatt.',
     'Logging Settings' => 'Logginnstillinger',
-    'Log Level' => 'Loggnivå',
-    'Choose what types of messages to log. Debug level requires devMode to be enabled.' => 'Velg hvilke typer meldinger som skal logges. Feilsøkingsnivå krever at devMode er aktivert.',
-    'Error (Critical errors only)' => 'Feil (kun kritiske feil)',
-    'Warning (Errors and warnings)' => 'Advarsel (feil og advarsler)',
-    'Info (General information)' => 'Info (generell informasjon)',
-    'Debug (Detailed debugging)' => 'Debug (detaljert feilsøking)',
-    'This is being overridden by the <code>logLevel</code> setting in <code>config/translation-manager.php</code>.' => 'Dette overstyres av innstillingen <code>logLevel</code> i <code>config/translation-manager.php</code>.',
 
     // Settings: Translation Sources
     'Translation Sources' => 'Oversettelseskilder',
@@ -345,8 +336,6 @@ return [
     // Settings: Interface
     'Interface Settings' => 'Grensesnittinnstillinger',
     'Interface' => 'Grensesnitt',
-    'Items Per Page' => 'Elementer per side',
-    'Number of translations to show per page' => 'Antall oversettelser som vises per side',
     'Enable Auto-Save' => 'Aktiver automatisk lagring',
     'Auto-Save Delay' => 'Forsinkelse ved automatisk lagring',
     'Automatically save each translation when you click outside the field (blur)' => 'Lagre automatisk hver oversettelse når du klikker utenfor feltet (blur)',

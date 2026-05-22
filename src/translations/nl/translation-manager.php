@@ -267,20 +267,11 @@ return [
     // Settings: General
     'General Settings' => 'Algemene instellingen',
     'General' => 'Algemeen',
-    'Plugin Name' => 'Pluginnaam',
-    'The display name for the plugin in the Control Panel menu and breadcrumbs' => 'De weergavenaam voor de plugin in het menu en de broodkruimels van het configuratiescherm',
     'Workflow Settings' => 'Workflowinstellingen',
     'Require Approval' => 'Goedkeuring vereist',
     'Require Approval Before Publish' => 'Goedkeuring vereist vóór publicatie',
     'When enabled, users without approval permission can only save drafts. Approvers can publish as translated.' => 'Indien ingeschakeld, kunnen gebruikers zonder goedkeuringsrecht alleen concepten opslaan. Goedkeurders kunnen publiceren als vertaald.',
     'Logging Settings' => 'Logboekinstellingen',
-    'Log Level' => 'Logboekniveau',
-    'Choose what types of messages to log. Debug level requires devMode to be enabled.' => 'Kies welke soorten berichten worden gelogd. Het debugniveau vereist dat devMode is ingeschakeld.',
-    'Error (Critical errors only)' => 'Fout (alleen kritieke fouten)',
-    'Warning (Errors and warnings)' => 'Waarschuwing (fouten en waarschuwingen)',
-    'Info (General information)' => 'Info (algemene informatie)',
-    'Debug (Detailed debugging)' => 'Debug (gedetailleerd debuggen)',
-    'This is being overridden by the <code>logLevel</code> setting in <code>config/translation-manager.php</code>.' => 'Dit wordt overschreven door de instelling <code>logLevel</code> in <code>config/translation-manager.php</code>.',
 
     // Settings: Translation Sources
     'Translation Sources' => 'Vertaalbronnen',
@@ -345,8 +336,6 @@ return [
     // Settings: Interface
     'Interface Settings' => 'Interface-instellingen',
     'Interface' => 'Interface',
-    'Items Per Page' => 'Items per pagina',
-    'Number of translations to show per page' => 'Aantal vertalingen dat per pagina wordt weergegeven',
     'Enable Auto-Save' => 'Automatisch opslaan inschakelen',
     'Auto-Save Delay' => 'Vertraging automatisch opslaan',
     'Automatically save each translation when you click outside the field (blur)' => 'Elke vertaling automatisch opslaan wanneer u buiten het veld klikt (blur)',

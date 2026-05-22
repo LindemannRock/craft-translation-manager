@@ -267,20 +267,11 @@ return [
     // Settings: General
     'General Settings' => 'Paramètres généraux',
     'General' => 'Général',
-    'Plugin Name' => 'Nom du plugin',
-    'The display name for the plugin in the Control Panel menu and breadcrumbs' => 'Le nom d\'affichage du plugin dans le menu et le fil d\'Ariane du panneau de contrôle',
     'Workflow Settings' => 'Paramètres du flux de travail',
     'Require Approval' => 'Approbation requise',
     'Require Approval Before Publish' => 'Approbation requise avant publication',
     'When enabled, users without approval permission can only save drafts. Approvers can publish as translated.' => 'Lorsque cette option est activée, les utilisateurs sans permission d\'approbation ne peuvent qu\'enregistrer des brouillons. Les approbateurs peuvent publier comme traduit.',
     'Logging Settings' => 'Paramètres de journalisation',
-    'Log Level' => 'Niveau de journal',
-    'Choose what types of messages to log. Debug level requires devMode to be enabled.' => 'Choisissez les types de messages à journaliser. Le niveau de débogage nécessite que le devMode soit activé.',
-    'Error (Critical errors only)' => 'Erreur (erreurs critiques uniquement)',
-    'Warning (Errors and warnings)' => 'Avertissement (erreurs et avertissements)',
-    'Info (General information)' => 'Info (informations générales)',
-    'Debug (Detailed debugging)' => 'Débogage (débogage détaillé)',
-    'This is being overridden by the <code>logLevel</code> setting in <code>config/translation-manager.php</code>.' => 'Ce paramètre est remplacé par le paramètre <code>logLevel</code> dans <code>config/translation-manager.php</code>.',
 
     // Settings: Translation Sources
     'Translation Sources' => 'Sources de traduction',
@@ -345,8 +336,6 @@ return [
     // Settings: Interface
     'Interface Settings' => 'Paramètres d\'interface',
     'Interface' => 'Interface',
-    'Items Per Page' => 'Éléments par page',
-    'Number of translations to show per page' => 'Nombre de traductions à afficher par page',
     'Enable Auto-Save' => 'Activer la sauvegarde automatique',
     'Auto-Save Delay' => 'Délai de sauvegarde automatique',
     'Automatically save each translation when you click outside the field (blur)' => 'Enregistrer automatiquement chaque traduction lorsque vous cliquez en dehors du champ (perte de focus)',

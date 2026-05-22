@@ -267,20 +267,11 @@ return [
     // Settings: General
     'General Settings' => '一般設定',
     'General' => '一般',
-    'Plugin Name' => 'プラグイン名',
-    'The display name for the plugin in the Control Panel menu and breadcrumbs' => 'コントロールパネルのメニューとパンくずリストに表示されるプラグイン名',
     'Workflow Settings' => 'ワークフロー設定',
     'Require Approval' => '承認必須',
     'Require Approval Before Publish' => '公開前に承認を要求',
     'When enabled, users without approval permission can only save drafts. Approvers can publish as translated.' => '有効にすると、承認権限のないユーザーは下書きのみ保存できます。承認者は翻訳済みとして公開できます。',
     'Logging Settings' => 'ログ設定',
-    'Log Level' => 'ログレベル',
-    'Choose what types of messages to log. Debug level requires devMode to be enabled.' => 'ログに記録するメッセージの種類を選択してください。デバッグレベルには devMode の有効化が必要です。',
-    'Error (Critical errors only)' => 'エラー（重大なエラーのみ）',
-    'Warning (Errors and warnings)' => '警告（エラーと警告）',
-    'Info (General information)' => '情報（一般情報）',
-    'Debug (Detailed debugging)' => 'デバッグ（詳細なデバッグ情報）',
-    'This is being overridden by the <code>logLevel</code> setting in <code>config/translation-manager.php</code>.' => '<code>config/translation-manager.php</code> の <code>logLevel</code> 設定によって上書きされています。',
 
     // Settings: Translation Sources
     'Translation Sources' => '翻訳ソース',
@@ -345,8 +336,6 @@ return [
     // Settings: Interface
     'Interface Settings' => 'インターフェース設定',
     'Interface' => 'インターフェース',
-    'Items Per Page' => '1 ページあたりの件数',
-    'Number of translations to show per page' => '1 ページに表示する翻訳数',
     'Enable Auto-Save' => '自動保存を有効にする',
     'Auto-Save Delay' => '自動保存の遅延時間',
     'Automatically save each translation when you click outside the field (blur)' => 'フィールドの外をクリックしたとき（フォーカスが外れたとき）に各翻訳を自動保存',

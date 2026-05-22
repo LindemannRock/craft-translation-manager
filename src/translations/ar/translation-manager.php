@@ -267,20 +267,11 @@ return [
     // Settings: General
     'General Settings' => 'الإعدادات العامة',
     'General' => 'عام',
-    'Plugin Name' => 'اسم الإضافة',
-    'The display name for the plugin in the Control Panel menu and breadcrumbs' => 'اسم العرض للـ Plugin في قائمة لوحة التحكم ومسار التنقل',
     'Workflow Settings' => 'إعدادات سير العمل',
     'Require Approval' => 'الموافقة مطلوبة',
     'Require Approval Before Publish' => 'اشتراط الموافقة قبل النشر',
     'When enabled, users without approval permission can only save drafts. Approvers can publish as translated.' => 'عند التفعيل، يمكن للمستخدمين الذين لا يملكون صلاحية الموافقة حفظ المسودات فحسب. يمكن للمعتمدين النشر كمترجَم.',
     'Logging Settings' => 'إعدادات التسجيل',
-    'Log Level' => 'مستوى التسجيل',
-    'Choose what types of messages to log. Debug level requires devMode to be enabled.' => 'اختر أنواع الرسائل التي سيتم تسجيلها. يتطلب مستوى التصحيح تفعيل devMode.',
-    'Error (Critical errors only)' => 'خطأ (الأخطاء الحرجة فقط)',
-    'Warning (Errors and warnings)' => 'تحذير (الأخطاء والتحذيرات)',
-    'Info (General information)' => 'معلومات (معلومات عامة)',
-    'Debug (Detailed debugging)' => 'تصحيح (تصحيح مفصّل)',
-    'This is being overridden by the <code>logLevel</code> setting in <code>config/translation-manager.php</code>.' => 'يتم تجاوز هذا الإعداد بواسطة إعداد <code>logLevel</code> في <code>config/translation-manager.php</code>.',
 
     // Settings: Translation Sources
     'Translation Sources' => 'مصادر الترجمة',
@@ -345,8 +336,6 @@ return [
     // Settings: Interface
     'Interface Settings' => 'إعدادات الواجهة',
     'Interface' => 'الواجهة',
-    'Items Per Page' => 'العناصر في الصفحة',
-    'Number of translations to show per page' => 'عدد الترجمات التي يتم عرضها لكل صفحة',
     'Enable Auto-Save' => 'تفعيل الحفظ التلقائي',
     'Auto-Save Delay' => 'تأخير الحفظ التلقائي',
     'Automatically save each translation when you click outside the field (blur)' => 'حفظ كل ترجمة تلقائياً عند النقر خارج الحقل (فقدان التركيز)',

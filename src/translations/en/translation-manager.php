@@ -264,20 +264,11 @@ return [
     // Settings: General
     'General Settings' => 'General Settings',
     'General' => 'General',
-    'Plugin Name' => 'Plugin Name',
-    'The display name for the plugin in the Control Panel menu and breadcrumbs' => 'The display name for the plugin in the Control Panel menu and breadcrumbs',
     'Workflow Settings' => 'Workflow Settings',
     'Require Approval' => 'Require Approval',
     'Require Approval Before Publish' => 'Require Approval Before Publish',
     'When enabled, users without approval permission can only save drafts. Approvers can publish as translated.' => 'When enabled, users without approval permission can only save drafts. Approvers can publish as translated.',
     'Logging Settings' => 'Logging Settings',
-    'Log Level' => 'Log Level',
-    'Choose what types of messages to log. Debug level requires devMode to be enabled.' => 'Choose what types of messages to log. Debug level requires devMode to be enabled.',
-    'Error (Critical errors only)' => 'Error (Critical errors only)',
-    'Warning (Errors and warnings)' => 'Warning (Errors and warnings)',
-    'Info (General information)' => 'Info (General information)',
-    'Debug (Detailed debugging)' => 'Debug (Detailed debugging)',
-    'This is being overridden by the <code>logLevel</code> setting in <code>config/translation-manager.php</code>.' => 'This is being overridden by the <code>logLevel</code> setting in <code>config/translation-manager.php</code>.',
 
     // Settings: Translation Sources
     'Translation Sources' => 'Translation Sources',
@@ -342,8 +333,6 @@ return [
     // Settings: Interface
     'Interface Settings' => 'Interface Settings',
     'Interface' => 'Interface',
-    'Items Per Page' => 'Items Per Page',
-    'Number of translations to show per page' => 'Number of translations to show per page',
     'Enable Auto-Save' => 'Enable Auto-Save',
     'Auto-Save Delay' => 'Auto-Save Delay',
     'Automatically save each translation when you click outside the field (blur)' => 'Automatically save each translation when you click outside the field (blur)',

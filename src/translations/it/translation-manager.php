@@ -267,20 +267,11 @@ return [
     // Settings: General
     'General Settings' => 'Impostazioni generali',
     'General' => 'Generale',
-    'Plugin Name' => 'Nome del plugin',
-    'The display name for the plugin in the Control Panel menu and breadcrumbs' => 'Il nome visualizzato per il plugin nel menu e nelle breadcrumb del pannello di controllo',
     'Workflow Settings' => 'Impostazioni flusso di lavoro',
     'Require Approval' => 'Approvazione richiesta',
     'Require Approval Before Publish' => 'Richiedi approvazione prima della pubblicazione',
     'When enabled, users without approval permission can only save drafts. Approvers can publish as translated.' => 'Se abilitato, gli utenti senza permesso di approvazione possono solo salvare bozze. Gli approvatori possono pubblicare come tradotto.',
     'Logging Settings' => 'Impostazioni log',
-    'Log Level' => 'Livello log',
-    'Choose what types of messages to log. Debug level requires devMode to be enabled.' => 'Scegliete quali tipi di messaggi registrare. Il livello debug richiede che devMode sia abilitato.',
-    'Error (Critical errors only)' => 'Errore (solo errori critici)',
-    'Warning (Errors and warnings)' => 'Avviso (errori e avvisi)',
-    'Info (General information)' => 'Info (informazioni generali)',
-    'Debug (Detailed debugging)' => 'Debug (debug dettagliato)',
-    'This is being overridden by the <code>logLevel</code> setting in <code>config/translation-manager.php</code>.' => 'Questa impostazione viene sovrascritta dall\'impostazione <code>logLevel</code> in <code>config/translation-manager.php</code>.',
 
     // Settings: Translation Sources
     'Translation Sources' => 'Sorgenti di traduzione',
@@ -345,8 +336,6 @@ return [
     // Settings: Interface
     'Interface Settings' => 'Impostazioni interfaccia',
     'Interface' => 'Interfaccia',
-    'Items Per Page' => 'Elementi per pagina',
-    'Number of translations to show per page' => 'Numero di traduzioni da mostrare per pagina',
     'Enable Auto-Save' => 'Abilita salvataggio automatico',
     'Auto-Save Delay' => 'Ritardo salvataggio automatico',
     'Automatically save each translation when you click outside the field (blur)' => 'Salva automaticamente ogni traduzione quando si fa clic fuori dal campo (blur)',

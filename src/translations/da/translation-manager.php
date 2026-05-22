@@ -267,20 +267,11 @@ return [
     // Settings: General
     'General Settings' => 'Generelle indstillinger',
     'General' => 'Generelt',
-    'Plugin Name' => 'Plugin-navn',
-    'The display name for the plugin in the Control Panel menu and breadcrumbs' => 'Visningsnavnet for plugin i kontrolpanelmenuen og brødkrummerne',
     'Workflow Settings' => 'Arbejdsgangsindstillinger',
     'Require Approval' => 'Godkendelse påkrævet',
     'Require Approval Before Publish' => 'Kræv godkendelse inden publicering',
     'When enabled, users without approval permission can only save drafts. Approvers can publish as translated.' => 'Når aktiveret kan brugere uden godkendelsestilladelse kun gemme kladder. Godkendere kan publicere som oversat.',
     'Logging Settings' => 'Logindstillinger',
-    'Log Level' => 'Logniveau',
-    'Choose what types of messages to log. Debug level requires devMode to be enabled.' => 'Vælg hvilke typer meddelelser der skal logges. Fejlfindingsniveau kræver at devMode er aktiveret.',
-    'Error (Critical errors only)' => 'Fejl (kun kritiske fejl)',
-    'Warning (Errors and warnings)' => 'Advarsel (fejl og advarsler)',
-    'Info (General information)' => 'Info (generelle oplysninger)',
-    'Debug (Detailed debugging)' => 'Debug (detaljeret fejlfinding)',
-    'This is being overridden by the <code>logLevel</code> setting in <code>config/translation-manager.php</code>.' => 'Dette tilsidesættes af indstillingen <code>logLevel</code> i <code>config/translation-manager.php</code>.',
 
     // Settings: Translation Sources
     'Translation Sources' => 'Oversættelseskilder',
@@ -345,8 +336,6 @@ return [
     // Settings: Interface
     'Interface Settings' => 'Grænsefladeindstillinger',
     'Interface' => 'Brugerflade',
-    'Items Per Page' => 'Elementer pr. side',
-    'Number of translations to show per page' => 'Antal oversættelser, der vises pr. side',
     'Enable Auto-Save' => 'Aktiver automatisk gemning',
     'Auto-Save Delay' => 'Forsinkelse ved automatisk gemning',
     'Automatically save each translation when you click outside the field (blur)' => 'Gem automatisk hver oversættelse, når du klikker uden for feltet (blur)',

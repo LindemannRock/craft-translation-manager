@@ -267,20 +267,11 @@ return [
     // Settings: General
     'General Settings' => 'Allmänna inställningar',
     'General' => 'Allmänt',
-    'Plugin Name' => 'Plugin-namn',
-    'The display name for the plugin in the Control Panel menu and breadcrumbs' => 'Visningsnamnet för plugin i kontrollpanelens meny och brödsmulor',
     'Workflow Settings' => 'Arbetsflödesinställningar',
     'Require Approval' => 'Godkännande krävs',
     'Require Approval Before Publish' => 'Kräv godkännande innan publicering',
     'When enabled, users without approval permission can only save drafts. Approvers can publish as translated.' => 'När aktiverat kan användare utan godkännandebehörighet bara spara utkast. Godkännare kan publicera som översatt.',
     'Logging Settings' => 'Logginställningar',
-    'Log Level' => 'Loggnivå',
-    'Choose what types of messages to log. Debug level requires devMode to be enabled.' => 'Välj vilka typer av meddelanden som ska loggas. Felsökningsnivå kräver att devMode är aktiverat.',
-    'Error (Critical errors only)' => 'Fel (endast kritiska fel)',
-    'Warning (Errors and warnings)' => 'Varning (fel och varningar)',
-    'Info (General information)' => 'Info (allmän information)',
-    'Debug (Detailed debugging)' => 'Felsökning (detaljerad felsökning)',
-    'This is being overridden by the <code>logLevel</code> setting in <code>config/translation-manager.php</code>.' => 'Detta åsidosätts av inställningen <code>logLevel</code> i <code>config/translation-manager.php</code>.',
 
     // Settings: Translation Sources
     'Translation Sources' => 'Översättningskällor',
@@ -345,8 +336,6 @@ return [
     // Settings: Interface
     'Interface Settings' => 'Gränssnittsinställningar',
     'Interface' => 'Gränssnitt',
-    'Items Per Page' => 'Objekt per sida',
-    'Number of translations to show per page' => 'Antal översättningar att visa per sida',
     'Enable Auto-Save' => 'Aktivera auto-spara',
     'Auto-Save Delay' => 'Auto-spara-fördröjning',
     'Automatically save each translation when you click outside the field (blur)' => 'Spara automatiskt varje översättning när du klickar utanför fältet (blur)',
