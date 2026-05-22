@@ -131,14 +131,6 @@ return [
         // 'showSeconds' => false,    // Show seconds in time display
 
         /**
-         * Default date range for analytics, logs, and dashboard pages
-         * Options: 'today', 'yesterday', 'last7days', 'last30days', 'last90days',
-         *          'thisMonth', 'lastMonth', 'thisYear', 'lastYear', 'all'
-         * Default: 'last30days' (from base plugin)
-         */
-        // 'defaultDateRange' => 'last7days',
-
-        /**
          * Export format overrides
          * Enable/disable specific export formats for this plugin
          * Default: all enabled (from base plugin)
