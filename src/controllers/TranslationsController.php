@@ -271,10 +271,8 @@ class TranslationsController extends Controller
         }
 
         try {
-            $date = $dateValue instanceof \DateTime
-                ? $dateValue
-                : new \DateTime((string)$dateValue);
-            return DateFormatHelper::formatDatetime($date);
+            $formatted = DateFormatHelper::formatDatetime($dateValue);
+            return $formatted ?? (string)$dateValue;
         } catch (\Throwable) {
             return (string)$dateValue;
         }
