@@ -57,6 +57,7 @@ return [
 
     // Common
     'Save Settings' => 'Guardar definições',
+    'Save' => 'Guardar',
     'Cancel' => 'Cancelar',
     'Delete' => 'Eliminar',
     'View' => 'Ver',

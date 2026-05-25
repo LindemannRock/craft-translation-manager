@@ -57,6 +57,7 @@ return [
 
     // Common
     'Save Settings' => 'Enregistrer les paramètres',
+    'Save' => 'Enregistrer',
     'Cancel' => 'Annuler',
     'Delete' => 'Supprimer',
     'View' => 'Afficher',

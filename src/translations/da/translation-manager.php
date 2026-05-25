@@ -57,6 +57,7 @@ return [
 
     // Common
     'Save Settings' => 'Gem indstillinger',
+    'Save' => 'Gem',
     'Cancel' => 'Annuller',
     'Delete' => 'Slet',
     'View' => 'Vis',

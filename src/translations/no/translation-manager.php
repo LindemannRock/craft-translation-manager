@@ -57,6 +57,7 @@ return [
 
     // Common
     'Save Settings' => 'Lagre innstillinger',
+    'Save' => 'Lagre',
     'Cancel' => 'Avbryt',
     'Delete' => 'Slett',
     'View' => 'Vis',

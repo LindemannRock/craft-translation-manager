@@ -57,6 +57,7 @@ return [
 
     // Common
     'Save Settings' => 'حفظ الإعدادات',
+    'Save' => 'حفظ',
     'Cancel' => 'إلغاء',
     'Delete' => 'حذف',
     'View' => 'عرض',

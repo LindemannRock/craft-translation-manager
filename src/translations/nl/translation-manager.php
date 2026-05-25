@@ -57,6 +57,7 @@ return [
 
     // Common
     'Save Settings' => 'Instellingen opslaan',
+    'Save' => 'Opslaan',
     'Cancel' => 'Annuleren',
     'Delete' => 'Verwijderen',
     'View' => 'Bekijken',

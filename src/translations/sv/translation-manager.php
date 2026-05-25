@@ -57,6 +57,7 @@ return [
 
     // Common
     'Save Settings' => 'Spara inställningar',
+    'Save' => 'Spara',
     'Cancel' => 'Avbryt',
     'Delete' => 'Ta bort',
     'View' => 'Visa',

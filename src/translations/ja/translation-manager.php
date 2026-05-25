@@ -57,6 +57,7 @@ return [
 
     // Common
     'Save Settings' => '設定を保存する',
+    'Save' => '保存する',
     'Cancel' => 'キャンセル',
     'Delete' => '削除',
     'View' => '表示',

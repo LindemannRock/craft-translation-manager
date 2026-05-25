@@ -54,6 +54,7 @@ return [
 
     // Common
     'Save Settings' => 'Save Settings',
+    'Save' => 'Save',
     'Cancel' => 'Cancel',
     'Delete' => 'Delete',
     'View' => 'View',
