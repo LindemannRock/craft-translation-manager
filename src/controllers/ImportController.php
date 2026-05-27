@@ -932,7 +932,7 @@ class ImportController extends Controller
     public function actionHistory(): Response
     {
         $currentUser = Craft::$app->getUser()->getIdentity();
-        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:viewImportHistory'))) {
+        if (!$currentUser || (!Craft::$app->getUser()->checkPermission('translationManager:manageImportExport'))) {
             throw new ForbiddenHttpException('User is not authorized to view import history.');
         }
         
