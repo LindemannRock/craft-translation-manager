@@ -91,7 +91,7 @@ return [
         // Backup configuration and retention
 
         'backupEnabled' => true,
-        'backupSchedule' => 'manual',  // Options: 'manual', 'daily', 'weekly', 'monthly'
+        'backupSchedule' => 'disabled', // Options: 'disabled', 'daily', 'weekly', 'monthly'
         'backupRetentionDays' => 30,   // Number of days to keep automatic backups (0 = keep forever)
         'backupOnImport' => true,      // Automatically create backup before importing CSV files
         'backupPath' => '@storage/translation-manager/backups',
@@ -146,7 +146,7 @@ return [
     'dev' => [
         'logLevel' => 'debug',         // More detailed logging in development
         'autoGenerate' => false,         // Manual generation in dev
-        'backupSchedule' => 'manual',  // Manual backups in dev
+        'backupSchedule' => 'disabled', // Manual backups in dev
         'aiProvider' => 'mock',        // Use mock provider by default in local dev
         // 'captureMissingTranslations' => true, // Uncomment to auto-capture in dev
     ],
