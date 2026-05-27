@@ -17,7 +17,7 @@
 
 {% set canImportExport = currentUser.can('translationManager:importTranslations')
     or currentUser.can('translationManager:exportTranslations') %}
-{% set canViewHistory = currentUser.can('translationManager:viewImportHistory') %}
+{% set canViewHistory = currentUser.can('translationManager:manageImportExport') %}
 {% set canClearHistory = currentUser.can('translationManager:clearImportHistory') %}
 
 {% set tabs = {} %}
@@ -300,71 +300,44 @@
 </div>
 
 {% if canViewHistory %}
-<div id="history" class="hidden">
-    <div class="flex" style="align-items: center; margin-bottom: 1rem;">
-        <h2 style="margin: 0;">{{ "Import History"|t('translation-manager') }}</h2>
-        {% if importHistory|length and canClearHistory %}
-            <div style="margin-left: auto;">
-                <button type="button" class="btn" id="clear-logs-btn">
-                    {{ "Clear history"|t('translation-manager') }}
-                </button>
-            </div>
-        {% endif %}
-    </div>
-    <p>{{ "Recent CSV imports and their results."|t('translation-manager') }}</p>
+    {% embed 'lindemannrock-base/_partials/import-history' with {
+        sectionId: 'history',
+        importHistory: importHistory,
+        canClearHistory: canClearHistory,
+        clearButtonId: 'clear-logs-btn',
+        emptyMessage: 'No imports found yet.'|t('translation-manager'),
+    } only %}
+        {% block importedCell %}
+            {% if item.imported > 0 %}
+                <span class="success">{{ "{count} new"|t('translation-manager', { count: item.imported|number_format }) }}</span>
+            {% endif %}
+            {% if item.updated > 0 %}
+                {% if item.imported > 0 %}<br>{% endif %}
+                <span style="color: #E67E22;">{{ "{count} updated"|t('translation-manager', { count: item.updated|number_format }) }}</span>
+            {% endif %}
+            {% if item.skipped > 0 %}
+                {% if item.imported > 0 or item.updated > 0 %}<br>{% endif %}
+                <span class="light">{{ "{count} skipped"|t('translation-manager', { count: item.skipped|number_format }) }}</span>
+            {% endif %}
+            {% if item.imported == 0 and item.updated == 0 and item.skipped == 0 %}
+                <span class="light">{{ "No changes"|t('translation-manager') }}</span>
+            {% endif %}
+        {% endblock %}
 
-    {% if importHistory|length %}
-        <table class="data fullwidth">
-            <thead>
-                <tr>
-                    <th scope="col">{{ "Date"|t('translation-manager') }}</th>
-                    <th scope="col">{{ "Created By"|t('translation-manager') }}</th>
-                    <th scope="col">{{ "Filename"|t('translation-manager') }}</th>
-                    <th scope="col">{{ "Size"|t('translation-manager') }}</th>
-                    <th scope="col">{{ "Imported"|t('translation-manager') }}</th>
-                    <th scope="col">{{ "Failed"|t('translation-manager') }}</th>
-                    <th scope="col" class="rightalign">{{ "Backup"|t('translation-manager') }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for import in importHistory %}
-                    <tr>
-                        <td class="thin">{{ import.formattedDate }}</td>
-                        <td>{{ import.user }}</td>
-                        <td>{{ import.filename ?? '-' }}</td>
-                        <td><code style="font-size: 11px;">{{ import.formattedSize }}</code></td>
-                        <td>
-                            {% if import.imported > 0 %}
-                                <span class="success">{{ "{count} new"|t('translation-manager', { count: import.imported|number_format }) }}</span>
-                            {% endif %}
-                            {% if import.updated > 0 %}
-                                {% if import.imported > 0 %}<br>{% endif %}
-                                <span style="color: #E67E22;">{{ "{count} updated"|t('translation-manager', { count: import.updated|number_format }) }}</span>
-                            {% endif %}
-                            {% if import.skipped > 0 %}
-                                {% if import.imported > 0 or import.updated > 0 %}<br>{% endif %}
-                                <span class="light">{{ "{count} skipped"|t('translation-manager', { count: import.skipped|number_format }) }}</span>
-                            {% endif %}
-                            {% if import.imported == 0 and import.updated == 0 and import.skipped == 0 %}
-                                <span class="light">{{ "No changes"|t('translation-manager') }}</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ import.failed|number_format }}</td>
-                        <td class="rightalign">
-                            {% if import.backupPath %}
-                                <a href="{{ url('translation-manager/backups') }}" class="go" title="{{ 'View backup'|t('translation-manager') }}">{{ "View"|t('translation-manager') }}</a>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p class="light">{{ "No imports found yet."|t('translation-manager') }}</p>
-    {% endif %}
-</div>
+        {% block extraColumnsHead %}
+            <th scope="col" class="rightalign">{{ "Backup"|t('translation-manager') }}</th>
+        {% endblock %}
+
+        {% block extraColumnsCell %}
+            <td class="rightalign">
+                {% if item.backupPath %}
+                    <a href="{{ url('translation-manager/backups') }}" class="go" title="{{ 'View backup'|t('translation-manager') }}">{{ "View"|t('translation-manager') }}</a>
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+        {% endblock %}
+    {% endembed %}
 {% endif %}
 
 {% include 'lindemannrock-base/_components/plugin-credit' %}
