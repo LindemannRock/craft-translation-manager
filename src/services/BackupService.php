@@ -33,6 +33,11 @@ class BackupService extends Component
     use LoggingTrait;
 
     /**
+     * Backup subfolders by type.
+     */
+    private const BACKUP_FOLDERS = ['scheduled', 'imports', 'maintenance', 'manual', 'other'];
+
+    /**
      * @var \craft\base\FsInterface|null The filesystem instance for the selected volume
      */
     private $_volumeFs = null;
@@ -130,15 +135,7 @@ class BackupService extends Component
         ]);
 
         try {
-            // Determine the subfolder based on reason
-            $subfolder = match ($reason) {
-                'scheduled' => 'scheduled',
-                'before_import', 'before_php_import' => 'imports',
-                'before_cleanup' => 'maintenance',
-                'before_clear' => 'maintenance',
-                'manual' => 'manual',
-                default => 'other'
-            };
+            $subfolder = $this->getFolderForReason($reason);
 
             // Create timestamp-based directory name
             $timestamp = DateTimeHelper::currentTimeStamp();
@@ -426,10 +423,7 @@ class BackupService extends Component
                 return $backups;
             }
 
-            // List all subdirectories
-            $subfolders = ['manual', 'scheduled', 'imports', 'maintenance', 'other'];
-
-            foreach ($subfolders as $subfolder) {
+            foreach (self::BACKUP_FOLDERS as $subfolder) {
                 $folderPath = $this->_volumeBackupPath . '/' . $subfolder;
 
                 $this->logDebug('Checking subfolder', ['subfolder' => $subfolder, 'path' => $folderPath]);
@@ -556,9 +550,7 @@ class BackupService extends Component
             }
 
             // Use the same logic as local backups but with the volume path
-            $subfolders = ['manual', 'scheduled', 'imports', 'maintenance', 'other'];
-
-            foreach ($subfolders as $subfolder) {
+            foreach (self::BACKUP_FOLDERS as $subfolder) {
                 $subfolderPath = $fullBackupPath . '/' . $subfolder;
                 if (!is_dir($subfolderPath)) {
                     continue;
@@ -620,9 +612,6 @@ class BackupService extends Component
             return $backups;
         }
 
-        // Define the subfolders to scan
-        $subfolders = ['scheduled', 'imports', 'maintenance', 'manual', 'other'];
-
         // First check for legacy backups in root (backward compatibility)
         $rootDirs = FileHelper::findDirectories($backupPath, [
             'recursive' => false,
@@ -631,7 +620,7 @@ class BackupService extends Component
         foreach ($rootDirs as $dir) {
             $dirName = basename($dir);
             // Skip if it's one of our new subfolders
-            if (in_array($dirName, $subfolders)) {
+            if (in_array($dirName, self::BACKUP_FOLDERS, true)) {
                 continue;
             }
 
@@ -654,7 +643,7 @@ class BackupService extends Component
         }
 
         // Now scan each subfolder
-        foreach ($subfolders as $subfolder) {
+        foreach (self::BACKUP_FOLDERS as $subfolder) {
             $subfolderPath = $backupPath . '/' . $subfolder;
             if (!is_dir($subfolderPath)) {
                 continue;
@@ -1251,6 +1240,26 @@ class BackupService extends Component
         }
 
         return round($bytes, $precision) . ' ' . $units[$i];
+    }
+
+    /**
+     * Map backup reason to storage folder.
+     */
+    private function getFolderForReason(?string $reason): string
+    {
+        $reason = strtolower((string)$reason);
+
+        if (str_starts_with($reason, 'before_cleanup') || str_starts_with($reason, 'before_clear')) {
+            return 'maintenance';
+        }
+
+        return match ($reason) {
+            'import', 'before_import', 'before_php_import' => 'imports',
+            'restore', 'before_restore', 'maintenance' => 'maintenance',
+            'scheduled' => 'scheduled',
+            'manual', 'console' => 'manual',
+            default => 'other',
+        };
     }
 
     /**
