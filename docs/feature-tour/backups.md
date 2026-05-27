@@ -42,7 +42,7 @@ The Translation Manager includes a comprehensive backup system that automaticall
 // config/translation-manager.php
 return [
     'backupEnabled' => true,
-    'backupSchedule' => 'daily', // manual, daily, weekly
+    'backupSchedule' => 'daily', // disabled, daily, weekly, monthly
     'backupRetentionDays' => 30, // days (0 = keep forever)
     'backupOnImport' => true,
 ];
@@ -52,9 +52,10 @@ return [
 
 | Schedule | Frequency |
 |----------|-----------|
-| `manual` | No automatic backups (default) |
-| `daily` | Every 24 hours |
-| `weekly` | Every 7 days |
+| `disabled` | No automatic scheduled backups (default) |
+| `daily` | Daily |
+| `weekly` | Weekly |
+| `monthly` | Monthly |
 
 ## Using the Control Panel
 

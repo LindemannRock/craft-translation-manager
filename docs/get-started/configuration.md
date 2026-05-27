@@ -43,7 +43,7 @@ Configure Translation Manager by creating a config file at `config/translation-m
 | `backupEnabled` | `bool` | `true` | Enable automatic backups |
 | `backupRetentionDays` | `int` | `30` | Days to keep backups (0 = keep forever, max 365) |
 | `backupOnImport` | `bool` | `true` | Create a backup before importing |
-| `backupSchedule` | `string` | `'manual'` | Backup schedule: `manual`, `daily`, `weekly` |
+| `backupSchedule` | `string` | `'disabled'` | Backup schedule: `disabled`, `daily`, `weekly`, `monthly` |
 | `backupPath` | `string` | `'@storage/translation-manager/backups'` | Backup directory. Supports `$VARIABLE` env vars. Must be under `@root` or `@storage` |
 | `backupVolumeUid` | `string\|null` | `null` | Asset volume UID for cloud backup storage (overrides `backupPath`) |
 
@@ -81,7 +81,7 @@ return [
         'backupEnabled' => true,
         'backupRetentionDays' => 30,
         'backupOnImport' => true,
-        'backupSchedule' => 'manual',
+        'backupSchedule' => 'disabled',
         'backupPath' => '@storage/translation-manager/backups',
         'backupVolumeUid' => null,
     ],
