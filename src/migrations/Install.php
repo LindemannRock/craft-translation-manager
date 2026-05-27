@@ -119,7 +119,7 @@ class Install extends Migration
                 'backupEnabled' => $this->boolean()->defaultValue(true),
                 'backupRetentionDays' => $this->integer()->defaultValue(30),
                 'backupOnImport' => $this->boolean()->defaultValue(true),
-                'backupSchedule' => $this->string(20)->defaultValue('manual'),
+                'backupSchedule' => $this->string(20)->defaultValue('disabled'),
                 'backupPath' => $this->string()->defaultValue('@storage/translation-manager/backups'),
                 'backupVolumeUid' => $this->string()->null(),
                 'skipPatterns' => $this->text()->null(),
