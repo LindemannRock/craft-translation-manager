@@ -17,7 +17,7 @@
 
 {% set canImportExport = currentUser.can('translationManager:importTranslations')
     or currentUser.can('translationManager:exportTranslations') %}
-{% set canViewHistory = currentUser.can('translationManager:manageImportExport') %}
+{% set canShowHistory = currentUser.can('translationManager:manageImportExport') %}
 {% set canClearHistory = currentUser.can('translationManager:clearImportHistory') %}
 
 {% set tabs = {} %}
@@ -31,7 +31,7 @@
     }) %}
 {% endif %}
 
-{% if canViewHistory %}
+{% if canShowHistory %}
     {% set tabs = tabs|merge({
         history: {
             label: 'Import History'|t('translation-manager'),
@@ -44,7 +44,7 @@
 {% if craft.app.request.getSegment(3) == 'import-export' and '#history' in craft.app.request.url %}
     {% set selectedTab = 'history' %}
 {% endif %}
-{% if not canImportExport and canViewHistory %}
+{% if not canImportExport and canShowHistory %}
     {% set selectedTab = 'history' %}
 {% endif %}
 
@@ -299,7 +299,7 @@
     {% endif %}
 </div>
 
-{% if canViewHistory %}
+{% if canShowHistory %}
     {% embed 'lindemannrock-base/_partials/import-history' with {
         sectionId: 'history',
         importHistory: importHistory,
