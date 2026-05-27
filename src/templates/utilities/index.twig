@@ -25,10 +25,11 @@
 } %}
 
 {% block headerActions %}
+    {% if canViewTranslations %}
     <form method="get" style="margin: 0;">
         <div class="select">
             <select name="siteId" onchange="this.form.submit()">
-                {% for site in craft.app.sites.allSites %}
+                {% for site in allSites %}
                     <option value="{{ site.id }}" {{ currentSiteId == site.id ? 'selected' : '' }}>
                         {{ site.name }} ({{ site.language|upper }})
                     </option>
@@ -36,9 +37,11 @@
             </select>
         </div>
     </form>
+    {% endif %}
 {% endblock %}
 
 {% block overview %}
+    {% if canViewTranslations %}
     {# Translation Coverage Card #}
     {% include 'lindemannrock-base/_components/unified-card' with {
         title: 'Translation Coverage'|t('translation-manager'),
@@ -76,6 +79,7 @@
             {value: stats.site, label: 'Site'|t('translation-manager')},
         ],
     } only %}
+    {% endif %}
 {% endblock %}
 
 {% block quickActions %}
@@ -103,7 +107,7 @@
 {% endblock %}
 
 {% block additionalContent %}
-    {% if stats.siteInfo %}
+    {% if canViewTranslations and stats.siteInfo %}
         <div style="margin-top: 24px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center;">
             <span style="color: #6b7280; font-size: 13px;">
                 <strong>{{ "Current Site:"|t('translation-manager') }}</strong> {{ stats.siteInfo.name }} ({{ stats.siteInfo.language|upper }})
