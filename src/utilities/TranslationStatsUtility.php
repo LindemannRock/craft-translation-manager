@@ -50,37 +50,51 @@ class TranslationStatsUtility extends Utility
      */
     public static function contentHtml(): string
     {
+        $plugin = TranslationManager::getInstance();
+        $user = Craft::$app->getUser();
+        $allowedSites = $plugin->getAllowedSites();
+
         // Get site from URL parameter, fallback to current CP site
         $request = Craft::$app->getRequest();
-        $siteId = $request->getParam('siteId');
-        
-        if (!$siteId) {
-            $siteId = Craft::$app->getSites()->getCurrentSite()->id;
-        }
-        
-        
-        $stats = TranslationManager::getInstance()->translations->getStatistics((int)$siteId);
-        $allSiteStats = [];
-        
-        // Get stats for enabled sites only
-        $plugin = TranslationManager::getInstance();
-        $enabledSites = $plugin->getAllowedSites();
+        $siteId = (int) $request->getParam('siteId', 0);
 
-        foreach ($enabledSites as $site) {
-            $allSiteStats[$site->id] = $plugin->translations->getStatistics($site->id);
-            $allSiteStats[$site->id]['siteInfo'] = [
-                'id' => $site->id,
-                'name' => $site->name,
-                'language' => $site->language,
-            ];
+        $allowedSiteIds = array_map(fn($site) => (int) $site->id, $allowedSites);
+        if (!$siteId || !in_array($siteId, $allowedSiteIds, true)) {
+            $firstAllowedSite = reset($allowedSites);
+            $siteId = (int) ($firstAllowedSite?->id ?? Craft::$app->getSites()->getCurrentSite()->id);
         }
-        
+
+        $stats = [
+            'total' => 0,
+            'translated' => 0,
+            'pending' => 0,
+            'unused' => 0,
+            'formie' => 0,
+            'site' => 0,
+            'siteInfo' => null,
+        ];
+        $allSiteStats = [];
+
+        if ($user->getIdentity() && $user->checkPermission('translationManager:manageTranslations')) {
+            $stats = $plugin->translations->getStatistics($siteId);
+
+            foreach ($allowedSites as $site) {
+                $allSiteStats[$site->id] = $plugin->translations->getStatistics($site->id);
+                $allSiteStats[$site->id]['siteInfo'] = [
+                    'id' => $site->id,
+                    'name' => $site->name,
+                    'language' => $site->language,
+                ];
+            }
+        }
+
         return Craft::$app->getView()->renderTemplate(
             'translation-manager/utilities/index',
             [
                 'stats' => $stats,
-                'currentSiteId' => (int)$siteId,
+                'currentSiteId' => $siteId,
                 'allSiteStats' => $allSiteStats,
+                'allSites' => $allowedSites,
             ]
         );
     }
