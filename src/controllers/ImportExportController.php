@@ -84,7 +84,7 @@ class ImportExportController extends Controller
             'settings' => $settings,
             'importHistory' => $formattedHistory,
             'totalImports' => $totalImports,
-            'canViewHistory' => true,
+            'canShowHistory' => true,
             'uniqueLanguages' => TranslationManager::getInstance()->getUniqueLanguages(),
             'allSites' => TranslationManager::getInstance()->getAllowedSites(), // Legacy
             'importLimits' => [
