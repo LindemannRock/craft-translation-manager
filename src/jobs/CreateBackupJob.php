@@ -12,6 +12,9 @@ namespace lindemannrock\translationmanager\jobs;
 
 use Craft;
 use craft\queue\BaseJob;
+use DateTime;
+use lindemannrock\base\helpers\DateFormatHelper;
+use lindemannrock\base\helpers\ScheduleHelper;
 use lindemannrock\base\traits\QueueTtrTrait;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\TranslationManager;
@@ -34,7 +37,6 @@ class CreateBackupJob extends BaseJob implements RetryableJobInterface
 
     /**
      * @var bool Whether to reschedule after completion
-     * @deprecated Use cron for scheduling instead
      */
     public bool $reschedule = false;
 
@@ -51,16 +53,8 @@ class CreateBackupJob extends BaseJob implements RetryableJobInterface
         parent::init();
         $this->setLoggingHandle(TranslationManager::$plugin->id);
 
-        // Calculate and set next run time if not already set
         if ($this->reschedule && !$this->nextRunTime) {
-            $settings = TranslationManager::getInstance()->getSettings();
-            if ($settings->backupEnabled && $settings->backupSchedule !== 'manual') {
-                $delay = $this->calculateNextRunDelay($settings->backupSchedule);
-                if ($delay > 0) {
-                    // Short format: "Nov 8, 12:00am"
-                    $this->nextRunTime = date('M j, g:ia', time() + $delay);
-                }
-            }
+            $this->nextRunTime = $this->formatNextRunTime($this->calculateNextRun());
         }
     }
 
@@ -127,41 +121,25 @@ class CreateBackupJob extends BaseJob implements RetryableJobInterface
     {
         $settings = TranslationManager::getInstance()->getSettings();
 
-        if (!$settings->backupEnabled || $settings->backupSchedule === 'manual') {
+        if (!$settings->backupEnabled || $settings->getEffectiveBackupSchedule() === 'disabled') {
             return;
         }
 
-        // Prevent duplicate scheduling - check if another backup job already exists
-        // This prevents fan-out if multiple jobs end up in the queue (manual runs, retries, etc.)
-        $existingJob = (new \craft\db\Query())
-            ->from('{{%queue}}')
-            ->where(['like', 'job', 'translationmanager'])
-            ->andWhere(['like', 'job', 'CreateBackupJob'])
-            ->exists();
+        $nextRun = $this->calculateNextRun();
+        $delay = $this->calculateNextRunDelay($settings->getEffectiveBackupSchedule());
 
-        if ($existingJob) {
-            $this->logDebug('Skipping reschedule - backup job already exists');
-            return;
-        }
-
-        $delay = $this->calculateNextRunDelay($settings->backupSchedule);
-
-        if ($delay > 0) {
-            // Calculate next run time for display
-            $nextRunTime = date('M j, g:ia', time() + $delay);
-
-            // Create a new job for the next backup
+        if ($nextRun !== null && $delay > 0) {
             $job = new self([
                 'reason' => 'scheduled',
                 'reschedule' => true,
-                'nextRunTime' => $nextRunTime,
+                'nextRunTime' => $this->formatNextRunTime($nextRun),
             ]);
 
             Craft::$app->getQueue()->delay($delay)->push($job);
 
             $this->logInfo('Next backup scheduled', [
                 'delay_seconds' => $delay,
-                'next_run' => $nextRunTime,
+                'next_run' => $job->nextRunTime,
             ]);
         }
     }
@@ -171,11 +149,33 @@ class CreateBackupJob extends BaseJob implements RetryableJobInterface
      */
     private function calculateNextRunDelay(string $schedule): int
     {
-        return match ($schedule) {
-            'daily' => 86400, // 24 hours
-            'weekly' => 604800, // 7 days
-            'monthly' => 2592000, // 30 days
-            default => 0,
-        };
+        return ScheduleHelper::calculateDelaySeconds($schedule);
+    }
+
+    /**
+     * Calculate the next scheduled backup run.
+     */
+    private function calculateNextRun(): ?DateTime
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+
+        return ScheduleHelper::calculateNext($settings->getEffectiveBackupSchedule());
+    }
+
+    /**
+     * Format the next run for the serialized queue description.
+     */
+    private function formatNextRunTime(?DateTime $nextRun): ?string
+    {
+        if ($nextRun === null) {
+            return null;
+        }
+
+        return DateFormatHelper::formatCompactDatetimeFromSettings(
+            $nextRun,
+            TranslationManager::getInstance()->getSettings(),
+            false,
+            false,
+        );
     }
 }
