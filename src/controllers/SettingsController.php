@@ -322,11 +322,15 @@ class SettingsController extends Controller
             if ($oldBackupEnabled !== $settings->backupEnabled ||
                 $oldBackupSchedule !== $settings->backupSchedule
             ) {
-                $plugin->handleBackupScheduleChange($settings);
+                // Reset cached settings before queueing so job init/description
+                // reads the persisted schedule and date-format settings.
+                $plugin->setSettings([]);
+                $settings = Settings::loadFromDatabase();
+                $plugin->handleBackupScheduleChange($settings, $oldBackupEnabled, $oldBackupSchedule);
+            } else {
+                // Reset cached settings so next request loads fresh from DB
+                $plugin->setSettings([]);
             }
-
-            // Reset cached settings so next request loads fresh from DB
-            $plugin->setSettings([]);
 
             Craft::$app->getSession()->setNotice(Craft::t('translation-manager', 'Settings saved.'));
         } else {
