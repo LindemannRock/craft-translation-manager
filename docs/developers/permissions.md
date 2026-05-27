@@ -19,7 +19,6 @@ Translation Manager registers granular permissions that can be assigned to user 
 | **`translationManager:manageImportExport`** | Parent — access the Import/Export section |
 | └─ `translationManager:importTranslations` | Import translations from CSV files |
 | └─ `translationManager:exportTranslations` | Export translations as CSV files |
-| └─ `translationManager:viewImportHistory` | View the import history log |
 | └─ `translationManager:clearImportHistory` | Clear the import history log |
 
 ### Generate Files
