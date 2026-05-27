@@ -1,11 +1,11 @@
 {% extends 'lindemannrock-base/_layouts/cp-utilities' %}
 
 {# Permission checks #}
-{% set canViewTranslations = currentUser.can('translationManager:manageTranslations') %}
+{% set canManageTranslations = currentUser.can('translationManager:manageTranslations') %}
 {% set canImportExport = currentUser.can('translationManager:importTranslations') or currentUser.can('translationManager:exportTranslations') %}
 {% set canBackups = currentUser.can('translationManager:manageBackups') %}
 {% set canMaintenance = currentUser.can('translationManager:maintenance') or currentUser.can('translationManager:cleanUnused') or currentUser.can('translationManager:scanTemplates') %}
-{% set hasNavigation = canViewTranslations or canImportExport or canBackups or canMaintenance %}
+{% set hasNavigation = canManageTranslations or canImportExport or canBackups or canMaintenance %}
 
 {# Calculate coverage colors #}
 {% set translatedPercentage = stats.total > 0 ? ((stats.translated / stats.total) * 100)|round : 100 %}
@@ -25,7 +25,7 @@
 } %}
 
 {% block headerActions %}
-    {% if canViewTranslations %}
+    {% if canManageTranslations %}
     <form method="get" style="margin: 0;">
         <div class="select">
             <select name="siteId" onchange="this.form.submit()">
@@ -41,7 +41,7 @@
 {% endblock %}
 
 {% block overview %}
-    {% if canViewTranslations %}
+    {% if canManageTranslations %}
     {# Translation Coverage Card #}
     {% include 'lindemannrock-base/_components/unified-card' with {
         title: 'Translation Coverage'|t('translation-manager'),
@@ -85,7 +85,7 @@
 {% block quickActions %}
     {% if hasNavigation %}
         {% set navButtons = [] %}
-        {% if canViewTranslations %}
+        {% if canManageTranslations %}
             {% set navButtons = navButtons|merge([{type: 'link', label: 'Manage Translations'|t('translation-manager'), url: url('translation-manager', {language: stats.siteInfo.language ?? craft.app.sites.currentSite.language})}]) %}
         {% endif %}
         {% if canImportExport %}
@@ -107,7 +107,7 @@
 {% endblock %}
 
 {% block additionalContent %}
-    {% if canViewTranslations and stats.siteInfo %}
+    {% if canManageTranslations and stats.siteInfo %}
         <div style="margin-top: 24px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center;">
             <span style="color: #6b7280; font-size: 13px;">
                 <strong>{{ "Current Site:"|t('translation-manager') }}</strong> {{ stats.siteInfo.name }} ({{ stats.siteInfo.language|upper }})
