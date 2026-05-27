@@ -213,9 +213,6 @@ class TranslationManager extends Plugin
                                 'translationManager:exportTranslations' => [
                                     'label' => Craft::t('translation-manager', 'Export {plural}', ['plural' => $plural]),
                                 ],
-                                'translationManager:viewImportHistory' => [
-                                    'label' => Craft::t('translation-manager', 'View import history'),
-                                ],
                                 'translationManager:clearImportHistory' => [
                                     'label' => Craft::t('translation-manager', 'Clear import history'),
                                 ],
@@ -423,13 +420,7 @@ class TranslationManager extends Plugin
             'key' => 'import-export',
             'label' => Craft::t('translation-manager', 'Import/Export'),
             'url' => 'translation-manager/import-export',
-            'permissionsAny' => [
-                'translationManager:manageImportExport',
-                'translationManager:importTranslations',
-                'translationManager:exportTranslations',
-                'translationManager:viewImportHistory',
-                'translationManager:clearImportHistory',
-            ],
+            'permissionsAll' => ['translationManager:manageImportExport'],
         ];
 
         $sections[] = [
