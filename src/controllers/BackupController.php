@@ -442,19 +442,23 @@ class BackupController extends Controller
         }
 
         return match ($reason) {
-            'before_import', 'before_php_import' => [
+            'import', 'before_import', 'before_php_import' => [
                 'label' => Craft::t('translation-manager', 'Import'),
                 'value' => 'import',
             ],
-            'before_restore' => [
+            'restore', 'before_restore' => [
                 'label' => Craft::t('translation-manager', 'Restore'),
                 'value' => 'restore',
+            ],
+            'maintenance' => [
+                'label' => Craft::t('translation-manager', 'Maintenance'),
+                'value' => 'maintenance',
             ],
             'scheduled' => [
                 'label' => Craft::t('translation-manager', 'Scheduled'),
                 'value' => 'scheduled',
             ],
-            'manual' => [
+            'manual', 'console' => [
                 'label' => Craft::t('translation-manager', 'Manual'),
                 'value' => 'manual',
             ],
