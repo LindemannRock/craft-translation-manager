@@ -14,6 +14,7 @@ use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\console\Application as ConsoleApplication;
+use craft\db\Query;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
@@ -25,11 +26,14 @@ use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 use lindemannrock\base\helpers\ColorHelper;
 use lindemannrock\base\helpers\CpNavHelper;
+use lindemannrock\base\helpers\DateFormatHelper;
 use lindemannrock\base\helpers\PluginHelper;
+use lindemannrock\base\helpers\ScheduleHelper;
 use lindemannrock\logginglibrary\LoggingLibrary;
 
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\i18n\LocaleMappingPhpMessageSource;
+use lindemannrock\translationmanager\jobs\CreateBackupJob;
 use lindemannrock\translationmanager\listeners\MissingTranslationListener;
 use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\translationmanager\services\AiTranslationService;
@@ -809,39 +813,43 @@ class TranslationManager extends Plugin
     {
         $settings = $this->getSettings();
 
-        // Only schedule if backups are enabled and not manual
-        if (!$settings->backupEnabled || $settings->backupSchedule === 'manual') {
+        $schedule = $settings->getEffectiveBackupSchedule();
+
+        if (!$settings->backupEnabled || $schedule === 'disabled') {
             return;
         }
 
         // Check if a backup job is already scheduled
-        $existingJob = (new \craft\db\Query())
+        $existingJob = (new Query())
             ->from('{{%queue}}')
             ->where(['like', 'job', 'translationmanager'])
             ->andWhere(['like', 'job', 'CreateBackupJob'])
             ->exists();
 
         if (!$existingJob) {
-            // Calculate delay based on schedule setting
-            $delay = match ($settings->backupSchedule) {
-                'daily' => 86400, // 24 hours
-                'weekly' => 604800, // 7 days
-                'monthly' => 2592000, // 30 days
-                default => 86400,
-            };
+            $nextRun = ScheduleHelper::calculateNext($schedule);
+            $delay = ScheduleHelper::calculateDelaySeconds($schedule);
 
-            // Create backup job
-            $job = new \lindemannrock\translationmanager\jobs\CreateBackupJob([
+            if ($nextRun === null || $delay <= 0) {
+                return;
+            }
+
+            $job = new CreateBackupJob([
                 'reason' => 'scheduled',
                 'reschedule' => true,
+                'nextRunTime' => DateFormatHelper::formatCompactDatetimeFromSettings(
+                    $nextRun,
+                    $settings,
+                    false,
+                    false,
+                ),
             ]);
 
-            // Add to queue with the proper schedule delay
             Craft::$app->getQueue()->delay($delay)->push($job);
 
             $this->logInfo('Scheduled initial backup job', [
                 'delay_seconds' => $delay,
-                'schedule' => $settings->backupSchedule,
+                'schedule' => $schedule,
             ]);
         }
     }
@@ -849,46 +857,46 @@ class TranslationManager extends Plugin
     /**
      * Handle backup schedule changes when settings are saved
      */
-    public function handleBackupScheduleChange(Settings $settings): void
+    public function handleBackupScheduleChange(Settings $settings, ?bool $oldBackupEnabled = null, ?string $oldBackupSchedule = null): void
     {
-        if (!$settings->backupEnabled || $settings->backupSchedule === 'manual') {
-            // Cancel any existing scheduled backup jobs
-            $this->cancelScheduledBackupJobs();
+        $schedule = $settings->getEffectiveBackupSchedule();
+
+        if (
+            $oldBackupEnabled !== null &&
+            $oldBackupSchedule !== null &&
+            $oldBackupEnabled === $settings->backupEnabled &&
+            $this->normalizeBackupSchedule($oldBackupSchedule) === $schedule
+        ) {
+            return;
+        }
+
+        $this->cancelScheduledBackupJobs();
+
+        if (!$settings->backupEnabled || $schedule === 'disabled') {
             $this->logInfo('Backup scheduling disabled');
             return;
         }
 
-        // Check if there's already a scheduled backup job in the queue
-        $existingJob = (new \craft\db\Query())
-            ->from('{{%queue}}')
-            ->where(['like', 'job', 'translationmanager'])
-            ->andWhere(['like', 'job', 'CreateBackupJob'])
-            ->andWhere(['fail' => false])
-            ->andWhere(['timePushed' => null])
-            ->exists();
-
-        if ($existingJob) {
-            $this->logInfo('Scheduled backup job already exists, not creating a new one');
+        $nextRun = ScheduleHelper::calculateNext($schedule);
+        $delay = ScheduleHelper::calculateDelaySeconds($schedule);
+        if ($nextRun === null || $delay <= 0) {
             return;
         }
 
-        // Schedule the first backup job with appropriate delay
-        $delay = match ($settings->backupSchedule) {
-            'daily' => 86400, // 24 hours
-            'weekly' => 604800, // 7 days
-            'monthly' => 2592000, // 30 days
-            default => 86400,
-        };
-
-        $job = new \lindemannrock\translationmanager\jobs\CreateBackupJob([
+        $job = new CreateBackupJob([
             'reason' => 'scheduled',
             'reschedule' => true,
+            'nextRunTime' => DateFormatHelper::formatCompactDatetimeFromSettings(
+                $nextRun,
+                $settings,
+                false,
+                false,
+            ),
         ]);
 
-        // Add job with delay
         Craft::$app->getQueue()->delay($delay)->push($job);
 
-        $this->logInfo('Scheduled backup job queued', ['schedule' => $settings->backupSchedule]);
+        $this->logInfo('Scheduled backup job queued', ['schedule' => $schedule]);
     }
 
     /**
@@ -906,5 +914,16 @@ class TranslationManager extends Plugin
                 ['like', 'job', 'CreateBackupJob'],
             ])
             ->execute();
+    }
+
+    /**
+     * Normalize backup schedule values.
+     */
+    private function normalizeBackupSchedule(string $schedule): string
+    {
+        $settings = new Settings();
+        $settings->backupSchedule = $schedule;
+
+        return $settings->getEffectiveBackupSchedule();
     }
 }
