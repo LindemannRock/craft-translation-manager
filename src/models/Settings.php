@@ -13,6 +13,7 @@ namespace lindemannrock\translationmanager\models;
 use Craft;
 use craft\base\Model;
 use craft\behaviors\EnvAttributeParserBehavior;
+use lindemannrock\base\helpers\ScheduleHelper;
 use lindemannrock\base\traits\DateFormatSettingsTrait;
 use lindemannrock\base\traits\ExportFormatSettingsTrait;
 use lindemannrock\base\traits\ItemsPerPageSettingsTrait;
@@ -40,6 +41,13 @@ class Settings extends Model
     use SettingsConfigTrait;
     use SettingsDisplayNameTrait;
     use SettingsPersistenceTrait;
+
+    private const BACKUP_SCHEDULE_OPTIONS = [
+        'disabled',
+        'daily',
+        'weekly',
+        'monthly',
+    ];
 
     /**
      * @inheritdoc
@@ -212,9 +220,9 @@ class Settings extends Model
     public bool $backupOnImport = true;
     
     /**
-     * @var string Backup schedule (manual, daily, weekly)
+     * @var string Backup schedule
      */
-    public string $backupSchedule = 'manual';
+    public string $backupSchedule = 'disabled';
     
     /**
      * @var string The path where backups should be stored
@@ -276,9 +284,36 @@ class Settings extends Model
             [['skipPatterns', 'excludeFormHandlePatterns', 'translationCategories', 'localeMapping'], 'safe'],
             [['localeMapping'], 'validateLocaleMapping'],
             [['backupRetentionDays'], 'integer', 'min' => 0, 'max' => 365],
-            [['backupSchedule'], 'in', 'range' => ['manual', 'daily', 'weekly']],
+            [['backupSchedule'], 'in', 'range' => array_merge(self::BACKUP_SCHEDULE_OPTIONS, ['manual'])],
             [['aiProvider'], 'in', 'range' => ['openai', 'gemini', 'anthropic', 'mock']],
         ], $this->pluginNameSettingsRules(), $this->logLevelSettingsRules(), $this->dateFormatSettingsRules(), $this->exportFormatSettingsRules(), $this->itemsPerPageSettingsRules());
+    }
+
+    /**
+     * Get the normalized backup schedule.
+     *
+     * @since 5.25.0
+     */
+    public function getEffectiveBackupSchedule(): string
+    {
+        if ($this->backupSchedule === 'manual') {
+            return 'disabled';
+        }
+
+        return in_array($this->backupSchedule, self::BACKUP_SCHEDULE_OPTIONS, true)
+            ? $this->backupSchedule
+            : 'disabled';
+    }
+
+    /**
+     * Get backup schedule options for settings UI.
+     *
+     * @return array<int, array{value: string, label: string}>
+     * @since 5.25.0
+     */
+    public function getBackupScheduleOptions(): array
+    {
+        return ScheduleHelper::getOptions(self::BACKUP_SCHEDULE_OPTIONS);
     }
 
     public function attributeLabels(): array
