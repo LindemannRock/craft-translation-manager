@@ -266,7 +266,7 @@ class BackupService extends Component
      */
     private function _createLocalBackup(string $backupDir, array $metadata, array $formieTranslations, array $siteTranslations): string
     {
-        $basePath = Craft::getAlias(TranslationManager::getInstance()->getSettings()->backupPath);
+        $basePath = TranslationManager::getInstance()->getSettings()->getBackupPath();
         $fullPath = $basePath . '/' . $backupDir;
 
         try {
@@ -604,7 +604,7 @@ class BackupService extends Component
      */
     private function _getLocalBackups(): array
     {
-        $backupPath = Craft::getAlias(TranslationManager::getInstance()->getSettings()->backupPath);
+        $backupPath = TranslationManager::getInstance()->getSettings()->getBackupPath();
         $this->logInfo("Starting local backup listing", ['path' => $backupPath]);
         $backups = [];
 
@@ -850,10 +850,10 @@ class BackupService extends Component
     {
         // Handle subfolder structure
         if (str_contains($backupName, '/')) {
-            $backupDir = Craft::getAlias(TranslationManager::getInstance()->getSettings()->backupPath) . '/' . $backupName;
+            $backupDir = TranslationManager::getInstance()->getSettings()->getBackupPath() . '/' . $backupName;
         } else {
             // Legacy backup in root
-            $backupDir = Craft::getAlias(TranslationManager::getInstance()->getSettings()->backupPath) . '/' . $backupName;
+            $backupDir = TranslationManager::getInstance()->getSettings()->getBackupPath() . '/' . $backupName;
         }
 
         if (!is_dir($backupDir)) {
@@ -1099,10 +1099,10 @@ class BackupService extends Component
     {
         // Handle subfolder structure
         if (str_contains($backupName, '/')) {
-            $backupDir = Craft::getAlias(TranslationManager::getInstance()->getSettings()->backupPath) . '/' . $backupName;
+            $backupDir = TranslationManager::getInstance()->getSettings()->getBackupPath() . '/' . $backupName;
         } else {
             // Legacy backup in root
-            $backupDir = Craft::getAlias(TranslationManager::getInstance()->getSettings()->backupPath) . '/' . $backupName;
+            $backupDir = TranslationManager::getInstance()->getSettings()->getBackupPath() . '/' . $backupName;
         }
 
         $exists = is_dir($backupDir) ? 'exists' : 'missing';
