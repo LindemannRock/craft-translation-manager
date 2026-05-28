@@ -110,7 +110,7 @@ class Install extends Migration
                 'captureMissingTranslations' => $this->boolean()->notNull()->defaultValue(false),
                 'captureMissingOnlyDevMode' => $this->boolean()->notNull()->defaultValue(true),
                 'autoGenerate' => $this->boolean()->notNull()->defaultValue(true),
-                'generationPath' => $this->string()->notNull()->defaultValue('@root/translations'),
+                'generationPath' => $this->string()->notNull()->defaultValue('@translations'),
                 'itemsPerPage' => $this->integer()->notNull()->defaultValue(100),
                 'autoSaveEnabled' => $this->boolean()->notNull()->defaultValue(false),
                 'autoSaveDelay' => $this->integer()->notNull()->defaultValue(2),
