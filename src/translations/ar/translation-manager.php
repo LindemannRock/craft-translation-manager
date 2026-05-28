@@ -320,7 +320,8 @@ return [
     'Automatically generate translation files when translations are saved' => 'توليد ملفات الترجمة تلقائياً عند حفظ الترجمات',
     'Generation Path' => 'مسار التوليد',
     'The path where PHP translation files should be generated for Craft to read' => 'المسار الذي يجب توليد ملفات ترجمة PHP فيه لكي يقرأها Craft',
-    'Use Craft path aliases only: <code>@translations</code>, <code>@translations/translation-manager</code>, or <code>@root/translations/translation-manager</code>. Paths must be outside webroot for security.' => 'استخدم مستعارات مسار Craft فقط: <code>@translations</code> أو <code>@translations/translation-manager</code> أو <code>@root/translations/translation-manager</code>. يجب أن تكون المسارات خارج webroot لأغراض الأمان.',
+    'Use Craft\'s translations alias: <code>@translations</code>. Environment variables like <code>$ENV_VAR</code> are supported when they resolve exactly to <code>@translations</code>.' => 'استخدم مستعار ترجمات Craft: <code>@translations</code>. متغيرات البيئة مثل <code>$ENV_VAR</code> مدعومة عندما تُحل تماماً إلى <code>@translations</code>.',
+    'Generation path must resolve to @translations exactly so Craft can load the generated files.' => 'يجب أن يُحل مسار التوليد تماماً إلى @translations حتى يتمكن Craft من تحميل الملفات المولّدة.',
     'Generation Location:' => 'موقع التوليد:',
 
     // Settings: Interface
@@ -348,7 +349,7 @@ return [
     'Custom Backup Path' => 'مسار النسخ الاحتياطي المخصص',
     'Backup Path' => 'مسار النسخ الاحتياطي',
     'The custom path where backups should be stored (only used when no volume is selected)' => 'المسار المخصص لتخزين النسخ الاحتياطية (يُستخدم فقط عند عدم اختيار أي وحدة تخزين)',
-    'Use Craft path aliases only: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security.' => 'استخدم مستعارات مسار Craft فقط: <code>@storage/translation-manager/backups</code> (موصى به) أو <code>@root/backups/translation-manager</code>. يجب أن تكون المسارات خارج webroot لأغراض الأمان.',
+    'Use Craft path aliases: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security. Environment variables like <code>$ENV_VAR</code> are supported.' => 'استخدم مستعارات مسار Craft: <code>@storage/translation-manager/backups</code> (موصى به) أو <code>@root/backups/translation-manager</code>. يجب أن تكون المسارات خارج webroot لأغراض الأمان. متغيرات البيئة مثل <code>$ENV_VAR</code> مدعومة.',
     'Backup Location:' => 'موقع النسخ الاحتياطي:',
 
     // Settings: Integrations

@@ -320,7 +320,8 @@ return [
     'Automatically generate translation files when translations are saved' => 'Generer automatisk oversettelsesfiler når oversettelser lagres',
     'Generation Path' => 'Genereringssti',
     'The path where PHP translation files should be generated for Craft to read' => 'Stien der PHP-oversettelsesfiler skal genereres for at Craft skal lese dem',
-    'Use Craft path aliases only: <code>@translations</code>, <code>@translations/translation-manager</code>, or <code>@root/translations/translation-manager</code>. Paths must be outside webroot for security.' => 'Bruk kun Craft-stialias: <code>@translations</code>, <code>@translations/translation-manager</code> eller <code>@root/translations/translation-manager</code>. Stier må være utenfor webroot av sikkerhetshensyn.',
+    'Use Craft\'s translations alias: <code>@translations</code>. Environment variables like <code>$ENV_VAR</code> are supported when they resolve exactly to <code>@translations</code>.' => 'Bruk Crafts oversettelsesalias: <code>@translations</code>. Miljøvariabler som <code>$ENV_VAR</code> støttes når de løses nøyaktig til <code>@translations</code>.',
+    'Generation path must resolve to @translations exactly so Craft can load the generated files.' => 'Genereringsstien må løses nøyaktig til @translations slik at Craft kan laste inn de genererte filene.',
     'Generation Location:' => 'Genereringsplassering:',
 
     // Settings: Interface
@@ -348,7 +349,7 @@ return [
     'Custom Backup Path' => 'Egendefinert sikkerhetskopisti',
     'Backup Path' => 'Sikkerhetskopisti',
     'The custom path where backups should be stored (only used when no volume is selected)' => 'Den egendefinerte stien der sikkerhetskopier skal lagres (brukes bare når intet volum er valgt)',
-    'Use Craft path aliases only: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security.' => 'Bruk kun Craft-stialias: <code>@storage/translation-manager/backups</code> (anbefalt) eller <code>@root/backups/translation-manager</code>. Stier må være utenfor webroot av sikkerhetshensyn.',
+    'Use Craft path aliases: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security. Environment variables like <code>$ENV_VAR</code> are supported.' => 'Bruk Craft-stialias: <code>@storage/translation-manager/backups</code> (anbefalt) eller <code>@root/backups/translation-manager</code>. Stier må være utenfor webroot av sikkerhetshensyn. Miljøvariabler som <code>$ENV_VAR</code> støttes.',
     'Backup Location:' => 'Sikkerhetskopieringsplassering:',
 
     // Settings: Integrations

@@ -320,7 +320,8 @@ return [
     'Automatically generate translation files when translations are saved' => 'Generera automatiskt översättningsfiler när översättningar sparas',
     'Generation Path' => 'Genereringssökväg',
     'The path where PHP translation files should be generated for Craft to read' => 'Sökvägen där PHP-översättningsfiler ska genereras för Craft att läsa',
-    'Use Craft path aliases only: <code>@translations</code>, <code>@translations/translation-manager</code>, or <code>@root/translations/translation-manager</code>. Paths must be outside webroot for security.' => 'Använd bara Craft-sökvägsalias: <code>@translations</code>, <code>@translations/translation-manager</code> eller <code>@root/translations/translation-manager</code>. Sökvägar måste vara utanför webbroten av säkerhetsskäl.',
+    'Use Craft\'s translations alias: <code>@translations</code>. Environment variables like <code>$ENV_VAR</code> are supported when they resolve exactly to <code>@translations</code>.' => 'Använd Crafts översättningsalias: <code>@translations</code>. Miljövariabler som <code>$ENV_VAR</code> stöds när de löses upp exakt till <code>@translations</code>.',
+    'Generation path must resolve to @translations exactly so Craft can load the generated files.' => 'Genereringssökvägen måste lösas upp exakt till @translations så att Craft kan läsa in de genererade filerna.',
     'Generation Location:' => 'Genereringsplats:',
 
     // Settings: Interface
@@ -348,7 +349,7 @@ return [
     'Custom Backup Path' => 'Anpassad säkerhetskopieringssökväg',
     'Backup Path' => 'Sökväg för säkerhetskopia',
     'The custom path where backups should be stored (only used when no volume is selected)' => 'Den anpassade sökvägen där säkerhetskopior ska lagras (används bara när ingen volym är vald)',
-    'Use Craft path aliases only: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security.' => 'Använd bara Craft-sökvägsalias: <code>@storage/translation-manager/backups</code> (rekommenderas) eller <code>@root/backups/translation-manager</code>. Sökvägar måste vara utanför webbroten av säkerhetsskäl.',
+    'Use Craft path aliases: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security. Environment variables like <code>$ENV_VAR</code> are supported.' => 'Använd Craft-sökvägsalias: <code>@storage/translation-manager/backups</code> (rekommenderas) eller <code>@root/backups/translation-manager</code>. Sökvägar måste vara utanför webbroten av säkerhetsskäl. Miljövariabler som <code>$ENV_VAR</code> stöds.',
     'Backup Location:' => 'Plats för säkerhetskopia:',
 
     // Settings: Integrations

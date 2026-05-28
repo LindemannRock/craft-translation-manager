@@ -320,7 +320,8 @@ return [
     'Automatically generate translation files when translations are saved' => '翻訳が保存されたときに翻訳ファイルを自動生成',
     'Generation Path' => '生成パス',
     'The path where PHP translation files should be generated for Craft to read' => 'Craft が読み込む PHP 翻訳ファイルを生成するパス',
-    'Use Craft path aliases only: <code>@translations</code>, <code>@translations/translation-manager</code>, or <code>@root/translations/translation-manager</code>. Paths must be outside webroot for security.' => 'Craft パスエイリアスのみを使用してください: <code>@translations</code>、<code>@translations/translation-manager</code>、または <code>@root/translations/translation-manager</code>。セキュリティ上、パスは webroot の外に設定する必要があります。',
+    'Use Craft\'s translations alias: <code>@translations</code>. Environment variables like <code>$ENV_VAR</code> are supported when they resolve exactly to <code>@translations</code>.' => 'Craft の翻訳エイリアス <code>@translations</code> を使用してください。<code>$ENV_VAR</code> のような環境変数は、<code>@translations</code> に正確に解決される場合にサポートされます。',
+    'Generation path must resolve to @translations exactly so Craft can load the generated files.' => 'Craft が生成されたファイルを読み込めるように、生成パスは @translations に正確に解決される必要があります。',
     'Generation Location:' => '生成場所:',
 
     // Settings: Interface
@@ -348,7 +349,7 @@ return [
     'Custom Backup Path' => 'カスタムバックアップパス',
     'Backup Path' => 'バックアップパス',
     'The custom path where backups should be stored (only used when no volume is selected)' => 'バックアップを保存するカスタムパス（ボリュームが選択されていない場合のみ使用）',
-    'Use Craft path aliases only: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security.' => 'Craft パスエイリアスのみを使用してください: <code>@storage/translation-manager/backups</code>（推奨）または <code>@root/backups/translation-manager</code>。セキュリティ上、パスは webroot の外に設定する必要があります。',
+    'Use Craft path aliases: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security. Environment variables like <code>$ENV_VAR</code> are supported.' => 'Craft パスエイリアスを使用してください: <code>@storage/translation-manager/backups</code>（推奨）または <code>@root/backups/translation-manager</code>。セキュリティ上、パスは webroot の外に設定する必要があります。<code>$ENV_VAR</code> のような環境変数がサポートされます。',
     'Backup Location:' => 'バックアップ場所:',
 
     // Settings: Integrations

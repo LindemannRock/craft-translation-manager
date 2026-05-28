@@ -320,7 +320,8 @@ return [
     'Automatically generate translation files when translations are saved' => 'Übersetzungsdateien automatisch generieren, wenn Übersetzungen gespeichert werden',
     'Generation Path' => 'Generierungspfad',
     'The path where PHP translation files should be generated for Craft to read' => 'Der Pfad, in dem PHP-Übersetzungsdateien für Craft generiert werden sollen',
-    'Use Craft path aliases only: <code>@translations</code>, <code>@translations/translation-manager</code>, or <code>@root/translations/translation-manager</code>. Paths must be outside webroot for security.' => 'Nur Craft-Pfadaliase verwenden: <code>@translations</code>, <code>@translations/translation-manager</code> oder <code>@root/translations/translation-manager</code>. Pfade müssen aus Sicherheitsgründen außerhalb des Webroots liegen.',
+    'Use Craft\'s translations alias: <code>@translations</code>. Environment variables like <code>$ENV_VAR</code> are supported when they resolve exactly to <code>@translations</code>.' => 'Verwenden Sie den Craft-Translations-Alias: <code>@translations</code>. Umgebungsvariablen wie <code>$ENV_VAR</code> werden unterstützt, wenn sie exakt zu <code>@translations</code> aufgelöst werden.',
+    'Generation path must resolve to @translations exactly so Craft can load the generated files.' => 'Der Generierungspfad muss exakt zu @translations aufgelöst werden, damit Craft die generierten Dateien laden kann.',
     'Generation Location:' => 'Generierungsort:',
 
     // Settings: Interface
@@ -348,7 +349,7 @@ return [
     'Custom Backup Path' => 'Benutzerdefinierter Backup-Pfad',
     'Backup Path' => 'Backup-Pfad',
     'The custom path where backups should be stored (only used when no volume is selected)' => 'Der benutzerdefinierte Pfad, in dem Backups gespeichert werden sollen (wird nur verwendet, wenn kein Volume ausgewählt ist)',
-    'Use Craft path aliases only: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security.' => 'Nur Craft-Pfadaliase verwenden: <code>@storage/translation-manager/backups</code> (empfohlen) oder <code>@root/backups/translation-manager</code>. Pfade müssen aus Sicherheitsgründen außerhalb des Webroots liegen.',
+    'Use Craft path aliases: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security. Environment variables like <code>$ENV_VAR</code> are supported.' => 'Verwenden Sie Craft-Pfadaliase: <code>@storage/translation-manager/backups</code> (empfohlen) oder <code>@root/backups/translation-manager</code>. Pfade müssen aus Sicherheitsgründen außerhalb des Webroots liegen. Umgebungsvariablen wie <code>$ENV_VAR</code> werden unterstützt.',
     'Backup Location:' => 'Backup-Speicherort:',
 
     // Settings: Integrations

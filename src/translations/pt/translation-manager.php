@@ -319,7 +319,8 @@ return [
     'Automatically generate translation files when translations are saved' => 'Gera automaticamente ficheiros de tradução quando as traduções são guardadas',
     'Generation Path' => 'Caminho de geração',
     'The path where PHP translation files should be generated for Craft to read' => 'O caminho onde os ficheiros de tradução PHP devem ser gerados para o Craft ler',
-    'Use Craft path aliases only: <code>@translations</code>, <code>@translations/translation-manager</code>, or <code>@root/translations/translation-manager</code>. Paths must be outside webroot for security.' => 'Utilize apenas aliases de caminho Craft: <code>@translations</code>, <code>@translations/translation-manager</code> ou <code>@root/translations/translation-manager</code>. Os caminhos devem estar fora do webroot por razões de segurança.',
+    'Use Craft\'s translations alias: <code>@translations</code>. Environment variables like <code>$ENV_VAR</code> are supported when they resolve exactly to <code>@translations</code>.' => 'Use o alias de traduções do Craft: <code>@translations</code>. Variáveis de ambiente como <code>$ENV_VAR</code> são suportadas quando resolvem exatamente para <code>@translations</code>.',
+    'Generation path must resolve to @translations exactly so Craft can load the generated files.' => 'O caminho de geração deve resolver exatamente para @translations para que o Craft possa carregar os ficheiros gerados.',
     'Generation Location:' => 'Localização de geração:',
 
     // Settings: Interface
@@ -347,7 +348,7 @@ return [
     'Custom Backup Path' => 'Caminho de backup personalizado',
     'Backup Path' => 'Caminho de backup',
     'The custom path where backups should be stored (only used when no volume is selected)' => 'O caminho personalizado onde os backups devem ser armazenados (utilizado apenas quando nenhum volume está selecionado)',
-    'Use Craft path aliases only: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security.' => 'Utilize apenas aliases de caminho Craft: <code>@storage/translation-manager/backups</code> (recomendado) ou <code>@root/backups/translation-manager</code>. Os caminhos devem estar fora do webroot por razões de segurança.',
+    'Use Craft path aliases: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security. Environment variables like <code>$ENV_VAR</code> are supported.' => 'Use aliases de caminho Craft: <code>@storage/translation-manager/backups</code> (recomendado) ou <code>@root/backups/translation-manager</code>. Os caminhos devem estar fora do webroot por razões de segurança. Variáveis de ambiente como <code>$ENV_VAR</code> são suportadas.',
     'Backup Location:' => 'Localização do backup:',
 
     // Settings: Integrations

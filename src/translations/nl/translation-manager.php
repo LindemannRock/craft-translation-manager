@@ -320,7 +320,8 @@ return [
     'Automatically generate translation files when translations are saved' => 'Automatisch vertaalbestanden genereren wanneer vertalingen worden opgeslagen',
     'Generation Path' => 'Generatiepad',
     'The path where PHP translation files should be generated for Craft to read' => 'Het pad waar PHP-vertaalbestanden moeten worden gegenereerd voor Craft om te lezen',
-    'Use Craft path aliases only: <code>@translations</code>, <code>@translations/translation-manager</code>, or <code>@root/translations/translation-manager</code>. Paths must be outside webroot for security.' => 'Gebruik alleen Craft-padaliassen: <code>@translations</code>, <code>@translations/translation-manager</code> of <code>@root/translations/translation-manager</code>. Paden moeten buiten de webroot liggen voor de beveiliging.',
+    'Use Craft\'s translations alias: <code>@translations</code>. Environment variables like <code>$ENV_VAR</code> are supported when they resolve exactly to <code>@translations</code>.' => 'Gebruik de vertalingenalias van Craft: <code>@translations</code>. Omgevingsvariabelen zoals <code>$ENV_VAR</code> worden ondersteund wanneer ze exact naar <code>@translations</code> worden omgezet.',
+    'Generation path must resolve to @translations exactly so Craft can load the generated files.' => 'Het generatiepad moet exact naar @translations worden omgezet, zodat Craft de gegenereerde bestanden kan laden.',
     'Generation Location:' => 'Generatielocatie:',
 
     // Settings: Interface
@@ -348,7 +349,7 @@ return [
     'Custom Backup Path' => 'Aangepast back-uppad',
     'Backup Path' => 'Back-uppad',
     'The custom path where backups should be stored (only used when no volume is selected)' => 'Het aangepaste pad waar back-ups moeten worden opgeslagen (alleen gebruikt wanneer geen volume is geselecteerd)',
-    'Use Craft path aliases only: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security.' => 'Gebruik alleen Craft-padaliassen: <code>@storage/translation-manager/backups</code> (aanbevolen) of <code>@root/backups/translation-manager</code>. Paden moeten buiten de webroot liggen voor de beveiliging.',
+    'Use Craft path aliases: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security. Environment variables like <code>$ENV_VAR</code> are supported.' => 'Gebruik Craft-padaliassen: <code>@storage/translation-manager/backups</code> (aanbevolen) of <code>@root/backups/translation-manager</code>. Paden moeten buiten de webroot liggen voor de beveiliging. Omgevingsvariabelen zoals <code>$ENV_VAR</code> worden ondersteund.',
     'Backup Location:' => 'Back-uplocatie:',
 
     // Settings: Integrations
