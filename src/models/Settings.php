@@ -14,6 +14,7 @@ use Craft;
 use craft\base\Model;
 use craft\behaviors\EnvAttributeParserBehavior;
 use lindemannrock\base\helpers\ScheduleHelper;
+use lindemannrock\base\helpers\StoragePathHelper;
 use lindemannrock\base\traits\DateFormatSettingsTrait;
 use lindemannrock\base\traits\ExportFormatSettingsTrait;
 use lindemannrock\base\traits\ItemsPerPageSettingsTrait;
@@ -112,7 +113,7 @@ class Settings extends Model
     /**
      * @var string The path where translation files should be generated
      */
-    public string $generationPath = '@root/translations';
+    public string $generationPath = '@translations';
     
     /**
      * @var string The raw generation path before parsing
@@ -260,11 +261,11 @@ class Settings extends Model
                 ['generationPath'],
                 StoragePathValidator::class,
                 'translationCategory' => static::pluginHandle(),
-                'allowedAliases' => ['@translations', '@root', '@storage'],
+                'allowedAliases' => ['@translations'],
                 'requireAlias' => true,
                 'preventWebroot' => true,
             ],
-            [['generationPath'], 'validateGenerationPathRootSubfolder'],
+            [['generationPath'], 'validateGenerationPathTranslationsRoot'],
             [
                 ['backupPath'],
                 StoragePathValidator::class,
@@ -772,20 +773,30 @@ class Settings extends Model
     }
 
     /**
-     * Require a subfolder when using @root for generationPath.
+     * Require generationPath to resolve to Craft's translations root exactly.
      */
-    public function validateGenerationPathRootSubfolder($attribute): void
+    public function validateGenerationPathTranslationsRoot(string $attribute): void
     {
         $value = trim((string)$this->$attribute);
         if ($value === '') {
             return;
         }
 
-        $normalized = rtrim($value, '/\\');
-        if (strcasecmp($normalized, '@root') === 0) {
+        try {
+            $parsed = StoragePathHelper::parseEnv($value);
+            $resolvedPath = StoragePathHelper::resolveParsed($parsed);
+        } catch (\Throwable) {
+            return;
+        }
+
+        $translationsPath = Craft::getAlias('@translations');
+        $normalizedPath = rtrim(str_replace('\\', '/', $resolvedPath), '/');
+        $normalizedTranslationsPath = rtrim(str_replace('\\', '/', $translationsPath), '/');
+
+        if ($normalizedPath !== $normalizedTranslationsPath) {
             $this->addError(
                 $attribute,
-                Craft::t(static::pluginHandle(), 'When using @root, include a subfolder (for example: @root/translations).')
+                Craft::t(static::pluginHandle(), 'Generation path must resolve to @translations exactly so Craft can load the generated files.')
             );
         }
     }
@@ -816,7 +827,20 @@ class Settings extends Model
      */
     public function getGenerationPath(): string
     {
-        $path = Craft::getAlias($this->generationPath);
+        if (!$this->validate(['generationPath'])) {
+            return Craft::getAlias('@translations');
+        }
+
+        try {
+            $path = StoragePathHelper::resolve($this->generationPath);
+        } catch (\Throwable $e) {
+            $this->logWarning('Generation path could not be resolved. Using safe default.', [
+                'path' => $this->generationPath,
+                'error' => $e->getMessage(),
+            ]);
+
+            return Craft::getAlias('@translations');
+        }
         
         // Additional safety check
         if (strpos($path, '..') !== false) {
@@ -836,24 +860,9 @@ class Settings extends Model
             return $path;
         }
         
-        // Verify the real path is still within allowed directories
-        $validPaths = [
-            Craft::getAlias('@root'),
-            Craft::getAlias('@storage'),
-            Craft::getAlias('@translations'),
-        ];
-        
-        $isValid = false;
-        foreach ($validPaths as $validPath) {
-            $realValidPath = realpath($validPath);
-            if ($realValidPath !== false && strpos($realPath, $realValidPath) === 0) {
-                $isValid = true;
-                break;
-            }
-        }
-        
-        if (!$isValid) {
-            throw new \Exception('Export path resolved outside allowed directories');
+        $realTranslationsPath = realpath(Craft::getAlias('@translations'));
+        if ($realTranslationsPath === false || $realPath !== $realTranslationsPath) {
+            throw new \Exception('Generation path resolved outside allowed directories');
         }
         
         return $realPath;
@@ -885,9 +894,21 @@ class Settings extends Model
             }
         }
 
+        if (!$this->validate(['backupPath'])) {
+            return Craft::getAlias('@storage/translation-manager/backups');
+        }
+
         // No volume selected - use regular backup path and properly resolve it
-        $rawPath = $this->backupPath;
-        $path = Craft::getAlias($rawPath);
+        try {
+            $path = StoragePathHelper::resolve($this->backupPath);
+        } catch (\Throwable $e) {
+            $this->logWarning('Backup path could not be resolved. Using safe default.', [
+                'path' => $this->backupPath,
+                'error' => $e->getMessage(),
+            ]);
+
+            return Craft::getAlias('@storage/translation-manager/backups');
+        }
 
         // If path is null or empty, use default
         if (empty($path)) {
