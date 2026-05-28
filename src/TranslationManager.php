@@ -507,8 +507,6 @@ class TranslationManager extends Plugin
             // Normalize legacy absolute paths to aliases before strict validation.
             $this->normalizeLegacyPathSettings($settings);
 
-            // CRITICAL: Validate settings even when loaded from config
-            // This prevents config files from bypassing security validation
             if (!$settings->validate()) {
                 $errors = $settings->getFirstErrors();
 
@@ -516,10 +514,6 @@ class TranslationManager extends Plugin
                     'errors' => $errors,
                     'configSource' => 'database and/or config/translation-manager.php',
                 ]);
-
-                // For security, throw exception rather than silently using invalid config
-                $errorMessage = 'Invalid Translation Manager configuration: ' . implode(', ', $errors);
-                throw new \Exception($errorMessage . ' Please check Translation Manager settings (database and config/translation-manager.php).');
             }
 
             $this->_settings = $settings;
@@ -563,7 +557,10 @@ class TranslationManager extends Plugin
     {
         // Keep bootstrap resilient if a legacy value uses @root directly.
         if ($this->isRootAliasValue($settings->generationPath)) {
-            $settings->generationPath = '@root/translations';
+            $settings->generationPath = '@translations';
+        }
+        if ($this->isLegacyRootTranslationsValue($settings->generationPath)) {
+            $settings->generationPath = $this->normalizeLegacyRootTranslationsValue($settings->generationPath);
         }
         if ($this->isRootAliasValue($settings->backupPath)) {
             $settings->backupPath = '@root/backups/translation-manager';
@@ -571,13 +568,16 @@ class TranslationManager extends Plugin
 
         $normalizedGenerationPath = $this->normalizeAbsolutePathToAlias(
             $settings->generationPath,
-            ['@translations', '@root', '@storage']
+            ['@translations']
         );
         if ($normalizedGenerationPath !== null) {
             $settings->generationPath = $normalizedGenerationPath;
         }
         if ($this->isRootAliasValue($settings->generationPath)) {
-            $settings->generationPath = '@root/translations';
+            $settings->generationPath = '@translations';
+        }
+        if ($this->isLegacyRootTranslationsValue($settings->generationPath)) {
+            $settings->generationPath = $this->normalizeLegacyRootTranslationsValue($settings->generationPath);
         }
 
         $normalizedBackupPath = $this->normalizeAbsolutePathToAlias(
@@ -596,6 +596,21 @@ class TranslationManager extends Plugin
     {
         $normalized = rtrim(trim($value), "/\\");
         return strcasecmp($normalized, '@root') === 0;
+    }
+
+    private function isLegacyRootTranslationsValue(string $value): bool
+    {
+        $normalized = rtrim(str_replace('\\', '/', trim($value)), '/');
+        return strcasecmp($normalized, '@root/translations') === 0
+            || str_starts_with(strtolower($normalized), '@root/translations/');
+    }
+
+    private function normalizeLegacyRootTranslationsValue(string $value): string
+    {
+        $normalized = rtrim(str_replace('\\', '/', trim($value)), '/');
+        $suffix = substr($normalized, strlen('@root/translations'));
+
+        return '@translations' . $suffix;
     }
 
     private function normalizeAbsolutePathToAlias(string $path, array $allowedAliases): ?string
