@@ -179,7 +179,7 @@ cp plugins/my-plugin/src/translations/ar/my-plugin.php translations/ar/
 
 - PHP Import is only available in **devMode** (for security)
 - User must have **Import Translations** permission
-- Files must be in the configured export path (default: `@root/translations`)
+- Files must be in the configured generation path (default: `@translations`)
 
 ## Import History
 

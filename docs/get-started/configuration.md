@@ -34,7 +34,7 @@ Configure Translation Manager by creating a config file at `config/translation-m
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `autoGenerate` | `bool` | `true` | Automatically generate PHP translation files when translations are saved |
-| `generationPath` | `string` | `'@root/translations'` | Generation directory. Supports `$VARIABLE` env vars. Must be under `@root`, `@storage`, or `@translations` |
+| `generationPath` | `string` | `'@translations'` | Generation directory. Supports `@translations` or `$VARIABLE` env vars that resolve exactly to `@translations` |
 
 ### Backup
 
@@ -72,7 +72,7 @@ return [
         'captureMissingTranslations' => false,
         'captureMissingOnlyDevMode' => true,
         'autoGenerate' => true,
-        'generationPath' => '@root/translations',
+        'generationPath' => '@translations',
         'itemsPerPage' => 100,
         'autoSaveEnabled' => false,
         'autoSaveDelay' => 2,
