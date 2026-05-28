@@ -82,7 +82,7 @@ return [
         // PHP translation file generation settings
 
         'autoGenerate' => true,          // Automatically generate translation files when translations are saved
-        'generationPath' => '@root/translations', // Path where PHP translation files should be generated
+        'generationPath' => '@translations', // Path where PHP translation files should be generated
 
 
         // ========================================
