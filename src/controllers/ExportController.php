@@ -193,7 +193,7 @@ class ExportController extends Controller
 
             $filename = ExportHelper::filename($settings, $filenameParts, 'csv');
 
-            return ExportHelper::toCsv($rows, $headers, $filename, ['reviewedAt', 'dateUpdated']);
+            return ExportHelper::dispatchTable($rows, $headers, 'csv', $filename, ['reviewedAt', 'dateUpdated']);
         } catch (\Exception $e) {
             $this->logError('Export failed', ['error' => $e->getMessage()]);
             throw $e;
@@ -333,7 +333,7 @@ class ExportController extends Controller
 
         $filename = ExportHelper::filename($settings, $filenameParts, 'csv');
 
-        return ExportHelper::toCsv($rows, $headers, $filename, ['reviewedAt', 'dateUpdated']);
+        return ExportHelper::dispatchTable($rows, $headers, 'csv', $filename, ['reviewedAt', 'dateUpdated']);
     }
 
 
