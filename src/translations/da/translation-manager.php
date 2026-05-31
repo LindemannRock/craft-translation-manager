@@ -143,7 +143,6 @@ return [
     // Controller messages
     'Invalid AI provider selected.' => 'Ugyldig AI-udbyder valgt.',
     'Could not save settings.' => 'Indstillingerne kunne ikke gemmes.',
-    'Could not save settings' => 'Indstillingerne kunne ikke gemmes',
     'Settings saved.' => 'Indstillinger gemt.',
     '{count} {plugin} translations and corresponding files have been deleted.' => '{count} {plugin}-oversættelser og tilsvarende filer er blevet slettet.',
     'No {plugin} translations found to delete.' => 'Ingen {plugin}-oversættelser fundet til sletning.',
@@ -324,13 +323,6 @@ return [
     'Generation path must resolve to @translations exactly so Craft can load the generated files.' => 'Genereringsstien skal løses nøjagtigt til @translations, så Craft kan indlæse de genererede filer.',
     'Generation Location:' => 'Genereringsplacering:',
 
-    // Settings: Interface
-    'Interface Settings' => 'Grænsefladeindstillinger',
-    'Interface' => 'Brugerflade',
-    'Enable Auto-Save' => 'Aktiver automatisk gemning',
-    'Auto-Save Delay' => 'Forsinkelse ved automatisk gemning',
-    'Automatically save each translation when you click outside the field (blur)' => 'Gem automatisk hver oversættelse, når du klikker uden for feltet (blur)',
-
     // Settings: Backup
     'Backup Settings' => 'Sikkerhedskopieringsindstillinger',
     'Enable Backups' => 'Aktiver sikkerhedskopier',
@@ -396,6 +388,13 @@ return [
     'Sample Text' => 'Eksempeltekst',
     'Run AI Test' => 'Kør AI-test',
 
+    // Settings: Interface
+    'Interface Settings' => 'Grænsefladeindstillinger',
+    'Interface' => 'Brugerflade',
+    'Enable Auto-Save' => 'Aktiver automatisk gemning',
+    'Auto-Save Delay' => 'Forsinkelse ved automatisk gemning',
+    'Automatically save each translation when you click outside the field (blur)' => 'Gem automatisk hver oversættelse, når du klikker uden for feltet (blur)',
+
     // Translations: Index
     'No translations found.' => 'Ingen oversættelser fundet.',
     'Mark Draft' => 'Markér som kladde',
@@ -404,7 +403,6 @@ return [
     'Translation Key' => 'Oversættelsesnøgle',
     'Translation Category' => 'Oversættelseskategori',
     'The category to use for site translations (e.g. \'lindemannrock\' for |t(\'lindemannrock\')). Cannot use reserved categories: site, app, yii, craft.' => 'Kategorien, der skal bruges til webstedsoversættelser (f.eks. \'lindemannrock\' for |t(\'lindemannrock\')). Reserverede kategorier kan ikke bruges: site, app, yii, craft.',
-
     'Translation Statistics' => 'Oversættelsesstatistik',
     'Translation Overview' => 'Oversættelsesoversigt',
     'Count' => 'Antal',
@@ -435,7 +433,6 @@ return [
     'Starting restore operation...' => 'Starter gendannelsesoperation...',
     'Are you sure you want to delete this backup? This action cannot be undone.' => 'Er du sikker på, at du vil slette denne sikkerhedskopi? Denne handling kan ikke fortrydes.',
     'Deleting backup...' => 'Sletter sikkerhedskopi...',
-
     'Before Import' => 'Inden import',
     'Before PHP Import' => 'Inden PHP-import',
     'Before Restore' => 'Inden gendannelse',
@@ -455,36 +452,23 @@ return [
     'Cleanup' => 'Oprydning',
     'Danger Zone' => 'Farezonen',
     'A backup will be created automatically before deleting.' => 'Der oprettes automatisk en sikkerhedskopi inden sletning.',
-    ' A backup will be created automatically before deleting.' => ' Der oprettes automatisk en sikkerhedskopi inden sletning.',
+    'This will permanently delete unused translations for the {category} category that are no longer found in any template files.' => 'Dette sletter permanent ubrugte oversættelser for kategorien {category}, som ikke længere findes i nogen template-filer.',
+    'Are you sure you want to delete unused {category} translations?' => 'Er du sikker på, at du vil slette ubrugte {category}-oversættelser?',
+    'This will permanently delete all rows for ghost language {language}.' => 'Dette sletter permanent alle rækker for spøgelsessproget {language}.',
+    'This will permanently delete all rows for language {language}.' => 'Dette sletter permanent alle rækker for sproget {language}.',
+    'This will permanently delete all rows for removed category {category}.' => 'Dette sletter permanent alle rækker for den fjernede kategori {category}.',
+    'This will permanently delete ALL translations from the database and remove all translation files, including both {name} and site translations. Use this to start completely fresh.' => 'Dette sletter permanent ALLE oversættelser fra databasen og fjerner alle oversættelsesfiler, inklusive både {name} og webstedsoversættelser. Brug dette til at starte helt forfra.',
+    'This will permanently delete all {name} form translations from the database and remove the corresponding translation files. Your forms will not be affected, only the stored translations will be removed.' => 'Dette sletter permanent alle {name}-formularoversættelser fra databasen og fjerner de tilsvarende oversættelsesfiler. Dine formularer påvirkes ikke, kun de gemte oversættelser fjernes.',
+    'This will permanently delete all translations for the {category} category from the database and remove the corresponding translation files. You will need to re-translate this content.' => 'Dette sletter permanent alle oversættelser for kategorien {category} fra databasen og fjerner de tilsvarende oversættelsesfiler. Du skal oversætte dette indhold igen.',
+    'Are you sure you want to delete all {name} translations and their files? This action cannot be undone.' => 'Er du sikker på, at du vil slette alle {name}-oversættelser og deres filer? Denne handling kan ikke fortrydes.',
+    'Are you absolutely sure you want to delete ALL translations and files? This will remove both {name} and site translations. This action cannot be undone.' => 'Er du helt sikker på, at du vil slette ALLE oversættelser og filer? Dette fjerner både {name} og webstedsoversættelser. Denne handling kan ikke fortrydes.',
     'This will permanently delete ALL unused translations (both site and form translations) that are no longer used anywhere.' => 'Dette sletter permanent ALLE ubrugte oversættelser (både websteds- og formoversættelser), der ikke længere bruges nogen steder.',
     'This will permanently delete unused form translations from deleted forms or fields.' => 'Dette sletter permanent ubrugte formoversættelser fra slettede formularer eller felter.',
-    'This will permanently delete unused translations for the' => 'Dette sletter permanent ubrugte oversættelser for',
-    'category that are no longer found in any template files.' => 'kategorien, der ikke længere findes i nogen skabelonfiler.',
     'Are you sure you want to delete ALL unused translations?' => 'Er du sikker på, at du vil slette ALLE ubrugte oversættelser?',
     'Are you sure you want to delete unused form translations?' => 'Er du sikker på, at du vil slette ubrugte formoversættelser?',
-    'Are you sure you want to delete unused' => 'Er du sikker på, at du vil slette ubrugte',
-    'translations?' => 'oversættelser?',
-    'This will permanently delete all rows for' => 'Dette sletter permanent alle rækker for',
-    '(mapped to' => '(kortlagt til',
-    'This will permanently delete all rows for ghost language' => 'Dette sletter permanent alle rækker for spøgelsessprog',
-    'This will permanently delete all rows for language' => 'Dette sletter permanent alle rækker for sproget',
-    'Delete all translations for selected language?' => 'Slet alle oversættelser for det valgte sprog?',
-    'This will permanently delete all rows for removed category' => 'Dette sletter permanent alle rækker for den fjernede kategori',
     'Delete all translations for selected removed category?' => 'Slet alle oversættelser for den valgte fjernede kategori?',
     'Are you sure you want to remove all unused form translations?' => 'Er du sikker på, at du vil fjerne alle ubrugte formoversættelser?',
     'This will permanently delete ALL translations from the database and remove all translation files. Use this to start completely fresh.' => 'Dette sletter permanent ALLE oversættelser fra databasen og fjerner alle oversættelsesfiler. Brug dette til at starte helt forfra.',
-    'This will permanently delete ALL translations from the database and remove all translation files, including both ' => 'Dette sletter permanent ALLE oversættelser fra databasen og fjerner alle oversættelsesfiler, herunder både ',
-    ' and site translations. Use this to start completely fresh.' => ' og webstedsoversættelser. Brug dette til at starte helt forfra.',
-    'This will permanently delete all ' => 'Dette sletter permanent alle ',
-    ' form translations from the database and remove the corresponding translation files. Your forms will not be affected, only the stored translations will be removed.' => ' formoversættelser fra databasen og fjerner de tilsvarende oversættelsesfiler. Dine formularer påvirkes ikke, kun de gemte oversættelser fjernes.',
-    'This will permanently delete all translations for the' => 'Dette sletter permanent alle oversættelser for',
-    'category from the database and remove the corresponding translation files. You will need to re-translate this content.' => 'kategorien fra databasen og fjerner de tilsvarende oversættelsesfiler. Du skal genoversætte dette indhold.',
-    'Are you sure you want to delete all ' => 'Er du sikker på, at du vil slette alle ',
-    ' translations and their files? This action cannot be undone.' => ' oversættelser og deres filer? Denne handling kan ikke fortrydes.',
-    'Are you absolutely sure you want to delete ALL translations and files? This will remove both ' => 'Er du helt sikker på, at du vil slette ALLE oversættelser og filer? Dette fjerner både ',
-    ' and site translations. This action cannot be undone.' => ' og webstedsoversættelser. Denne handling kan ikke fortrydes.',
-    'Are you sure you want to delete all' => 'Er du sikker på, at du vil slette alle',
-    'translations and their files? This action cannot be undone.' => 'oversættelser og deres filer? Denne handling kan ikke fortrydes.',
     'Note: A backup will be created automatically before deleting.' => 'Bemærk: Der oprettes automatisk en sikkerhedskopi inden sletning.',
     'Select an option' => 'Vælg en mulighed',
     'Clear Translations' => 'Ryd oversættelser',
@@ -492,7 +476,6 @@ return [
     'No translation integrations are currently enabled. Enable {formiePluginName} Integration or Site Translations above to start capturing translations.' => 'Der er ingen oversættelsesintegrationer aktiveret i øjeblikket. Aktiver {formiePluginName}-integration eller webstedsoversættelser ovenfor for at begynde at optage oversættelser.',
     'No translations found for the selected option.' => 'Ingen oversættelser fundet for den valgte mulighed.',
     'Clear Selected Translations' => 'Ryd valgte oversættelser',
-
     'Clean Up Unused Translations' => 'Ryd ubrugte oversættelser',
     'Remove translations that are no longer used in templates or forms' => 'Fjern oversættelser, der ikke længere bruges i skabeloner eller formularer',
     'All Unused ({count})' => 'Alle ubrugte ({count})',
@@ -522,7 +505,6 @@ return [
     'Migrate useful {source} translations into {target}, then delete {source} rows?' => 'Migrere nyttige {source}-oversættelser til {target} og derefter slette {source}-rækker?',
     'Delete all translations for selected language without copying?' => 'Slette alle oversættelser for det valgte sprog uden kopiering?',
     'No mapped-source or ghost language rows found.' => 'Ingen kortlagte kilde- eller spøgelsessprograekker fundet.',
-
     'Template Scanner' => 'Skabelonscanner',
     'Scan all templates to identify translations that are no longer used and update their status' => 'Scan alle skabeloner for at identificere oversættelser, der ikke længere bruges, og opdatere deres status',
     'Scan Templates' => 'Scan skabeloner',
@@ -587,7 +569,6 @@ return [
     'No PHP files found in translations folder' => 'Ingen PHP-filer fundet i oversættelsesfoldere',
     'No translations selected' => 'Ingen oversættelser valgt',
     'No changes to import. All translations are already up to date.' => 'Ingen ændringer at importere. Alle oversættelser er allerede opdaterede.',
-
     'Map CSV Columns' => 'Kortlæg CSV-kolonner',
     'Map Columns' => 'Kortlæg kolonner',
     'Preview of CSV Data' => 'Forhåndsvisning af CSV-data',
@@ -600,7 +581,6 @@ return [
     'Maps to Field' => 'Kortlægges til felt',
     'Sample Data' => 'Eksempeldata',
     'Preview Import' => 'Forhåndsvis import',
-
     'Import CSV' => 'Importér CSV',
     'Import translations from a CSV file.' => 'Importér oversættelser fra en CSV-fil.',
     'CSV File' => 'CSV-fil',
@@ -615,7 +595,6 @@ return [
     'Upload & Map Columns' => 'Upload og kortlæg kolonner',
     'CSV Import' => 'CSV-import',
     'PHP Import' => 'PHP-import',
-
     'Total Rows' => 'Rækker i alt',
     'Updates' => 'Opdateringer',
     'Unchanged' => 'Uændret',
