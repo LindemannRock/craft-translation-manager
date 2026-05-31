@@ -46,7 +46,7 @@
             errors: settings.getErrors('requireApproval'),
             disabled: settings.isOverriddenByConfig('requireApproval'),
             warning: settings.isOverriddenByConfig('requireApproval') ?
-                "This is being overridden by the <code>requireApproval</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                "This is being overridden by the <code>requireApproval</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
         }) }}
 
 		<hr>

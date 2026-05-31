@@ -42,7 +42,7 @@
             errors: settings.getErrors('autoSaveEnabled'),
             disabled: settings.isOverriddenByConfig('autoSaveEnabled'),
             warning: settings.isOverriddenByConfig('autoSaveEnabled') ?
-                "This is being overridden by the <code>autoSaveEnabled</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                "This is being overridden by the <code>autoSaveEnabled</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
         }) }}
 
         <hr>

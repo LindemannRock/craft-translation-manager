@@ -37,7 +37,7 @@
             errors: settings.getErrors('autoGenerate'),
             disabled: settings.isOverriddenByConfig('autoGenerate'),
             warning: settings.isOverriddenByConfig('autoGenerate') ?
-                "This is being overridden by the <code>autoGenerate</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                "This is being overridden by the <code>autoGenerate</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
         }) }}
 
         {{ forms.autosuggestField({
@@ -52,7 +52,7 @@
             suggestEnvVars: true,
             disabled: settings.isOverriddenByConfig('generationPath'),
             warning: settings.isOverriddenByConfig('generationPath') ?
-                "This is being overridden by the <code>generationPath</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                "This is being overridden by the <code>generationPath</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
         }) }}
 
     {% if not settings.getErrors('generationPath') %}

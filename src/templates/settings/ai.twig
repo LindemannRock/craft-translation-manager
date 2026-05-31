@@ -50,7 +50,7 @@
             errors: settings.getErrors('enableAiTranslations'),
             disabled: settings.isOverriddenByConfig('enableAiTranslations'),
             warning: settings.isOverriddenByConfig('enableAiTranslations') ?
-                "This is being overridden by the <code>enableAiTranslations</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                "This is being overridden by the <code>enableAiTranslations</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
         }) }}
 
         <div id="ai-provider-settings" class="{{ not settings.enableAiTranslations ? 'hidden' }}">
@@ -69,7 +69,7 @@
                 ],
                 disabled: settings.isOverriddenByConfig('aiProvider'),
                 warning: settings.isOverriddenByConfig('aiProvider') ?
-                    "This is being overridden by the <code>aiProvider</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                    "This is being overridden by the <code>aiProvider</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
             }) }}
 
             <div id="provider-openai" class="{{ (settings.aiProvider ?? 'openai') != 'openai' ? 'hidden' }}">
@@ -83,7 +83,7 @@
                     errors: settings.getErrors('openAiApiKey'),
                     disabled: settings.isOverriddenByConfig('openAiApiKey'),
                     warning: settings.isOverriddenByConfig('openAiApiKey') ?
-                        "This is being overridden by the <code>openAiApiKey</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                        "This is being overridden by the <code>openAiApiKey</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
                 }) }}
 
                 {{ forms.selectField({
@@ -101,7 +101,7 @@
                     ],
                     disabled: settings.isOverriddenByConfig('openAiModel'),
                     warning: settings.isOverriddenByConfig('openAiModel') ?
-                        "This is being overridden by the <code>openAiModel</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                        "This is being overridden by the <code>openAiModel</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
                 }) }}
 
                 <div id="openAiModelCustomWrap" class="{{ openAiCurrentModel in openAiKnownModels ? 'hidden' }}">
@@ -127,7 +127,7 @@
                     errors: settings.getErrors('geminiApiKey'),
                     disabled: settings.isOverriddenByConfig('geminiApiKey'),
                     warning: settings.isOverriddenByConfig('geminiApiKey') ?
-                        "This is being overridden by the <code>geminiApiKey</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                        "This is being overridden by the <code>geminiApiKey</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
                     }) }}
 
                 {{ forms.selectField({
@@ -145,7 +145,7 @@
                     ],
                     disabled: settings.isOverriddenByConfig('geminiModel'),
                     warning: settings.isOverriddenByConfig('geminiModel') ?
-                        "This is being overridden by the <code>geminiModel</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                        "This is being overridden by the <code>geminiModel</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
                 }) }}
 
                 <div id="geminiModelCustomWrap" class="{{ geminiCurrentModel in geminiKnownModels ? 'hidden' }}">
@@ -171,7 +171,7 @@
                     errors: settings.getErrors('anthropicApiKey'),
                     disabled: settings.isOverriddenByConfig('anthropicApiKey'),
                     warning: settings.isOverriddenByConfig('anthropicApiKey') ?
-                        "This is being overridden by the <code>anthropicApiKey</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                        "This is being overridden by the <code>anthropicApiKey</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
                 }) }}
 
                 {{ forms.selectField({
@@ -189,7 +189,7 @@
                     ],
                     disabled: settings.isOverriddenByConfig('anthropicModel'),
                     warning: settings.isOverriddenByConfig('anthropicModel') ?
-                        "This is being overridden by the <code>anthropicModel</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                        "This is being overridden by the <code>anthropicModel</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
                 }) }}
 
                 <div id="anthropicModelCustomWrap" class="{{ anthropicCurrentModel in anthropicKnownModels ? 'hidden' }}">

@@ -47,7 +47,7 @@
             errors: settings.getErrors('enableFormieIntegration'),
             disabled: not craft.app.plugins.isPluginEnabled('formie') or settings.isOverriddenByConfig('enableFormieIntegration'),
             warning: settings.isOverriddenByConfig('enableFormieIntegration') ?
-                "This is being overridden by the <code>enableFormieIntegration</code> setting in <code>config/translation-manager.php</code>."|raw :
+                "This is being overridden by the <code>enableFormieIntegration</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw :
                 (not craft.app.plugins.isPluginEnabled('formie') ? (formiePluginName ~ " plugin is not installed")|t('translation-manager') : null),
         }) }}
 
@@ -63,7 +63,7 @@
                 placeholder: "Example:\n(Ar)\n(ar)\nAr1\n-ar"|t('translation-manager'),
                 disabled: settings.isOverriddenByConfig('excludeFormHandlePatterns'),
                 warning: settings.isOverriddenByConfig('excludeFormHandlePatterns') ?
-                    "This is being overridden by the <code>excludeFormHandlePatterns</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                    "This is being overridden by the <code>excludeFormHandlePatterns</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
             }) }}
 
             {% include 'lindemannrock-base/_components/info-box' with {

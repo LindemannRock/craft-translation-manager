@@ -95,7 +95,7 @@
                 allowReorder: true,
                 disabled: settings.isOverriddenByConfig('localeMapping'),
                 warning: settings.isOverriddenByConfig('localeMapping') ?
-                    "This is being overridden by the <code>localeMapping</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                    "This is being overridden by the <code>localeMapping</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
             }) }}
         {% else %}
             {% include 'lindemannrock-base/_components/info-box' with {

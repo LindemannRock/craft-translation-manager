@@ -41,7 +41,7 @@
             errors: settings.getErrors('captureMissingTranslations'),
             disabled: settings.isOverriddenByConfig('captureMissingTranslations'),
             warning: settings.isOverriddenByConfig('captureMissingTranslations') ?
-                "This is being overridden by the <code>captureMissingTranslations</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                "This is being overridden by the <code>captureMissingTranslations</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
         }) }}
 
         <div id="capture-missing-settings" class="{{ not settings.captureMissingTranslations ? 'hidden' }}">
@@ -54,7 +54,7 @@
                 errors: settings.getErrors('captureMissingOnlyDevMode'),
                 disabled: settings.isOverriddenByConfig('captureMissingOnlyDevMode'),
                 warning: settings.isOverriddenByConfig('captureMissingOnlyDevMode') ?
-                    "This is being overridden by the <code>captureMissingOnlyDevMode</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                    "This is being overridden by the <code>captureMissingOnlyDevMode</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
             }) }}
 
             {% include 'lindemannrock-base/_components/info-box' with {

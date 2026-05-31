@@ -38,7 +38,7 @@
             errors: settings.getErrors('backupEnabled'),
             disabled: settings.isOverriddenByConfig('backupEnabled'),
             warning: settings.isOverriddenByConfig('backupEnabled') ?
-                "This is being overridden by the <code>backupEnabled</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                "This is being overridden by the <code>backupEnabled</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
         }) }}
 
         <div id="backup-settings" class="{{ not settings.backupEnabled ? 'hidden' }}">
@@ -51,7 +51,7 @@
                 errors: settings.getErrors('backupOnImport'),
                 disabled: settings.isOverriddenByConfig('backupOnImport'),
                 warning: settings.isOverriddenByConfig('backupOnImport') ?
-                    "This is being overridden by the <code>backupOnImport</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                    "This is being overridden by the <code>backupOnImport</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
             }) }}
 
             {{ forms.selectField({
@@ -64,7 +64,7 @@
                 errors: settings.getErrors('backupSchedule'),
                 disabled: settings.isOverriddenByConfig('backupSchedule'),
                 warning: settings.isOverriddenByConfig('backupSchedule') ?
-                    "This is being overridden by the <code>backupSchedule</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                    "This is being overridden by the <code>backupSchedule</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
             }) }}
 
             {{ forms.textField({
@@ -79,7 +79,7 @@
                 max: 365,
                 disabled: settings.isOverriddenByConfig('backupRetentionDays'),
                 warning: settings.isOverriddenByConfig('backupRetentionDays') ?
-                    "This is being overridden by the <code>backupRetentionDays</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                    "This is being overridden by the <code>backupRetentionDays</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
             }) }}
 
             {# Asset volume selection dropdown for backups #}
@@ -101,7 +101,7 @@
                 errors: settings.getErrors('backupVolumeUid'),
                 disabled: settings.isOverriddenByConfig('backupVolumeUid'),
                 warning: settings.isOverriddenByConfig('backupVolumeUid') ?
-                    "This is being overridden by the <code>backupVolumeUid</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                    "This is being overridden by the <code>backupVolumeUid</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
             }) }}
 
             <div id="custom-backup-path" class="{{ settings.backupVolumeUid ? 'hidden' }}">
@@ -117,7 +117,7 @@
                     suggestEnvVars: true,
                     disabled: settings.isOverriddenByConfig('backupPath'),
                     warning: settings.isOverriddenByConfig('backupPath') ?
-                        "This is being overridden by the <code>backupPath</code> setting in <code>config/translation-manager.php</code>."|raw : null,
+                        "This is being overridden by the <code>backupPath</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
                 }) }}
             </div>
         </div>
