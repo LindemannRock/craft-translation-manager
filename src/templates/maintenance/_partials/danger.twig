@@ -35,7 +35,7 @@
     <div class="heading">
         <label>{{ "Clear Translations"|t('translation-manager') }}</label>
     </div>
-    <p class="light">{{ ("No translation integrations are currently enabled. Enable " ~ formiePluginName ~ " Integration or Site Translations above to start capturing translations.")|t('translation-manager') }}</p>
+    <p class="light">{{ "No translation integrations are currently enabled. Enable {formiePluginName} Integration or Site Translations above to start capturing translations."|t('translation-manager', {formiePluginName: formiePluginName}) }}</p>
 </div>
 {% endif %}
 

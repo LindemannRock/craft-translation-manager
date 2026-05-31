@@ -131,8 +131,12 @@
     const categoryCleanupDescription = document.getElementById('categoryCleanupDescription');
     const categoryCleanupDescriptionText = document.getElementById('categoryCleanupDescriptionText');
 
+    function withBackupDescription(message, backupSuffix) {
+        return backupSuffix ? `${message} ${backupSuffix}` : message;
+    }
+
     if (unusedTypeSelect) {
-        const cleanupBackupDescriptionSuffix = '{{ settings.backupEnabled ? " A backup will be created automatically before deleting."|t('translation-manager')|e('js') : '' }}';
+        const cleanupBackupDescriptionSuffix = '{{ settings.backupEnabled ? "A backup will be created automatically before deleting."|t('translation-manager')|e('js') : '' }}';
         const descriptions = {
             all: '{{ "This will permanently delete ALL unused translations (both site and form translations) that are no longer used anywhere."|t('translation-manager')|e('js') }}',
             formie: '{{ "This will permanently delete unused form translations from deleted forms or fields."|t('translation-manager')|e('js') }}'
@@ -144,12 +148,12 @@
 
         // Add dynamic descriptions for each category
         {% for category in settings.getEnabledCategories() %}
-        descriptions['category:{{ category }}'] = '{{ "This will permanently delete unused translations for the"|t('translation-manager')|e('js') }} {{ category }} {{ "category that are no longer found in any template files."|t('translation-manager')|e('js') }}';
-        counts['category:{{ category }}'] = {{ unusedCounts[category] ?? 0 }};
+        descriptions['category:{{ category|e('js') }}'] = '{{ "This will permanently delete unused translations for the {category} category that are no longer found in any template files."|t('translation-manager', {category: category})|e('js') }}';
+        counts['category:{{ category|e('js') }}'] = {{ unusedCounts[category] ?? 0 }};
         {% endfor %}
         if (cleanupBackupDescriptionSuffix) {
             Object.keys(descriptions).forEach((key) => {
-                descriptions[key] = descriptions[key] + cleanupBackupDescriptionSuffix;
+                descriptions[key] = withBackupDescription(descriptions[key], cleanupBackupDescriptionSuffix);
             });
         }
 
@@ -199,7 +203,7 @@
 
             // Add dynamic confirm messages for each category
             {% for category in settings.getEnabledCategories() %}
-            confirmMessages['category:{{ category }}'] = '{{ "Are you sure you want to delete unused"|t('translation-manager')|e('js') }} {{ category }} {{ "translations?"|t('translation-manager')|e('js') }}';
+            confirmMessages['category:{{ category|e('js') }}'] = '{{ "Are you sure you want to delete unused {category} translations?"|t('translation-manager', {category: category})|e('js') }}';
             {% endfor %}
 
             if (confirm(confirmMessages[type])) {
@@ -238,7 +242,7 @@
     }
 
     if (cleanLanguagesBtn && cleanLanguageSelect) {
-        const languageCleanupBackupDescriptionSuffix = '{{ settings.backupEnabled ? " A backup will be created automatically before deleting."|t('translation-manager')|e('js') : '' }}';
+        const languageCleanupBackupDescriptionSuffix = '{{ settings.backupEnabled ? "A backup will be created automatically before deleting."|t('translation-manager')|e('js') : '' }}';
         const mappedSourceLanguages = new Set([
             {% for row in languageCleanup.mappedSource %}
             '{{ row.language|e('js') }}',
@@ -251,15 +255,15 @@
         };
         const languageDescriptions = {
             {% for row in languageCleanup.mappedSource %}
-            '{{ row.language }}': '{{ "Migrate & Delete copies useful translations into the mapped target without overwriting existing translations, then deletes the mapped-source rows. Delete Only permanently removes the mapped-source rows without copying."|t('translation-manager')|e('js') }}',
+            '{{ row.language|e('js') }}': '{{ "Migrate & Delete copies useful translations into the mapped target without overwriting existing translations, then deletes the mapped-source rows. Delete Only permanently removes the mapped-source rows without copying."|t('translation-manager')|e('js') }}',
             {% endfor %}
             {% for row in languageCleanup.ghost %}
-            '{{ row.language }}': '{{ "This will permanently delete all rows for ghost language"|t('translation-manager')|e('js') }} {{ row.language }}.',
+            '{{ row.language|e('js') }}': '{{ "This will permanently delete all rows for ghost language {language}."|t('translation-manager', {language: row.language})|e('js') }}',
             {% endfor %}
         };
         if (languageCleanupBackupDescriptionSuffix) {
             Object.keys(languageDescriptions).forEach((key) => {
-                languageDescriptions[key] = languageDescriptions[key] + languageCleanupBackupDescriptionSuffix;
+                languageDescriptions[key] = withBackupDescription(languageDescriptions[key], languageCleanupBackupDescriptionSuffix);
             });
         }
 
@@ -277,12 +281,11 @@
 
             if (hasSelection) {
                 const description = languageDescriptions[selected] || (
-                    '{{ "This will permanently delete all rows for language"|t('translation-manager')|e('js') }} ' +
-                    selected +
-                    '.'
-                ) + languageCleanupBackupDescriptionSuffix;
+                    `{{ "This will permanently delete all rows for language {language}."|t('translation-manager', {language: '__LANGUAGE__'})|e('js') }}`
+                        .replaceAll('__LANGUAGE__', selected)
+                );
                 languageCleanupDescription.style.display = 'block';
-                languageCleanupDescriptionText.textContent = description;
+                languageCleanupDescriptionText.textContent = withBackupDescription(description, languageCleanupBackupDescriptionSuffix);
             } else {
                 languageCleanupDescription.style.display = 'none';
             }
@@ -347,15 +350,15 @@
     }
 
     if (cleanCategoriesBtn && cleanCategorySelect) {
-        const categoryCleanupBackupDescriptionSuffix = '{{ settings.backupEnabled ? " A backup will be created automatically before deleting."|t('translation-manager')|e('js') : '' }}';
+        const categoryCleanupBackupDescriptionSuffix = '{{ settings.backupEnabled ? "A backup will be created automatically before deleting."|t('translation-manager')|e('js') : '' }}';
         const categoryDescriptions = {
             {% for row in categoryCleanup.removed %}
-            '{{ row.category }}': '{{ "This will permanently delete all rows for removed category"|t('translation-manager')|e('js') }} {{ row.category }}.',
+            '{{ row.category|e('js') }}': '{{ "This will permanently delete all rows for removed category {category}."|t('translation-manager', {category: row.category})|e('js') }}',
             {% endfor %}
         };
         if (categoryCleanupBackupDescriptionSuffix) {
             Object.keys(categoryDescriptions).forEach((key) => {
-                categoryDescriptions[key] = categoryDescriptions[key] + categoryCleanupBackupDescriptionSuffix;
+                categoryDescriptions[key] = withBackupDescription(categoryDescriptions[key], categoryCleanupBackupDescriptionSuffix);
             });
         }
 
@@ -367,12 +370,11 @@
 
             if (hasSelection) {
                 const description = categoryDescriptions[selected] || (
-                    '{{ "This will permanently delete all rows for removed category"|t('translation-manager')|e('js') }} ' +
-                    selected +
-                    '.'
-                ) + categoryCleanupBackupDescriptionSuffix;
+                    `{{ "This will permanently delete all rows for removed category {category}."|t('translation-manager', {category: '__CATEGORY__'})|e('js') }}`
+                        .replaceAll('__CATEGORY__', selected)
+                );
                 categoryCleanupDescription.style.display = 'block';
-                categoryCleanupDescriptionText.textContent = description;
+                categoryCleanupDescriptionText.textContent = withBackupDescription(description, categoryCleanupBackupDescriptionSuffix);
             } else {
                 categoryCleanupDescription.style.display = 'none';
             }
@@ -560,15 +562,17 @@
         const hasFormie = {{ settings.enableFormieIntegration ? 'true' : 'false' }};
         const hasSite = {{ settings.enableSiteTranslations ? 'true' : 'false' }};
         const formiePluginName = '{{ craft.translationManager.getFormiePluginName()|e('js') }}';
-        const backupDescriptionSuffix = '{{ settings.backupEnabled ? " A backup will be created automatically before deleting."|t('translation-manager')|e('js') : '' }}';
+        const backupDescriptionSuffix = '{{ settings.backupEnabled ? "A backup will be created automatically before deleting."|t('translation-manager')|e('js') : '' }}';
 
         let allDescription = '{{ "This will permanently delete ALL translations from the database and remove all translation files. Use this to start completely fresh."|t('translation-manager')|e('js') }}';
         if (hasFormie && hasSite) {
-            allDescription = '{{ "This will permanently delete ALL translations from the database and remove all translation files, including both "|t('translation-manager')|e('js') }}' + formiePluginName + '{{ " and site translations. Use this to start completely fresh."|t('translation-manager')|e('js') }}';
+            allDescription = `{{ "This will permanently delete ALL translations from the database and remove all translation files, including both {name} and site translations. Use this to start completely fresh."|t('translation-manager', {name: '__NAME__'})|e('js') }}`
+                .replaceAll('__NAME__', formiePluginName);
         }
 
         const descriptions = {
-            formie: '{{ "This will permanently delete all "|t('translation-manager')|e('js') }}' + formiePluginName + '{{ " form translations from the database and remove the corresponding translation files. Your forms will not be affected, only the stored translations will be removed."|t('translation-manager')|e('js') }}',
+            formie: `{{ "This will permanently delete all {name} form translations from the database and remove the corresponding translation files. Your forms will not be affected, only the stored translations will be removed."|t('translation-manager', {name: '__NAME__'})|e('js') }}`
+                .replaceAll('__NAME__', formiePluginName),
             all: allDescription
         };
         const counts = {
@@ -578,24 +582,26 @@
 
         // Add dynamic descriptions for each category
         {% for category in settings.getEnabledCategories() %}
-        descriptions['category:{{ category }}'] = '{{ "This will permanently delete all translations for the"|t('translation-manager')|e('js') }} {{ category }} {{ "category from the database and remove the corresponding translation files. You will need to re-translate this content."|t('translation-manager')|e('js') }}';
-        counts['category:{{ category }}'] = {{ translationCounts[category] ?? 0 }};
+        descriptions['category:{{ category|e('js') }}'] = '{{ "This will permanently delete all translations for the {category} category from the database and remove the corresponding translation files. You will need to re-translate this content."|t('translation-manager', {category: category})|e('js') }}';
+        counts['category:{{ category|e('js') }}'] = {{ translationCounts[category] ?? 0 }};
         {% endfor %}
 
         if (backupDescriptionSuffix) {
             Object.keys(descriptions).forEach((key) => {
-                descriptions[key] = descriptions[key] + backupDescriptionSuffix;
+                descriptions[key] = withBackupDescription(descriptions[key], backupDescriptionSuffix);
             });
         }
 
         const confirmMessages = {
-            formie: '{{ "Are you sure you want to delete all "|t('translation-manager')|e('js') }}' + formiePluginName + '{{ " translations and their files? This action cannot be undone."|t('translation-manager')|e('js') }}',
-            all: '{{ "Are you absolutely sure you want to delete ALL translations and files? This will remove both "|t('translation-manager')|e('js') }}' + formiePluginName + '{{ " and site translations. This action cannot be undone."|t('translation-manager')|e('js') }}'
+            formie: `{{ "Are you sure you want to delete all {name} translations and their files? This action cannot be undone."|t('translation-manager', {name: '__NAME__'})|e('js') }}`
+                .replaceAll('__NAME__', formiePluginName),
+            all: `{{ "Are you absolutely sure you want to delete ALL translations and files? This will remove both {name} and site translations. This action cannot be undone."|t('translation-manager', {name: '__NAME__'})|e('js') }}`
+                .replaceAll('__NAME__', formiePluginName)
         };
 
         // Add dynamic confirm messages for each category
         {% for category in settings.getEnabledCategories() %}
-        confirmMessages['category:{{ category }}'] = '{{ "Are you sure you want to delete all"|t('translation-manager')|e('js') }} {{ category }} {{ "translations and their files? This action cannot be undone."|t('translation-manager')|e('js') }}';
+        confirmMessages['category:{{ category|e('js') }}'] = '{{ "Are you sure you want to delete all {name} translations and their files? This action cannot be undone."|t('translation-manager', {name: category})|e('js') }}';
         {% endfor %}
 
         const actions = {

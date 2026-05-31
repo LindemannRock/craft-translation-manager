@@ -25,7 +25,7 @@
             <div>
                 {% set unusedOptions = [
                     {value: '', label: 'Select type'|t('translation-manager')},
-                    {value: 'all', label: 'All Unused (' ~ (totalUnused|number_format) ~ ')'|t('translation-manager')}
+                    {value: 'all', label: 'All Unused ({count})'|t('translation-manager', {count: totalUnused|number_format})}
                 ] %}
                 {% set enabledCategories = settings.getEnabledCategories() %}
                 {% for category in enabledCategories %}
