@@ -45,11 +45,11 @@ class PhpImportController extends Controller
     {
         // PHP import is only available in devMode (for client onboarding scenarios)
         if (!Craft::$app->getConfig()->getGeneral()->devMode) {
-            throw new ForbiddenHttpException('PHP import is only available in devMode');
+            throw new ForbiddenHttpException(Craft::t('translation-manager', 'PHP import is only available in devMode.'));
         }
 
         if (!Craft::$app->getUser()->checkPermission('translationManager:importTranslations')) {
-            throw new ForbiddenHttpException('User does not have permission to import translations');
+            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to import translations.'));
         }
 
         return parent::beforeAction($action);

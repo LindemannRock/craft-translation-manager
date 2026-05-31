@@ -37,23 +37,23 @@ class SettingsController extends Controller
         switch ($action->id) {
             case 'clear-formie':
                 if (!$user->checkPermission('translationManager:clearFormie')) {
-                    throw new ForbiddenHttpException('User does not have permission to clear Formie translations');
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clear Formie translations.'));
                 }
                 break;
             case 'clear-site':
                 if (!$user->checkPermission('translationManager:clearSite')) {
-                    throw new ForbiddenHttpException('User does not have permission to clear site translations');
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clear site translations.'));
                 }
                 break;
             case 'clear-all':
                 if (!$user->checkPermission('translationManager:clearAll')) {
-                    throw new ForbiddenHttpException('User does not have permission to clear all translations');
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clear all translations.'));
                 }
                 break;
             default:
                 // All other actions require editSettings permission
                 if (!$user->checkPermission('translationManager:editSettings')) {
-                    throw new ForbiddenHttpException('User does not have permission to edit settings');
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to edit settings.'));
                 }
         }
 
@@ -512,7 +512,7 @@ class SettingsController extends Controller
         
         // Check permission
         if (!Craft::$app->getUser()->checkPermission('translationManager:editSettings')) {
-            throw new ForbiddenHttpException('User does not have permission to edit settings');
+            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to edit settings.'));
         }
         
         try {

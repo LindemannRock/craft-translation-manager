@@ -46,12 +46,12 @@ class TranslationsController extends Controller
             }
 
             // No access at all
-            throw new ForbiddenHttpException('User does not have permission to access Translation Manager');
+            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to access Translation Manager.'));
         }
 
         // For other actions, require manageTranslations permission
         if ($action->id !== 'index' && !$user->checkPermission('translationManager:manageTranslations')) {
-            throw new ForbiddenHttpException('User does not have permission to view translations');
+            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to view translations.'));
         }
 
         return parent::beforeAction($action);
@@ -290,7 +290,7 @@ class TranslationsController extends Controller
         
         // Check permission
         if (!Craft::$app->getUser()->checkPermission('translationManager:editTranslations')) {
-            throw new ForbiddenHttpException('User does not have permission to edit translations');
+            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to edit translations.'));
         }
 
         $request = Craft::$app->getRequest();
@@ -346,7 +346,7 @@ class TranslationsController extends Controller
         
         // Check permission
         if (!Craft::$app->getUser()->checkPermission('translationManager:editTranslations')) {
-            throw new ForbiddenHttpException('User does not have permission to edit translations');
+            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to edit translations.'));
         }
 
         $request = Craft::$app->getRequest();
@@ -426,7 +426,7 @@ class TranslationsController extends Controller
         
         // Check permission
         if (!Craft::$app->getUser()->checkPermission('translationManager:deleteTranslations')) {
-            throw new ForbiddenHttpException('User does not have permission to delete translations');
+            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to delete translations.'));
         }
 
         $request = Craft::$app->getRequest();
@@ -458,7 +458,7 @@ class TranslationsController extends Controller
         $this->requireAcceptsJson();
 
         if (!Craft::$app->getUser()->checkPermission('translationManager:editTranslations')) {
-            throw new ForbiddenHttpException('User does not have permission to edit translations');
+            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to edit translations.'));
         }
 
         $request = Craft::$app->getRequest();
@@ -478,7 +478,7 @@ class TranslationsController extends Controller
             && $settings->requireApproval
             && !Craft::$app->getUser()->checkPermission('translationManager:approveTranslations')
         ) {
-            throw new ForbiddenHttpException('User does not have permission to approve translations');
+            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to approve translations.'));
         }
 
         $updated = 0;

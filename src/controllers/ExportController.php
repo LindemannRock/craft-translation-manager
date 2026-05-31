@@ -41,7 +41,7 @@ class ExportController extends Controller
         $user = Craft::$app->getUser();
 
         if (!$user->checkPermission('translationManager:exportTranslations')) {
-            throw new ForbiddenHttpException('User does not have permission to export translations');
+            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to export translations.'));
         }
 
         return parent::beforeAction($action);

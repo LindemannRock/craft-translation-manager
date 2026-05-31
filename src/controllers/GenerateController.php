@@ -37,22 +37,22 @@ class GenerateController extends Controller
         switch ($action->id) {
             case 'files':
                 if (!$user->checkPermission('translationManager:generateAllTranslations')) {
-                    throw new ForbiddenHttpException('User does not have permission to generate translation files');
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate translation files.'));
                 }
                 break;
             case 'formie-files':
                 if (!$user->checkPermission('translationManager:generateFormieTranslations')) {
-                    throw new ForbiddenHttpException('User does not have permission to generate Formie translation files');
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate Formie translation files.'));
                 }
                 break;
             case 'site-files':
                 if (!$user->checkPermission('translationManager:generateSiteTranslations')) {
-                    throw new ForbiddenHttpException('User does not have permission to generate site translation files');
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate site translation files.'));
                 }
                 break;
             case 'category-files':
                 if (!$user->checkPermission('translationManager:generateSiteTranslations')) {
-                    throw new ForbiddenHttpException('User does not have permission to generate category translation files');
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate category translation files.'));
                 }
                 break;
             default:
@@ -64,7 +64,7 @@ class GenerateController extends Controller
                     $user->checkPermission('translationManager:generateSiteTranslations');
 
                 if (!$hasGenerateAccess) {
-                    throw new ForbiddenHttpException('User does not have permission to generate translation files');
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate translation files.'));
                 }
         }
 

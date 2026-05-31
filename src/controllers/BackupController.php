@@ -45,22 +45,22 @@ class BackupController extends Controller
         switch ($action->id) {
             case 'create':
                 if (!$user->checkPermission('translationManager:createBackups')) {
-                    throw new ForbiddenHttpException('User does not have permission to create backups');
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to create backups.'));
                 }
                 break;
             case 'restore':
                 if (!$user->checkPermission('translationManager:restoreBackups')) {
-                    throw new ForbiddenHttpException('User does not have permission to restore backups');
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to restore backups.'));
                 }
                 break;
             case 'delete':
                 if (!$user->checkPermission('translationManager:deleteBackups')) {
-                    throw new ForbiddenHttpException('User does not have permission to delete backups');
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to delete backups.'));
                 }
                 break;
             case 'download':
                 if (!$user->checkPermission('translationManager:downloadBackups')) {
-                    throw new ForbiddenHttpException('User does not have permission to download backups');
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to download backups.'));
                 }
                 break;
             default:
@@ -73,7 +73,7 @@ class BackupController extends Controller
                     $user->checkPermission('translationManager:deleteBackups');
 
                 if (!$hasAccess) {
-                    throw new ForbiddenHttpException('User does not have permission to manage backups');
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to manage backups.'));
                 }
         }
 
@@ -304,7 +304,7 @@ class BackupController extends Controller
         $backupName = Craft::$app->getRequest()->getRequiredParam('backup');
 
         if (!preg_match('/^([\w]+\/)?(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})$/', $backupName)) {
-            throw new NotFoundHttpException('Invalid backup name');
+            throw new NotFoundHttpException(Craft::t('translation-manager', 'Invalid backup name'));
         }
 
         $this->logInfo("User requested backup download", ['backup' => $backupName]);
@@ -331,14 +331,14 @@ class BackupController extends Controller
         $volume = Craft::$app->getVolumes()->getVolumeByUid($settings->backupVolumeUid);
 
         if (!$volume) {
-            throw new NotFoundHttpException('Volume not found');
+            throw new NotFoundHttpException(Craft::t('translation-manager', 'Volume not found'));
         }
 
         $fs = $volume->getFs();
         $backupPath = 'translation-manager/backups/' . $backupName;
 
         if (!$fs->directoryExists($backupPath)) {
-            throw new NotFoundHttpException('Backup not found');
+            throw new NotFoundHttpException(Craft::t('translation-manager', 'Backup not found'));
         }
 
         // Create a temporary zip file
@@ -386,7 +386,7 @@ class BackupController extends Controller
         $backupDir = $backupService->getBackupPath() . '/' . $backupName;
 
         if (!is_dir($backupDir)) {
-            throw new NotFoundHttpException('Backup not found');
+            throw new NotFoundHttpException(Craft::t('translation-manager', 'Backup not found'));
         }
 
         // Create a temporary zip file

@@ -45,17 +45,17 @@ class MaintenanceController extends Controller
             case 'clean-languages':
             case 'clean-categories':
                 if (!$user->checkPermission('translationManager:cleanUnused')) {
-                    throw new \yii\web\ForbiddenHttpException('User does not have permission to clean unused translations');
+                    throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clean unused translations.'));
                 }
                 break;
             case 'scan-templates-action':
                 if (!$user->checkPermission('translationManager:scanTemplates')) {
-                    throw new \yii\web\ForbiddenHttpException('User does not have permission to scan templates');
+                    throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to scan templates.'));
                 }
                 break;
             case 'recapture-formie':
                 if (!$user->checkPermission('translationManager:recaptureFormie')) {
-                    throw new \yii\web\ForbiddenHttpException('User does not have permission to recapture Formie translations');
+                    throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to recapture Formie translations.'));
                 }
                 break;
             default:
@@ -71,7 +71,7 @@ class MaintenanceController extends Controller
                     $user->checkPermission('translationManager:clearAll');
 
                 if (!$hasAccess) {
-                    throw new \yii\web\ForbiddenHttpException('User does not have permission to access maintenance');
+                    throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to access maintenance.'));
                 }
         }
 

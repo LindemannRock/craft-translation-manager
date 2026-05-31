@@ -110,7 +110,7 @@ class CreateBackupJob extends BaseJob implements RetryableJobInterface
                 $this->scheduleNextBackup();
             }
         } else {
-            throw new \Exception('Failed to create scheduled backup');
+            throw new \Exception(Craft::t('translation-manager', 'Failed to create scheduled backup'));
         }
     }
     
