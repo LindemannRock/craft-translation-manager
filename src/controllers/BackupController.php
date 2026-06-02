@@ -15,6 +15,7 @@ use craft\helpers\FileHelper;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
 use lindemannrock\base\helpers\DateFormatHelper;
+use lindemannrock\base\helpers\SafeSegmentHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
@@ -341,8 +342,8 @@ class BackupController extends Controller
             throw new NotFoundHttpException(Craft::t('translation-manager', 'Backup not found'));
         }
 
-        // Create a temporary zip file
-        $zipPath = Craft::$app->getPath()->getTempPath() . '/translation-backup-' . str_replace('/', '-', $backupName) . '.zip';
+        $downloadFilename = 'translation-backup-' . SafeSegmentHelper::filenamePart($backupName, 'backup') . '.zip';
+        $zipPath = Craft::$app->getPath()->getTempPath() . '/' . $downloadFilename;
 
         // Create zip archive
         $zip = new \ZipArchive();
@@ -364,7 +365,7 @@ class BackupController extends Controller
 
         // Send the file
         $response = Craft::$app->getResponse();
-        $response->sendFile($zipPath, 'translation-backup-' . str_replace('/', '-', $backupName) . '.zip', [
+        $response->sendFile($zipPath, $downloadFilename, [
             'mimeType' => 'application/zip',
             'inline' => false,
         ]);
@@ -389,8 +390,8 @@ class BackupController extends Controller
             throw new NotFoundHttpException(Craft::t('translation-manager', 'Backup not found'));
         }
 
-        // Create a temporary zip file
-        $zipPath = Craft::$app->getPath()->getTempPath() . '/translation-backup-' . str_replace('/', '-', $backupName) . '.zip';
+        $downloadFilename = 'translation-backup-' . SafeSegmentHelper::filenamePart($backupName, 'backup') . '.zip';
+        $zipPath = Craft::$app->getPath()->getTempPath() . '/' . $downloadFilename;
 
         // Create zip archive
         $zip = new \ZipArchive();
@@ -409,7 +410,7 @@ class BackupController extends Controller
 
         // Send the file
         $response = Craft::$app->getResponse();
-        $response->sendFile($zipPath, 'translation-backup-' . str_replace('/', '-', $backupName) . '.zip', [
+        $response->sendFile($zipPath, $downloadFilename, [
             'mimeType' => 'application/zip',
             'inline' => false,
         ]);

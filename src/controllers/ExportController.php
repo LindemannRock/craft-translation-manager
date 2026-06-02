@@ -169,26 +169,24 @@ class ExportController extends Controller
 
             $filenameParts = ['export'];
 
-            // Add language info to filename (sanitized to prevent header injection)
             if ($exportAll) {
                 $filenameParts[] = 'all-languages';
             } elseif (!empty($languageParam)) {
-                $filenameParts[] = $this->sanitizeFilenamePart($languageParam);
+                $filenameParts[] = $languageParam;
             }
 
-            // Add category to filename (sanitized)
             if ($categoryParam && $categoryParam !== 'all') {
-                $filenameParts[] = $this->sanitizeFilenamePart($categoryParam);
+                $filenameParts[] = $categoryParam;
             }
 
             if ($typeParam && $typeParam !== 'all') {
-                $filenameParts[] = $this->sanitizeFilenamePart($typeParam);
+                $filenameParts[] = $typeParam;
             }
             if ($statusParam && $statusParam !== 'all') {
-                $filenameParts[] = $this->sanitizeFilenamePart($statusParam);
+                $filenameParts[] = $statusParam;
             }
             if ($originParam && $originParam !== 'all') {
-                $filenameParts[] = $this->sanitizeFilenamePart($originParam);
+                $filenameParts[] = $originParam;
             }
 
             $filename = ExportHelper::filename($settings, $filenameParts, 'csv');
@@ -322,13 +320,13 @@ class ExportController extends Controller
         $filenameParts = ['export-selected'];
 
         if (count($languages) === 1 && !empty($languages[0])) {
-            $filenameParts[] = $this->sanitizeFilenamePart($languages[0]);
+            $filenameParts[] = $languages[0];
         } else {
             $filenameParts[] = 'multi-language';
         }
 
         if (count($types) === 1) {
-            $filenameParts[] = $this->sanitizeFilenamePart($types[0]);
+            $filenameParts[] = $types[0];
         }
 
         $filename = ExportHelper::filename($settings, $filenameParts, 'csv');
@@ -336,20 +334,6 @@ class ExportController extends Controller
         return ExportHelper::dispatchTable($rows, $headers, 'csv', $filename, ['reviewedAt', 'dateUpdated']);
     }
 
-
-    /**
-     * Sanitize a string for use in filename
-     *
-     * Prevents header injection and ensures valid filename characters.
-     * Only allows alphanumeric, dots, underscores, and hyphens.
-     */
-    private function sanitizeFilenamePart(string $part): string
-    {
-        // Replace any non-alphanumeric characters (except ._-) with hyphen
-        $sanitized = preg_replace('/[^a-z0-9._-]+/i', '-', $part);
-        // Remove leading/trailing hyphens and convert to lowercase
-        return strtolower(trim($sanitized, '-'));
-    }
 
     /**
      * Build a map of userId => email for export metadata.
