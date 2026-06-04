@@ -182,46 +182,6 @@ php craft translation-manager/backup/clean
 ddev craft translation-manager/backup/clean
 ```
 
-## Debug Commands
-
-### `translation-manager/debug/search`
-
-Test search functionality against the translation database.
-
-```bash title="PHP"
-php craft translation-manager/debug/search "search term"
-```
-
-```bash title="DDEV"
-ddev craft translation-manager/debug/search "search term"
-```
-
-### `translation-manager/debug/recent`
-
-List recent translations. Defaults to the last 10 entries.
-
-| Argument | Type | Default | Description |
-|----------|------|---------|-------------|
-| `limit` | `int` | `10` | Number of recent translations to show |
-
-```bash title="PHP"
-php craft translation-manager/debug/recent
-```
-
-```bash title="DDEV"
-ddev craft translation-manager/debug/recent
-```
-
-With a custom limit:
-
-```bash title="PHP"
-php craft translation-manager/debug/recent 50
-```
-
-```bash title="DDEV"
-ddev craft translation-manager/debug/recent 50
-```
-
 ## Cron Examples
 
 Daily backup at 3 AM:

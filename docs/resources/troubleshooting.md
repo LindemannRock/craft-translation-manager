@@ -52,15 +52,9 @@ php craft migrate/all
 php craft clear-caches/all
 ```
 
-## Debug Commands
+## Useful Commands
 
 ```bash
-# Search for specific text
-php craft translation-manager/debug/search "Your text"
-
-# List recent translations
-php craft translation-manager/debug/recent
-
 # Recapture Formie forms
 php craft translation-manager/translations/capture-formie
 ```
