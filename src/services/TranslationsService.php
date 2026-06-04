@@ -690,9 +690,20 @@ class TranslationsService extends Component
     }
     
     /**
-     * @var int Count of template files scanned during usage checks
+     * @var int Count of template files scanned during the most recent template scan.
      */
-    public $_scannedFileCount = 0;
+    private int $_scannedFileCount = 0;
+
+    /**
+     * Number of template files scanned during the most recent scan
+     * (`scanTemplateDirectory()` / `scanTemplateDirectoryAllCategories()`).
+     *
+     * @since 5.25.0
+     */
+    public function getScannedFileCount(): int
+    {
+        return $this->_scannedFileCount;
+    }
 
     /**
      * Scan template directory for ALL enabled categories at once

@@ -139,7 +139,7 @@ class MaintenanceController extends Controller
             
             $this->stdout("Template path: {$templatePath}" . PHP_EOL);
             $this->stdout("Category: '{$category}'" . PHP_EOL);
-            $this->stdout("Files scanned: {$service->_scannedFileCount}" . PHP_EOL);
+            $this->stdout("Files scanned: {$service->getScannedFileCount()}" . PHP_EOL);
             $this->stdout("Translation keys found: " . count($foundKeys) . PHP_EOL);
             
             if (!empty($foundKeys)) {
