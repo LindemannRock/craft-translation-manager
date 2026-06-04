@@ -67,13 +67,20 @@ class FormieIntegration extends BaseIntegration
             }
         );
 
-        // Listen to form delete events
+        // Listen to form delete events via the Elements SERVICE, not the Form
+        // element's own EVENT_AFTER_DELETE. Formie's Form::afterDelete() overrides
+        // the base method without calling parent::afterDelete(), so the element's
+        // EVENT_AFTER_DELETE never fires (even though Formie documents it). The
+        // service-level EVENT_AFTER_DELETE_ELEMENT is triggered by Craft itself
+        // for every element delete (soft or hard), independent of that override.
         Event::on(
-            \verbb\formie\elements\Form::class,
-            \verbb\formie\elements\Form::EVENT_AFTER_DELETE,
-            function(\craft\events\ModelEvent $event) {
-                $this->logInfo("FormieIntegration: Form deleted", ['handle' => $event->sender->handle]);
-                $this->handleFormDelete($event->sender);
+            \craft\services\Elements::class,
+            \craft\services\Elements::EVENT_AFTER_DELETE_ELEMENT,
+            function(\craft\events\ElementEvent $event) {
+                if ($event->element instanceof \verbb\formie\elements\Form) {
+                    $this->logInfo("FormieIntegration: Form deleted", ['handle' => $event->element->handle]);
+                    $this->handleFormDelete($event->element);
+                }
             }
         );
     }
@@ -256,10 +263,15 @@ class FormieIntegration extends BaseIntegration
     {
         $this->logInfo("Processing form deletion", ['handle' => $form->handle]);
 
-        // Mark all translations for this form as unused
+        // Mark all translations for this form as unused — across every language.
+        // Without allSites, getTranslations() defaults to the current CP site
+        // language, so other languages' rows for the deleted form would never be
+        // marked unused (they only self-healed later via recheckUsage on the next
+        // form save).
         $translations = $this->getTranslationsService()->getTranslations([
             'type' => 'forms',
             'search' => "formie.{$form->handle}.",
+            'allSites' => true,
         ]);
 
         $translationIds = array_column($translations, 'id');
