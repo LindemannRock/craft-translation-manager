@@ -11,6 +11,7 @@
 namespace lindemannrock\translationmanager\integrations;
 
 use craft\base\Component;
+use craft\helpers\Db;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\interfaces\TranslationIntegrationInterface;
 use lindemannrock\translationmanager\TranslationManager;
@@ -25,6 +26,20 @@ use lindemannrock\translationmanager\TranslationManager;
 abstract class BaseIntegration extends Component implements TranslationIntegrationInterface
 {
     use LoggingTrait;
+
+    /**
+     * @inheritdoc
+     */
+    public function init(): void
+    {
+        parent::init();
+
+        // Route integration logs to the plugin's log category, matching the
+        // services. Without this, LoggingTrait derives the category from the
+        // class name (e.g. "formie-integration"), so these entries never reach
+        // the plugin log that the CP log viewer shows.
+        $this->setLoggingHandle(TranslationManager::$plugin?->id ?? 'translation-manager');
+    }
 
     /**
      * @var bool Whether this integration is enabled
@@ -186,22 +201,24 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
      */
     protected function markTranslationsUnused(array $translationIds): int
     {
-        $marked = 0;
+        if (empty($translationIds)) {
+            return 0;
+        }
 
-        foreach ($translationIds as $id) {
-            $record = \lindemannrock\translationmanager\records\TranslationRecord::findOne($id);
-            if ($record && $record->status !== 'unused') {
-                $record->status = 'unused';
-                if ($record->save()) {
-                    $marked++;
-                    $this->logInfo("Marked translation as unused", [
-                        'id' => $id,
-                        'key' => $record->translationKey,
-                        'context' => $record->context,
-                        'integration' => $this->getName(),
-                    ]);
-                }
-            }
+        // Single bulk UPDATE instead of one findOne()+save() per ID — a deleted
+        // form can produce hundreds of rows. The `!= unused` guard preserves the
+        // old skip-already-unused behavior so the returned count reflects rows
+        // actually flipped.
+        $marked = \lindemannrock\translationmanager\records\TranslationRecord::updateAll(
+            ['status' => 'unused', 'dateUpdated' => Db::prepareDateForDb(new \DateTime())],
+            ['and', ['id' => $translationIds], ['!=', 'status', 'unused']],
+        );
+
+        if ($marked > 0) {
+            $this->logInfo("Marked translations as unused", [
+                'count' => $marked,
+                'integration' => $this->getName(),
+            ]);
         }
 
         return $marked;
