@@ -17,6 +17,7 @@ use craft\helpers\DateTimeHelper;
 use craft\helpers\Db;
 use craft\helpers\FileHelper;
 use craft\helpers\Json;
+use lindemannrock\base\helpers\StorageVolumeHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\helpers\SiteLanguageHelper;
 use lindemannrock\translationmanager\TranslationManager;
@@ -64,6 +65,15 @@ class BackupService extends Component
 
         // Check if a backup volume is configured
         if ($settings->backupVolumeUid) {
+            $volumeErrors = StorageVolumeHelper::validateVolume($settings->backupVolumeUid);
+            if ($volumeErrors !== []) {
+                $this->logWarning('Backup volume failed validation. Falling back to local storage.', [
+                    'backupVolumeUid' => $settings->backupVolumeUid,
+                    'errors' => $volumeErrors,
+                ]);
+                return;
+            }
+
             $volume = Craft::$app->getVolumes()->getVolumeByUid($settings->backupVolumeUid);
             if ($volume) {
                 $this->_volumeFs = $volume->getFs();
@@ -100,18 +110,9 @@ class BackupService extends Component
     public function getBackupPath(): string
     {
         if ($this->_useVolume) {
-            // Return a display path for volume storage
             $settings = TranslationManager::getInstance()->getSettings();
-            $volume = Craft::$app->getVolumes()->getVolumeByUid($settings->backupVolumeUid);
-            if ($volume) {
-                // Get the actual filesystem path
-                $fs = $volume->getFs();
-                if (property_exists($fs, 'path')) {
-                    $path = App::env($fs->path);
-                    return rtrim($path, '/') . '/' . $this->_volumeBackupPath;
-                }
-                return "Volume: {$volume->name} / {$this->_volumeBackupPath}";
-            }
+            return StorageVolumeHelper::displayPath($settings->backupVolumeUid, $this->_volumeBackupPath)
+                ?? Craft::t('translation-manager', 'Backup Volume');
         }
 
         // Fall back to local storage

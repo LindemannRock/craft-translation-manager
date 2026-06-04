@@ -15,6 +15,7 @@ use craft\base\Model;
 use craft\behaviors\EnvAttributeParserBehavior;
 use lindemannrock\base\helpers\ScheduleHelper;
 use lindemannrock\base\helpers\StoragePathHelper;
+use lindemannrock\base\helpers\StorageVolumeHelper;
 use lindemannrock\base\traits\DateFormatSettingsTrait;
 use lindemannrock\base\traits\ExportFormatSettingsTrait;
 use lindemannrock\base\traits\ItemsPerPageSettingsTrait;
@@ -24,6 +25,7 @@ use lindemannrock\base\traits\SettingsConfigTrait;
 use lindemannrock\base\traits\SettingsDisplayNameTrait;
 use lindemannrock\base\traits\SettingsPersistenceTrait;
 use lindemannrock\base\validators\StoragePathValidator;
+use lindemannrock\base\validators\StorageVolumeValidator;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 
 /**
@@ -275,7 +277,7 @@ class Settings extends Model
                 'preventWebroot' => true,
             ],
             [['backupPath'], 'validateBackupPathRootSubfolder'],
-            [['backupVolumeUid'], 'string'],
+            [['backupVolumeUid'], StorageVolumeValidator::class],
             [['openAiApiKey', 'geminiApiKey', 'anthropicApiKey'], 'string'],
             [['openAiModel', 'geminiModel', 'anthropicModel'], 'string', 'max' => 100],
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
@@ -877,21 +879,8 @@ class Settings extends Model
     {
         // If a volume is selected, use its path
         if ($this->backupVolumeUid) {
-            $volume = Craft::$app->getVolumes()->getVolumeByUid($this->backupVolumeUid);
-            if ($volume) {
-                try {
-                    // Get the filesystem configuration
-                    $fs = $volume->getFs();
-
-                    // For volumes, we should return a display-friendly path
-                    // The actual storage and I/O are handled by BackupService
-                    $volumeName = $volume->name;
-                    return "Volume: {$volumeName}/translation-manager/backups";
-                } catch (\Exception $e) {
-                    // Log the error and fall back
-                    $this->logError('Failed to get volume path', ['error' => $e->getMessage()]);
-                }
-            }
+            return StorageVolumeHelper::displayPath($this->backupVolumeUid, 'translation-manager/backups')
+                ?? Craft::t('translation-manager', 'Backup Volume');
         }
 
         if (!$this->validate(['backupPath'])) {
