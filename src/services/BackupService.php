@@ -770,10 +770,14 @@ class BackupService extends Component
                     'checksum' => substr($actualChecksum, 0, 16) . '...',
                 ]);
             } else {
-                // Old backup without checksum - log warning but continue
-                $this->logWarning('Backup does not have checksum (created with older version)', [
+                $this->logError('Backup checksum is missing', [
                     'backup' => $backupName,
                 ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'Backup integrity check failed. The backup files may have been modified or corrupted.',
+                ];
             }
 
             // Create a backup of current state before restoring if backups are enabled
@@ -912,10 +916,14 @@ class BackupService extends Component
                     'checksum' => substr($actualChecksum, 0, 16) . '...',
                 ]);
             } else {
-                // Old backup without checksum - log warning but continue
-                $this->logWarning('Backup does not have checksum (created with older version)', [
+                $this->logError('Backup checksum is missing', [
                     'backup' => $backupName,
                 ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'Backup integrity check failed. The backup files may have been modified or corrupted.',
+                ];
             }
 
             // Create a backup of current state before restoring if backups are enabled

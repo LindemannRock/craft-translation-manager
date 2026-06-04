@@ -82,6 +82,8 @@ The backup list shows:
 3. Confirm (safety backup created first)
 4. All translations replaced with backup version
 
+Restore requires an intact backup folder with `metadata.json` and a valid SHA-256 checksum. Backups with missing metadata, missing checksum data, or modified translation JSON contents are rejected before translations are replaced.
+
 ### Downloading Backups
 
 Click gear icon → **Download** to get a ZIP containing:
@@ -89,6 +91,8 @@ Click gear icon → **Download** to get a ZIP containing:
 - Translation data (JSON)
 - Generated PHP files
 - Backup metadata
+
+Downloaded ZIP files are portable archives. To use one on another install without an upload flow, extract the ZIP and place its files in the expected backup folder structure under that install's configured backup storage.
 
 ## Console Commands
 
@@ -127,6 +131,8 @@ Store backups in any Craft asset volume:
 - Any cloud provider with Craft volume support
 
 Configure in **Settings → Backup → Backup Storage Volume**.
+
+Local volumes that resolve inside `@webroot` are rejected because backup JSON files should not be web-accessible. Remote volumes such as Amazon S3 are allowed; configure bucket/object access policies in the storage provider so backups are private.
 
 ## Retention Policy
 

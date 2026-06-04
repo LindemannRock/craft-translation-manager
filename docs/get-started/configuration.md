@@ -45,7 +45,7 @@ Configure Translation Manager by creating a config file at `config/translation-m
 | `backupOnImport` | `bool` | `true` | Create a backup before importing |
 | `backupSchedule` | `string` | `'disabled'` | Backup schedule: `disabled`, `daily`, `weekly`, `monthly` |
 | `backupPath` | `string` | `'@storage/translation-manager/backups'` | Backup directory. Supports `$VARIABLE` env vars. Must be under `@root` or `@storage` |
-| `backupVolumeUid` | `string\|null` | `null` | Asset volume UID for cloud backup storage (overrides `backupPath`) |
+| `backupVolumeUid` | `string\|null` | `null` | Asset volume UID for backup storage (overrides `backupPath`). Local volumes inside `@webroot` are rejected; remote volume access must be restricted in the storage provider. |
 
 ### Logging
 
