@@ -15,6 +15,7 @@ use craft\helpers\Console;
 use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\translationmanager\helpers\PhpTranslationsHelper;
 use lindemannrock\translationmanager\services\IntegrationService;
+use lindemannrock\translationmanager\services\TranslationsService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\console\ExitCode;
 
@@ -29,6 +30,39 @@ class TranslationsController extends Controller
      * @var string The default action
      */
     public $defaultAction = 'capture-formie';
+
+    /**
+     * @var string|null Restrict `import` to a single language (the file's directory name).
+     */
+    public ?string $language = null;
+
+    /**
+     * @var string|null Restrict `import` to a single category (the file name without `.php`).
+     */
+    public ?string $category = null;
+
+    /**
+     * @var bool Required to import every discovered file when no --language/--category
+     * filter is given. Guards against accidentally importing the whole translations
+     * tree (including stray test fixtures) in one shot.
+     */
+    public bool $all = false;
+
+    /**
+     * @inheritdoc
+     */
+    public function options($actionID): array
+    {
+        $options = parent::options($actionID);
+
+        if ($actionID === 'import') {
+            $options[] = 'language';
+            $options[] = 'category';
+            $options[] = 'all';
+        }
+
+        return $options;
+    }
 
     /**
      * Translate pending rows into AI drafts (manual approval remains separate).
@@ -228,74 +262,184 @@ class TranslationsController extends Controller
     }
 
     /**
-     * Import existing Formie translation files to database
+     * Import existing PHP translation files from disk into the database.
+     *
+     * Mirrors the CP PHP import: discovers every {language}/{category}.php file
+     * under the generation path and creates/updates rows for all languages,
+     * preserving the translated values.
+     *
+     * Run with no scope to see a dry-run summary of what could be imported
+     * (nothing is written). Pass --language and/or --category to import a
+     * subset, or --all to import every discovered file.
+     *
+     * Usage:
+     * - php craft translation-manager/translations/import                      (dry-run summary)
+     * - php craft translation-manager/translations/import --all                (import everything)
+     * - php craft translation-manager/translations/import --language=ar
+     * - php craft translation-manager/translations/import --category=formie
+     * - php craft translation-manager/translations/import --language=ar --category=formie
+     *
+     * @since 5.25.0
      */
-    public function actionImportFormie(): int
+    public function actionImport(): int
     {
-        $this->stdout("Importing existing Formie translation files...\n", Console::FG_YELLOW);
-        
-        $settings = TranslationManager::getInstance()->getSettings();
-        $translationPath = $settings->getGenerationPath();
-        $files = [];
-        
-        // Find all formie.php files in language directories
-        if (is_dir($translationPath)) {
-            $dirs = scandir($translationPath);
-            foreach ($dirs as $dir) {
-                if ($dir !== '.' && $dir !== '..' && is_dir($translationPath . '/' . $dir)) {
-                    $filePath = $translationPath . '/' . $dir . '/formie.php';
-                    if (file_exists($filePath)) {
-                        $files[$dir] = $filePath;
-                    }
-                }
-            }
-        }
-        
-        if (empty($files)) {
-            $this->stdout("No Formie translation files found.\n", Console::FG_YELLOW);
+        $this->stdout("Importing PHP translation files...\n", Console::FG_YELLOW);
+
+        $grouped = PhpTranslationsHelper::findFiles();
+
+        if (empty($grouped)) {
+            $this->stdout("No translation files found under the generation path.\n", Console::FG_YELLOW);
             return ExitCode::OK;
         }
-        
-        $this->stdout("Found translation files for: " . implode(', ', array_keys($files)) . "\n\n", Console::FG_GREEN);
-        
-        try {
-            $translationsService = TranslationManager::getInstance()->translations;
-            $totalImported = 0;
-            
-            foreach ($files as $language => $filePath) {
-                $this->stdout("Importing {$language} translations from {$filePath}...\n", Console::FG_CYAN);
 
-                // Use safe parser (no code execution) - console method skips path validation
-                $translations = PhpTranslationsHelper::safeParseFileForConsole($filePath);
+        $service = TranslationManager::getInstance()->translations;
 
-                if ($translations === null) {
-                    $this->stderr("  Could not parse translation file (may contain unsafe code).\n", Console::FG_RED);
+        // Require an explicit scope: a --language/--category filter, or --all.
+        // With no scope, print a dry-run summary of what could be imported and
+        // stop — importing the entire translations tree (stray test fixtures
+        // included) in one shot is rarely what's intended.
+        $explicitScope = $this->language !== null || $this->category !== null;
+        if (!$explicitScope && !$this->all) {
+            $this->printImportSummary($grouped, $service);
+            return ExitCode::OK;
+        }
+
+        // Flatten to a list of file descriptors, applying --language / --category filters.
+        $targets = [];
+        foreach ($grouped as $fileLanguage => $files) {
+            if ($this->language !== null && $fileLanguage !== $this->language) {
+                continue;
+            }
+            foreach ($files as $info) {
+                if ($this->category !== null && $info['category'] !== $this->category) {
                     continue;
                 }
-                
-                $count = 0;
-                foreach ($translations as $original => $translation) {
-                    // Extract context from the translation key
-                    $context = 'formie';
-
-                    $translationsService->createOrUpdateTranslation(
-                        $original,
-                        $context
-                    );
-                    
-                    $count++;
-                }
-                
-                $this->stdout("  Imported {$count} translations.\n", Console::FG_GREEN);
-                $totalImported += $count;
+                $targets[] = $info;
             }
-            
-            $this->stdout("\nTotal imported: {$totalImported} translations.\n", Console::FG_GREEN);
-            
+        }
+
+        if (empty($targets)) {
+            $this->stdout("No matching translation files found.\n", Console::FG_YELLOW);
             return ExitCode::OK;
-        } catch (\Exception $e) {
-            $this->stderr("Error importing translations: {$e->getMessage()}\n", Console::FG_RED);
+        }
+
+        $settings = TranslationManager::getInstance()->getSettings();
+
+        // Mirror the CP import: back up first when backups-on-import is enabled.
+        if ($settings->backupEnabled && $settings->backupOnImport) {
+            $backupPath = TranslationManager::getInstance()->backup->createBackup('before_php_import');
+            if ($backupPath) {
+                $this->stdout("Created backup: " . basename($backupPath) . "\n", Console::FG_GREY);
+            }
+        }
+
+        $totalImported = 0;
+        $totalUpdated = 0;
+        $totalErrors = 0;
+
+        foreach ($targets as $info) {
+            $fileLanguage = $info['language'];
+            $category = $info['category'];
+            $filePath = $info['value'];
+
+            $this->stdout("\n{$fileLanguage}/{$category}.php\n", Console::FG_CYAN);
+
+            // Validate / auto-register the category, same rules as the CP import.
+            $status = $service->getImportCategoryStatus($category);
+            if (isset($status['error'])) {
+                $this->stderr("  Skipped: {$status['error']}\n", Console::FG_RED);
+                continue;
+            }
+            if (($status['requiresRegistration'] ?? false) && !$service->registerImportCategory($category)) {
+                $this->stderr("  Skipped: category \"{$category}\" is not enabled and cannot be added automatically (configured in config/translation-manager.php).\n", Console::FG_RED);
+                continue;
+            }
+
+            // Parse without executing the file.
+            $parsed = PhpTranslationsHelper::safeParseFileForConsole($filePath);
+            if ($parsed === null) {
+                $this->stderr("  Could not parse file (may contain unsafe code).\n", Console::FG_RED);
+                continue;
+            }
+
+            $entries = [];
+            foreach ($parsed as $source => $translation) {
+                $entries[] = ['key' => (string)$source, 'value' => (string)$translation];
+            }
+
+            $result = $service->importPhpEntries($entries, $fileLanguage, $category, null);
+
+            $errorCount = count($result['errors']);
+            $this->stdout("  Imported {$result['imported']} new, updated {$result['updated']} existing.\n", Console::FG_GREEN);
+            if ($errorCount > 0) {
+                $this->stderr("  {$errorCount} error(s).\n", Console::FG_RED);
+                foreach ($result['errors'] as $error) {
+                    $this->stderr("    - {$error}\n", Console::FG_RED);
+                }
+            }
+
+            $totalImported += $result['imported'];
+            $totalUpdated += $result['updated'];
+            $totalErrors += $errorCount;
+        }
+
+        $this->stdout("\nDone. Imported {$totalImported} new, updated {$totalUpdated} existing across " . count($targets) . " file(s).\n", Console::FG_GREEN);
+        if ($totalErrors > 0) {
+            $this->stderr("{$totalErrors} error(s) — see above.\n", Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;
         }
+
+        return ExitCode::OK;
+    }
+
+    /**
+     * Print a dry-run summary of what a full import would touch: per-file key
+     * counts and whether each file would import or be skipped (reserved
+     * category, unreadable/unsafe file). Shown when `import` runs with no
+     * --language/--category scope and no --all. Nothing is written.
+     *
+     * @param array<string, array<string, array{value: string, label: string, language: string, category: string}>> $grouped
+     */
+    private function printImportSummary(array $grouped, TranslationsService $service): void
+    {
+        $this->stdout("\nNo scope given — showing what could be imported (dry run; nothing changed).\n\n", Console::FG_CYAN);
+
+        $totalFiles = 0;
+        $importable = 0;
+        $skipped = 0;
+        $totalKeys = 0;
+
+        foreach ($grouped as $fileLanguage => $files) {
+            $this->stdout("{$fileLanguage}/\n", Console::FG_YELLOW);
+
+            foreach ($files as $info) {
+                $totalFiles++;
+                $category = $info['category'];
+                $label = '  ' . str_pad("{$category}.php", 26);
+
+                $status = $service->getImportCategoryStatus($category);
+                if (isset($status['error'])) {
+                    $this->stdout($label . "skip — {$status['error']}\n", Console::FG_GREY);
+                    $skipped++;
+                    continue;
+                }
+
+                $parsed = PhpTranslationsHelper::safeParseFileForConsole($info['value']);
+                if ($parsed === null) {
+                    $this->stdout($label . "skip — unreadable (possibly unsafe code)\n", Console::FG_GREY);
+                    $skipped++;
+                    continue;
+                }
+
+                $keys = count($parsed);
+                $totalKeys += $keys;
+                $importable++;
+                $note = ($status['requiresRegistration'] ?? false) ? ' (category would be added)' : '';
+                $this->stdout($label . "{$keys} key(s){$note}\n", Console::FG_GREEN);
+            }
+        }
+
+        $this->stdout("\nSummary: {$totalFiles} file(s) — {$importable} importable (~{$totalKeys} key(s)), {$skipped} would be skipped.\n", Console::FG_CYAN);
+        $this->stdout("Re-run with --all to import everything, or narrow with --language / --category.\n", Console::FG_CYAN);
     }
 }

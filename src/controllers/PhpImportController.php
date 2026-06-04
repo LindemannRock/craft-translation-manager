@@ -11,15 +11,10 @@
 namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
-use craft\helpers\Db;
-use craft\helpers\StringHelper;
 use craft\web\Controller;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\helpers\PhpTranslationsHelper;
-use lindemannrock\translationmanager\helpers\SiteLanguageHelper;
-use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\translationmanager\records\ImportHistoryRecord;
-use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
@@ -84,7 +79,7 @@ class PhpImportController extends Controller
         $language = $request->getRequiredBodyParam('language');
         $category = $request->getRequiredBodyParam('category');
 
-        $categoryStatus = $this->getImportCategoryStatus($category);
+        $categoryStatus = TranslationManager::getInstance()->translations->getImportCategoryStatus($category);
         if (isset($categoryStatus['error'])) {
             return $this->asJson([
                 'success' => false,
@@ -125,8 +120,8 @@ class PhpImportController extends Controller
         $file = (string)$request->getBodyParam('file', '');
 
         $settings = TranslationManager::getInstance()->getSettings();
-        $sourceLanguage = $settings->sourceLanguage;
-        $categoryStatus = $this->getImportCategoryStatus($category);
+        $translationsService = TranslationManager::getInstance()->translations;
+        $categoryStatus = $translationsService->getImportCategoryStatus($category);
 
         if (isset($categoryStatus['error'])) {
             return $this->asJson([
@@ -135,7 +130,7 @@ class PhpImportController extends Controller
             ]);
         }
 
-        if (($categoryStatus['requiresRegistration'] ?? false) && !$this->registerImportCategory($category)) {
+        if (($categoryStatus['requiresRegistration'] ?? false) && !$translationsService->registerImportCategory($category)) {
             return $this->asJson([
                 'success' => false,
                 'error' => Craft::t('translation-manager', 'Category "{category}" is not enabled and cannot be added automatically because Translation Categories are configured in config/translation-manager.php.', [
@@ -151,122 +146,16 @@ class PhpImportController extends Controller
             $backupPath = TranslationManager::getInstance()->backup->createBackup('before_php_import');
         }
 
-        // Get ALL unique site languages (like scan does)
-        $allLanguages = TranslationManager::getInstance()->getUniqueLanguages();
+        $result = $translationsService->importPhpEntries(
+            $translations,
+            $importLanguage,
+            $category,
+            Craft::$app->getUser()->getId(),
+        );
 
-        $imported = 0;
-        $updated = 0;
-        $errors = [];
-
-        foreach ($translations as $item) {
-            try {
-                $key = $item['key'] ?? '';
-                $value = $item['value'] ?? '';
-
-                if (empty($key)) {
-                    continue;
-                }
-
-                $sourceHash = md5($key);
-
-                // Create/update records for ALL languages (like scan does)
-                foreach ($allLanguages as $language) {
-                    /** @var TranslationRecord|null $record */
-                    $record = TranslationRecord::find()
-                        ->where([
-                            'sourceHash' => $sourceHash,
-                            'language' => $language,
-                            'category' => $category,
-                        ])
-                        ->one();
-
-                    // Determine translation value and status for this language
-                    $isImportLanguage = ($language === $importLanguage);
-                    $isSourceLang = $this->isSourceLanguage($language, $sourceLanguage);
-
-                    if ($record instanceof TranslationRecord) {
-                        // Only update if this is the import language
-                        if ($isImportLanguage) {
-                            $record->translation = $value;
-                            $record->status = !empty($value) ? 'translated' : 'pending';
-                            $record->translationOrigin = 'import';
-                            $record->createdByUserId = Craft::$app->getUser()->getId();
-                            if (!empty($value)) {
-                                $record->reviewedByUserId = Craft::$app->getUser()->getId();
-                                $record->reviewedAt = Db::prepareDateForDb(new \DateTime());
-                            } else {
-                                $record->reviewedByUserId = null;
-                                $record->reviewedAt = null;
-                            }
-                            $record->dateUpdated = Db::prepareDateForDb(new \DateTime());
-
-                            if ($record->save()) {
-                                $updated++;
-                            } else {
-                                $errors[] = "Failed to update '{$key}' ({$language}): " . json_encode($record->getErrors());
-                            }
-                        }
-                        // Other languages: record exists, don't touch it
-                    } else {
-                        // Create new record for this language
-                        $record = new TranslationRecord();
-                        $record->source = $key;
-                        $record->sourceHash = $sourceHash;
-                        $record->translationKey = $key;
-                        $record->language = $language;
-                        $record->category = $category;
-                        $record->context = ($category === 'formie') ? 'formie.php-import' : 'site.php-import';
-                        $record->siteId = SiteLanguageHelper::getSiteIdForLanguage($language);
-                        $record->usageCount = 1;
-                        $record->dateCreated = Db::prepareDateForDb(new \DateTime());
-                        $record->dateUpdated = Db::prepareDateForDb(new \DateTime());
-                        $record->uid = StringHelper::UUID();
-
-                        if ($isImportLanguage) {
-                            // This is the language being imported - use the value
-                            $record->translation = $value;
-                            $record->status = !empty($value) ? 'translated' : 'pending';
-                            $record->translationOrigin = 'import';
-                            $record->createdByUserId = Craft::$app->getUser()->getId();
-                            if (!empty($value)) {
-                                $record->reviewedByUserId = Craft::$app->getUser()->getId();
-                                $record->reviewedAt = Db::prepareDateForDb(new \DateTime());
-                            }
-                        } elseif ($isSourceLang) {
-                            // Source language: key is the translation
-                            $record->translation = $key;
-                            $record->status = 'translated';
-                            $record->translationOrigin = 'system';
-                        } else {
-                            // Other languages: empty translation, pending
-                            $record->translation = '';
-                            $record->status = 'pending';
-                            $record->translationOrigin = 'system';
-                        }
-
-                        if ($record->save()) {
-                            // Only count the import language for the "imported" count
-                            if ($isImportLanguage) {
-                                $imported++;
-                            }
-                        } else {
-                            $errors[] = "Failed to create '{$key}' ({$language}): " . json_encode($record->getErrors());
-                        }
-                    }
-                }
-            } catch (\Throwable $e) {
-                $errors[] = "Error processing: " . ($item['key'] ?? 'unknown') . " - " . $e->getMessage();
-            }
-        }
-
-        $this->logInfo('PHP import completed', [
-            'imported' => $imported,
-            'updated' => $updated,
-            'errors' => count($errors),
-            'language' => $importLanguage,
-            'category' => $category,
-            'languages_created' => $allLanguages,
-        ]);
+        $imported = $result['imported'];
+        $updated = $result['updated'];
+        $errors = $result['errors'];
 
         $this->saveImportHistory($file, $imported, $updated, $errors, $backupPath);
 
@@ -277,22 +166,6 @@ class PhpImportController extends Controller
             'errors' => $errors,
             'message' => Craft::t('translation-manager', 'Imported {imported} new, updated {updated} existing translations', ['imported' => $imported, 'updated' => $updated]),
         ]);
-    }
-
-    /**
-     * Check if a language matches the configured source language
-     */
-    private function isSourceLanguage(string $language, string $sourceLanguage): bool
-    {
-        if ($language === $sourceLanguage) {
-            return true;
-        }
-
-        // Base language match (e.g., 'en-US' matches source 'en')
-        $languageBase = explode('-', $language)[0];
-        $sourceBase = explode('-', $sourceLanguage)[0];
-
-        return $languageBase === $sourceBase;
     }
 
     /**
@@ -317,102 +190,5 @@ class PhpImportController extends Controller
         $history->errors = !empty($errors) ? json_encode($errors) : null;
         $history->backupPath = $backupPath ? basename($backupPath) : null;
         $history->save();
-    }
-
-    /**
-     * Get the configuration status for the selected import category.
-     *
-     * @return array<string, bool|string>
-     */
-    private function getImportCategoryStatus(string $category): array
-    {
-        $category = trim($category);
-
-        if (!preg_match('/^[a-zA-Z][a-zA-Z0-9_-]*$/', $category)) {
-            return [
-                'error' => Craft::t('translation-manager', 'Category "{category}" must start with a letter and contain only letters, numbers, hyphens, and underscores.', [
-                    'category' => $category,
-                ]),
-            ];
-        }
-
-        if (in_array(strtolower($category), Settings::RESERVED_CATEGORIES, true)) {
-            return [
-                'error' => Craft::t('translation-manager', 'Category "{category}" is reserved and cannot be imported.', [
-                    'category' => $category,
-                ]),
-            ];
-        }
-
-        $settings = TranslationManager::getInstance()->getSettings();
-        $enabledCategories = $settings->getEnabledCategories();
-        $isConfigured = in_array($category, $enabledCategories, true)
-            || ($category === 'formie' && $settings->enableFormieIntegration);
-
-        if ($isConfigured) {
-            return [
-                'requiresRegistration' => false,
-                'canAutoRegister' => false,
-            ];
-        }
-
-        $canAutoRegister = !$settings->isOverriddenByConfig('translationCategories');
-
-        return [
-            'requiresRegistration' => true,
-            'canAutoRegister' => $canAutoRegister,
-            'message' => Craft::t('translation-manager', $canAutoRegister
-                ? 'Category "{category}" is not enabled. It will be added to Translation Categories when imported.'
-                : 'Category "{category}" is not enabled and cannot be added automatically because Translation Categories are configured in config/translation-manager.php.', [
-                    'category' => $category,
-                ]),
-        ];
-    }
-
-    /**
-     * Add or enable a PHP import category before creating translations.
-     */
-    private function registerImportCategory(string $category): bool
-    {
-        $settings = Settings::loadFromDatabase();
-
-        if ($settings->isOverriddenByConfig('translationCategories')) {
-            return false;
-        }
-
-        $categories = $settings->translationCategories;
-        if (empty($categories)) {
-            $categories[] = [
-                'key' => $settings->translationCategory ?: 'messages',
-                'enabled' => true,
-            ];
-        }
-        $found = false;
-
-        foreach ($categories as &$categoryConfig) {
-            if (($categoryConfig['key'] ?? null) === $category) {
-                $categoryConfig['enabled'] = true;
-                $found = true;
-                break;
-            }
-        }
-        unset($categoryConfig);
-
-        if (!$found) {
-            $categories[] = [
-                'key' => $category,
-                'enabled' => true,
-            ];
-        }
-
-        $settings->translationCategories = $categories;
-
-        if (!$settings->saveToDatabase(['translationCategories'])) {
-            return false;
-        }
-
-        TranslationManager::getInstance()->setSettings([]);
-
-        return true;
     }
 }

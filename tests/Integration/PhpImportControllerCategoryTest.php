@@ -18,7 +18,9 @@ use lindemannrock\translationmanager\TranslationManager;
 
 /**
  * Covers PHP file import category registration so imported rows do not end up
- * hidden behind an unconfigured category filter.
+ * hidden behind an unconfigured category filter. The category-status and
+ * registration logic lives on TranslationsService (shared by the CP import
+ * controller and the console import command).
  *
  * @since 5.24.0
  */
@@ -26,10 +28,9 @@ final class PhpImportControllerCategoryTest extends TestCase
 {
     public function testMissingCategoryRequiresAutomaticRegistration(): void
     {
-        $controller = $this->createPhpImportController();
         $category = 'tm_php_import_' . bin2hex(random_bytes(4));
 
-        $status = $this->invokePrivate($controller, 'getImportCategoryStatus', [$category]);
+        $status = TranslationManager::getInstance()->translations->getImportCategoryStatus($category);
 
         self::assertTrue($status['requiresRegistration']);
         self::assertTrue($status['canAutoRegister']);
@@ -38,9 +39,7 @@ final class PhpImportControllerCategoryTest extends TestCase
 
     public function testReservedCategoryIsRejected(): void
     {
-        $controller = $this->createPhpImportController();
-
-        $status = $this->invokePrivate($controller, 'getImportCategoryStatus', ['site']);
+        $status = TranslationManager::getInstance()->translations->getImportCategoryStatus('site');
 
         self::assertArrayHasKey('error', $status);
     }
@@ -54,10 +53,9 @@ final class PhpImportControllerCategoryTest extends TestCase
 
         $originalCategories = $settings->translationCategories;
         $category = 'tm_php_import_' . bin2hex(random_bytes(4));
-        $controller = $this->createPhpImportController();
 
         try {
-            $registered = $this->invokePrivate($controller, 'registerImportCategory', [$category]);
+            $registered = TranslationManager::getInstance()->translations->registerImportCategory($category);
             self::assertTrue($registered);
 
             TranslationManager::getInstance()->setSettings([]);
