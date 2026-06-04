@@ -47,9 +47,11 @@ class IntegrationService extends Component
     private static bool $_hasLoggedSetup = false;
 
     /**
-     * @var bool Track if hooks have been registered globally to prevent duplicate event listeners
+     * @var array<string, true> Integration names whose hooks have been registered this request,
+     * keyed by name. Prevents the eager init-path and the lazy load-path from registering the
+     * same event listeners twice (which would fire form save/delete capture more than once).
      */
-    private static bool $_hooksRegistered = false;
+    private static array $_registeredHookNames = [];
 
 
     /**
@@ -83,9 +85,26 @@ class IntegrationService extends Component
     {
         // Register FormieIntegration event handlers directly
         if (PluginHelper::isPluginEnabled('formie')) {
-            $formieIntegration = new \lindemannrock\translationmanager\integrations\FormieIntegration();
-            $formieIntegration->registerHooks();
+            $this->registerIntegrationHooks('formie', new \lindemannrock\translationmanager\integrations\FormieIntegration());
         }
+    }
+
+    /**
+     * Register an integration's event hooks exactly once per request.
+     *
+     * Both the eager init path (registerEventHandlers) and the lazy load path
+     * (initializeIntegrations) can reach the same integration; without this guard
+     * the underlying Event::on() listeners would be attached twice and fire on
+     * every form save/delete more than once.
+     */
+    private function registerIntegrationHooks(string $name, TranslationIntegrationInterface $integration): void
+    {
+        if (isset(self::$_registeredHookNames[$name])) {
+            return;
+        }
+
+        $integration->registerHooks();
+        self::$_registeredHookNames[$name] = true;
     }
 
     /**
@@ -310,7 +329,7 @@ class IntegrationService extends Component
 
             if ($available && $enabled) {
                 try {
-                    $integration->registerHooks();
+                    $this->registerIntegrationHooks($name, $integration);
                 } catch (\Exception $e) {
                     // Always log errors
                     $this->logError("Failed to initialize integration {$name}: " . $e->getMessage());
