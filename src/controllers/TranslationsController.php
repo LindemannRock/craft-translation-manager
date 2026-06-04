@@ -484,13 +484,27 @@ class TranslationsController extends Controller
         $updated = 0;
         $skipped = 0;
 
+        // Batch-fetch all referenced records in one query (avoids an N+1 SELECT
+        // per id; same pattern as actionSaveAll).
+        $validIds = [];
+        foreach ($ids as $id) {
+            if (is_numeric($id)) {
+                $validIds[] = (int) $id;
+            }
+        }
+
+        /** @var TranslationRecord[] $records */
+        $records = $validIds === []
+            ? []
+            : TranslationRecord::find()->where(['id' => $validIds])->indexBy('id')->all();
+
         foreach ($ids as $id) {
             if (!is_numeric($id)) {
                 $skipped++;
                 continue;
             }
 
-            $translation = TranslationRecord::findOne((int) $id);
+            $translation = $records[(int) $id] ?? null;
             if (!$translation instanceof TranslationRecord) {
                 $skipped++;
                 continue;
