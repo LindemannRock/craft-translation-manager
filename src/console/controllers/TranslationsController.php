@@ -49,6 +49,24 @@ class TranslationsController extends Controller
     public bool $all = false;
 
     /**
+     * @var int Maximum number of pending translations to process in `ai-draft`.
+     * @since 5.25.0
+     */
+    public int $limit = 50;
+
+    /**
+     * @var string Translation type filter for `ai-draft`: all, forms, or site.
+     * @since 5.25.0
+     */
+    public string $type = 'all';
+
+    /**
+     * @var string|null Provider handle for `ai-draft`; null uses settings default.
+     * @since 5.25.0
+     */
+    public ?string $provider = null;
+
+    /**
      * @inheritdoc
      */
     public function options($actionID): array
@@ -61,6 +79,12 @@ class TranslationsController extends Controller
             $options[] = 'all';
         }
 
+        if ($actionID === 'ai-draft') {
+            $options[] = 'limit';
+            $options[] = 'type';
+            $options[] = 'provider';
+        }
+
         return $options;
     }
 
@@ -69,23 +93,19 @@ class TranslationsController extends Controller
      *
      * Usage:
      * - php craft translation-manager/translations/ai-draft ar
-     * - php craft translation-manager/translations/ai-draft de 100 site mock
+     * - php craft translation-manager/translations/ai-draft de --limit=100 --type=site --provider=mock
      *
      * @since 5.22.0
      */
-    public function actionAiDraft(
-        string $language,
-        int $limit = 50,
-        string $type = 'all',
-        ?string $provider = null,
-    ): int {
+    public function actionAiDraft(string $language): int
+    {
         $this->stdout("AI draft translation batch\n", Console::FG_YELLOW);
         $this->stdout("Language: {$language}\n", Console::FG_CYAN);
-        $this->stdout("Limit: {$limit}\n", Console::FG_CYAN);
-        $this->stdout("Type: {$type}\n", Console::FG_CYAN);
-        $this->stdout("Provider: " . ($provider ?? 'settings default') . "\n\n", Console::FG_CYAN);
+        $this->stdout("Limit: {$this->limit}\n", Console::FG_CYAN);
+        $this->stdout("Type: {$this->type}\n", Console::FG_CYAN);
+        $this->stdout("Provider: " . ($this->provider ?? 'settings default') . "\n\n", Console::FG_CYAN);
 
-        if (!in_array($type, ['all', 'forms', 'site'], true)) {
+        if (!in_array($this->type, ['all', 'forms', 'site'], true)) {
             $this->stderr("Invalid type. Use: all, forms, or site.\n", Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;
         }
@@ -93,9 +113,9 @@ class TranslationsController extends Controller
         try {
             $result = TranslationManager::getInstance()->ai->translatePendingToDraft(
                 targetLanguage: $language,
-                limit: $limit,
-                type: $type,
-                providerHandle: $provider,
+                limit: $this->limit,
+                type: $this->type,
+                providerHandle: $this->provider,
             );
 
             $this->stdout("Processed: {$result['processed']}\n", Console::FG_CYAN);

@@ -24,6 +24,26 @@ use yii\console\ExitCode;
 class MaintenanceController extends Controller
 {
     /**
+     * @var string Type filter for `clean-by-type`: all, site, or formie.
+     * @since 5.25.0
+     */
+    public string $type = '';
+
+    /**
+     * @inheritdoc
+     */
+    public function options($actionID): array
+    {
+        $options = parent::options($actionID);
+
+        if ($actionID === 'clean-by-type') {
+            $options[] = 'type';
+        }
+
+        return $options;
+    }
+
+    /**
      * Scan all templates for translation usage and mark unused translations
      */
     public function actionScanTemplates(): int
@@ -158,9 +178,9 @@ class MaintenanceController extends Controller
     /**
      * Clean unused translations by type
      */
-    public function actionCleanByType(?string $type = null): int
+    public function actionCleanByType(): int
     {
-        if (!$type) {
+        if ($this->type === '') {
             $this->stdout('Usage: craft translation-manager/maintenance/clean-by-type --type=[all|site|formie]' . PHP_EOL, Console::FG_YELLOW);
             return ExitCode::USAGE;
         }
@@ -169,7 +189,7 @@ class MaintenanceController extends Controller
         $query->from('{{%translationmanager_translations}}')
               ->where(['status' => 'unused']);
         
-        switch ($type) {
+        switch ($this->type) {
             case 'site':
                 // Include both 'site' context and 'runtime' context (from auto-capture)
                 $query->andWhere([
@@ -190,7 +210,7 @@ class MaintenanceController extends Controller
                 $this->stdout('Cleaning ALL unused translations...' . PHP_EOL, Console::FG_BLUE);
                 break;
             default:
-                $this->stdout("Invalid type: {$type}. Use: all, site, or formie" . PHP_EOL, Console::FG_RED);
+                $this->stdout("Invalid type: {$this->type}. Use: all, site, or formie" . PHP_EOL, Console::FG_RED);
                 return ExitCode::USAGE;
         }
         
@@ -198,14 +218,14 @@ class MaintenanceController extends Controller
         $count = count($unusedTranslations);
         
         if ($count === 0) {
-            $this->stdout("No unused {$type} translations found." . PHP_EOL, Console::FG_GREEN);
+            $this->stdout("No unused {$this->type} translations found." . PHP_EOL, Console::FG_GREEN);
             return ExitCode::OK;
         }
         
-        $this->stdout("Found {$count} unused {$type} translations." . PHP_EOL);
+        $this->stdout("Found {$count} unused {$this->type} translations." . PHP_EOL);
         
         if ($this->interactive) {
-            if (!$this->confirm("Delete {$count} unused {$type} translations?")) {
+            if (!$this->confirm("Delete {$count} unused {$this->type} translations?")) {
                 $this->stdout('Cancelled.' . PHP_EOL, Console::FG_YELLOW);
                 return ExitCode::OK;
             }
@@ -215,7 +235,7 @@ class MaintenanceController extends Controller
             array_column($unusedTranslations, 'id')
         );
         
-        $this->stdout("Deleted {$deleted} unused {$type} translations." . PHP_EOL, Console::FG_GREEN);
+        $this->stdout("Deleted {$deleted} unused {$this->type} translations." . PHP_EOL, Console::FG_GREEN);
         
         return ExitCode::OK;
     }

@@ -52,16 +52,54 @@ php craft translation-manager/translations/generate-site
 ddev craft translation-manager/translations/generate-site
 ```
 
-### `translation-manager/translations/import-formie`
+### `translation-manager/translations/import`
 
-Import existing Formie translation files from disk into the database.
+Import existing PHP translation files from disk into the database, preserving the translated values. Mirrors the Control Panel PHP import: it discovers every `{language}/{category}.php` file under the generation path and creates or updates rows for all languages.
+
+Run with **no scope** to print a dry-run summary of what could be imported (per-file key counts and what would be skipped) — nothing is written. To actually import, pass `--all`, or narrow with `--language` and/or `--category`.
+
+| Option | Description |
+|--------|-------------|
+| `--all` | Import every discovered file (required when no `--language`/`--category` is given) |
+| `--language` | Only import files in this language directory (e.g. `ar`) |
+| `--category` | Only import files for this category (e.g. `formie`) |
 
 ```bash title="PHP"
-php craft translation-manager/translations/import-formie
+php craft translation-manager/translations/import                  # dry-run summary, imports nothing
+php craft translation-manager/translations/import --all            # import everything
+php craft translation-manager/translations/import --language=ar
+php craft translation-manager/translations/import --category=formie
+php craft translation-manager/translations/import --language=ar --category=formie
 ```
 
 ```bash title="DDEV"
-ddev craft translation-manager/translations/import-formie
+ddev craft translation-manager/translations/import
+ddev craft translation-manager/translations/import --all
+ddev craft translation-manager/translations/import --language=ar --category=formie
+```
+
+### `translation-manager/translations/ai-draft`
+
+Translate pending rows into AI drafts for a required target language. The command uses the AI provider from settings unless `--provider` is supplied.
+
+| Argument | Description |
+|----------|-------------|
+| `language` | Required target language, such as `ar` or `de` |
+
+| Option | Values | Default | Description |
+|--------|--------|---------|-------------|
+| `--limit` | integer | `50` | Maximum number of pending rows to process |
+| `--type` | `all`, `forms`, `site` | `all` | Translation type filter |
+| `--provider` | provider handle | settings default | AI provider to use for this run |
+
+```bash title="PHP"
+php craft translation-manager/translations/ai-draft ar
+php craft translation-manager/translations/ai-draft de --limit=100 --type=site --provider=mock
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/translations/ai-draft ar
+ddev craft translation-manager/translations/ai-draft de --limit=100 --type=site --provider=mock
 ```
 
 ## Maintenance Commands
@@ -180,6 +218,30 @@ php craft translation-manager/backup/clean
 
 ```bash title="DDEV"
 ddev craft translation-manager/backup/clean
+```
+
+## Debug Commands
+
+### `translation-manager/debug/test-ai`
+
+Test the configured AI provider, or an explicit provider, with a live sample translation.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--provider` | settings default | AI provider handle to test |
+| `--targetLanguage` | `de` | Target language for the sample translation |
+| `--text` | `Welcome to our agency website.` | Sample text to translate |
+
+```bash title="PHP"
+php craft translation-manager/debug/test-ai
+php craft translation-manager/debug/test-ai --provider=openai
+php craft translation-manager/debug/test-ai --provider=gemini --targetLanguage=ar --text="Welcome to our agency"
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/debug/test-ai
+ddev craft translation-manager/debug/test-ai --provider=openai
+ddev craft translation-manager/debug/test-ai --provider=gemini --targetLanguage=ar --text="Welcome to our agency"
 ```
 
 ## Cron Examples
