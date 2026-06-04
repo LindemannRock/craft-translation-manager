@@ -2,6 +2,30 @@
 
 Translation Manager provides console commands for automation and scripting.
 
+## Command Help
+
+Use the plugin help command when you need to discover available commands or confirm the correct command group.
+
+```bash title="PHP"
+php craft translation-manager/help
+php craft translation-manager/help maintenance/clean-by-type
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/help
+ddev craft translation-manager/help maintenance/clean-by-type
+```
+
+Craft's native help also works when you already know the exact command:
+
+```bash title="PHP"
+php craft help translation-manager/maintenance/clean-by-type
+```
+
+```bash title="DDEV"
+ddev craft help translation-manager/maintenance/clean-by-type
+```
+
 ## Translation Commands
 
 ### `translation-manager/translations/capture-formie`
@@ -234,19 +258,19 @@ Test the configured AI provider, or an explicit provider, with a live sample tra
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--provider` | settings default | AI provider handle to test |
-| `--targetLanguage` | `de` | Target language for the sample translation |
+| `--target-language` | `de` | Target language for the sample translation. `--targetLanguage` is also accepted for backward compatibility |
 | `--text` | `Welcome to our agency website.` | Sample text to translate |
 
 ```bash title="PHP"
 php craft translation-manager/debug/test-ai
 php craft translation-manager/debug/test-ai --provider=openai
-php craft translation-manager/debug/test-ai --provider=gemini --targetLanguage=ar --text="Welcome to our agency"
+php craft translation-manager/debug/test-ai --provider=gemini --target-language=ar --text="Welcome to our agency"
 ```
 
 ```bash title="DDEV"
 ddev craft translation-manager/debug/test-ai
 ddev craft translation-manager/debug/test-ai --provider=openai
-ddev craft translation-manager/debug/test-ai --provider=gemini --targetLanguage=ar --text="Welcome to our agency"
+ddev craft translation-manager/debug/test-ai --provider=gemini --target-language=ar --text="Welcome to our agency"
 ```
 
 ## Cron Examples

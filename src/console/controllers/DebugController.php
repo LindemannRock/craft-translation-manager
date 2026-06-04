@@ -57,12 +57,22 @@ class DebugController extends Controller
     }
 
     /**
+     * @inheritdoc
+     */
+    public function optionAliases(): array
+    {
+        $aliases = parent::optionAliases();
+        $aliases['target-language'] = 'targetLanguage';
+        return $aliases;
+    }
+
+    /**
      * Test configured AI provider or explicit provider with a live API call.
      *
      * Usage:
      * - php craft translation-manager/debug/test-ai
      * - php craft translation-manager/debug/test-ai --provider=openai
-     * - php craft translation-manager/debug/test-ai --provider=gemini --targetLanguage=ar --text="Welcome to our agency"
+     * - php craft translation-manager/debug/test-ai --provider=gemini --target-language=ar --text="Welcome to our agency"
      *
      * @since 5.22.0
      */
