@@ -280,6 +280,10 @@ class Settings extends Model
             [['backupVolumeUid'], StorageVolumeValidator::class],
             [['openAiApiKey', 'geminiApiKey', 'anthropicApiKey'], 'string'],
             [['openAiModel', 'geminiModel', 'anthropicModel'], 'string', 'max' => 100],
+            // Gemini's model name is interpolated into the request URL path, so constrain it
+            // to a safe charset. (OpenAI fine-tuned names can contain ':', so this is Gemini-only.)
+            [['geminiModel'], 'match', 'pattern' => '/^[a-zA-Z0-9._-]+$/',
+             'message' => 'Gemini model must contain only letters, numbers, dots, hyphens, and underscores.', ],
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
             [['enableFormieIntegration', 'enableSiteTranslations', 'autoGenerate',
               'enableSuggestions', 'autoSaveEnabled', 'backupEnabled',

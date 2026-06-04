@@ -68,7 +68,7 @@ class GeminiProvider implements AiTranslationProviderInterface
 
         $endpoint = sprintf(
             'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s',
-            $this->model,
+            rawurlencode($this->model),
             rawurlencode($this->apiKey)
         );
 
