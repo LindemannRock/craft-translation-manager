@@ -96,7 +96,6 @@
 
     // Generate files functionality
     function generateTranslationFiles(type) {
-        console.log('Generating translation files:', type);
         let url;
         let bodyData = {
             '{{ craft.app.config.general.csrfTokenName }}': '{{ craft.app.request.csrfToken }}'
@@ -113,8 +112,6 @@
             bodyData.category = category;
         }
 
-        console.log('URL:', url);
-
         fetch(url, {
             method: 'POST',
             headers: {
@@ -126,39 +123,21 @@
             body: JSON.stringify(bodyData)
         })
         .then(response => {
-            console.log('Response status:', response.status);
-            console.log('Response headers:', response.headers);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
         })
         .then(data => {
-            console.log('Response data:', data);
             if (data.success) {
-                Craft.cp.displayNotice(data.message || 'Translation files generated successfully');
+                Craft.cp.displayNotice(data.message || {{ 'Translation files generated successfully.'|t('translation-manager')|json_encode|raw }});
             } else {
-                Craft.cp.displayError(data.error || 'Failed to generate translation files');
+                Craft.cp.displayError(data.error || {{ 'Failed to generate translation files.'|t('translation-manager')|json_encode|raw }});
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            Craft.cp.displayError('Failed to generate translation files: ' + error.message);
+            Craft.cp.displayError({{ 'Failed to generate translation files: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
         });
     }
-
-    // Use event delegation for dynamically created menu items
-    document.addEventListener('click', function(e) {
-        // Check if the clicked element or its parent has the generate button ID
-        let target = e.target;
-        let id = target.id;
-
-        // Check parent elements too in case the click was on a child element
-        if (!id && target.parentElement) {
-            target = target.parentElement;
-            id = target.id;
-        }
-
-        console.log('Clicked element ID:', id);
-    });
 {% endjs %}

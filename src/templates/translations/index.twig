@@ -315,7 +315,7 @@
 {% block extraFooter %}
     {% if not settings.autoGenerate and hasAnyGeneratePermission %}
         <form>
-            <button type="button" class="btn secondary menubtn" data-icon="settings" title="{{ 'Generate translation files'|t('translation-manager') }}" id="generate-menu-btn"></button>
+            <button type="button" class="btn secondary menubtn" data-icon="settings" title="{{ 'action title: generate translation files'|t('translation-manager') }}" id="generate-menu-btn"></button>
             <div class="menu" data-align="right">
                 <ul>
                     {% if canGenerateAll %}
@@ -356,8 +356,8 @@
             markDraftFailed: {{ 'Failed to mark as draft'|t('translation-manager')|json_encode|raw }},
             markTranslatedFailed: {{ 'Failed to mark as translated'|t('translation-manager')|json_encode|raw }},
             updatedTemplate: {{ 'Updated {count} translation(s) to {status}.'|t('translation-manager')|json_encode|raw }},
-            translatedLabel: {{ 'translated'|t('translation-manager')|json_encode|raw }},
-            draftLabel: {{ 'draft'|t('translation-manager')|json_encode|raw }},
+            translatedLabel: {{ 'status label: translated'|t('translation-manager')|json_encode|raw }},
+            draftLabel: {{ 'status label: draft'|t('translation-manager')|json_encode|raw }},
             deleteConfirmTemplate: {{ 'Are you sure you want to delete {count} translation(s)?'|t('translation-manager')|json_encode|raw }},
             deletedTemplate: {{ 'Deleted {count} translation(s).'|t('translation-manager')|json_encode|raw }},
             deleteFailed: {{ 'Failed to delete translations'|t('translation-manager')|json_encode|raw }},
