@@ -627,6 +627,11 @@ class TranslationsService extends Component
 
             // Second pass: Manage existing translations - check if still used
             // Process all translations (including all language variants)
+            $markUnusedIds = [];
+            $reactivateTranslatedIds = [];
+            $reactivatePendingIds = [];
+            $contextUpdateIdsByContext = [];
+
             foreach ($siteTranslations as $translation) {
                 $key = $translation['translationKey'];
                 $category = $translation['category'];
@@ -636,10 +641,7 @@ class TranslationsService extends Component
                     // Translation key not found in templates for this category
                     if ($translation['status'] !== 'unused') {
                         // Mark as unused
-                        Db::update(TranslationRecord::tableName(),
-                            ['status' => 'unused'],
-                            ['id' => $translation['id']]
-                        );
+                        $markUnusedIds[] = (int)$translation['id'];
                         $results['marked_unused']++;
                         $this->logInfo("Template scanner: Marked as unused", [
                             'key' => $key,
@@ -653,7 +655,11 @@ class TranslationsService extends Component
 
                     // Reactivate if unused
                     if ($translation['status'] === 'unused') {
-                        $updates['status'] = $translation['translation'] ? 'translated' : 'pending';
+                        if ($translation['translation']) {
+                            $reactivateTranslatedIds[] = (int)$translation['id'];
+                        } else {
+                            $reactivatePendingIds[] = (int)$translation['id'];
+                        }
                         $results['reactivated']++;
                         $this->logWarning("Template scanner: Reactivated", [
                             'key' => $key,
@@ -667,6 +673,7 @@ class TranslationsService extends Component
                         $fileInfo = $foundKeysByCategory[$category][$key] ?? null;
                         if ($fileInfo && isset($fileInfo['file'])) {
                             $updates['context'] = 'site.' . $fileInfo['file'];
+                            $contextUpdateIdsByContext[$updates['context']][] = (int)$translation['id'];
                             $this->logInfo("Template scanner: Updated runtime context", [
                                 'key' => $key,
                                 'language' => $translation['language'] ?? 'unknown',
@@ -677,9 +684,23 @@ class TranslationsService extends Component
 
                     // Apply updates if any
                     if (!empty($updates)) {
-                        Db::update(TranslationRecord::tableName(), $updates, ['id' => $translation['id']]);
+                        // Writes are applied in grouped batches after this loop.
                     }
                 }
+            }
+
+            $table = TranslationRecord::tableName();
+            if ($markUnusedIds) {
+                Db::update($table, ['status' => 'unused'], ['id' => $markUnusedIds]);
+            }
+            if ($reactivateTranslatedIds) {
+                Db::update($table, ['status' => 'translated'], ['id' => $reactivateTranslatedIds]);
+            }
+            if ($reactivatePendingIds) {
+                Db::update($table, ['status' => 'pending'], ['id' => $reactivatePendingIds]);
+            }
+            foreach ($contextUpdateIdsByContext as $context => $ids) {
+                Db::update($table, ['context' => $context], ['id' => $ids]);
             }
         } catch (\Exception $e) {
             $results['errors'][] = $e->getMessage();
@@ -812,10 +833,38 @@ class TranslationsService extends Component
     {
         // Create/update records for ALL languages (like scan does).
         $allLanguages = TranslationManager::getInstance()->getUniqueLanguages();
+        $sourceHashes = [];
 
         $imported = 0;
         $updated = 0;
         $errors = [];
+
+        foreach ($entries as $item) {
+            $key = $item['key'] ?? '';
+            if ($key === '') {
+                continue;
+            }
+
+            $sourceHashes[] = md5($key);
+        }
+
+        /** @var array<string,TranslationRecord> $existingRecords */
+        $existingRecords = [];
+        $sourceHashes = array_values(array_unique($sourceHashes));
+        if ($sourceHashes !== [] && $allLanguages !== []) {
+            /** @var TranslationRecord[] $records */
+            $records = TranslationRecord::find()
+                ->where([
+                    'sourceHash' => $sourceHashes,
+                    'language' => $allLanguages,
+                    'category' => $category,
+                ])
+                ->all();
+
+            foreach ($records as $record) {
+                $existingRecords[$this->phpImportLookupKey($record->sourceHash, (string)$record->language)] = $record;
+            }
+        }
 
         foreach ($entries as $item) {
             try {
@@ -829,14 +878,8 @@ class TranslationsService extends Component
                 $sourceHash = md5($key);
 
                 foreach ($allLanguages as $language) {
-                    /** @var TranslationRecord|null $record */
-                    $record = TranslationRecord::find()
-                        ->where([
-                            'sourceHash' => $sourceHash,
-                            'language' => $language,
-                            'category' => $category,
-                        ])
-                        ->one();
+                    $lookupKey = $this->phpImportLookupKey($sourceHash, $language);
+                    $record = $existingRecords[$lookupKey] ?? null;
 
                     $isImportLanguage = ($language === $importLanguage);
                     $isSourceLang = $this->isSourceLanguage($language);
@@ -862,8 +905,10 @@ class TranslationsService extends Component
 
                             if ($record->save()) {
                                 $updated++;
+                                $existingRecords[$lookupKey] = $record;
                             } else {
                                 $errors[] = "Failed to update '{$key}' ({$language}): " . json_encode($record->getErrors());
+                                $record->refresh();
                             }
                         }
                         // Other languages: record exists, don't touch it.
@@ -907,6 +952,7 @@ class TranslationsService extends Component
                         }
 
                         if ($record->save()) {
+                            $existingRecords[$lookupKey] = $record;
                             // Only count the import language for the "imported" count.
                             if ($isImportLanguage) {
                                 $imported++;
@@ -935,6 +981,11 @@ class TranslationsService extends Component
             'updated' => $updated,
             'errors' => $errors,
         ];
+    }
+
+    private function phpImportLookupKey(string $sourceHash, string $language): string
+    {
+        return $sourceHash . "\n" . $language;
     }
 
     /**
