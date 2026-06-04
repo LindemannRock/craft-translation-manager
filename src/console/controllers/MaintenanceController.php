@@ -24,10 +24,16 @@ use yii\console\ExitCode;
 class MaintenanceController extends Controller
 {
     /**
-     * @var string Type filter for `clean-by-type`: all, site, or formie.
+     * @var string Type filter for `clean-by-type`: all, site, or forms.
      * @since 5.25.0
      */
     public string $type = '';
+
+    /**
+     * @var string|null Forms provider filter for `clean-by-type`.
+     * @since 5.25.0
+     */
+    public ?string $provider = null;
 
     /**
      * @inheritdoc
@@ -38,6 +44,7 @@ class MaintenanceController extends Controller
 
         if ($actionID === 'clean-by-type') {
             $options[] = 'type';
+            $options[] = 'provider';
         }
 
         return $options;
@@ -181,7 +188,12 @@ class MaintenanceController extends Controller
     public function actionCleanByType(): int
     {
         if ($this->type === '') {
-            $this->stdout('Usage: craft translation-manager/maintenance/clean-by-type --type=[all|site|formie]' . PHP_EOL, Console::FG_YELLOW);
+            $this->stdout('Usage: craft translation-manager/maintenance/clean-by-type --type=[all|site|forms] [--provider=formie]' . PHP_EOL, Console::FG_YELLOW);
+            return ExitCode::USAGE;
+        }
+
+        if ($this->provider !== null && $this->type !== 'forms') {
+            $this->stdout('--provider can only be used with --type=forms.' . PHP_EOL, Console::FG_RED);
             return ExitCode::USAGE;
         }
         
@@ -199,18 +211,23 @@ class MaintenanceController extends Controller
                 ]);
                 $this->stdout('Cleaning unused site translations...' . PHP_EOL, Console::FG_BLUE);
                 break;
-            case 'formie':
-                $query->andWhere(['or',
-                    ['like', 'context', 'formie.%', false],
-                    ['=', 'context', 'formie'],
-                ]);
-                $this->stdout('Cleaning unused form translations...' . PHP_EOL, Console::FG_BLUE);
+            case 'forms':
+                $providerConditions = $this->getFormsProviderConditions($this->provider);
+
+                if ($providerConditions === []) {
+                    $this->stdout("Invalid provider: {$this->provider}. Use: formie or freeform" . PHP_EOL, Console::FG_RED);
+                    return ExitCode::USAGE;
+                }
+
+                $query->andWhere(array_merge(['or'], $providerConditions));
+                $providerLabel = $this->provider ?? 'all providers';
+                $this->stdout("Cleaning unused form translations ({$providerLabel})..." . PHP_EOL, Console::FG_BLUE);
                 break;
             case 'all':
                 $this->stdout('Cleaning ALL unused translations...' . PHP_EOL, Console::FG_BLUE);
                 break;
             default:
-                $this->stdout("Invalid type: {$this->type}. Use: all, site, or formie" . PHP_EOL, Console::FG_RED);
+                $this->stdout("Invalid type: {$this->type}. Use: all, site, or forms" . PHP_EOL, Console::FG_RED);
                 return ExitCode::USAGE;
         }
         
@@ -238,5 +255,25 @@ class MaintenanceController extends Controller
         $this->stdout("Deleted {$deleted} unused {$this->type} translations." . PHP_EOL, Console::FG_GREEN);
         
         return ExitCode::OK;
+    }
+
+    /**
+     * @return array<int, array<int, string|bool>>
+     */
+    private function getFormsProviderConditions(?string $provider): array
+    {
+        $providers = $provider === null ? ['formie', 'freeform'] : [$provider];
+        $conditions = [];
+
+        foreach ($providers as $providerHandle) {
+            if (!in_array($providerHandle, ['formie', 'freeform'], true)) {
+                return [];
+            }
+
+            $conditions[] = ['like', 'context', $providerHandle . '.%', false];
+            $conditions[] = ['=', 'context', $providerHandle];
+        }
+
+        return $conditions;
     }
 }

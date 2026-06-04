@@ -142,18 +142,23 @@ ddev craft translation-manager/maintenance/clean-unused
 
 ### `translation-manager/maintenance/clean-by-type`
 
-Clean unused translations by type. The `--type` option is required.
+Clean unused translations by type. The `--type` option is required. Use `--provider` with `--type=forms` to narrow cleanup to one forms provider.
 
 | Option | Values | Description |
 |--------|--------|-------------|
-| `--type` | `all`, `site`, `formie` | Type of translations to clean |
+| `--type` | `all`, `site`, `forms` | Type of translations to clean |
+| `--provider` | `formie`, `freeform` | Optional forms provider filter; only valid with `--type=forms` |
 
 ```bash title="PHP"
 php craft translation-manager/maintenance/clean-by-type --type=all
+php craft translation-manager/maintenance/clean-by-type --type=forms
+php craft translation-manager/maintenance/clean-by-type --type=forms --provider=formie
 ```
 
 ```bash title="DDEV"
 ddev craft translation-manager/maintenance/clean-by-type --type=all
+ddev craft translation-manager/maintenance/clean-by-type --type=forms
+ddev craft translation-manager/maintenance/clean-by-type --type=forms --provider=formie
 ```
 
 ## Backup Commands
