@@ -11,7 +11,10 @@ declare(strict_types=1);
 namespace lindemannrock\translationmanager\tests\Integration;
 
 use Craft;
+use craft\helpers\Db;
+use craft\helpers\StringHelper;
 use lindemannrock\translationmanager\controllers\ImportController;
+use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
 
@@ -94,6 +97,68 @@ final class ImportControllerNormalizedRowsTest extends TestCase
         self::assertArrayNotHasKey('arabic', $analysis['toImport'][0]);
     }
 
+    public function testAnalyzeTranslationsClassifiesExistingRows(): void
+    {
+        $this->requireLatinSourceLanguage();
+        $this->requireAtLeastOneSite();
+
+        $controller = $this->createImportController();
+        $language = Craft::$app->getSites()->getPrimarySite()->language;
+        $category = TranslationManager::getInstance()->getSettings()->getPrimaryCategory();
+        $unchangedSource = self::MARKER . 'preview_unchanged_' . bin2hex(random_bytes(4));
+        $updateSource = self::MARKER . 'preview_update_' . bin2hex(random_bytes(4));
+
+        $this->createTranslationRecord($unchangedSource, 'Existing translation', $language, $category);
+        $this->createTranslationRecord($updateSource, 'Before import', $language, $category);
+
+        $analysis = $this->invokePrivate($controller, 'analyzeTranslations', [[
+            [
+                'translationKey' => $unchangedSource,
+                'translation' => 'Existing translation',
+                'language' => $language,
+                'category' => $category,
+                'context' => 'site',
+                '_rowNumber' => 2,
+            ],
+            [
+                'translationKey' => $updateSource,
+                'translation' => 'After import',
+                'language' => $language,
+                'category' => $category,
+                'context' => 'site',
+                '_rowNumber' => 3,
+            ],
+        ]]);
+
+        self::assertCount(1, $analysis['unchanged']);
+        self::assertSame($unchangedSource, $analysis['unchanged'][0]['translationKey']);
+        self::assertCount(1, $analysis['toUpdate']);
+        self::assertSame($updateSource, $analysis['toUpdate'][0]['translationKey']);
+        self::assertSame('Before import', $analysis['toUpdate'][0]['currentTranslation']);
+        self::assertSame([], $analysis['toImport']);
+    }
+
+    public function testAnalyzeTranslationsKeepsMaliciousRowsOutOfImportBuckets(): void
+    {
+        $this->requireLatinSourceLanguage();
+
+        $controller = $this->createImportController();
+
+        $analysis = $this->invokePrivate($controller, 'analyzeTranslations', [[[
+            'translationKey' => self::MARKER . 'malicious_' . bin2hex(random_bytes(4)),
+            'translation' => '<script>alert(1)</script>',
+            'language' => Craft::$app->getSites()->getPrimarySite()->language,
+            'category' => TranslationManager::getInstance()->getSettings()->getPrimaryCategory(),
+            'context' => 'site',
+            '_rowNumber' => 2,
+        ]]]);
+
+        self::assertCount(1, $analysis['malicious']);
+        self::assertSame([], $analysis['toImport']);
+        self::assertSame([], $analysis['toUpdate']);
+        self::assertSame([], $analysis['unchanged']);
+    }
+
     public function testImportTranslationsCreatesRecordFromPreviewRows(): void
     {
         $this->requireLatinSourceLanguage();
@@ -134,9 +199,164 @@ final class ImportControllerNormalizedRowsTest extends TestCase
         self::assertSame($category, $rows[0]['category']);
     }
 
+    public function testImportTranslationsUpdatesExistingRowsAndSkipsUnchangedRows(): void
+    {
+        $this->requireLatinSourceLanguage();
+        $this->requireAtLeastOneSite();
+
+        $controller = $this->createImportController();
+        $language = Craft::$app->getSites()->getPrimarySite()->language;
+        $category = TranslationManager::getInstance()->getSettings()->getPrimaryCategory();
+        $updateSource = self::MARKER . 'import_update_' . bin2hex(random_bytes(4));
+        $skipSource = self::MARKER . 'import_skip_' . bin2hex(random_bytes(4));
+
+        $this->createTranslationRecord($updateSource, 'Before import', $language, $category);
+        $this->createTranslationRecord($skipSource, 'Same translation', $language, $category);
+
+        $result = $this->invokePrivate($controller, 'importTranslations', [
+            [
+                [
+                    'translationKey' => $updateSource,
+                    'translation' => 'After import',
+                    'language' => $language,
+                    'category' => $category,
+                    'context' => 'site',
+                    'status' => 'translated',
+                    'origin' => 'manual',
+                    'rowNumber' => 2,
+                ],
+                [
+                    'translationKey' => $skipSource,
+                    'translation' => 'Same translation',
+                    'language' => $language,
+                    'category' => $category,
+                    'context' => 'site',
+                    'rowNumber' => 3,
+                ],
+            ],
+            false,
+        ]);
+
+        self::assertSame(0, $result['imported']);
+        self::assertSame(1, $result['updated']);
+        self::assertSame(1, $result['skipped']);
+        self::assertSame([], $result['errors']);
+
+        $rows = $this->fetchRowsForSource($updateSource);
+        self::assertCount(1, $rows);
+        self::assertSame('After import', $rows[0]['translation']);
+        self::assertSame('translated', $rows[0]['status']);
+        self::assertSame('manual', $rows[0]['translationOrigin']);
+    }
+
+    public function testImportTranslationsDerivesFormieCategoryBeforeLookup(): void
+    {
+        $this->requireLatinSourceLanguage();
+        $this->requireAtLeastOneSite();
+
+        $controller = $this->createImportController();
+        $language = Craft::$app->getSites()->getPrimarySite()->language;
+        $source = self::MARKER . 'formie_' . bin2hex(random_bytes(4));
+
+        $this->createTranslationRecord($source, 'Before import', $language, 'formie', 'formie.field');
+
+        $result = $this->invokePrivate($controller, 'importTranslations', [
+            [[
+                'translationKey' => $source,
+                'translation' => 'After import',
+                'language' => $language,
+                'category' => '',
+                'context' => 'formie.field',
+                'type' => 'forms',
+                'rowNumber' => 2,
+            ]],
+            false,
+        ]);
+
+        self::assertSame(0, $result['imported']);
+        self::assertSame(1, $result['updated']);
+        self::assertSame(0, $result['skipped']);
+
+        $rows = $this->fetchRowsForSource($source);
+        self::assertCount(1, $rows);
+        self::assertSame('formie', $rows[0]['category']);
+        self::assertSame('After import', $rows[0]['translation']);
+    }
+
+    public function testImportTranslationsHandlesDuplicateRowsInSameImport(): void
+    {
+        $this->requireLatinSourceLanguage();
+        $this->requireAtLeastOneSite();
+
+        $controller = $this->createImportController();
+        $language = Craft::$app->getSites()->getPrimarySite()->language;
+        $category = TranslationManager::getInstance()->getSettings()->getPrimaryCategory();
+        $source = self::MARKER . 'duplicate_' . bin2hex(random_bytes(4));
+
+        $result = $this->invokePrivate($controller, 'importTranslations', [
+            [
+                [
+                    'translationKey' => $source,
+                    'translation' => 'First import value',
+                    'language' => $language,
+                    'category' => $category,
+                    'context' => 'site',
+                    'rowNumber' => 2,
+                ],
+                [
+                    'translationKey' => $source,
+                    'translation' => 'Second import value',
+                    'language' => $language,
+                    'category' => $category,
+                    'context' => 'site',
+                    'rowNumber' => 3,
+                ],
+            ],
+            false,
+        ]);
+
+        self::assertSame(1, $result['imported']);
+        self::assertSame(1, $result['updated']);
+        self::assertSame(0, $result['skipped']);
+        self::assertSame([], $result['errors']);
+
+        $rows = $this->fetchRowsForSource($source);
+        self::assertCount(1, $rows);
+        self::assertSame('Second import value', $rows[0]['translation']);
+    }
+
     private function createImportController(): ImportController
     {
         return new ImportController('import', TranslationManager::getInstance());
+    }
+
+    private function createTranslationRecord(
+        string $source,
+        string $translation,
+        string $language,
+        string $category,
+        string $context = 'site',
+    ): TranslationRecord {
+        $record = new TranslationRecord();
+        $record->source = $source;
+        $record->sourceHash = md5($source);
+        $record->translationKey = $source;
+        $record->translation = $translation;
+        $record->language = TranslationManager::getInstance()->getSettings()->mapLanguage($language);
+        $record->category = $category;
+        $record->context = $context;
+        $record->siteId = Craft::$app->getSites()->getPrimarySite()->id;
+        $record->status = 'translated';
+        $record->translationOrigin = 'manual';
+        $record->usageCount = 1;
+        $record->lastUsed = Db::prepareDateForDb(new \DateTime());
+        $record->dateCreated = Db::prepareDateForDb(new \DateTime());
+        $record->dateUpdated = Db::prepareDateForDb(new \DateTime());
+        $record->uid = StringHelper::UUID();
+
+        self::assertTrue($record->save(), json_encode($record->getErrors()));
+
+        return $record;
     }
 
     /**

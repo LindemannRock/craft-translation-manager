@@ -33,6 +33,18 @@ use yii\web\Response;
 class ImportController extends Controller
 {
     use LoggingTrait;
+
+    private const DANGEROUS_IMPORT_PATTERNS = [
+        '/<script[^>]*>.*?<\/script>/si',
+        '/javascript:/i',
+        '/on\w+\s*=/i',
+        '/<iframe[^>]*>.*?<\/iframe>/si',
+        '/<object[^>]*>.*?<\/object>/si',
+        '/<embed[^>]*>/i',
+        '/data:text\/html/i',
+        '/vbscript:/i',
+    ];
+
     /**
      * @var array<int|string>|bool|int
      */
@@ -455,6 +467,7 @@ class ImportController extends Controller
         $unchanged = [];
         $maliciousRows = [];
         $errors = [];
+        $candidates = [];
 
         foreach ($translations as $translation) {
             if (!isset($translation['translationKey']) || $translation['translationKey'] === '') {
@@ -552,21 +565,8 @@ class ImportController extends Controller
             $translationText = CsvImportHelper::stripFormulaEscapePrefix($translationText);
             $context = CsvImportHelper::stripFormulaEscapePrefix($context);
 
-            $dangerousPatterns = [
-                '/<script[^>]*>.*?<\/script>/si',
-                '/javascript:/i',
-                '/on\w+\s*=/i',
-                '/<iframe[^>]*>.*?<\/iframe>/si',
-                '/<object[^>]*>.*?<\/object>/si',
-                '/<embed[^>]*>/i',
-                '/data:text\/html/i',
-                '/vbscript:/i',
-            ];
-
-            foreach ($dangerousPatterns as $pattern) {
-                $keyText = preg_replace($pattern, '', $keyText);
-                $translationText = preg_replace($pattern, '', $translationText);
-            }
+            $keyText = $this->stripDangerousImportContent((string)$keyText);
+            $translationText = $this->stripDangerousImportContent((string)$translationText);
 
             if (empty($context)) {
                 $context = 'site';
@@ -585,64 +585,81 @@ class ImportController extends Controller
             }
 
             $sourceHash = md5($keyText);
-            $existing = TranslationRecord::findOne([
-                'sourceHash' => $sourceHash,
-                'language' => $targetLanguage,
+            $candidates[] = [
+                'rowNumber' => $translation['_rowNumber'] ?? null,
+                'translationKey' => $keyText,
+                'translation' => $translationText,
+                'context' => $context,
                 'category' => $category,
-            ]);
+                'language' => $targetLanguage,
+                'type' => $type,
+                'status' => $translation['status'] ?? '',
+                'origin' => $translation['origin'] ?? '',
+                'siteId' => $translation['siteId'] ?? '',
+                'sourceHash' => $sourceHash,
+            ];
+        }
+
+        $existingTranslations = $this->findExistingTranslationsForCandidates($candidates);
+
+        foreach ($candidates as $candidate) {
+            $existing = $existingTranslations[$this->translationLookupKey(
+                (string)$candidate['sourceHash'],
+                (string)$candidate['language'],
+                (string)$candidate['category'],
+            )] ?? null;
 
             if ($existing) {
                 $dbValue = $existing->translation;
-                $csvValue = $translationText;
+                $csvValue = (string)$candidate['translation'];
 
                 $dbNormalized = $dbValue === null ? '' : $dbValue;
-                $csvNormalized = $csvValue === null ? '' : $csvValue;
 
-                if ($dbNormalized === $csvNormalized) {
+                if ($dbNormalized === $csvValue) {
                     $unchanged[] = [
-                        'rowNumber' => $translation['_rowNumber'] ?? null,
-                        'translationKey' => $keyText,
-                        'translation' => $translationText,
-                        'context' => $context,
-                        'category' => $category,
+                        'rowNumber' => $candidate['rowNumber'],
+                        'translationKey' => $candidate['translationKey'],
+                        'translation' => $candidate['translation'],
+                        'context' => $candidate['context'],
+                        'category' => $candidate['category'],
                         'currentTranslation' => $existing->translation,
                         'currentStatus' => $existing->status,
                         'existingContext' => $existing->context,
-                        'language' => $targetLanguage,
-                        'type' => $type,
-                        'status' => $translation['status'] ?? '',
-                        'origin' => $translation['origin'] ?? '',
-                        'siteId' => $translation['siteId'] ?? '',
+                        'language' => $candidate['language'],
+                        'type' => $candidate['type'],
+                        'status' => $candidate['status'],
+                        'origin' => $candidate['origin'],
+                        'siteId' => $candidate['siteId'],
                     ];
                 } else {
                     $toUpdate[] = [
-                        'rowNumber' => $translation['_rowNumber'] ?? null,
-                        'translationKey' => $keyText,
-                        'translation' => $translationText,
+                        'rowNumber' => $candidate['rowNumber'],
+                        'translationKey' => $candidate['translationKey'],
+                        'translation' => $candidate['translation'],
                         'currentTranslation' => $existing->translation ?? '',
-                        'context' => $context,
-                        'category' => $category,
+                        'context' => $candidate['context'],
+                        'category' => $candidate['category'],
                         'currentStatus' => $existing->status,
                         'existingContext' => $existing->context,
-                        'language' => $targetLanguage,
-                        'type' => $type,
-                        'status' => $translation['status'] ?? '',
-                        'origin' => $translation['origin'] ?? '',
-                        'siteId' => $translation['siteId'] ?? '',
+                        'language' => $candidate['language'],
+                        'type' => $candidate['type'],
+                        'status' => $candidate['status'],
+                        'origin' => $candidate['origin'],
+                        'siteId' => $candidate['siteId'],
                     ];
                 }
             } else {
                 $toImport[] = [
-                    'rowNumber' => $translation['_rowNumber'] ?? null,
-                    'translationKey' => $keyText,
-                    'translation' => $translationText,
-                    'context' => $context,
-                    'category' => $category,
-                    'language' => $targetLanguage,
-                    'type' => $type,
-                    'status' => $translation['status'] ?? '',
-                    'origin' => $translation['origin'] ?? '',
-                    'siteId' => $translation['siteId'] ?? '',
+                    'rowNumber' => $candidate['rowNumber'],
+                    'translationKey' => $candidate['translationKey'],
+                    'translation' => $candidate['translation'],
+                    'context' => $candidate['context'],
+                    'category' => $candidate['category'],
+                    'language' => $candidate['language'],
+                    'type' => $candidate['type'],
+                    'status' => $candidate['status'],
+                    'origin' => $candidate['origin'],
+                    'siteId' => $candidate['siteId'],
                 ];
             }
         }
@@ -673,6 +690,7 @@ class ImportController extends Controller
         ] : null;
         $translationService = TranslationManager::getInstance()->translations;
         $userId = Craft::$app->getUser()->getId();
+        $candidates = [];
 
         foreach ($translations as $translation) {
             $rowNumber = (int)($translation['rowNumber'] ?? $translation['_rowNumber'] ?? 0);
@@ -723,22 +741,9 @@ class ImportController extends Controller
 
                 $siteId = SiteLanguageHelper::getSiteIdForLanguage($language);
 
-                $dangerousPatterns = [
-                    '/<script[^>]*>.*?<\/script>/si',
-                    '/javascript:/i',
-                    '/on\w+\s*=/i',
-                    '/<iframe[^>]*>.*?<\/iframe>/si',
-                    '/<object[^>]*>.*?<\/object>/si',
-                    '/<embed[^>]*>/i',
-                    '/data:text\/html/i',
-                    '/vbscript:/i',
-                ];
-
-                foreach ($dangerousPatterns as $pattern) {
-                    $keyText = preg_replace($pattern, '', $keyText) ?? '';
-                    $translationText = preg_replace($pattern, '', $translationText) ?? '';
-                    $context = preg_replace($pattern, '', $context) ?? '';
-                }
+                $keyText = $this->stripDangerousImportContent($keyText);
+                $translationText = $this->stripDangerousImportContent($translationText);
+                $context = $this->stripDangerousImportContent($context);
 
                 $context = StringHelper::stripHtml($context);
                 $category = StringHelper::stripHtml($category);
@@ -767,11 +772,41 @@ class ImportController extends Controller
                 $importedStatus = $this->normalizeImportedStatus(isset($translation['status']) ? (string)$translation['status'] : null);
                 $importedOrigin = $this->normalizeImportedOrigin(isset($translation['origin']) ? (string)$translation['origin'] : null);
 
-                $translationRecord = TranslationRecord::findOne([
-                    'sourceHash' => md5($keyText),
-                    'language' => $language,
+                $candidates[] = [
+                    'rowNumber' => $rowNumber,
+                    'translationKey' => $keyText,
+                    'translation' => $translationText,
+                    'context' => $context,
                     'category' => $category,
-                ]);
+                    'language' => $language,
+                    'siteId' => $siteId,
+                    'sourceHash' => md5($keyText),
+                    'importedStatus' => $importedStatus,
+                    'importedOrigin' => $importedOrigin,
+                ];
+            } catch (\Exception $e) {
+                $errors[] = "Row {$rowNumber}: " . $e->getMessage();
+            }
+        }
+
+        $existingTranslations = $this->findExistingTranslationsForCandidates($candidates);
+
+        foreach ($candidates as $candidate) {
+            $rowNumber = (int)$candidate['rowNumber'];
+            $keyText = (string)$candidate['translationKey'];
+            $translationText = (string)$candidate['translation'];
+            $context = (string)$candidate['context'];
+            $category = (string)$candidate['category'];
+            $language = (string)$candidate['language'];
+            $siteId = (int)$candidate['siteId'];
+            $sourceHash = (string)$candidate['sourceHash'];
+            $importedStatus = $candidate['importedStatus'];
+            $importedOrigin = $candidate['importedOrigin'];
+            $lookupKey = $this->translationLookupKey($sourceHash, $language, $category);
+            $translationRecord = null;
+
+            try {
+                $translationRecord = $existingTranslations[$lookupKey] ?? null;
 
                 $isNew = false;
                 $previousTranslation = '';
@@ -784,7 +819,7 @@ class ImportController extends Controller
                 } else {
                     $translationRecord = new TranslationRecord();
                     $translationRecord->source = $keyText;
-                    $translationRecord->sourceHash = md5($keyText);
+                    $translationRecord->sourceHash = $sourceHash;
                     $translationRecord->siteId = $siteId;
                     $translationRecord->language = $language;
                     $translationRecord->context = $context;
@@ -864,6 +899,10 @@ class ImportController extends Controller
             } catch (\Exception $e) {
                 $errors[] = "Row {$rowNumber}: " . $e->getMessage();
             }
+
+            if (!$translationRecord->getIsNewRecord()) {
+                $existingTranslations[$lookupKey] = $translationRecord;
+            }
         }
 
         $result = [
@@ -878,6 +917,67 @@ class ImportController extends Controller
         }
 
         return $result;
+    }
+
+    private function stripDangerousImportContent(string $value): string
+    {
+        foreach (self::DANGEROUS_IMPORT_PATTERNS as $pattern) {
+            $value = preg_replace($pattern, '', $value) ?? '';
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $candidates
+     * @return array<string,TranslationRecord>
+     */
+    private function findExistingTranslationsForCandidates(array $candidates): array
+    {
+        $sourceHashes = [];
+        $languages = [];
+        $categories = [];
+
+        foreach ($candidates as $candidate) {
+            $sourceHash = (string)($candidate['sourceHash'] ?? '');
+            $language = (string)($candidate['language'] ?? '');
+            $category = (string)($candidate['category'] ?? '');
+
+            if ($sourceHash === '' || $language === '' || $category === '') {
+                continue;
+            }
+
+            $sourceHashes[] = $sourceHash;
+            $languages[] = $language;
+            $categories[] = $category;
+        }
+
+        $sourceHashes = array_values(array_unique($sourceHashes));
+        $languages = array_values(array_unique($languages));
+        $categories = array_values(array_unique($categories));
+
+        if ($sourceHashes === [] || $languages === [] || $categories === []) {
+            return [];
+        }
+
+        /** @var TranslationRecord[] $records */
+        $records = TranslationRecord::find()
+            ->where(['sourceHash' => $sourceHashes])
+            ->andWhere(['language' => $languages])
+            ->andWhere(['category' => $categories])
+            ->all();
+
+        $indexed = [];
+        foreach ($records as $record) {
+            $indexed[$this->translationLookupKey($record->sourceHash, (string)$record->language, $record->category)] = $record;
+        }
+
+        return $indexed;
+    }
+
+    private function translationLookupKey(string $sourceHash, string $language, string $category): string
+    {
+        return $sourceHash . "\n" . $language . "\n" . $category;
     }
 
     /**
