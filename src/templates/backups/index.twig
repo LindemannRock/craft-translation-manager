@@ -17,7 +17,7 @@
 
 {% block actionButton %}
     {% if currentUser.can('translationManager:createBackups') %}
-        <button type="button" class="btn submit" id="create-backup-btn" style="background-color: #dc2626; border-color: #dc2626;">
+        <button type="button" class="btn submit" id="create-backup-btn">
             <span class="icon backup-icon" aria-hidden="true">{{ svg('@appicons/database.svg') }}</span>
             <span class="spinner backup-spinner hidden" aria-hidden="true"></span>
             <span class="backup-text">{{ "Create Backup Now"|t('translation-manager') }}</span>
