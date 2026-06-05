@@ -86,6 +86,26 @@ final class SchedulerPatternTest extends TestCase
         self::assertSame(2, $this->countBackupQueueRows());
     }
 
+    public function testBackupBootstrapDoesNotDuplicateExistingDelayedBackupRow(): void
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $settings->backupEnabled = true;
+        $settings->backupSchedule = 'daily';
+
+        Craft::$app->getQueue()->delay(300)->push(new CreateBackupJob([
+            'reason' => 'scheduled',
+            'reschedule' => true,
+        ]));
+
+        self::assertSame(1, $this->countBackupQueueRows());
+
+        $scheduleBackup = new ReflectionMethod(TranslationManager::getInstance(), 'scheduleBackupJob');
+        $scheduleBackup->setAccessible(true);
+        $scheduleBackup->invoke(TranslationManager::getInstance());
+
+        self::assertSame(1, $this->countBackupQueueRows());
+    }
+
     public function testScheduleChangeReplacesPendingBackupRow(): void
     {
         $settings = TranslationManager::getInstance()->getSettings();

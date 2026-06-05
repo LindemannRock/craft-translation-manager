@@ -825,12 +825,7 @@ class TranslationManager extends Plugin
             return;
         }
 
-        // Check if a backup job is already scheduled
-        $existingJob = (new Query())
-            ->from('{{%queue}}')
-            ->where(['like', 'job', 'translationmanager'])
-            ->andWhere(['like', 'job', 'CreateBackupJob'])
-            ->exists();
+        $existingJob = $this->hasPendingBackupJob();
 
         if (!$existingJob) {
             $nextRun = ScheduleHelper::calculateNext($schedule);
@@ -920,6 +915,20 @@ class TranslationManager extends Plugin
                 ['like', 'job', 'CreateBackupJob'],
             ])
             ->execute();
+    }
+
+    /**
+     * Check whether a pending scheduled backup job is already queued.
+     */
+    private function hasPendingBackupJob(): bool
+    {
+        return (new Query())
+            ->from('{{%queue}}')
+            ->where(['like', 'job', 'translationmanager'])
+            ->andWhere(['like', 'job', 'CreateBackupJob'])
+            ->andWhere(['fail' => false])
+            ->andWhere(['timeUpdated' => null])
+            ->exists();
     }
 
     /**
