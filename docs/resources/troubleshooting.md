@@ -46,6 +46,10 @@ php craft translation-manager/translations/capture-formie
 
 This is normal in production - settings are stored in database, not project config.
 
+Numeric settings such as backup retention and items per page must be whole numbers within the allowed range. If a value is invalid, Translation Manager keeps you on the same settings page and shows the field error inline.
+
+When a setting is overridden in `config/translation-manager.php`, the Control Panel field is skipped during save. Change the config file value instead.
+
 If error persists:
 ```bash
 php craft migrate/all

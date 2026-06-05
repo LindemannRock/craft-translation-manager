@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
 use craft\web\Controller;
+use lindemannrock\base\helpers\SettingsPostHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\translationmanager\TranslationManager;
@@ -274,39 +275,24 @@ class SettingsController extends Controller
         // Get only the posted settings (fields from the current page)
         $settingsData = Craft::$app->getRequest()->getBodyParam('settings', []);
 
-        // Only update fields that were posted and are not overridden by config
-        foreach ($settingsData as $key => $value) {
-            if (!$settings->isOverriddenByConfig($key) && property_exists($settings, $key)) {
-                // Multi-state selects (e.g. "Use global default" = '') need '' → null
-                // so nullable properties hold null, not a coerced false / 0.
-                if ($value === '') {
-                    $type = (new \ReflectionProperty($settings, $key))->getType();
-                    if ($type instanceof \ReflectionNamedType && $type->allowsNull()) {
-                        $value = null;
-                    }
-                }
-
-                // Check for setter method first (handles array conversions, etc.)
-                $setterMethod = 'set' . ucfirst($key);
-                if (method_exists($settings, $setterMethod)) {
-                    $settings->$setterMethod($value);
-                } else {
-                    $settings->$key = $value;
-                }
-            }
-        }
-
         // Validate only fields belonging to the current section.
         $section = $this->_validSettingsSection(
             $this->request->getBodyParam('section', 'general'),
         );
-        $attributesToValidate = $this->_validationAttributesForSection($section);
-        $attributesToValidate = array_values(array_filter(
-            $attributesToValidate,
-            fn(string $attribute): bool => !$settings->isOverriddenByConfig($attribute),
-        ));
+        $result = SettingsPostHelper::apply(
+            model: $settings,
+            postedValues: is_array($settingsData) ? $settingsData : [],
+            allowedAttributes: $this->_validationAttributesForSection($section),
+            isOverridden: fn(string $attribute): bool => $settings->isOverriddenByConfig($attribute),
+            adapters: [
+                'skipPatterns' => $this->textareaListAdapter(...),
+                'excludeFormHandlePatterns' => $this->textareaListAdapter(...),
+            ],
+        );
 
-        if (!$settings->validate($attributesToValidate)) {
+        $attributesToValidate = $result->attributesToValidate;
+
+        if ($result->hasErrors || !$settings->validate($attributesToValidate)) {
             Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Could not save settings.'));
 
             $template = "translation-manager/settings/{$section}";
@@ -610,7 +596,6 @@ class SettingsController extends Controller
             'interface' => [
                 'itemsPerPage',
                 'autoSaveEnabled',
-                'autoSaveDelay',
                 'timeFormat',
                 'monthFormat',
                 'dateOrder',
@@ -643,5 +628,26 @@ class SettingsController extends Controller
             ],
             default => [],
         };
+    }
+
+    /**
+     * Normalizes textarea list settings before typed POST assignment.
+     *
+     * @return array<int|string, mixed>
+     */
+    private function textareaListAdapter(mixed $value): array
+    {
+        if (is_string($value)) {
+            if (trim($value) === '') {
+                return [];
+            }
+
+            return array_values(array_filter(
+                array_map('trim', preg_split('/\R/', $value) ?: []),
+                static fn(string $line): bool => $line !== '',
+            ));
+        }
+
+        return is_array($value) ? $value : [];
     }
 }
