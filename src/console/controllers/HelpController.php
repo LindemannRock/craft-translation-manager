@@ -25,7 +25,10 @@ final class HelpController extends AbstractHelpController
         return [
             'title' => 'Translation Manager',
             'pluginHandle' => 'translation-manager',
-            'commandPrefix' => 'ddev craft',
+            'commandPrefixes' => [
+                'php craft',
+                'ddev craft',
+            ],
             'summary' => 'Use these commands to capture translations, generate PHP files, import existing translation files, clean unused rows, manage backups, and test AI providers.',
             'common' => [
                 'translations/import',
