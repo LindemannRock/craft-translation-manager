@@ -1,5 +1,44 @@
 # Changelog
 
+## [5.25.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.24.0...v5.25.0) - 2026-06-07
+
+
+### Added
+
+* add PHP import functionality for translation entries ([294e93f](https://github.com/LindemannRock/craft-translation-manager/commit/294e93fdf4e277365560f1f524e04179942fed6b))
+* add static analysis script for CI workflow ([922e82f](https://github.com/LindemannRock/craft-translation-manager/commit/922e82fc17b4237778d3ed85a28922148a0431cb))
+* batch update translation statuses and contexts for efficiency ([53ccc9d](https://github.com/LindemannRock/craft-translation-manager/commit/53ccc9dd924d207b36f3b71b56a56faf09dcd380))
+* **cli:** add HelpController for cli command assistance ([4854c54](https://github.com/LindemannRock/craft-translation-manager/commit/4854c542a4d53cc8342def17d6325f051a86adc8))
+* **debug:** add AI provider testing command with configurable options ([ec2ba94](https://github.com/LindemannRock/craft-translation-manager/commit/ec2ba9481db0b1fdd81e5b48ae07bc1ba13063f8))
+* **i18n:** add 'Save' translation key for settings ([d67988c](https://github.com/LindemannRock/craft-translation-manager/commit/d67988cb56262dbeb830c9d1cd1355aeab56e824))
+* **i18n:** add config override messages for settings ([8ddcc22](https://github.com/LindemannRock/craft-translation-manager/commit/8ddcc228f3e6e9418fb9dd48ca0477f3df32f8d4))
+* **i18n:** add localized error and success messages for backup operations ([da5ae5a](https://github.com/LindemannRock/craft-translation-manager/commit/da5ae5a749be48fae50c3e62523efbb5f0f9fa68))
+* **i18n:** translate permission error messages in controllers and jobs ([e9b53fd](https://github.com/LindemannRock/craft-translation-manager/commit/e9b53fd6b6a80807f9c8c21a4a491772b63d7aa0))
+* **i18n:** update Portuguese translations for backup terminology ([debfc31](https://github.com/LindemannRock/craft-translation-manager/commit/debfc31d19e0c99fe1aecebea7ade448e5addf55))
+* **import:** sanitize import content to prevent XSS attacks ([91a9a24](https://github.com/LindemannRock/craft-translation-manager/commit/91a9a2490a39c01d2c8fbe3a580a29a60d7727ee))
+* **settings:** add backup schedule options and effective schedule method ([e0a4d04](https://github.com/LindemannRock/craft-translation-manager/commit/e0a4d045c0bd0cdff50a3198a1eb97ae7c774a9c))
+* **settings:** add base plugin overrides for time and export formats ([ad67377](https://github.com/LindemannRock/craft-translation-manager/commit/ad673777b5c5c42c64545c1506c5321615c80fd6))
+* **settings:** constrain Gemini model name to safe charset ([47f54f1](https://github.com/LindemannRock/craft-translation-manager/commit/47f54f18799c11304d2fc04bb2dd9a7bd9c07731))
+* **settings:** handle empty multi-state select values in settings ([61d7f08](https://github.com/LindemannRock/craft-translation-manager/commit/61d7f08c8a806c86259f574abacc507cbf09b7ff))
+* **settings:** refactor settings handling with SettingsPostHelper ([fa64cb3](https://github.com/LindemannRock/craft-translation-manager/commit/fa64cb37f573980271ddbb36e9db18f9dc7f695e))
+* **settings:** validate backup volume and display path for backups ([6f69d91](https://github.com/LindemannRock/craft-translation-manager/commit/6f69d9136cf9d7f3784880a3902ae5019eeee7c1))
+* **tests:** add ScanTemplatesForUnusedTest for template scanning functionality ([4a46710](https://github.com/LindemannRock/craft-translation-manager/commit/4a4671085a761e958cfde64127b9d48ebd36f1e4))
+* **tests:** add test for updating existing import language row ([a1bd2c8](https://github.com/LindemannRock/craft-translation-manager/commit/a1bd2c80e53bcf38bcdffb6879b964237ef869a6))
+
+
+### Fixed
+
+* **backup:** handle missing backup checksum and return error message ([7bee673](https://github.com/LindemannRock/craft-translation-manager/commit/7bee67352d71d1c1fe5c0b809709ef11119c37fa))
+* **formie:** listen to form delete events via Elements service ([2e81b0a](https://github.com/LindemannRock/craft-translation-manager/commit/2e81b0a5ca9ca4141212d319a3656e2186ba1803))
+* **i18n:** correct phrasing for deletion confirmation messages ([bff55d1](https://github.com/LindemannRock/craft-translation-manager/commit/bff55d1d8a6894ae1f0e543e2d83d465d760a5e6))
+* **i18n:** correct punctuation in Japanese translation strings ([ce424c5](https://github.com/LindemannRock/craft-translation-manager/commit/ce424c5eb481c19d28a97132dd0e3e1030f11e0a))
+* **settings:** correct error message for saving settings ([f771ea5](https://github.com/LindemannRock/craft-translation-manager/commit/f771ea543949481c1fd9da4b233135ab83f204d2))
+
+
+### Changed
+
+* **controllers:** batch-fetch referenced translation records to avoid N+1 query ([6ea4692](https://github.com/LindemannRock/craft-translation-manager/commit/6ea46921e340d2f834f59a60799e758599b5923d))
+
 ## [5.24.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.23.3...v5.24.0) - 2026-05-22
 
 ### Added
