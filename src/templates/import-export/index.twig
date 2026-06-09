@@ -54,12 +54,12 @@
 <div id="import-export">
     {% if currentUser.can('translationManager:exportTranslations') %}
     <h2>{{ "Export Translations"|t('translation-manager') }}</h2>
-    <p class="light" style="margin-bottom: 16px;">{{ "Download translations for backup or migration."|t('translation-manager') }}</p>
+    <p class="light lr-mb-16">{{ "Download translations for backup or migration."|t('translation-manager') }}</p>
 
     <form method="post" action="{{ actionUrl('translation-manager/export') }}">
         {{ csrfInput() }}
 
-        <div class="flex" style="gap: 12px; align-items: center; flex-wrap: wrap;">
+        <div class="lr-control-row">
             {% set languageOptions = [{value: '', label: 'All Languages'|t('translation-manager')}] %}
             {% for lang in uniqueLanguages %}
                 {% set languageOptions = languageOptions|merge([{value: lang, label: lang|upper}]) %}
@@ -128,7 +128,7 @@
             <li><strong>Status</strong> - {{ "pending, translated, or unused"|t('translation-manager') }}</li>
         </ul>
         <p><strong>{{ "Example:"|t('translation-manager') }}</strong></p>
-        <pre style="background: #f3f4f6; padding: 8px; border-radius: 4px; font-size: 12px;">Translation Key,Translation,Language,Category
+        <pre class="lr-csv-columns">Translation Key,Translation,Language,Category
 "Welcome","مرحباً","ar","lindemannrock"
 "Contact Us","اتصل بنا","ar","lindemannrock"
 "Submit","Soumettre","fr","lindemannrock"</pre>
@@ -148,7 +148,7 @@
                 <li>{{ "Files must be in your configured translations folder"|t('translation-manager') }}</li>
             </ul>
             <p><strong>{{ "Expected file structure:"|t('translation-manager') }}</strong></p>
-            <pre style="background: #f3f4f6; padding: 8px; border-radius: 4px; font-size: 12px;">translations/
+            <pre class="lr-csv-columns">translations/
 ├── en/
 │   └── lindemannrock.php
 └── ar/
@@ -159,7 +159,7 @@
                 <li>{{ "Source language auto-filled with key as translation"|t('translation-manager') }}</li>
                 <li>{{ "Other languages set to pending"|t('translation-manager') }}</li>
             </ul>
-            <p class="light" style="margin-top: 8px;">{{ "Only available in devMode"|t('translation-manager') }}</p>
+            <p class="light lr-mt-8">{{ "Only available in devMode"|t('translation-manager') }}</p>
         {% endset %}
 
         {% set phpBackupEnabled = settings.backupEnabled %}
@@ -171,12 +171,12 @@
                     <label>{{ "Import from PHP Files"|t('translation-manager') }}</label>
                     <span class="info">{{ phpFormatTip|raw }}</span>
                     <div class="instructions">
-                        <p style="margin-bottom: 12px;">{{ "Import existing translations from PHP files in your translations folder"|t('translation-manager') }}</p>
+                        <p class="lr-mb-12">{{ "Import existing translations from PHP files in your translations folder"|t('translation-manager') }}</p>
                     </div>
                 </div>
                     <div class="input">
                     <div id="php-file-input-section">
-                        <div class="flex" style="gap: 12px; align-items: center; flex-wrap: wrap;">
+                        <div class="lr-control-row">
                             {{ forms.select({
                                 id: 'phpFile',
                                 name: 'phpFile',
@@ -197,7 +197,7 @@
                             }) }}
                         </div>
                         {% if phpBackupEnabled and phpBackupOnImport %}
-                            <div id="php-create-backup-field" style="margin-top: 24px;">
+                            <div id="php-create-backup-field" class="lr-mt-24">
                                 {{ forms.lightswitchField({
                                     label: 'Create Backup Before Import'|t('translation-manager'),
                                     instructions: 'Automatically backup existing translations before importing (recommended)'|t('translation-manager'),
@@ -218,7 +218,7 @@
                         </div>
                     </div>
 
-                    <div id="php-preview-section" style="margin-top: 20px; display: none;">
+                    <div id="php-preview-section" class="lr-mt-20" style="display: none;">
                         <h3>{{ "Import Preview"|t('translation-manager') }}</h3>
                         {% include 'lindemannrock-base/_components/info-box' with {
                             message: '<strong>' ~ "Backup will be created automatically before importing to protect existing translations."|t('translation-manager') ~ '</strong>',
@@ -238,9 +238,9 @@
                             hidden: true,
                             allowHtml: false
                         } %}
-                        <div id="php-preview-summary" style="margin-bottom: 12px; padding: 12px; background: #f3f4f6; border-radius: 4px;"></div>
+                        <div id="php-preview-summary" class="lr-mb-12" style="padding: 12px; background: #f3f4f6; border-radius: 4px;"></div>
                         <div id="php-preview-content" style="max-height: 400px; overflow-y: auto;"></div>
-                        <div id="php-preview-buttons" style="margin-top: 12px;">
+                        <div id="php-preview-buttons" class="lr-mt-12">
                             <button type="button" class="btn submit" id="php-confirm-import-btn">
                                 {{ "Confirm and Import"|t('translation-manager') }}
                             </button>
@@ -250,7 +250,7 @@
                         </div>
                     </div>
 
-                    <div id="php-import-results" style="margin-top: 20px; display: none;">
+                    <div id="php-import-results" class="lr-mt-20" style="display: none;">
                         <div id="php-import-success" class="success" style="display: none;"></div>
                         <div id="php-import-error" class="error" style="display: none;"></div>
                     </div>
@@ -313,7 +313,7 @@
             {% endif %}
             {% if item.updated > 0 %}
                 {% if item.imported > 0 %}<br>{% endif %}
-                <span style="color: #E67E22;">{{ "{count} updated"|t('translation-manager', { count: item.updated|number_format }) }}</span>
+                <span class="lr-text-orange">{{ "{count} updated"|t('translation-manager', { count: item.updated|number_format }) }}</span>
             {% endif %}
             {% if item.skipped > 0 %}
                 {% if item.imported > 0 or item.updated > 0 %}<br>{% endif %}
@@ -559,13 +559,13 @@
             summaryHtml += `<p><span class="success">{{ "New translations:"|t('translation-manager') }}</span> ${data.counts.new}</p>`;
         }
         if (data.counts.existing > 0) {
-            summaryHtml += `<p><span style="color: #E67E22;">{{ "Will update:"|t('translation-manager') }}</span> ${data.counts.existing}</p>`;
+            summaryHtml += `<p><span class="lr-text-orange">{{ "Will update:"|t('translation-manager') }}</span> ${data.counts.existing}</p>`;
         }
         if (data.counts.unchanged > 0) {
             summaryHtml += `<p><span class="light">{{ "Unchanged (will skip):"|t('translation-manager') }}</span> ${data.counts.unchanged}</p>`;
         }
         if (willProcess === 0) {
-            summaryHtml += `<p class="warning" style="margin-top: 8px;">{{ "No changes to import. All translations are already up to date."|t('translation-manager') }}</p>`;
+            summaryHtml += `<p class="warning lr-mt-8">{{ "No changes to import. All translations are already up to date."|t('translation-manager') }}</p>`;
         }
         summaryDiv.innerHTML = summaryHtml;
 
@@ -608,7 +608,7 @@
                     <td>${escapeHtml(key)}</td>
                     <td>${escapeHtml(item.newValue)}</td>
                     <td>${escapeHtml(item.oldValue) || '<span class="light">{{ "Empty"|t('translation-manager') }}</span>'}</td>
-                    <td><span style="color: #E67E22;">{{ "Update"|t('translation-manager') }}</span></td>
+                    <td><span class="lr-text-orange">{{ "Update"|t('translation-manager') }}</span></td>
                 </tr>
             `;
             index++;
