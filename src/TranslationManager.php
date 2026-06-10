@@ -205,7 +205,7 @@ class TranslationManager extends Plugin
                             ],
                         ],
                         'translationManager:manageImportExport' => [
-                            'label' => Craft::t('translation-manager', 'Manage import/export'),
+                            'label' => Craft::t('translation-manager', 'Manage Import/Export'),
                             'nested' => [
                                 'translationManager:importTranslations' => [
                                     'label' => Craft::t('translation-manager', 'Import {plural}', ['plural' => $plural]),
@@ -233,7 +233,7 @@ class TranslationManager extends Plugin
                             ],
                         ],
                         'translationManager:manageBackups' => [
-                            'label' => Craft::t('translation-manager', 'Manage backups'),
+                            'label' => Craft::t('translation-manager', 'Manage Backups'),
                             'nested' => [
                                 'translationManager:createBackups' => [
                                     'label' => Craft::t('translation-manager', 'Create backups'),
@@ -250,13 +250,13 @@ class TranslationManager extends Plugin
                             ],
                         ],
                         'translationManager:maintenance' => [
-                            'label' => Craft::t('translation-manager', 'Perform maintenance'),
+                            'label' => Craft::t('translation-manager', 'Perform Maintenance'),
                             'nested' => [
                                 'translationManager:cleanUnused' => [
                                     'label' => Craft::t('translation-manager', 'Clean unused {plural}', ['plural' => $plural]),
                                 ],
                                 'translationManager:scanTemplates' => [
-                                    'label' => Craft::t('translation-manager', 'Scan templates'),
+                                    'label' => Craft::t('translation-manager', 'Scan Templates'),
                                 ],
                                 'translationManager:recaptureFormie' => [
                                     'label' => Craft::t('translation-manager', 'Recapture {name} {plural}', ['name' => $formieName, 'plural' => $plural]),
