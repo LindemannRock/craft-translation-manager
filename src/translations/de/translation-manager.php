@@ -624,7 +624,7 @@ return [
     'Auto (detect)' => 'Auto (erkennen)',
     'Comma (,)' => 'Komma (,)',
     'Semicolon (;)' => 'Semikolon (;)',
-    'Tab' => 'Tab',
+    'Tab' => 'Tabstopp',
     'Pipe (|)' => 'Pipe (|)',
     'Upload & Map Columns' => 'Hochladen und Spalten zuordnen',
     'CSV Import' => 'CSV-Import',

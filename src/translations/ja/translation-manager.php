@@ -619,7 +619,7 @@ return [
     'Import translations from a CSV file.' => 'CSV ファイルから翻訳をインポートします。',
     'CSV File' => 'CSV ファイル',
     'Select a CSV file to import translations' => '翻訳をインポートする CSV ファイルを選択',
-    'CSV Delimiter' => 'CSV デリミター',
+    'CSV Delimiter' => 'CSV 区切り文字',
     'Character used to separate values in your CSV (auto-detect is default)' => 'CSV の値を区切る文字（デフォルトは自動検出）',
     'Auto (detect)' => '自動（検出）',
     'Comma (,)' => 'カンマ（,）',

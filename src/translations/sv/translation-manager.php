@@ -625,7 +625,7 @@ return [
     'Comma (,)' => 'Komma (,)',
     'Semicolon (;)' => 'Semikolon (;)',
     'Tab' => 'Tabb',
-    'Pipe (|)' => 'Pipe (|)',
+    'Pipe (|)' => 'Vertikalstreck (|)',
     'Upload & Map Columns' => 'Ladda upp och mappa kolumner',
     'CSV Import' => 'CSV-import',
     'PHP Import' => 'PHP-import',
