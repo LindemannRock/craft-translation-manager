@@ -44,19 +44,23 @@ final class HelpController extends AbstractHelpController
                     'description' => 'Capture, import, generate, and AI-draft translations.',
                     'commands' => [
                         [
-                            'path' => 'translations/capture-formie',
-                            'summary' => 'Capture translatable text from Formie forms.',
-                            'description' => 'Scan Formie forms and add their translatable strings to Translation Manager.',
+                            'path' => 'translations/capture-provider',
+                            'summary' => 'Capture translatable text from a form provider.',
+                            'description' => 'Scan a registered form provider and add its translatable strings to Translation Manager.',
+                            'arguments' => '<provider>',
                             'examples' => [
-                                'translation-manager/translations/capture-formie',
+                                'translation-manager/translations/capture-provider formie',
+                                'translation-manager/translations/capture-provider freeform',
                             ],
                         ],
                         [
-                            'path' => 'translations/generate-formie',
-                            'summary' => 'Generate Formie translation files.',
-                            'description' => 'Write translated Formie strings from the database to PHP translation files.',
+                            'path' => 'translations/generate-provider',
+                            'summary' => 'Generate provider translation files.',
+                            'description' => 'Write translated form-provider strings from the database to PHP translation files.',
+                            'arguments' => '<provider>',
                             'examples' => [
-                                'translation-manager/translations/generate-formie',
+                                'translation-manager/translations/generate-provider formie',
+                                'translation-manager/translations/generate-provider freeform',
                             ],
                         ],
                         [
@@ -69,8 +73,8 @@ final class HelpController extends AbstractHelpController
                         ],
                         [
                             'path' => 'translations/generate-all',
-                            'summary' => 'Generate Formie and site translation files.',
-                            'description' => 'Run both Formie and site translation file generation in one command.',
+                            'summary' => 'Generate provider and site translation files.',
+                            'description' => 'Run enabled form-provider and site translation file generation in one command.',
                             'examples' => [
                                 'translation-manager/translations/generate-all',
                             ],

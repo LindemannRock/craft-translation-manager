@@ -29,7 +29,7 @@ class TranslationsController extends Controller
     /**
      * @var string The default action
      */
-    public $defaultAction = 'capture-formie';
+    public $defaultAction = 'generate-all';
 
     /**
      * @var string|null Restrict `import` to a single language (the file's directory name).
@@ -132,101 +132,87 @@ class TranslationsController extends Controller
     }
 
     /**
-     * Capture all existing Formie form translations
+     * Capture all existing translations for a form provider.
      */
-    public function actionCaptureFormie(): int
+    public function actionCaptureProvider(string $provider): int
     {
-        $this->stdout("Capturing Formie form translations...\n", Console::FG_YELLOW);
-        
-        // Check if Formie is installed and enabled
-        if (!PluginHelper::isPluginEnabled('formie')) {
-            $this->stderr("Formie plugin is not installed or enabled.\n", Console::FG_RED);
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $integration = $integrationService->get($provider);
+
+        if ($integration === null || $integration->getSourceType() !== 'forms') {
+            $this->stderr("Provider \"{$provider}\" is not a registered form integration.\n", Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;
         }
 
-        // Check if Formie integration is enabled
-        if (!TranslationManager::getInstance()->getSettings()->enableFormieIntegration) {
-            $this->stderr("Formie integration is not enabled in settings.\n", Console::FG_RED);
+        $pluginName = PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()));
+        $this->stdout("Capturing {$pluginName} form translations...\n", Console::FG_YELLOW);
+
+        if (!$integration->isAvailable()) {
+            $this->stderr("{$pluginName} integration is not available.\n", Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+
+        if (!$integrationService->isIntegrationEnabled($provider)) {
+            $this->stderr("{$pluginName} integration is not enabled in settings.\n", Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;
         }
 
         try {
-            $forms = \verbb\formie\Formie::getInstance()->getForms()->getAllForms();
-            $totalForms = count($forms);
-            
-            if ($totalForms === 0) {
-                $this->stdout("No forms found.\n", Console::FG_YELLOW);
-                return ExitCode::OK;
-            }
+            $result = $integration->recaptureAll();
 
-            $this->stdout("Found {$totalForms} forms to process.\n\n", Console::FG_GREEN);
-
-            /** @var IntegrationService $integrationService */
-            $integrationService = TranslationManager::getInstance()->get('integrations');
-            $formieIntegration = $integrationService->get('formie');
-            if ($formieIntegration === null) {
-                $this->stderr("Formie integration is not available.\n", Console::FG_RED);
-                return ExitCode::UNSPECIFIED_ERROR;
-            }
-
-            $processed = 0;
-
-            foreach ($forms as $form) {
-                $this->stdout("Processing form: {$form->title} ({$form->handle})... ", Console::FG_CYAN);
-                
-                try {
-                    $formieIntegration->captureTranslations($form);
-                    $processed++;
-                    $this->stdout("Done\n", Console::FG_GREEN);
-                } catch (\Exception $e) {
-                    $this->stdout("Failed\n", Console::FG_RED);
-                    $this->stderr("  Error: {$e->getMessage()}\n", Console::FG_RED);
-                }
-            }
-
-            $this->stdout("\n");
-            $this->stdout("Processed {$processed} of {$totalForms} forms successfully.\n", Console::FG_GREEN);
-            
-            // Check for unused translations after capturing
-            $this->stdout("Checking for unused translations...\n", Console::FG_YELLOW);
-            $formieIntegration->checkUsage();
-            $this->stdout("Usage check complete.\n", Console::FG_GREEN);
+            $this->stdout("Processed {$result['processed']} form(s).\n", Console::FG_CYAN);
+            $this->stdout("Captured {$result['captured']} translation row(s).\n", Console::FG_GREEN);
 
             return ExitCode::OK;
         } catch (\Exception $e) {
-            $this->stderr("Error capturing Formie translations: {$e->getMessage()}\n", Console::FG_RED);
+            $this->stderr("Error capturing {$pluginName} translations: {$e->getMessage()}\n", Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;
         }
     }
 
     /**
-     * Generate Formie translation files
+     * Generate translation files for a form provider.
      */
-    public function actionGenerateFormie(): int
+    public function actionGenerateProvider(string $provider): int
     {
-        $this->stdout("Generating Formie translation files...\n", Console::FG_YELLOW);
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $integration = $integrationService->get($provider);
+
+        if ($integration === null || $integration->getSourceType() !== 'forms') {
+            $this->stderr("Provider \"{$provider}\" is not a registered form integration.\n", Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+
+        $pluginName = PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()));
+        $this->stdout("Generating {$pluginName} translation files...\n", Console::FG_YELLOW);
+
+        if (!$integration->isAvailable() || !$integrationService->isIntegrationEnabled($provider)) {
+            $this->stderr("{$pluginName} integration is not available.\n", Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
 
         try {
-            $generationService = TranslationManager::getInstance()->generate;
-            $success = $generationService->generateFormieTranslations();
+            $success = TranslationManager::getInstance()->generate->generateProviderTranslations($provider);
 
-            if ($success) {
-                // Get count matching actual generation criteria (translated only, all sites)
-                $translations = TranslationManager::getInstance()->translations->getTranslations([
-                    'type' => 'forms',
-                    'category' => 'formie',
-                    'status' => 'translated',
-                    'allSites' => true,
-                ]);
-                $count = count($translations);
-                $this->stdout("Generated {$count} translated entries into Formie translation files\n", Console::FG_GREEN);
-                return ExitCode::OK;
-            } else {
+            if (!$success) {
                 $this->stderr("Generation failed\n", Console::FG_RED);
                 return ExitCode::UNSPECIFIED_ERROR;
             }
+
+            $translations = TranslationManager::getInstance()->translations->getTranslations([
+                'type' => 'forms',
+                'category' => $integration->getCategory(),
+                'status' => 'translated',
+                'allSites' => true,
+            ]);
+            $count = count($translations);
+            $this->stdout("Generated {$count} translated entries into {$pluginName} translation files\n", Console::FG_GREEN);
+
+            return ExitCode::OK;
         } catch (\Exception $e) {
-            $this->stderr("Error generating Formie translation files: {$e->getMessage()}\n", Console::FG_RED);
+            $this->stderr("Error generating {$pluginName} translation files: {$e->getMessage()}\n", Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;
         }
     }
@@ -253,24 +239,28 @@ class TranslationsController extends Controller
     }
 
     /**
-     * Generate all translation files (Formie + site)
+     * Generate all translation files (enabled form providers + site)
      */
     public function actionGenerateAll(): int
     {
         $this->stdout("Generating all translation files...\n\n", Console::FG_YELLOW);
 
-        // Generate Formie
-        $this->stdout("1. Generating Formie translation files...\n", Console::FG_CYAN);
-        $formieResult = $this->actionGenerateFormie();
+        $generationService = TranslationManager::getInstance()->generate;
+        $providerResults = $generationService->generateIntegrationTranslations('forms');
 
-        if ($formieResult !== ExitCode::OK) {
-            return $formieResult;
+        foreach ($providerResults as $provider => $success) {
+            $status = $success ? 'Done' : 'Failed';
+            $color = $success ? Console::FG_GREEN : Console::FG_RED;
+            $this->stdout("{$provider}: {$status}\n", $color);
+
+            if (!$success) {
+                return ExitCode::UNSPECIFIED_ERROR;
+            }
         }
 
         $this->stdout("\n");
 
-        // Generate site
-        $this->stdout("2. Generating site translation files...\n", Console::FG_CYAN);
+        $this->stdout("Generating site translation files...\n", Console::FG_CYAN);
         $siteResult = $this->actionGenerateSite();
 
         if ($siteResult !== ExitCode::OK) {
