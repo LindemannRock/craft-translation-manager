@@ -67,6 +67,7 @@ final class SettingsControllerSectionScopeTest extends TestCase
             ],
             'integrations' => [
                 'enableFormieIntegration',
+                'enableFreeformIntegration',
                 'excludeFormHandlePatterns',
             ],
             'ai' => [

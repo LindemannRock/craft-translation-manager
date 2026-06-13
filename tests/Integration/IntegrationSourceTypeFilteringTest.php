@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace lindemannrock\translationmanager\tests\Integration;
 
 use lindemannrock\translationmanager\integrations\BaseIntegration;
+use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
 
@@ -49,6 +50,45 @@ final class IntegrationSourceTypeFilteringTest extends TestCase
             self::assertSame(TestFormsProviderIntegration::CATEGORY, $row['category']);
             self::assertStringStartsWith(TestFormsProviderIntegration::CONTEXT_PREFIX . '.', $row['context']);
         }
+
+        $formsSources = array_column(
+            $this->translations->getTranslations(['type' => 'forms', 'allSites' => true]),
+            'source',
+        );
+        self::assertContains($providerSource, $formsSources);
+        self::assertNotContains($siteSource, $formsSources);
+
+        $siteSources = array_column(
+            $this->translations->getTranslations(['type' => 'site', 'allSites' => true]),
+            'source',
+        );
+        self::assertContains($siteSource, $siteSources);
+        self::assertNotContains($providerSource, $siteSources);
+    }
+
+    public function testBuiltInFreeformIntegrationMetadataIsRegistered(): void
+    {
+        $this->requireLatinSourceLanguage();
+        $this->requireAtLeastOneSite();
+
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $freeformIntegration = $integrationService->get('freeform');
+
+        self::assertNotNull($freeformIntegration);
+        self::assertSame('forms', $freeformIntegration->getSourceType());
+        self::assertSame('freeform', $freeformIntegration->getContextPrefix());
+        self::assertSame('freeform', $freeformIntegration->getCategory());
+        self::assertSame('freeform', $integrationService->getCategoryForContext('freeform.contact.label'));
+
+        $providerSource = self::MARKER . 'freeform_provider_' . bin2hex(random_bytes(4));
+        $siteSource = self::MARKER . 'freeform_site_' . bin2hex(random_bytes(4));
+
+        $providerCreated = $this->translations->createOrUpdateTranslation($providerSource, 'freeform.contact.label');
+        self::assertNotNull($providerCreated, 'Freeform-context source string should create translation rows.');
+
+        $siteCreated = $this->translations->createOrUpdateTranslation($siteSource, 'site.freeform-control');
+        self::assertNotNull($siteCreated, 'Site source string should create translation rows.');
 
         $formsSources = array_column(
             $this->translations->getTranslations(['type' => 'forms', 'allSites' => true]),
