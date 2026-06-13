@@ -204,16 +204,6 @@ class GenerationService extends Component
     }
 
     /**
-     * Generate Formie translation files.
-     *
-     * Compatibility wrapper for existing callers.
-     */
-    public function generateFormieTranslations(): bool
-    {
-        return $this->generateProviderTranslations('formie');
-    }
-
-    /**
      * Generate site translation files (per category)
      */
     public function generateSiteTranslations(): bool

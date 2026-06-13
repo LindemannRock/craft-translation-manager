@@ -1366,14 +1366,6 @@ class TranslationsService extends Component
     }
     
     /**
-     * Clear all Formie translations
-     */
-    public function clearFormieTranslations(): int
-    {
-        return $this->clearProviderTranslations('formie');
-    }
-
-    /**
      * Clear all translations for one integration provider.
      */
     public function clearProviderTranslations(string $provider): int
