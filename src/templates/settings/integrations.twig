@@ -37,7 +37,7 @@
         {% for provider in formProviders %}
             {% set settingName = 'enable' ~ provider.name|capitalize ~ 'Integration' %}
             {% set settingValue = attribute(settings, settingName) %}
-            {% set isInstalled = craft.app.plugins.isPluginEnabled(provider.pluginHandle) %}
+            {% set isInstalled = provider.installed %}
             {% set overrideWarning = null %}
             {% if settings.isOverriddenByConfig(settingName) %}
                 {% if settingName == 'enableFreeformIntegration' %}
