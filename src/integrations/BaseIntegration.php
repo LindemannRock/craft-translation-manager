@@ -187,6 +187,14 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
     }
 
     /**
+     * @inheritdoc
+     */
+    public function getActiveTranslationTexts(): array
+    {
+        return [];
+    }
+
+    /**
      * Create or update a translation with proper logging
      * Automatically skips text that is not in the source language
      *

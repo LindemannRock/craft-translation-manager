@@ -100,7 +100,12 @@ class GenerateController extends Controller
             $translationsService = TranslationManager::getInstance()->translations;
 
             // Check what's available to generate first
-            $formieCount = count($translationsService->getTranslations(['type' => 'forms', 'status' => 'translated', 'allSites' => true]));
+            $formieCount = count($translationsService->getTranslations([
+                'type' => 'forms',
+                'category' => 'formie',
+                'status' => 'translated',
+                'allSites' => true,
+            ]));
             $siteCount = count($translationsService->getTranslations(['type' => 'site', 'status' => 'translated', 'allSites' => true]));
 
             $this->logInfo("Generation preparation", [
@@ -184,7 +189,12 @@ class GenerateController extends Controller
         try {
             $this->logInfo('User requested Formie generation only');
             $translationsService = TranslationManager::getInstance()->translations;
-            $formieCount = count($translationsService->getTranslations(['type' => 'forms', 'status' => 'translated', 'allSites' => true]));
+            $formieCount = count($translationsService->getTranslations([
+                'type' => 'forms',
+                'category' => 'formie',
+                'status' => 'translated',
+                'allSites' => true,
+            ]));
 
             $this->logInfo("Formie generation preparation", ['formieCount' => $formieCount]);
 

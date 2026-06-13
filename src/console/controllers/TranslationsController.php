@@ -214,6 +214,7 @@ class TranslationsController extends Controller
                 // Get count matching actual generation criteria (translated only, all sites)
                 $translations = TranslationManager::getInstance()->translations->getTranslations([
                     'type' => 'forms',
+                    'category' => 'formie',
                     'status' => 'translated',
                     'allSites' => true,
                 ]);

@@ -214,15 +214,7 @@ class IntegrationService extends Component
      */
     public function getCategoryForContext(string $context): ?string
     {
-        foreach ($this->getAll() as $integration) {
-            $prefix = $integration->getContextPrefix();
-
-            if ($context === $prefix || str_starts_with($context, $prefix . '.')) {
-                return $integration->getCategory();
-            }
-        }
-
-        return null;
+        return $this->getIntegrationForContext($context)?->getCategory();
     }
 
     /**
@@ -230,9 +222,33 @@ class IntegrationService extends Component
      */
     public function getContextPrefixForCategory(string $category): ?string
     {
+        return $this->getIntegrationForCategory($category)?->getContextPrefix();
+    }
+
+    /**
+     * Resolve the integration for a translation context.
+     */
+    public function getIntegrationForContext(string $context): ?TranslationIntegrationInterface
+    {
+        foreach ($this->getAll() as $integration) {
+            $prefix = $integration->getContextPrefix();
+
+            if ($context === $prefix || str_starts_with($context, $prefix . '.')) {
+                return $integration;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve the integration for a translation category.
+     */
+    public function getIntegrationForCategory(string $category): ?TranslationIntegrationInterface
+    {
         foreach ($this->getAll() as $integration) {
             if ($integration->getCategory() === $category) {
-                return $integration->getContextPrefix();
+                return $integration;
             }
         }
 

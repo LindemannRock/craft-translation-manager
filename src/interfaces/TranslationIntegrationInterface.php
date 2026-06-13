@@ -77,6 +77,16 @@ interface TranslationIntegrationInterface
     public function captureTranslations($element): array;
 
     /**
+     * Get all currently active source strings owned by this integration.
+     *
+     * Used by maintenance usage checks to mark orphaned integration rows unused
+     * without hardcoding provider-specific traversal in the core service.
+     *
+     * @return array<string,true> Map keyed by translation source string
+     */
+    public function getActiveTranslationTexts(): array;
+
+    /**
      * Check usage of existing translations and mark unused ones
      * Called after content changes to clean up orphaned translations
      */

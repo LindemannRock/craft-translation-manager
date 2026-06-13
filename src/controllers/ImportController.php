@@ -21,6 +21,7 @@ use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\helpers\SiteLanguageHelper;
 use lindemannrock\translationmanager\records\ImportHistoryRecord;
 use lindemannrock\translationmanager\records\TranslationRecord;
+use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
@@ -576,13 +577,7 @@ class ImportController extends Controller
             $category = CsvImportHelper::stripFormulaEscapePrefix($category);
             $type = isset($translation['type']) ? strtolower(trim($translation['type'])) : '';
 
-            if (empty($category)) {
-                $category = 'messages';
-            }
-
-            if ($type === 'forms' || $context === 'formie' || str_starts_with($context, 'formie.')) {
-                $category = 'formie';
-            }
+            $category = $this->normalizeImportedCategory($category, $context, $type);
 
             $sourceHash = md5($keyText);
             $candidates[] = [
@@ -751,12 +746,7 @@ class ImportController extends Controller
                 if ($context === '') {
                     $context = 'site';
                 }
-                if ($category === '') {
-                    $category = 'messages';
-                }
-                if ($type === 'forms' || $context === 'formie' || str_starts_with($context, 'formie.')) {
-                    $category = 'formie';
-                }
+                $category = $this->normalizeImportedCategory($category, $context, $type);
 
                 if (strlen($keyText) > 5000 || strlen($translationText) > 5000) {
                     $errors[] = "Row {$rowNumber}: Text too long (max 5000 characters)";
@@ -853,7 +843,7 @@ class ImportController extends Controller
                     $translationRecord->reviewedAt = null;
                 }
 
-                if (str_starts_with($context, 'formie.') && $translationRecord->context !== $context) {
+                if ($this->getIntegrationService()->getIntegrationForContext($context) !== null && $translationRecord->context !== $context) {
                     if (substr_count($context, '.') > substr_count($translationRecord->context, '.')) {
                         $translationRecord->context = $context;
                     }
@@ -926,6 +916,39 @@ class ImportController extends Controller
         }
 
         return $value;
+    }
+
+    private function getIntegrationService(): IntegrationService
+    {
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+
+        return $integrationService;
+    }
+
+    private function normalizeImportedCategory(string $category, string $context, string $type): string
+    {
+        $integrationService = $this->getIntegrationService();
+        $contextCategory = $integrationService->getCategoryForContext($context);
+        if ($contextCategory !== null) {
+            return $contextCategory;
+        }
+
+        if ($category !== '') {
+            return $category;
+        }
+
+        if ($type === 'forms') {
+            $formIntegrations = $integrationService->getIntegrationsBySourceType('forms');
+            if (count($formIntegrations) === 1) {
+                $integration = reset($formIntegrations);
+                if ($integration !== false) {
+                    return $integration->getCategory();
+                }
+            }
+        }
+
+        return 'messages';
     }
 
     /**

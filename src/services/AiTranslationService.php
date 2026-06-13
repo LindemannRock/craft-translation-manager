@@ -144,15 +144,17 @@ class AiTranslationService extends Component
             ->limit(max(1, $limit));
 
         if ($type === 'forms') {
-            $query->andWhere(['or',
-                ['like', 'context', 'formie.%', false],
-                ['=', 'context', 'formie'],
-            ]);
+            $condition = $this->buildContextPrefixCondition(
+                $this->getIntegrationService()->getContextPrefixes('forms'),
+            );
+            $query->andWhere($condition ?? '0=1');
         } elseif ($type === 'site') {
-            $query->andWhere(['and',
-                ['not', ['like', 'context', 'formie.%', false]],
-                ['!=', 'context', 'formie'],
-            ]);
+            $condition = $this->buildContextPrefixCondition(
+                $this->getIntegrationService()->getIntegrationContextPrefixes(),
+            );
+            if ($condition !== null) {
+                $query->andWhere(['not', $condition]);
+            }
         }
 
         /** @var TranslationRecord[] $rows */
@@ -205,6 +207,33 @@ class AiTranslationService extends Component
         }
 
         return $result;
+    }
+
+    private function getIntegrationService(): IntegrationService
+    {
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+
+        return $integrationService;
+    }
+
+    /**
+     * @param string[] $prefixes
+     */
+    private function buildContextPrefixCondition(array $prefixes): ?array
+    {
+        $prefixes = array_values(array_unique(array_filter($prefixes)));
+        if ($prefixes === []) {
+            return null;
+        }
+
+        $conditions = ['or'];
+        foreach ($prefixes as $prefix) {
+            $conditions[] = ['=', 'context', $prefix];
+            $conditions[] = ['like', 'context', $prefix . '.%', false];
+        }
+
+        return $conditions;
     }
 
     /**

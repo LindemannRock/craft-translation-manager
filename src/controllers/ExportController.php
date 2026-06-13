@@ -16,6 +16,7 @@ use craft\web\Controller;
 use lindemannrock\base\helpers\ExportHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\records\TranslationRecord;
+use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
@@ -96,8 +97,10 @@ class ExportController extends Controller
             // Category filter
             $categoryParam = $request->getParam('category') ?: $request->getBodyParam('category');
             if ($categoryParam && $categoryParam !== 'all') {
-                if ($categoryParam === 'formie') {
-                    $criteria['type'] = 'forms';
+                $integration = $this->getIntegrationService()->getIntegrationForCategory($categoryParam);
+                if ($integration !== null) {
+                    $criteria['type'] = $integration->getSourceType();
+                    $criteria['category'] = $categoryParam;
                 } else {
                     $criteria['type'] = 'site';
                     $criteria['category'] = $categoryParam;
@@ -144,8 +147,7 @@ class ExportController extends Controller
                 }
 
                 $context = $translation['context'] ?? '';
-                $isFormie = str_starts_with($context, 'formie.') || $context === 'formie';
-                $typeLabel = $isFormie ? TranslationManager::getFormiePluginName() : 'Site';
+                $typeLabel = $this->getTypeLabelForContext($context);
 
                 $row = [
                     'translationKey' => $translation['translationKey'] ?? '',
@@ -287,8 +289,8 @@ class ExportController extends Controller
             $translation = $translationsById[$id];
 
             $context = $translation->context ?? '';
-            $isFormie = str_starts_with($context, 'formie.') || $context === 'formie';
-            $typeLabel = $isFormie ? TranslationManager::getFormiePluginName() : 'Site';
+            $integration = $this->getIntegrationService()->getIntegrationForContext($context);
+            $typeLabel = $this->getTypeLabelForContext($context);
 
             $row = [
                 'translationKey' => $translation->translationKey ?? '',
@@ -311,7 +313,7 @@ class ExportController extends Controller
             if (!empty($translation->language)) {
                 $languages[] = $translation->language;
             }
-            $types[] = $isFormie ? 'formie' : 'site';
+            $types[] = $integration?->getName() ?? 'site';
         }
 
         $languages = array_unique($languages);
@@ -374,6 +376,28 @@ class ExportController extends Controller
         }
 
         return $map[$id] ?? '';
+    }
+
+    private function getIntegrationService(): IntegrationService
+    {
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+
+        return $integrationService;
+    }
+
+    private function getTypeLabelForContext(string $context): string
+    {
+        $integration = $this->getIntegrationService()->getIntegrationForContext($context);
+        if ($integration === null) {
+            return 'Site';
+        }
+
+        if ($integration->getName() === 'formie') {
+            return TranslationManager::getFormiePluginName();
+        }
+
+        return ucfirst($integration->getName());
     }
 
     /**

@@ -191,6 +191,66 @@ class FormieIntegration extends BaseIntegration
     /**
      * @inheritdoc
      */
+    public function getActiveTranslationTexts(): array
+    {
+        $activeTexts = [];
+        $forms = \verbb\formie\Formie::getInstance()->getForms()->getAllForms();
+
+        foreach ($forms as $form) {
+            if ($form->title) {
+                $activeTexts[$form->title] = true;
+            }
+
+            foreach ($form->getPages() as $page) {
+                $pageSettings = $page->getPageSettings();
+
+                if ($pageSettings->submitButtonLabel ?? false) {
+                    $activeTexts[$pageSettings->submitButtonLabel] = true;
+                }
+                if ($pageSettings->backButtonLabel ?? false) {
+                    $activeTexts[$pageSettings->backButtonLabel] = true;
+                }
+                if ($pageSettings->saveButtonLabel ?? false) {
+                    $activeTexts[$pageSettings->saveButtonLabel] = true;
+                }
+            }
+
+            // IMPORTANT: read RAW properties — getters return translated content
+            if ($form->settings->submitActionMessage ?? false) {
+                $htmlMessage = $this->convertTipTapToHtml($form->settings->submitActionMessage);
+                if ($htmlMessage) {
+                    $activeTexts[$htmlMessage] = true;
+                    $plainMessage = $this->extractPlainTextFromFormie($htmlMessage);
+                    if ($plainMessage && $plainMessage !== $htmlMessage) {
+                        $activeTexts[$plainMessage] = true;
+                    }
+                }
+            }
+
+            if ($form->settings->errorMessage ?? false) {
+                $htmlMessage = $this->convertTipTapToHtml($form->settings->errorMessage);
+                if ($htmlMessage) {
+                    $activeTexts[$htmlMessage] = true;
+                    $plainMessage = $this->extractTextFromTipTap($htmlMessage);
+                    if ($plainMessage && $plainMessage !== $htmlMessage) {
+                        $activeTexts[$plainMessage] = true;
+                    }
+                }
+            }
+
+            foreach ($form->getCustomFields() as $field) {
+                $this->collectFieldTexts($field, $activeTexts);
+            }
+        }
+
+        $this->logDebug('Collected Formie active texts', ['count' => count($activeTexts)]);
+
+        return $activeTexts;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getSupportedContentTypes(): array
     {
         return [
@@ -851,6 +911,157 @@ class FormieIntegration extends BaseIntegration
     }
 
     /**
+     * Extract plain text from HTML or TipTap JSON format.
+     */
+    private function extractPlainTextFromFormie($content): string
+    {
+        if (empty($content)) {
+            return '';
+        }
+
+        // Try TipTap JSON first
+        $jsonText = $this->extractTextFromTipTap($content);
+        if ($jsonText !== $content) {
+            return $jsonText;
+        }
+
+        // If not JSON, try HTML stripping with paragraph preservation
+        if (is_string($content) && (strpos($content, '<') !== false)) {
+            $content = preg_replace('/<\/p>\s*<p[^>]*>/i', "\n\n", $content);
+            return trim(strip_tags($content));
+        }
+
+        return $content;
+    }
+
+    /**
+     * Recursively collect field texts including nested fields in groups.
+     *
+     * @param array<string,true> $activeTexts
+     */
+    private function collectFieldTexts($field, array &$activeTexts): void
+    {
+        // Basic field properties
+        if ($field->label) {
+            $activeTexts[$field->label] = true;
+        }
+
+        if ($field->instructions) {
+            $activeTexts[$field->instructions] = true;
+        }
+
+        if (property_exists($field, 'placeholder') && $field->placeholder) {
+            $activeTexts[$field->placeholder] = true;
+        }
+
+        if (property_exists($field, 'errorMessage') && $field->errorMessage) {
+            $activeTexts[$field->errorMessage] = true;
+        }
+
+        // Field type-specific content
+        $fieldClass = get_class($field);
+
+        switch ($fieldClass) {
+            case 'verbb\formie\fields\Group':
+                // Recursively process nested fields in groups
+                if (method_exists($field, 'getCustomFields')) {
+                    foreach ($field->getCustomFields() as $nestedField) {
+                        $this->collectFieldTexts($nestedField, $activeTexts);
+                    }
+                }
+                break;
+
+            case 'verbb\formie\fields\Html':
+                if (property_exists($field, 'htmlContent') && $field->htmlContent) {
+                    $activeTexts[$field->htmlContent] = true;
+                }
+                break;
+
+            case 'verbb\formie\fields\Heading':
+                if (property_exists($field, 'headingText') && $field->headingText) {
+                    $activeTexts[$field->headingText] = true;
+                }
+                break;
+
+            case 'lindemannrock\formieparagraphfield\fields\Paragraph':
+                if (property_exists($field, 'paragraphContent') && $field->paragraphContent) {
+                    $activeTexts[$field->paragraphContent] = true;
+                }
+                break;
+
+            case 'lindemannrock\formieratingfield\fields\Rating':
+                if (property_exists($field, 'showEndpointLabels') && $field->showEndpointLabels) {
+                    if (property_exists($field, 'startLabel') && $field->startLabel) {
+                        $activeTexts[$field->startLabel] = true;
+                    }
+                    if (property_exists($field, 'endLabel') && $field->endLabel) {
+                        $activeTexts[$field->endLabel] = true;
+                    }
+                }
+
+                // customLabels is an array of objects: [{"value": "", "label": "Text"}, ...]
+                if (property_exists($field, 'customLabels') && is_array($field->customLabels)) {
+                    foreach ($field->customLabels as $labelData) {
+                        if (is_array($labelData) && !empty($labelData['label'])) {
+                            $activeTexts[$labelData['label']] = true;
+                        }
+                    }
+                }
+
+                // Google Review integration messages
+                if (property_exists($field, 'enableGoogleReview') && $field->enableGoogleReview) {
+                    // Add message high (custom or default)
+                    $messageHigh = $field->googleReviewMessageHigh ?: 'Thank you for the excellent rating! We would love if you could share your experience with others.';
+                    $activeTexts[$messageHigh] = true;
+
+                    // Add message medium (custom or default)
+                    $messageMedium = $field->googleReviewMessageMedium ?: 'Thank you for your feedback!';
+                    $activeTexts[$messageMedium] = true;
+
+                    // Add message low (custom or default)
+                    $messageLow = $field->googleReviewMessageLow ?: 'Thank you for your feedback. We will use it to improve our service.';
+                    $activeTexts[$messageLow] = true;
+
+                    // Add button label (custom or default)
+                    $buttonLabel = $field->googleReviewButtonLabel ?: 'Review on Google';
+                    $activeTexts[$buttonLabel] = true;
+                }
+                break;
+
+            case 'verbb\formie\fields\Dropdown':
+            case 'verbb\formie\fields\Radio':
+            case 'verbb\formie\fields\Checkboxes':
+                if (property_exists($field, 'options') && is_array($field->options)) {
+                    foreach ($field->options as $option) {
+                        if (isset($option['label']) && !empty($option['label'])) {
+                            $activeTexts[$option['label']] = true;
+                        }
+                    }
+                }
+                break;
+
+            case 'verbb\formie\fields\Agree':
+                // Use getDescriptionHtml() method to get the actual HTML that Formie uses
+                if (method_exists($field, 'getDescriptionHtml')) {
+                    $descriptionHtml = $field->getDescriptionHtml();
+                    if (!empty($descriptionHtml)) {
+                        $activeTexts[(string)$descriptionHtml] = true;
+                    }
+                }
+
+                // Agree field checked/unchecked values
+                if (property_exists($field, 'checkedValue') && $field->checkedValue) {
+                    $activeTexts[$field->checkedValue] = true;
+                }
+
+                if (property_exists($field, 'uncheckedValue') && $field->uncheckedValue) {
+                    $activeTexts[$field->uncheckedValue] = true;
+                }
+                break;
+        }
+    }
+
+    /**
      * Convert TipTap JSON to clean HTML
      */
     private function convertTipTapToHtml($content): string
@@ -911,5 +1122,44 @@ class FormieIntegration extends BaseIntegration
         }
 
         return implode('', $htmlParts);
+    }
+
+    /**
+     * Extract text from TipTap/ProseMirror JSON format.
+     */
+    private function extractTextFromTipTap($jsonString): string
+    {
+        if (empty($jsonString)) {
+            return '';
+        }
+
+        // If it's already plain text, return it
+        if (!is_string($jsonString) || $jsonString[0] !== '[') {
+            return $jsonString;
+        }
+
+        try {
+            $data = json_decode($jsonString, true);
+            if (!is_array($data)) {
+                return $jsonString;
+            }
+
+            $textParts = [];
+
+            // Iterate through all blocks
+            foreach ($data as $block) {
+                if (isset($block['content']) && is_array($block['content'])) {
+                    foreach ($block['content'] as $textNode) {
+                        if (isset($textNode['type']) && $textNode['type'] === 'text' && isset($textNode['text'])) {
+                            $textParts[] = $textNode['text'];
+                        }
+                    }
+                }
+            }
+
+            return implode(' ', $textParts);
+        } catch (\Exception) {
+            return $jsonString;
+        }
     }
 }

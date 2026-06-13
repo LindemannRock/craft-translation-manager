@@ -15,6 +15,7 @@ use Craft;
 use craft\base\Component;
 use craft\helpers\FileHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\interfaces\TranslationIntegrationInterface;
 use lindemannrock\translationmanager\TranslationManager;
 
 /**
@@ -56,16 +57,16 @@ class GenerationService extends Component
     }
 
     /**
-     * Generate all translation files (Formie + site)
+     * Generate all translation files (enabled integrations + site)
      */
     public function generateAll(): array
     {
         $this->logInfo('Starting generateAll()');
         $results = [];
 
-        $this->logInfo('About to generate Formie translations');
-        $results['formie'] = $this->generateFormieTranslations();
-        $this->logInfo('Formie generation result', ['success' => $results['formie']]);
+        $this->logInfo('About to generate integration translations');
+        $results += $this->generateIntegrationTranslations();
+        $this->logInfo('Integration generation results', ['results' => $results]);
 
         $this->logInfo('About to generate site translations');
         $results['site'] = $this->generateSiteTranslations();
@@ -76,26 +77,68 @@ class GenerationService extends Component
     }
 
     /**
-     * Generate Formie translation files
+     * Generate translation files for every enabled integration.
+     *
+     * @return array<string,bool> Results keyed by integration name
      */
-    public function generateFormieTranslations(): bool
+    public function generateIntegrationTranslations(?string $sourceType = null): array
     {
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $integrations = $sourceType === null
+            ? $integrationService->getEnabledIntegrations()
+            : $integrationService->getIntegrationsBySourceType($sourceType, true);
+
+        $results = [];
+        foreach ($integrations as $integration) {
+            $results[$integration->getName()] = $this->generateProviderTranslations($integration->getName());
+        }
+
+        return $results;
+    }
+
+    /**
+     * Generate translation files for one integration provider.
+     */
+    public function generateProviderTranslations(string $provider): bool
+    {
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $integration = $integrationService->get($provider);
+
+        if (!$integration instanceof TranslationIntegrationInterface) {
+            $this->logInfo('Integration provider is not registered', ['provider' => $provider]);
+            return false;
+        }
+
         $settings = TranslationManager::getInstance()->getSettings();
         $translationsService = TranslationManager::getInstance()->translations;
+        $category = $integration->getCategory();
+        $filename = $category . '.php';
 
-        $this->logInfo('Starting Formie translation generation');
-
-        // NEW: Get Formie translations for ALL sites
-        $translations = $translationsService->getTranslations([
-            'type' => 'forms',
-            'status' => 'translated',
-            'allSites' => true,  // Get from all sites
+        $this->logInfo('Starting integration translation generation', [
+            'provider' => $provider,
+            'category' => $category,
         ]);
 
-        $this->logInfo('Found Formie translations to generate', ['count' => count($translations)]);
+        $translations = $translationsService->getTranslations([
+            'type' => $integration->getSourceType(),
+            'category' => $category,
+            'status' => 'translated',
+            'allSites' => true,
+        ]);
+
+        $this->logInfo('Found integration translations to generate', [
+            'provider' => $provider,
+            'category' => $category,
+            'count' => count($translations),
+        ]);
 
         if (empty($translations)) {
-            $this->logInfo('No Formie translations to generate');
+            $this->logInfo('No integration translations to generate', [
+                'provider' => $provider,
+                'category' => $category,
+            ]);
 
             // Delete existing files if they exist to prevent stale translations
             $basePath = $settings->getGenerationPath();
@@ -104,10 +147,14 @@ class GenerationService extends Component
             $sites = TranslationManager::getInstance()->getAllowedSites();
             foreach ($sites as $site) {
                 $generationLanguage = $this->getGenerationLanguage($site);
-                $file = $basePath . '/' . $generationLanguage . '/formie.php';
+                $file = $basePath . '/' . $generationLanguage . '/' . $filename;
                 if (file_exists($file)) {
                     @unlink($file);
-                    $this->logInfo("Deleted stale Formie file", ['file' => $file]);
+                    $this->logInfo('Deleted stale integration file', [
+                        'file' => $file,
+                        'provider' => $provider,
+                        'category' => $category,
+                    ]);
                 }
             }
 
@@ -140,11 +187,13 @@ class GenerationService extends Component
                 FileHelper::createDirectory($sitePath);
 
                 // Write translation file for this site
-                $this->writeTranslationFile($sitePath . '/formie.php', $siteTranslations, $site->name);
-                $this->logInfo("Generated Formie translations", [
+                $this->writeTranslationFile($sitePath . '/' . $filename, $siteTranslations, $site->name);
+                $this->logInfo('Generated integration translations', [
                     'count' => count($siteTranslations),
                     'site' => $site->name,
                     'language' => $generationLanguage,
+                    'provider' => $provider,
+                    'category' => $category,
                 ]);
             }
         }
@@ -152,6 +201,16 @@ class GenerationService extends Component
         // Don't clear caches - let them refresh naturally
 
         return true;
+    }
+
+    /**
+     * Generate Formie translation files.
+     *
+     * Compatibility wrapper for existing callers.
+     */
+    public function generateFormieTranslations(): bool
+    {
+        return $this->generateProviderTranslations('formie');
     }
 
     /**
