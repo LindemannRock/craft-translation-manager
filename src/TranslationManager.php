@@ -33,6 +33,7 @@ use lindemannrock\logginglibrary\LoggingLibrary;
 
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\i18n\LocaleMappingPhpMessageSource;
+use lindemannrock\translationmanager\i18n\MergedLocaleMappingPhpMessageSource;
 use lindemannrock\translationmanager\jobs\CreateBackupJob;
 use lindemannrock\translationmanager\listeners\MissingTranslationListener;
 use lindemannrock\translationmanager\models\Settings;
@@ -787,8 +788,13 @@ class TranslationManager extends Plugin
 
         // Register message source for each enabled category
         foreach ($categories as $category) {
+            $pluginTranslationsPath = $this->getPluginTranslationsPath($category);
+            $messageSourceClass = $pluginTranslationsPath === null
+                ? LocaleMappingPhpMessageSource::class
+                : MergedLocaleMappingPhpMessageSource::class;
+
             $i18n->translations[$category] = [
-                'class' => LocaleMappingPhpMessageSource::class,
+                'class' => $messageSourceClass,
                 'sourceLanguage' => $sourceLanguage, // Based on configured setting, not primary site
                 'basePath' => $basePath,
                 'forceTranslation' => true, // Force translation even for same language
@@ -797,7 +803,29 @@ class TranslationManager extends Plugin
                 ],
                 'localeMapping' => $localeMapping, // Pass the locale mapping configuration
             ];
+
+            if ($pluginTranslationsPath !== null) {
+                $i18n->translations[$category]['fallbackBasePath'] = $pluginTranslationsPath;
+            }
         }
+    }
+
+    /**
+     * Return a plugin's native translations path when the category is an enabled plugin handle.
+     */
+    private function getPluginTranslationsPath(string $category): ?string
+    {
+        if (!PluginHelper::isPluginEnabled($category)) {
+            return null;
+        }
+
+        $plugin = PluginHelper::getPlugin($category);
+        if (!$plugin instanceof Plugin) {
+            return null;
+        }
+
+        $path = $plugin->getBasePath() . DIRECTORY_SEPARATOR . 'translations';
+        return is_dir($path) ? $path : null;
     }
 
     /**

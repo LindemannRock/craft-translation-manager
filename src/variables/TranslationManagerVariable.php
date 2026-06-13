@@ -204,7 +204,7 @@ class TranslationManagerVariable
     /**
      * Get form providers for CP dropdowns and labels.
      *
-     * @return array<int,array{name:string,label:string,category:string,contextPrefix:string,pluginHandle:string,available:bool}>
+     * @return array<int,array{name:string,label:string,category:string,contextPrefix:string,pluginHandle:string,available:bool,installed:bool}>
      */
     public function getFormProviders(): array
     {
@@ -220,6 +220,7 @@ class TranslationManagerVariable
                 'contextPrefix' => $integration->getContextPrefix(),
                 'pluginHandle' => $integration->getPluginHandle(),
                 'available' => $integration->isAvailable(),
+                'installed' => \lindemannrock\base\helpers\PluginHelper::isPluginEnabled($integration->getPluginHandle()),
             ];
         }
 
@@ -227,7 +228,7 @@ class TranslationManagerVariable
     }
 
     /**
-     * @return array<int,array{name:string,label:string,category:string,contextPrefix:string,pluginHandle:string,available:bool}>
+     * @return array<int,array{name:string,label:string,category:string,contextPrefix:string,pluginHandle:string,available:bool,installed:bool}>
      */
     public function getEnabledFormProviders(): array
     {
