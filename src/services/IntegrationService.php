@@ -162,6 +162,98 @@ class IntegrationService extends Component
     }
 
     /**
+     * Get registered integrations for a source type.
+     *
+     * By default this includes registered integrations even when their target
+     * plugin is currently unavailable or disabled, so stale translation rows
+     * remain filterable and cleanable.
+     *
+     * @return TranslationIntegrationInterface[]
+     */
+    public function getIntegrationsBySourceType(string $sourceType, bool $enabledOnly = false): array
+    {
+        $this->ensureIntegrationsLoaded();
+
+        return array_filter(
+            $enabledOnly ? $this->getEnabledIntegrations() : $this->_integrations,
+            static fn(TranslationIntegrationInterface $integration): bool => $integration->getSourceType() === $sourceType,
+        );
+    }
+
+    /**
+     * Get context prefixes for registered integrations.
+     *
+     * @return string[]
+     */
+    public function getContextPrefixes(?string $sourceType = null, bool $enabledOnly = false): array
+    {
+        $integrations = $sourceType === null
+            ? ($enabledOnly ? $this->getEnabledIntegrations() : $this->getAll())
+            : $this->getIntegrationsBySourceType($sourceType, $enabledOnly);
+
+        $prefixes = [];
+        foreach ($integrations as $integration) {
+            $prefixes[] = $integration->getContextPrefix();
+        }
+
+        return array_values(array_unique(array_filter($prefixes)));
+    }
+
+    /**
+     * Get context prefixes that do not belong to site translations.
+     *
+     * @return string[]
+     */
+    public function getIntegrationContextPrefixes(bool $enabledOnly = false): array
+    {
+        return $this->getContextPrefixes(null, $enabledOnly);
+    }
+
+    /**
+     * Resolve the translation category for a context, if it belongs to an integration.
+     */
+    public function getCategoryForContext(string $context): ?string
+    {
+        foreach ($this->getAll() as $integration) {
+            $prefix = $integration->getContextPrefix();
+
+            if ($context === $prefix || str_starts_with($context, $prefix . '.')) {
+                return $integration->getCategory();
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve the context prefix for an integration category.
+     */
+    public function getContextPrefixForCategory(string $category): ?string
+    {
+        foreach ($this->getAll() as $integration) {
+            if ($integration->getCategory() === $category) {
+                return $integration->getContextPrefix();
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Check whether an integration category is registered and enabled.
+     */
+    public function isIntegrationCategoryEnabled(string $category): bool
+    {
+        foreach ($this->getAll() as $integration) {
+            if ($integration->getCategory() === $category) {
+                return $this->isIntegrationEnabled($integration->getName());
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Check if an integration is enabled in settings
      */
     public function isIntegrationEnabled(string $name): bool

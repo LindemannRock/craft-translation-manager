@@ -10,6 +10,7 @@
 
 namespace lindemannrock\translationmanager\variables;
 
+use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\TranslationManager;
 
 /**
@@ -90,28 +91,31 @@ class TranslationManagerVariable
      */
     public function getUnusedTranslationCounts(): array
     {
-        $query = new \craft\db\Query();
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $integrationCondition = $this->buildContextPrefixCondition(
+            $integrationService->getIntegrationContextPrefixes(),
+        );
+        $formieCondition = $this->buildContextPrefixCondition(['formie']);
 
-        // Get formie count
-        $formieCount = $query->from('{{%translationmanager_translations}}')
+        $formieCount = (new \craft\db\Query())
+            ->from('{{%translationmanager_translations}}')
             ->where(['status' => 'unused'])
-            ->andWhere(['or',
-                ['like', 'context', 'formie.%', false],
-                ['=', 'context', 'formie'],
-            ])
+            ->andWhere($formieCondition ?? '0=1')
             ->count();
 
         // Get per-category counts for site translations
-        $categoryCounts = (new \craft\db\Query())
+        $categoryQuery = (new \craft\db\Query())
             ->select(['category', 'COUNT(*) as count'])
             ->from('{{%translationmanager_translations}}')
             ->where(['status' => 'unused'])
-            ->andWhere(['not', ['or',
-                ['like', 'context', 'formie.%', false],
-                ['=', 'context', 'formie'],
-            ]])
-            ->groupBy(['category'])
-            ->all();
+            ->groupBy(['category']);
+
+        if ($integrationCondition !== null) {
+            $categoryQuery->andWhere(['not', $integrationCondition]);
+        }
+
+        $categoryCounts = $categoryQuery->all();
 
         $result = [
             'formie' => (int) $formieCount,
@@ -137,26 +141,29 @@ class TranslationManagerVariable
      */
     public function getTranslationCounts(): array
     {
-        $query = new \craft\db\Query();
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $integrationCondition = $this->buildContextPrefixCondition(
+            $integrationService->getIntegrationContextPrefixes(),
+        );
+        $formieCondition = $this->buildContextPrefixCondition(['formie']);
 
-        // Get formie count
-        $formieCount = $query->from('{{%translationmanager_translations}}')
-            ->where(['or',
-                ['like', 'context', 'formie.%', false],
-                ['=', 'context', 'formie'],
-            ])
+        $formieCount = (new \craft\db\Query())
+            ->from('{{%translationmanager_translations}}')
+            ->where($formieCondition ?? '0=1')
             ->count();
 
         // Get per-category counts for site translations
-        $categoryCounts = (new \craft\db\Query())
+        $categoryQuery = (new \craft\db\Query())
             ->select(['category', 'COUNT(*) as count'])
             ->from('{{%translationmanager_translations}}')
-            ->where(['not', ['or',
-                ['like', 'context', 'formie.%', false],
-                ['=', 'context', 'formie'],
-            ]])
-            ->groupBy(['category'])
-            ->all();
+            ->groupBy(['category']);
+
+        if ($integrationCondition !== null) {
+            $categoryQuery->where(['not', $integrationCondition]);
+        }
+
+        $categoryCounts = $categoryQuery->all();
 
         $result = [
             'formie' => (int) $formieCount,
@@ -174,6 +181,24 @@ class TranslationManagerVariable
         $result['total'] = $siteTotal + (int) $formieCount;
 
         return $result;
+    }
+
+    /**
+     * Build a context-prefix query condition.
+     *
+     * @param string[] $prefixes
+     * @return array<int, mixed>|null
+     */
+    private function buildContextPrefixCondition(array $prefixes): ?array
+    {
+        $conditions = [];
+
+        foreach (array_values(array_unique(array_filter($prefixes))) as $prefix) {
+            $conditions[] = ['like', 'context', $prefix . '.%', false];
+            $conditions[] = ['=', 'context', $prefix];
+        }
+
+        return $conditions === [] ? null : array_merge(['or'], $conditions);
     }
 
     /**

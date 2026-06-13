@@ -173,38 +173,33 @@ class TranslationsService extends Component
         $hasTypeFilter = false;
         if (!empty($criteria['type']) && $criteria['type'] !== 'all') {
             if ($criteria['type'] === 'forms') {
-                $query->andWhere(['or',
-                    ['like', 'context', 'formie.%', false],
-                    ['=', 'context', 'formie'],
-                ]);
+                $condition = $this->buildSourceTypeContextCondition('forms');
+                if ($condition === null) {
+                    return [];
+                }
+                $query->andWhere($condition);
                 $hasTypeFilter = true;
             } elseif ($criteria['type'] === 'site') {
-                $query->andWhere(['and',
-                    ['not', ['like', 'context', 'formie.%', false]],
-                    ['!=', 'context', 'formie'],
-                ]);
+                $condition = $this->buildNonIntegrationContextCondition();
+                if ($condition !== null) {
+                    $query->andWhere($condition);
+                }
                 $hasTypeFilter = true;
             }
         }
         
         // Only apply integration filters if no type filter was applied
         if (!$hasTypeFilter) {
-            // Filter based on enabled integrations
-            $conditions = [];
-            if (!$settings->enableFormieIntegration) {
-                $conditions[] = ['not', ['like', 'context', 'formie.%', false]];
-            }
             if (!$settings->enableSiteTranslations) {
-                $conditions[] = ['like', 'context', 'formie.%', false];
-            }
-
-            // Apply integration filters if both are not disabled
-            if (!empty($conditions)) {
-                if (count($conditions) === 2) {
-                    // If both are disabled, return empty array
+                $condition = $this->buildEnabledIntegrationContextCondition();
+                if ($condition === null) {
                     return [];
-                } else {
-                    $query->andWhere($conditions[0]);
+                }
+                $query->andWhere($condition);
+            } else {
+                $disabledCondition = $this->buildDisabledIntegrationContextCondition();
+                if ($disabledCondition !== null) {
+                    $query->andWhere(['not', $disabledCondition]);
                 }
             }
         }
@@ -260,11 +255,100 @@ class TranslationsService extends Component
             $query->orderBy([$sortMap[$sort] => $dir === 'desc' ? SORT_DESC : SORT_ASC]);
         }
 
-        // Get all translations. The "unused" status is maintained
-        // synchronously by FormieIntegration on form save and by the
-        // "Rescan all forms" maintenance action, so this read path
-        // no longer pays a per-request Formie-traversal cost.
+        // Get all translations. Integration rows maintain their "unused"
+        // status through provider save hooks and maintenance rescans, so this
+        // read path does not traverse forms on every request.
         return $query->all();
+    }
+
+    /**
+     * Get the integration registry.
+     */
+    private function getIntegrationService(): IntegrationService
+    {
+        /** @var IntegrationService $service */
+        $service = TranslationManager::getInstance()->get('integrations');
+
+        return $service;
+    }
+
+    /**
+     * Build a context condition for all registered integrations in a source type.
+     *
+     * @return array<int, mixed>|null
+     */
+    private function buildSourceTypeContextCondition(string $sourceType): ?array
+    {
+        return $this->buildContextPrefixCondition(
+            $this->getIntegrationService()->getContextPrefixes($sourceType),
+        );
+    }
+
+    /**
+     * Build a context condition for all enabled and available integrations.
+     *
+     * @return array<int, mixed>|null
+     */
+    private function buildEnabledIntegrationContextCondition(): ?array
+    {
+        return $this->buildContextPrefixCondition(
+            $this->getIntegrationService()->getIntegrationContextPrefixes(true),
+        );
+    }
+
+    /**
+     * Build a context condition for registered integrations disabled by settings.
+     *
+     * @return array<int, mixed>|null
+     */
+    private function buildDisabledIntegrationContextCondition(): ?array
+    {
+        $service = $this->getIntegrationService();
+        $prefixes = [];
+
+        foreach ($service->getAll() as $integration) {
+            if (!$service->isIntegrationEnabled($integration->getName())) {
+                $prefixes[] = $integration->getContextPrefix();
+            }
+        }
+
+        return $this->buildContextPrefixCondition($prefixes);
+    }
+
+    /**
+     * Build a condition matching rows that do not belong to any integration.
+     *
+     * @return array<int, mixed>|null
+     */
+    private function buildNonIntegrationContextCondition(): ?array
+    {
+        $condition = $this->buildContextPrefixCondition(
+            $this->getIntegrationService()->getIntegrationContextPrefixes(),
+        );
+
+        return $condition === null ? null : ['not', $condition];
+    }
+
+    /**
+     * Build a Yii condition matching exact context prefixes and dotted children.
+     *
+     * @param string[] $prefixes
+     * @return array<int, mixed>|null
+     */
+    private function buildContextPrefixCondition(array $prefixes): ?array
+    {
+        $conditions = [];
+
+        foreach (array_values(array_unique(array_filter($prefixes))) as $prefix) {
+            $conditions[] = ['like', 'context', $prefix . '.%', false];
+            $conditions[] = ['=', 'context', $prefix];
+        }
+
+        if ($conditions === []) {
+            return null;
+        }
+
+        return array_merge(['or'], $conditions);
     }
 
     /**
@@ -352,14 +436,14 @@ class TranslationsService extends Component
 
     /**
      * Derive translation category from context
-     * - formie.* contexts use 'formie' category
+     * - integration contexts use their integration category
      * - site.* contexts use the primary configured category
      */
     private function deriveCategoryFromContext(string $context): string
     {
-        // Formie contexts always use 'formie' category
-        if (str_starts_with($context, 'formie.') || $context === 'formie') {
-            return 'formie';
+        $integrationCategory = $this->getIntegrationService()->getCategoryForContext($context);
+        if ($integrationCategory !== null) {
+            return $integrationCategory;
         }
 
         // Site contexts use the primary configured category
@@ -551,7 +635,7 @@ class TranslationsService extends Component
         ];
 
         try {
-            // Get the configured translation categories (not formie)
+            // Get the configured site translation categories
             $settings = TranslationManager::getInstance()->getSettings();
             $categories = $settings->getEnabledCategories();
 
@@ -582,7 +666,7 @@ class TranslationsService extends Component
                 'by_category' => array_map('count', $foundKeysByCategory),
             ]);
 
-            // Get all site translations (not formie) - filter by enabled categories
+            // Get all site translations - filter by enabled categories
             // Include both 'site' context and 'runtime' context (from auto-capture)
             $siteTranslations = (new Query())
                 ->from(TranslationRecord::tableName())
@@ -920,7 +1004,8 @@ class TranslationsService extends Component
                         $record->translationKey = $key;
                         $record->language = $language;
                         $record->category = $category;
-                        $record->context = ($category === 'formie') ? 'formie.php-import' : 'site.php-import';
+                        $integrationPrefix = $this->getIntegrationService()->getContextPrefixForCategory($category);
+                        $record->context = $integrationPrefix === null ? 'site.php-import' : $integrationPrefix . '.php-import';
                         $record->siteId = SiteLanguageHelper::getSiteIdForLanguage($language);
                         $record->usageCount = 1;
                         $record->dateCreated = Db::prepareDateForDb(new \DateTime());
@@ -1018,7 +1103,7 @@ class TranslationsService extends Component
         $settings = TranslationManager::getInstance()->getSettings();
         $enabledCategories = $settings->getEnabledCategories();
         $isConfigured = in_array($category, $enabledCategories, true)
-            || ($category === 'formie' && $settings->enableFormieIntegration);
+            || $this->getIntegrationService()->isIntegrationCategoryEnabled($category);
 
         if ($isConfigured) {
             return [
@@ -1090,11 +1175,11 @@ class TranslationsService extends Component
     }
 
     /**
-     * Recompute "unused" status for all Formie translations and persist
+     * Recompute "unused" status for form-provider translations and persist
      * the result with batched UPDATEs.
      *
-     * Called synchronously by FormieIntegration on form save and by the
-     * maintenance "Rescan all forms" action — never on the read path.
+     * Called synchronously by form integrations on save and by the maintenance
+     * "Rescan all forms" action — never on the read path.
      * Handles both directions: marks newly-orphaned strings unused, and
      * restores the appropriate non-unused status when a previously
      * orphaned string becomes active again.
@@ -1111,10 +1196,7 @@ class TranslationsService extends Component
         $rows = (new Query())
             ->select(['id', 'context', 'translationKey', 'translation', 'status'])
             ->from(TranslationRecord::tableName())
-            ->where(['or',
-                ['context' => 'formie'],
-                new \yii\db\Expression('[[context]] LIKE :formiePrefix', [':formiePrefix' => 'formie.%']),
-            ])
+            ->where($this->buildSourceTypeContextCondition('forms') ?? '0=1')
             ->all();
 
         $shouldBeUnused = [];
@@ -1282,21 +1364,22 @@ class TranslationsService extends Component
         
 
         // Get type counts with same site filter
-        $formieCount = (new Query())
+        $formsCount = (new Query())
             ->from(TranslationRecord::tableName())
             ->andWhere($siteId ? ['siteId' => $siteId] : [])
-            ->andWhere(['or',
-                ['like', 'context', 'formie.%', false],
-                ['=', 'context', 'formie'],
-            ])->count();
+            ->andWhere($this->buildSourceTypeContextCondition('forms') ?? '0=1')
+            ->count();
         
-        $siteCount = (new Query())
+        $siteQuery = (new Query())
             ->from(TranslationRecord::tableName())
-            ->andWhere($siteId ? ['siteId' => $siteId] : [])
-            ->andWhere(['and',
-                ['not', ['like', 'context', 'formie.%', false]],
-                ['!=', 'context', 'formie'],
-            ])->count();
+            ->andWhere($siteId ? ['siteId' => $siteId] : []);
+
+        $nonIntegrationCondition = $this->buildNonIntegrationContextCondition();
+        if ($nonIntegrationCondition !== null) {
+            $siteQuery->andWhere($nonIntegrationCondition);
+        }
+
+        $siteCount = $siteQuery->count();
 
         $stats = [
             'total' => $total,
@@ -1304,7 +1387,8 @@ class TranslationsService extends Component
             'draft' => $draft,
             'translated' => $translated,
             'unused' => $unused,
-            'formie' => $formieCount,
+            'formie' => $this->countTranslationsForContextPrefixes(['formie'], $siteId),
+            'forms' => $formsCount,
             'site' => $siteCount,
         ];
         
@@ -1320,15 +1404,30 @@ class TranslationsService extends Component
         
         return $stats;
     }
+
+    /**
+     * Count translations for context prefixes.
+     *
+     * @param string[] $prefixes
+     */
+    private function countTranslationsForContextPrefixes(array $prefixes, ?int $siteId = null): int
+    {
+        return (int) (new Query())
+            ->from(TranslationRecord::tableName())
+            ->andWhere($siteId ? ['siteId' => $siteId] : [])
+            ->andWhere($this->buildContextPrefixCondition($prefixes) ?? '0=1')
+            ->count();
+    }
     
     /**
      * Clear all Formie translations
      */
     public function clearFormieTranslations(): int
     {
-        $count = Db::delete(TranslationRecord::tableName(), [
-            'like', 'context', 'formie.%', false,
-        ]);
+        $count = Db::delete(
+            TranslationRecord::tableName(),
+            $this->buildContextPrefixCondition(['formie']) ?? '0=1',
+        );
         
         // Delete corresponding translation files
         if ($count > 0) {
@@ -1345,9 +1444,10 @@ class TranslationsService extends Component
      */
     public function clearSiteTranslations(): int
     {
-        $count = Db::delete(TranslationRecord::tableName(), [
-            'not', ['like', 'context', 'formie.%', false],
-        ]);
+        $count = Db::delete(
+            TranslationRecord::tableName(),
+            $this->buildNonIntegrationContextCondition() ?? [],
+        );
         
         // Delete corresponding translation files
         if ($count > 0) {
@@ -1512,9 +1612,8 @@ class TranslationsService extends Component
      */
     public function getUnusedTranslationCount(): int
     {
-        // Simply count translations marked as "not used" from Formie
         return (int) TranslationRecord::find()
-            ->where(['like', 'context', 'formie.%', false])
+            ->where($this->buildSourceTypeContextCondition('forms') ?? '0=1')
             ->andWhere(['status' => 'unused'])
             ->count();
     }
@@ -1526,7 +1625,7 @@ class TranslationsService extends Component
     {
         $deleted = TranslationRecord::deleteAll([
             'and',
-            ['like', 'context', 'formie.%', false],
+            $this->buildSourceTypeContextCondition('forms') ?? '0=1',
             ['status' => 'unused'],
         ]);
         

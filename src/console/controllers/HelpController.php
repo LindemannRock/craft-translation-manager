@@ -160,7 +160,7 @@ final class HelpController extends AbstractHelpController
                             'path' => 'maintenance/clean-by-type',
                             'summary' => 'Delete unused rows by type.',
                             'description' => 'Delete unused rows for all translations, site translations, or form translations. Provider filtering is only valid for form translations.',
-                            'usageOptions' => '--type=<all|site|forms> [--provider=<formie|freeform>]',
+                            'usageOptions' => '--type=<all|site|forms> [--provider=<provider>]',
                             'options' => [
                                 [
                                     'name' => '--type',
@@ -169,7 +169,7 @@ final class HelpController extends AbstractHelpController
                                 ],
                                 [
                                     'name' => '--provider',
-                                    'description' => 'Only with --type=forms. Use formie or freeform.',
+                                    'description' => 'Only with --type=forms. Use a registered form provider such as formie.',
                                 ],
                             ],
                             'examples' => [

@@ -13,6 +13,7 @@ namespace lindemannrock\translationmanager\console\controllers;
 use Craft;
 use craft\console\Controller;
 use craft\helpers\Console;
+use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\console\ExitCode;
 
@@ -188,7 +189,7 @@ class MaintenanceController extends Controller
     public function actionCleanByType(): int
     {
         if ($this->type === '') {
-            $this->stdout('Usage: craft translation-manager/maintenance/clean-by-type --type=[all|site|forms] [--provider=formie]' . PHP_EOL, Console::FG_YELLOW);
+            $this->stdout('Usage: craft translation-manager/maintenance/clean-by-type --type=[all|site|forms] [--provider=<provider>]' . PHP_EOL, Console::FG_YELLOW);
             return ExitCode::USAGE;
         }
 
@@ -215,7 +216,8 @@ class MaintenanceController extends Controller
                 $providerConditions = $this->getFormsProviderConditions($this->provider);
 
                 if ($providerConditions === []) {
-                    $this->stdout("Invalid provider: {$this->provider}. Use: formie or freeform" . PHP_EOL, Console::FG_RED);
+                    $validProviders = $this->getFormsProviderHandles();
+                    $this->stdout("Invalid provider: {$this->provider}. Use: " . implode(', ', $validProviders) . PHP_EOL, Console::FG_RED);
                     return ExitCode::USAGE;
                 }
 
@@ -262,18 +264,48 @@ class MaintenanceController extends Controller
      */
     private function getFormsProviderConditions(?string $provider): array
     {
-        $providers = $provider === null ? ['formie', 'freeform'] : [$provider];
-        $conditions = [];
+        $providers = $this->getFormsProviderContextPrefixes();
 
-        foreach ($providers as $providerHandle) {
-            if (!in_array($providerHandle, ['formie', 'freeform'], true)) {
+        if ($provider !== null) {
+            if (!isset($providers[$provider])) {
                 return [];
             }
 
-            $conditions[] = ['like', 'context', $providerHandle . '.%', false];
-            $conditions[] = ['=', 'context', $providerHandle];
+            $providers = [$provider => $providers[$provider]];
+        }
+
+        $conditions = [];
+
+        foreach ($providers as $contextPrefix) {
+            $conditions[] = ['like', 'context', $contextPrefix . '.%', false];
+            $conditions[] = ['=', 'context', $contextPrefix];
         }
 
         return $conditions;
+    }
+
+    /**
+     * @return string[]
+     */
+    private function getFormsProviderHandles(): array
+    {
+        return array_keys($this->getFormsProviderContextPrefixes());
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function getFormsProviderContextPrefixes(): array
+    {
+        $providers = [];
+
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+
+        foreach ($integrationService->getIntegrationsBySourceType('forms') as $integration) {
+            $providers[$integration->getName()] = $integration->getContextPrefix();
+        }
+
+        return $providers;
     }
 }

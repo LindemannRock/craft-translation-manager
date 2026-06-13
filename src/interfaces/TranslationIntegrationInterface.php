@@ -34,6 +34,29 @@ interface TranslationIntegrationInterface
     public function getPluginHandle(): string;
 
     /**
+     * Get the broad translation source type this integration belongs to
+     * (e.g., 'forms', 'campaigns', 'commerce')
+     *
+     * @return string
+     */
+    public function getSourceType(): string;
+
+    /**
+     * Get the context prefix used for translations captured by this integration
+     * (e.g., 'formie' for formie.* contexts)
+     *
+     * @return string
+     */
+    public function getContextPrefix(): string;
+
+    /**
+     * Get the translation category used when generating/importing this integration
+     *
+     * @return string
+     */
+    public function getCategory(): string;
+
+    /**
      * Check if the target plugin is installed and compatible
      *
      * @return bool

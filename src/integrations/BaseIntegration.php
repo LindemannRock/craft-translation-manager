@@ -163,6 +163,30 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
     }
 
     /**
+     * @inheritdoc
+     */
+    public function getSourceType(): string
+    {
+        return $this->getTranslationType();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getContextPrefix(): string
+    {
+        return $this->getName();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getCategory(): string
+    {
+        return $this->getContextPrefix();
+    }
+
+    /**
      * Create or update a translation with proper logging
      * Automatically skips text that is not in the source language
      *
