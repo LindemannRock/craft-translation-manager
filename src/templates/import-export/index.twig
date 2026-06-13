@@ -72,9 +72,9 @@
             }) }}
 
             {% set categoryOptions = [{value: '', label: 'All Categories'|t('translation-manager')}] %}
-            {% if settings.enableFormieIntegration %}
-                {% set categoryOptions = categoryOptions|merge([{value: 'formie', label: craft.translationManager.getFormiePluginName()}]) %}
-            {% endif %}
+            {% for provider in craft.translationManager.getEnabledFormProviders() %}
+                {% set categoryOptions = categoryOptions|merge([{value: provider.category, label: provider.label}]) %}
+            {% endfor %}
             {% if settings.enableSiteTranslations %}
                 {% for category in settings.getEnabledCategories() %}
                     {% set categoryOptions = categoryOptions|merge([{value: category, label: category|title}]) %}
@@ -454,17 +454,22 @@
             });
             languageSelect.innerHTML = languageHtml;
 
-            // Update category dropdown - include enabled categories + formie + detected category
+            // Update category dropdown - include enabled categories + form providers + detected category
             const enabledCategories = {{ settings.getEnabledCategories()|json_encode|raw }};
-            const formieEnabled = {{ settings.enableFormieIntegration ? 'true' : 'false' }};
+            {% set formProviderCategories = [] %}
+            {% for provider in craft.translationManager.getEnabledFormProviders() %}
+                {% set formProviderCategories = formProviderCategories|merge([provider.category]) %}
+            {% endfor %}
+            const formProviderCategories = {{ formProviderCategories|json_encode|raw }};
 
             // Build list of all available categories
             let allCategories = [...enabledCategories];
 
-            // Add 'formie' if Formie integration is enabled and not already in list
-            if (formieEnabled && !allCategories.includes('formie')) {
-                allCategories.push('formie');
-            }
+            formProviderCategories.forEach(cat => {
+                if (cat && !allCategories.includes(cat)) {
+                    allCategories.push(cat);
+                }
+            });
 
             // Add the detected category from filename if not already in list
             if (category && !allCategories.includes(category)) {

@@ -4,7 +4,8 @@
    hasAnyGeneratePermission) and `settings` arrive pre-computed from the
    controller. Filter values arrive pre-validated — no re-validation here. #}
 
-{% set showTypeCol = settings.enableFormieIntegration and settings.enableSiteTranslations %}
+{% set formProviders = craft.translationManager.getEnabledFormProviders() %}
+{% set showTypeCol = formProviders|length and settings.enableSiteTranslations %}
 {% set showCategoryCol = allCategories|length > 1 %}
 
 {# Language switcher in crumbs #}
@@ -78,7 +79,7 @@
             current: type,
             options: [
                 { value: 'all', label: 'All Types'|t('translation-manager'), status: 'all' },
-                { value: 'forms', label: craft.translationManager.getFormiePluginName(), statusColor: lrSetColor('translationTypes', 'forms').color },
+                { value: 'forms', label: 'Forms'|t('translation-manager'), statusColor: lrSetColor('translationTypes', 'forms').color },
                 { value: 'site', label: 'Site'|t('translation-manager'), statusColor: lrSetColor('translationTypes', 'site').color },
             ],
         }])
@@ -220,8 +221,9 @@
 {% block tableRow %}
     {% if showTypeCol %}
         <td data-column="type" class="lr-hideable-column">
-            {% if item.context starts with 'formie.' %}
-                <span class="light">{{ craft.translationManager.getFormiePluginName() }}</span>
+            {% set providerLabel = craft.translationManager.getFormProviderLabelForContext(item.context) %}
+            {% if providerLabel %}
+                <span class="light">{{ providerLabel }}</span>
             {% else %}
                 <span class="light">{{ 'Site'|t('translation-manager') }}</span>
             {% endif %}
@@ -321,8 +323,12 @@
                     {% if canGenerateAll %}
                         <li><a href="#" id="generate-all-btn">{{ 'Generate All Files'|t('translation-manager') }}</a></li>
                     {% endif %}
-                    {% if settings.enableFormieIntegration and canGenerateFormie %}
-                        <li><a href="#" id="generate-formie-btn">{{ 'Generate {name} Files Only'|t('translation-manager', {name: craft.translationManager.getFormiePluginName()}) }}</a></li>
+                    {% if canGenerateFormie %}
+                        {% for provider in formProviders %}
+                            {% if provider.available %}
+                                <li><a href="#" class="generate-provider-btn" data-provider="{{ provider.name }}">{{ 'Generate {name} Files Only'|t('translation-manager', {name: provider.label}) }}</a></li>
+                            {% endif %}
+                        {% endfor %}
                     {% endif %}
                     {% if settings.enableSiteTranslations and canGenerateSite %}
                         <li><a href="#" id="generate-site-btn">{{ 'Generate {name} Files Only'|t('translation-manager', {name: settings.translationCategory|title}) }}</a></li>
@@ -727,15 +733,17 @@
         {% if not settings.autoGenerate and hasAnyGeneratePermission %}
         function generateTranslationFiles(type) {
             let endpoint = '';
+            let data = {};
             if (type === 'all') {
                 endpoint = 'translation-manager/generate/files';
-            } else if (type === 'formie') {
-                endpoint = 'translation-manager/generate/formie-files';
+            } else if (type.startsWith('provider:')) {
+                endpoint = 'translation-manager/generate/provider-files';
+                data.provider = type.substring(9);
             } else if (type === 'site') {
                 endpoint = 'translation-manager/generate/site-files';
             }
 
-            Craft.sendActionRequest('POST', endpoint).then(function(response) {
+            Craft.sendActionRequest('POST', endpoint, {data}).then(function(response) {
                 const data = response.data;
                 if (data.success) {
                     Craft.cp.displayNotice(data.message || T.generateSuccess);
@@ -752,9 +760,11 @@
             generateTranslationFiles('all');
         });
 
-        document.getElementById('generate-formie-btn')?.addEventListener('click', function(e) {
-            e.preventDefault();
-            generateTranslationFiles('formie');
+        document.querySelectorAll('.generate-provider-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                generateTranslationFiles('provider:' + this.dataset.provider);
+            });
         });
 
         document.getElementById('generate-site-btn')?.addEventListener('click', function(e) {

@@ -33,8 +33,12 @@
                     {% if currentUser.can('translationManager:generateAllTranslations') %}
                         {% set generateOptions = generateOptions|merge([{value: 'all', label: 'Generate All Files'|t('translation-manager')}]) %}
                     {% endif %}
-                    {% if settings.enableFormieIntegration and currentUser.can('translationManager:generateFormieTranslations') %}
-                        {% set generateOptions = generateOptions|merge([{value: 'formie', label: ('Generate ' ~ craft.translationManager.getFormiePluginName() ~ ' Files Only')|t('translation-manager')}]) %}
+                    {% if currentUser.can('translationManager:generateFormieTranslations') %}
+                        {% for provider in craft.translationManager.getEnabledFormProviders() %}
+                            {% if provider.available %}
+                                {% set generateOptions = generateOptions|merge([{value: 'provider:' ~ provider.name, label: 'Generate {name} Files Only'|t('translation-manager', {name: provider.label})}]) %}
+                            {% endif %}
+                        {% endfor %}
                     {% endif %}
                     {% if settings.enableSiteTranslations and currentUser.can('translationManager:generateSiteTranslations') %}
                         {# Show each enabled category as a separate option #}
@@ -103,8 +107,9 @@
 
         if (type === 'all') {
             url = '{{ cpUrl('translation-manager/generate/files') }}';
-        } else if (type === 'formie') {
-            url = '{{ cpUrl('translation-manager/generate/formie-files') }}';
+        } else if (type.startsWith('provider:')) {
+            url = '{{ cpUrl('translation-manager/generate/provider-files') }}';
+            bodyData.provider = type.substring(9);
         } else if (type.startsWith('category:')) {
             // Handle per-category generation
             const category = type.substring(9); // Remove 'category:' prefix
