@@ -5,17 +5,19 @@
 
 {% set translationCounts = craft.translationManager.getTranslationCounts() %}
 {% set clearOptions = [{ value: '', label: 'Select an option'|t('translation-manager') }] %}
-{% if settings.enableFormieIntegration and currentUser.can('translationManager:clearFormie') %}
-    {% set clearOptions = clearOptions|merge([{ value: 'formie', label: craft.translationManager.getFormiePluginName() ~ ' Only (' ~ (translationCounts.formie|number_format) ~ ')' }]) %}
+{% if (enabledFormProviders|length or settings.enableSiteTranslations) and currentUser.can('translationManager:clearAll') %}
+    {% set clearOptions = clearOptions|merge([{ value: 'all', label: 'All (' ~ (translationCounts.total|number_format) ~ ')' }]) %}
 {% endif %}
+{% for provider in enabledFormProviders %}
+    {% if provider.canClear %}
+        {% set clearOptions = clearOptions|merge([{ value: 'provider:' ~ provider.name, label: provider.label ~ ' Only (' ~ ((translationCounts.providers[provider.name] ?? 0)|number_format) ~ ')' }]) %}
+    {% endif %}
+{% endfor %}
 {% if settings.enableSiteTranslations and currentUser.can('translationManager:clearSite') %}
     {% set enabledCategories = settings.getEnabledCategories() %}
     {% for category in enabledCategories %}
         {% set clearOptions = clearOptions|merge([{ value: 'category:' ~ category, label: category|title ~ ' Only (' ~ ((translationCounts[category] ?? 0)|number_format) ~ ')' }]) %}
     {% endfor %}
-{% endif %}
-{% if (settings.enableFormieIntegration or settings.enableSiteTranslations) and currentUser.can('translationManager:clearAll') %}
-    {% set clearOptions = clearOptions|merge([{ value: 'all', label: 'All (' ~ (translationCounts.total|number_format) ~ ')' }]) %}
 {% endif %}
 
 {% set formiePluginName = craft.translationManager.getFormiePluginName() %}
@@ -30,7 +32,7 @@
     options: clearOptions,
     value: ''
 }) }}
-{% elseif not (settings.enableFormieIntegration or settings.enableSiteTranslations) %}
+{% elseif not (enabledFormProviders|length or settings.enableSiteTranslations) %}
 <div class="field">
     <div class="heading">
         <label>{{ "Clear Translations"|t('translation-manager') }}</label>

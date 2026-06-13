@@ -16,8 +16,16 @@
 ] %}
 
 {% import "_includes/forms" as forms %}
+{% set formProviders = craft.translationManager.getFormProviders() %}
+{% set enabledFormProviders = craft.translationManager.getEnabledFormProviders() %}
+{% set recapturableFormProviders = [] %}
+{% for provider in enabledFormProviders %}
+    {% if provider.available and provider.canRecapture %}
+        {% set recapturableFormProviders = recapturableFormProviders|merge([provider]) %}
+    {% endif %}
+{% endfor %}
 {% set canScan = currentUser.can('translationManager:scanTemplates')
-    or (settings.enableFormieIntegration and currentUser.can('translationManager:recaptureFormie')) %}
+    or recapturableFormProviders|length %}
 {% set canCleanup = currentUser.can('translationManager:cleanUnused') %}
 {% set canDanger = currentUser.can('translationManager:clearTranslations') %}
 
@@ -55,7 +63,8 @@
 {% set unusedCounts = {
     total: 0,
     site: 0,
-    formie: 0,
+    forms: 0,
+    providers: {},
 } %}
 {% set languageCleanup = {
     totalCandidates: 0,
@@ -70,8 +79,8 @@
 } %}
 {% set translationCounts = {
     total: 0,
-    formie: 0,
     site: 0,
+    providers: {},
 } %}
 {% if currentUser.can('translationManager:cleanUnused') %}
     {% set unusedCounts = craft.translationManager.getUnusedTranslationCounts() %}
@@ -138,13 +147,16 @@
     if (unusedTypeSelect) {
         const cleanupBackupDescriptionSuffix = '{{ settings.backupEnabled ? "A backup will be created automatically before deleting."|t('translation-manager')|e('js') : '' }}';
         const descriptions = {
-            all: '{{ "This will permanently delete ALL unused translations (both site and form translations) that are no longer used anywhere."|t('translation-manager')|e('js') }}',
-            formie: '{{ "This will permanently delete unused form translations from deleted forms or fields."|t('translation-manager')|e('js') }}'
+            all: '{{ "This will permanently delete ALL unused translations (both site and form translations) that are no longer used anywhere."|t('translation-manager')|e('js') }}'
         };
         const counts = {
-            all: {{ unusedCounts.total ?? 0 }},
-            formie: {{ unusedCounts.formie ?? 0 }},
+            all: {{ unusedCounts.total ?? 0 }}
         };
+
+        {% for provider in enabledFormProviders %}
+        descriptions['provider:{{ provider.name|e('js') }}'] = '{{ "This will permanently delete unused form translations from deleted forms or fields."|t('translation-manager')|e('js') }}';
+        counts['provider:{{ provider.name|e('js') }}'] = {{ unusedCounts.providers[provider.name] ?? 0 }};
+        {% endfor %}
 
         // Add dynamic descriptions for each category
         {% for category in settings.getEnabledCategories() %}
@@ -197,9 +209,12 @@
             if (!type) return;
 
             const confirmMessages = {
-                all: '{{ "Are you sure you want to delete ALL unused translations?"|t('translation-manager')|e('js') }}',
-                formie: '{{ "Are you sure you want to delete unused form translations?"|t('translation-manager')|e('js') }}'
+                all: '{{ "Are you sure you want to delete ALL unused translations?"|t('translation-manager')|e('js') }}'
             };
+
+            {% for provider in enabledFormProviders %}
+            confirmMessages['provider:{{ provider.name|e('js') }}'] = '{{ "Are you sure you want to delete unused form translations?"|t('translation-manager')|e('js') }}';
+            {% endfor %}
 
             // Add dynamic confirm messages for each category
             {% for category in settings.getEnabledCategories() %}
@@ -472,15 +487,15 @@
         handleTemplateScan(rescanTemplatesBtn);
     }
 
-    // Handle recapture Formie button
-    const recaptureFormieBtn = document.getElementById('recapture-formie-btn');
-    if (recaptureFormieBtn) {
-        recaptureFormieBtn.addEventListener('click', function() {
+    // Handle form-provider recapture buttons
+    document.querySelectorAll('[data-recapture-provider]').forEach((recaptureBtn) => {
+        recaptureBtn.addEventListener('click', function() {
             const btn = this;
+            const provider = btn.getAttribute('data-recapture-provider');
             btn.classList.add('loading');
             btn.disabled = true;
 
-            fetch('{{ actionUrl('translation-manager/maintenance/recapture-formie') }}', {
+            fetch('{{ actionUrl('translation-manager/maintenance/recapture-provider') }}', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
@@ -488,7 +503,7 @@
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({})
+                body: JSON.stringify({provider: provider})
             })
             .then(response => response.json())
             .then(data => {
@@ -506,7 +521,7 @@
                 Craft.cp.displayError({{ 'Failed to recapture form translations: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
             });
         });
-    }
+    });
 
     // Handle clean unused button (original)
     const cleanUnusedBtn = document.getElementById('clean-unused-btn');
@@ -559,26 +574,29 @@
     const clearButton = document.getElementById('clearButton');
 
     if (clearTypeSelect) {
-        const hasFormie = {{ settings.enableFormieIntegration ? 'true' : 'false' }};
         const hasSite = {{ settings.enableSiteTranslations ? 'true' : 'false' }};
-        const formiePluginName = '{{ craft.translationManager.getFormiePluginName()|e('js') }}';
+        const hasForms = {{ enabledFormProviders|length ? 'true' : 'false' }};
+        const formTranslationsName = '{{ "Forms"|t('translation-manager')|e('js') }}';
         const backupDescriptionSuffix = '{{ settings.backupEnabled ? "A backup will be created automatically before deleting."|t('translation-manager')|e('js') : '' }}';
 
         let allDescription = '{{ "This will permanently delete ALL translations from the database and remove all translation files. Use this to start completely fresh."|t('translation-manager')|e('js') }}';
-        if (hasFormie && hasSite) {
+        if (hasForms && hasSite) {
             allDescription = `{{ "This will permanently delete ALL translations from the database and remove all translation files, including both {name} and site translations. Use this to start completely fresh."|t('translation-manager', {name: '__NAME__'})|e('js') }}`
-                .replaceAll('__NAME__', formiePluginName);
+                .replaceAll('__NAME__', formTranslationsName);
         }
 
         const descriptions = {
-            formie: `{{ "This will permanently delete all {name} form translations from the database and remove the corresponding translation files. Your forms will not be affected, only the stored translations will be removed."|t('translation-manager', {name: '__NAME__'})|e('js') }}`
-                .replaceAll('__NAME__', formiePluginName),
             all: allDescription
         };
         const counts = {
-            formie: {{ translationCounts.formie ?? 0 }},
             all: {{ translationCounts.total ?? 0 }}
         };
+
+        {% for provider in enabledFormProviders %}
+        descriptions['provider:{{ provider.name|e('js') }}'] = `{{ "This will permanently delete all {name} form translations from the database and remove the corresponding translation files. Your forms will not be affected, only the stored translations will be removed."|t('translation-manager', {name: '__NAME__'})|e('js') }}`
+            .replaceAll('__NAME__', '{{ provider.label|e('js') }}');
+        counts['provider:{{ provider.name|e('js') }}'] = {{ translationCounts.providers[provider.name] ?? 0 }};
+        {% endfor %}
 
         // Add dynamic descriptions for each category
         {% for category in settings.getEnabledCategories() %}
@@ -593,11 +611,14 @@
         }
 
         const confirmMessages = {
-            formie: `{{ "Are you sure you want to delete all {name} translations and their files? This action cannot be undone."|t('translation-manager', {name: '__NAME__'})|e('js') }}`
-                .replaceAll('__NAME__', formiePluginName),
             all: `{{ "Are you absolutely sure you want to delete ALL translations and files? This will remove both {name} and site translations. This action cannot be undone."|t('translation-manager', {name: '__NAME__'})|e('js') }}`
-                .replaceAll('__NAME__', formiePluginName)
+                .replaceAll('__NAME__', formTranslationsName)
         };
+
+        {% for provider in enabledFormProviders %}
+        confirmMessages['provider:{{ provider.name|e('js') }}'] = `{{ "Are you sure you want to delete all {name} translations and their files? This action cannot be undone."|t('translation-manager', {name: '__NAME__'})|e('js') }}`
+            .replaceAll('__NAME__', '{{ provider.label|e('js') }}');
+        {% endfor %}
 
         // Add dynamic confirm messages for each category
         {% for category in settings.getEnabledCategories() %}
@@ -605,9 +626,12 @@
         {% endfor %}
 
         const actions = {
-            formie: 'translation-manager/settings/clear-formie',
             all: 'translation-manager/settings/clear-all'
         };
+
+        {% for provider in enabledFormProviders %}
+        actions['provider:{{ provider.name|e('js') }}'] = 'translation-manager/settings/clear-provider';
+        {% endfor %}
 
         // Add dynamic actions for each category
         {% for category in settings.getEnabledCategories() %}
@@ -692,6 +716,14 @@
                     categoryInput.name = 'category';
                     categoryInput.value = selectedValue.substring(9); // Remove 'category:' prefix
                     form.appendChild(categoryInput);
+                }
+
+                if (selectedValue.startsWith('provider:')) {
+                    const providerInput = document.createElement('input');
+                    providerInput.type = 'hidden';
+                    providerInput.name = 'provider';
+                    providerInput.value = selectedValue.substring(9);
+                    form.appendChild(providerInput);
                 }
 
                 // Add redirect input with proper hash

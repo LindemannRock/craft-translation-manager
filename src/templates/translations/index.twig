@@ -323,13 +323,11 @@
                     {% if canGenerateAll %}
                         <li><a href="#" id="generate-all-btn">{{ 'Generate All Files'|t('translation-manager') }}</a></li>
                     {% endif %}
-                    {% if canGenerateFormie %}
-                        {% for provider in formProviders %}
-                            {% if provider.available %}
-                                <li><a href="#" class="generate-provider-btn" data-provider="{{ provider.name }}">{{ 'Generate {name} Files Only'|t('translation-manager', {name: provider.label}) }}</a></li>
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
+                    {% for provider in formProviders %}
+                        {% if provider.available and provider.canGenerate %}
+                            <li><a href="#" class="generate-provider-btn" data-provider="{{ provider.name }}">{{ 'Generate {name} Files Only'|t('translation-manager', {name: provider.label}) }}</a></li>
+                        {% endif %}
+                    {% endfor %}
                     {% if settings.enableSiteTranslations and canGenerateSite %}
                         <li><a href="#" id="generate-site-btn">{{ 'Generate {name} Files Only'|t('translation-manager', {name: settings.translationCategory|title}) }}</a></li>
                     {% endif %}

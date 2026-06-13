@@ -33,13 +33,11 @@
                     {% if currentUser.can('translationManager:generateAllTranslations') %}
                         {% set generateOptions = generateOptions|merge([{value: 'all', label: 'Generate All Files'|t('translation-manager')}]) %}
                     {% endif %}
-                    {% if currentUser.can('translationManager:generateFormieTranslations') %}
-                        {% for provider in craft.translationManager.getEnabledFormProviders() %}
-                            {% if provider.available %}
-                                {% set generateOptions = generateOptions|merge([{value: 'provider:' ~ provider.name, label: 'Generate {name} Files Only'|t('translation-manager', {name: provider.label})}]) %}
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
+                    {% for provider in craft.translationManager.getEnabledFormProviders() %}
+                        {% if provider.available and provider.canGenerate %}
+                            {% set generateOptions = generateOptions|merge([{value: 'provider:' ~ provider.name, label: 'Generate {name} Files Only'|t('translation-manager', {name: provider.label})}]) %}
+                        {% endif %}
+                    {% endfor %}
                     {% if settings.enableSiteTranslations and currentUser.can('translationManager:generateSiteTranslations') %}
                         {# Show each enabled category as a separate option #}
                         {% set enabledCategories = settings.getEnabledCategories() %}

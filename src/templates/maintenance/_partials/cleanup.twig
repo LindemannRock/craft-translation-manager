@@ -16,8 +16,8 @@
                     {{ "You have {total} unused translation(s): {site} site translations and {formie} {formieName} translations"|t('translation-manager', {
                         total: totalUnused|number_format,
                         site: unusedCounts.site|number_format,
-                        formie: unusedCounts.formie|number_format,
-                        formieName: craft.translationManager.getFormiePluginName()|lower
+                        formie: unusedCounts.forms|number_format,
+                        formieName: 'form'
                     }) }}
                 </p>
             </div>
@@ -27,13 +27,13 @@
                     {value: '', label: 'Select type'|t('translation-manager')},
                     {value: 'all', label: 'All Unused ({count})'|t('translation-manager', {count: totalUnused|number_format})}
                 ] %}
+                {% for provider in enabledFormProviders %}
+                    {% set unusedOptions = unusedOptions|merge([{value: 'provider:' ~ provider.name, label: 'Unused ' ~ provider.label ~ ' (' ~ ((unusedCounts.providers[provider.name] ?? 0)|number_format) ~ ')'}]) %}
+                {% endfor %}
                 {% set enabledCategories = settings.getEnabledCategories() %}
                 {% for category in enabledCategories %}
                     {% set unusedOptions = unusedOptions|merge([{value: 'category:' ~ category, label: 'Unused ' ~ category|title ~ ' (' ~ ((unusedCounts[category] ?? 0)|number_format) ~ ')'}]) %}
                 {% endfor %}
-                {% if settings.enableFormieIntegration %}
-                    {% set unusedOptions = unusedOptions|merge([{value: 'formie', label: 'Unused ' ~ craft.translationManager.getFormiePluginName() ~ ' (' ~ (unusedCounts.formie|number_format) ~ ')'}]) %}
-                {% endif %}
                 {{ forms.selectField({
                     label: "Type to Clean"|t('translation-manager'),
                     id: 'unusedType',
