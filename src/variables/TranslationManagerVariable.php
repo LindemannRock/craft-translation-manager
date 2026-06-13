@@ -96,13 +96,19 @@ class TranslationManagerVariable
         $integrationCondition = $this->buildContextPrefixCondition(
             $integrationService->getIntegrationContextPrefixes(),
         );
-        $formieCondition = $this->buildContextPrefixCondition(['formie']);
+        $providerCounts = [];
+        $formsTotal = 0;
+        foreach ($integrationService->getIntegrationsBySourceType('forms') as $integration) {
+            $condition = $this->buildContextPrefixCondition([$integration->getContextPrefix()]);
+            $count = (int)(new \craft\db\Query())
+                ->from('{{%translationmanager_translations}}')
+                ->where(['status' => 'unused'])
+                ->andWhere($condition ?? '0=1')
+                ->count();
 
-        $formieCount = (new \craft\db\Query())
-            ->from('{{%translationmanager_translations}}')
-            ->where(['status' => 'unused'])
-            ->andWhere($formieCondition ?? '0=1')
-            ->count();
+            $providerCounts[$integration->getName()] = $count;
+            $formsTotal += $count;
+        }
 
         // Get per-category counts for site translations
         $categoryQuery = (new \craft\db\Query())
@@ -117,9 +123,9 @@ class TranslationManagerVariable
 
         $categoryCounts = $categoryQuery->all();
 
-        $result = [
-            'formie' => (int) $formieCount,
-        ];
+        $result = $providerCounts;
+        $result['providers'] = $providerCounts;
+        $result['forms'] = $formsTotal;
 
         $siteTotal = 0;
         foreach ($categoryCounts as $row) {
@@ -129,9 +135,9 @@ class TranslationManagerVariable
             $siteTotal += $count;
         }
 
-        // Keep 'site' for backwards compatibility (sum of all non-formie)
+        // Keep 'site' for backwards compatibility (sum of all non-integration rows)
         $result['site'] = $siteTotal;
-        $result['total'] = $siteTotal + (int) $formieCount;
+        $result['total'] = $siteTotal + $formsTotal;
 
         return $result;
     }
@@ -146,12 +152,18 @@ class TranslationManagerVariable
         $integrationCondition = $this->buildContextPrefixCondition(
             $integrationService->getIntegrationContextPrefixes(),
         );
-        $formieCondition = $this->buildContextPrefixCondition(['formie']);
+        $providerCounts = [];
+        $formsTotal = 0;
+        foreach ($integrationService->getIntegrationsBySourceType('forms') as $integration) {
+            $condition = $this->buildContextPrefixCondition([$integration->getContextPrefix()]);
+            $count = (int)(new \craft\db\Query())
+                ->from('{{%translationmanager_translations}}')
+                ->where($condition ?? '0=1')
+                ->count();
 
-        $formieCount = (new \craft\db\Query())
-            ->from('{{%translationmanager_translations}}')
-            ->where($formieCondition ?? '0=1')
-            ->count();
+            $providerCounts[$integration->getName()] = $count;
+            $formsTotal += $count;
+        }
 
         // Get per-category counts for site translations
         $categoryQuery = (new \craft\db\Query())
@@ -165,9 +177,9 @@ class TranslationManagerVariable
 
         $categoryCounts = $categoryQuery->all();
 
-        $result = [
-            'formie' => (int) $formieCount,
-        ];
+        $result = $providerCounts;
+        $result['providers'] = $providerCounts;
+        $result['forms'] = $formsTotal;
 
         $siteTotal = 0;
         foreach ($categoryCounts as $row) {
@@ -178,7 +190,7 @@ class TranslationManagerVariable
         }
 
         $result['site'] = $siteTotal;
-        $result['total'] = $siteTotal + (int) $formieCount;
+        $result['total'] = $siteTotal + $formsTotal;
 
         return $result;
     }
@@ -204,7 +216,7 @@ class TranslationManagerVariable
     /**
      * Get form providers for CP dropdowns and labels.
      *
-     * @return array<int,array{name:string,label:string,category:string,contextPrefix:string,pluginHandle:string,available:bool,installed:bool}>
+     * @return array<int,array{name:string,label:string,category:string,contextPrefix:string,pluginHandle:string,available:bool,installed:bool,generatePermission:string,recapturePermission:string,clearPermission:string,canGenerate:bool,canRecapture:bool,canClear:bool}>
      */
     public function getFormProviders(): array
     {
@@ -213,14 +225,25 @@ class TranslationManagerVariable
         $providers = [];
 
         foreach ($integrationService->getIntegrationsBySourceType('forms') as $integration) {
+            $name = $integration->getName();
+            $generatePermission = $integrationService->getGenerateProviderPermission($name);
+            $recapturePermission = $integrationService->getRecaptureProviderPermission($name);
+            $clearPermission = $integrationService->getClearProviderPermission($name);
+
             $providers[] = [
-                'name' => $integration->getName(),
-                'label' => \lindemannrock\base\helpers\PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName())),
+                'name' => $name,
+                'label' => \lindemannrock\base\helpers\PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($name)),
                 'category' => $integration->getCategory(),
                 'contextPrefix' => $integration->getContextPrefix(),
                 'pluginHandle' => $integration->getPluginHandle(),
                 'available' => $integration->isAvailable(),
                 'installed' => \lindemannrock\base\helpers\PluginHelper::isPluginEnabled($integration->getPluginHandle()),
+                'generatePermission' => $generatePermission,
+                'recapturePermission' => $recapturePermission,
+                'clearPermission' => $clearPermission,
+                'canGenerate' => \Craft::$app->getUser()->checkPermission($generatePermission),
+                'canRecapture' => \Craft::$app->getUser()->checkPermission($recapturePermission),
+                'canClear' => \Craft::$app->getUser()->checkPermission($clearPermission),
             ];
         }
 
@@ -228,7 +251,7 @@ class TranslationManagerVariable
     }
 
     /**
-     * @return array<int,array{name:string,label:string,category:string,contextPrefix:string,pluginHandle:string,available:bool,installed:bool}>
+     * @return array<int,array{name:string,label:string,category:string,contextPrefix:string,pluginHandle:string,available:bool,installed:bool,generatePermission:string,recapturePermission:string,clearPermission:string,canGenerate:bool,canRecapture:bool,canClear:bool}>
      */
     public function getEnabledFormProviders(): array
     {
@@ -339,8 +362,13 @@ class TranslationManagerVariable
             ->all();
 
         $enabledCategories = $settings->getEnabledCategories();
-        if ($settings->enableFormieIntegration && !in_array('formie', $enabledCategories, true)) {
-            $enabledCategories[] = 'formie';
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        foreach ($integrationService->getEnabledIntegrations() as $integration) {
+            $category = $integration->getCategory();
+            if (!in_array($category, $enabledCategories, true)) {
+                $enabledCategories[] = $category;
+            }
         }
         $enabledLookup = array_fill_keys(array_map('strtolower', array_filter($enabledCategories)), true);
 

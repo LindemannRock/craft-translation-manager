@@ -185,7 +185,30 @@ class TranslationManager extends Plugin
                 $settings = $this->getSettings();
                 $fullName = $settings->getFullName();
                 $plural = $settings->getPluralLowerDisplayName();
-                $formieName = self::getFormiePluginName();
+                /** @var IntegrationService $integrationService */
+                $integrationService = $this->get('integrations');
+                $generateProviderPermissions = [];
+                $recaptureProviderPermissions = [];
+                $clearProviderPermissions = [];
+
+                foreach ($integrationService->getIntegrationsBySourceType('forms') as $integration) {
+                    if (!$integration->isAvailable()) {
+                        continue;
+                    }
+
+                    $providerName = $integration->getName();
+                    $providerLabel = PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($providerName));
+
+                    $generateProviderPermissions[$integrationService->getGenerateProviderPermission($providerName)] = [
+                        'label' => Craft::t('translation-manager', 'Generate {name} files', ['name' => $providerLabel]),
+                    ];
+                    $recaptureProviderPermissions[$integrationService->getRecaptureProviderPermission($providerName)] = [
+                        'label' => Craft::t('translation-manager', 'Recapture {name} {plural}', ['name' => $providerLabel, 'plural' => $plural]),
+                    ];
+                    $clearProviderPermissions[$integrationService->getClearProviderPermission($providerName)] = [
+                        'label' => Craft::t('translation-manager', 'Clear {name} {plural}', ['name' => $providerLabel, 'plural' => $plural]),
+                    ];
+                }
 
                 $event->permissions[] = [
                     'heading' => $fullName,
@@ -225,10 +248,8 @@ class TranslationManager extends Plugin
                                 'translationManager:generateAllTranslations' => [
                                     'label' => Craft::t('translation-manager', 'Generate all files'),
                                 ],
-                                'translationManager:generateFormieTranslations' => [
-                                    'label' => Craft::t('translation-manager', 'Generate {name} files', ['name' => $formieName]),
-                                ],
-                                'translationManager:generateSiteTranslations' => [
+                            ] + $generateProviderPermissions + [
+                                    'translationManager:generateSiteTranslations' => [
                                     'label' => Craft::t('translation-manager', 'Generate site files'),
                                 ],
                             ],
@@ -259,17 +280,11 @@ class TranslationManager extends Plugin
                                 'translationManager:scanTemplates' => [
                                     'label' => Craft::t('translation-manager', 'Scan Templates'),
                                 ],
-                                'translationManager:recaptureFormie' => [
-                                    'label' => Craft::t('translation-manager', 'Recapture {name} {plural}', ['name' => $formieName, 'plural' => $plural]),
-                                ],
-                            ],
+                            ] + $recaptureProviderPermissions,
                         ],
                         'translationManager:clearTranslations' => [
                             'label' => Craft::t('translation-manager', 'Clear {plural}', ['plural' => $plural]),
-                            'nested' => [
-                                'translationManager:clearFormie' => [
-                                    'label' => Craft::t('translation-manager', 'Clear {name} {plural}', ['name' => $formieName, 'plural' => $plural]),
-                                ],
+                            'nested' => $clearProviderPermissions + [
                                 'translationManager:clearSite' => [
                                     'label' => Craft::t('translation-manager', 'Clear site {plural}', ['plural' => $plural]),
                                 ],
@@ -729,7 +744,6 @@ class TranslationManager extends Plugin
             // Generate routes (write PHP translation files to disk)
             'translation-manager/generate' => 'translation-manager/generate/index',
             'translation-manager/generate/files' => 'translation-manager/generate/files',
-            'translation-manager/generate/formie-files' => 'translation-manager/generate/formie-files',
             'translation-manager/generate/provider-files' => 'translation-manager/generate/provider-files',
             'translation-manager/generate/site-files' => 'translation-manager/generate/site-files',
             'translation-manager/generate/category-files' => 'translation-manager/generate/category-files',
@@ -750,7 +764,6 @@ class TranslationManager extends Plugin
             // Maintenance routes
             'translation-manager/maintenance' => 'translation-manager/maintenance/index',
             'translation-manager/maintenance/clean-unused' => 'translation-manager/maintenance/clean-unused',
-            'translation-manager/maintenance/recapture-formie' => 'translation-manager/maintenance/recapture-formie',
             'translation-manager/maintenance/recapture-provider' => 'translation-manager/maintenance/recapture-provider',
 
             // Backup routes
