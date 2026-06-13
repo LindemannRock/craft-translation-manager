@@ -14,6 +14,7 @@ use lindemannrock\translationmanager\integrations\BaseIntegration;
 use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
+use lindemannrock\translationmanager\variables\TranslationManagerVariable;
 
 /**
  * Pins generic source/provider filtering before adding another forms provider.
@@ -80,6 +81,23 @@ final class IntegrationSourceTypeFilteringTest extends TestCase
         self::assertSame('freeform', $freeformIntegration->getContextPrefix());
         self::assertSame('freeform', $freeformIntegration->getCategory());
         self::assertSame('freeform', $integrationService->getCategoryForContext('freeform.contact.label'));
+        self::assertSame(
+            'translationManager:generateProvider:freeform',
+            $integrationService->getGenerateProviderPermission('freeform'),
+        );
+        self::assertSame(
+            'translationManager:recaptureProvider:freeform',
+            $integrationService->getRecaptureProviderPermission('freeform'),
+        );
+        self::assertSame(
+            'translationManager:clearProvider:freeform',
+            $integrationService->getClearProviderPermission('freeform'),
+        );
+        self::assertNotSame(
+            $integrationService->getGenerateProviderPermission('formie'),
+            $integrationService->getGenerateProviderPermission('freeform'),
+            'Provider permission handles must stay provider-specific.',
+        );
 
         $providerSource = self::MARKER . 'freeform_provider_' . bin2hex(random_bytes(4));
         $siteSource = self::MARKER . 'freeform_site_' . bin2hex(random_bytes(4));
@@ -103,6 +121,52 @@ final class IntegrationSourceTypeFilteringTest extends TestCase
         );
         self::assertContains($siteSource, $siteSources);
         self::assertNotContains($providerSource, $siteSources);
+    }
+
+    public function testProviderMaintenanceCountsAndClearUseIntegrationMetadata(): void
+    {
+        $this->requireLatinSourceLanguage();
+        $this->requireAtLeastOneSite();
+
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $integrationService->register(
+            TestFormsProviderIntegration::NAME,
+            new TestFormsProviderIntegration(),
+        );
+
+        $providerSource = self::MARKER . 'provider_maintenance_' . bin2hex(random_bytes(4));
+        $siteSource = self::MARKER . 'site_maintenance_' . bin2hex(random_bytes(4));
+
+        $providerCreated = $this->translations->createOrUpdateTranslation(
+            $providerSource,
+            TestFormsProviderIntegration::CONTEXT_PREFIX . '.fixture.label',
+        );
+        $siteCreated = $this->translations->createOrUpdateTranslation($siteSource, 'site.fixture');
+
+        self::assertNotNull($providerCreated);
+        self::assertNotNull($siteCreated);
+
+        \Craft::$app->getDb()->createCommand()
+            ->update(
+                '{{%translationmanager_translations}}',
+                ['status' => 'unused'],
+                ['source' => $providerSource],
+            )
+            ->execute();
+
+        $counts = (new TranslationManagerVariable())->getUnusedTranslationCounts();
+        self::assertArrayHasKey('providers', $counts);
+        self::assertGreaterThanOrEqual(1, $counts['providers'][TestFormsProviderIntegration::NAME] ?? 0);
+
+        $deleted = $this->translations->clearProviderTranslations(TestFormsProviderIntegration::NAME);
+        self::assertGreaterThanOrEqual(1, $deleted);
+
+        self::assertSame([], $this->fetchRowsForSource($providerSource));
+        self::assertNotEmpty(
+            $this->fetchRowsForSource($siteSource),
+            'Provider clear must not delete site translation rows.',
+        );
     }
 }
 
