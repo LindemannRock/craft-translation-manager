@@ -53,21 +53,29 @@ class MaintenanceController extends Controller
                     throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to scan templates.'));
                 }
                 break;
-            case 'recapture-formie':
             case 'recapture-provider':
-                if (!$user->checkPermission('translationManager:recaptureFormie')) {
-                    throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to recapture Formie translations.'));
+                $provider = (string)Craft::$app->getRequest()->getBodyParam('provider', '');
+                /** @var IntegrationService $integrationService */
+                $integrationService = TranslationManager::getInstance()->get('integrations');
+                $integration = $integrationService->get($provider);
+                $providerLabel = $integration !== null
+                    ? PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()))
+                    : $provider;
+                if ($integration === null || !$integrationService->currentUserCanProviderAction('recapture', $provider)) {
+                    throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to recapture {name} translations.', ['name' => $providerLabel]));
                 }
                 break;
             default:
+                /** @var IntegrationService $integrationService */
+                $integrationService = TranslationManager::getInstance()->get('integrations');
                 // Index page - allow if user has ANY maintenance-related permission
                 $hasAccess =
                     $user->checkPermission('translationManager:maintenance') ||
                     $user->checkPermission('translationManager:cleanUnused') ||
                     $user->checkPermission('translationManager:scanTemplates') ||
-                    $user->checkPermission('translationManager:recaptureFormie') ||
+                    $integrationService->currentUserCanAnyFormsProviderAction('recapture') ||
                     $user->checkPermission('translationManager:clearTranslations') ||
-                    $user->checkPermission('translationManager:clearFormie') ||
+                    $integrationService->currentUserCanAnyFormsProviderAction('clear') ||
                     $user->checkPermission('translationManager:clearSite') ||
                     $user->checkPermission('translationManager:clearAll');
 
@@ -169,16 +177,6 @@ class MaintenanceController extends Controller
     }
 
     /**
-     * Force recapture all Formie translations
-     *
-     * @return Response
-     */
-    public function actionRecaptureFormie(): Response
-    {
-        return $this->recaptureProvider('formie');
-    }
-
-    /**
      * Recapture all translations for one form provider.
      *
      * @return Response
@@ -187,7 +185,6 @@ class MaintenanceController extends Controller
     {
         $this->requirePostRequest();
         $this->requireAcceptsJson();
-        $this->requirePermission('translationManager:recaptureFormie');
 
         return $this->recaptureProvider((string)Craft::$app->getRequest()->getRequiredBodyParam('provider'));
     }
@@ -196,7 +193,6 @@ class MaintenanceController extends Controller
     {
         $this->requirePostRequest();
         $this->requireAcceptsJson();
-        $this->requirePermission('translationManager:recaptureFormie');
 
         try {
             /** @var IntegrationService $integrationService */
@@ -211,9 +207,11 @@ class MaintenanceController extends Controller
             }
 
             if (!$integrationService->isIntegrationEnabled($integration->getName()) || !$integration->isAvailable()) {
+                $pluginName = PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()));
+
                 return $this->asJson([
                     'success' => false,
-                    'error' => Craft::t('translation-manager', 'Formie integration is not available.'),
+                    'error' => Craft::t('translation-manager', '{name} integration is not available.', ['name' => $pluginName]),
                 ]);
             }
 

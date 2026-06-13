@@ -42,14 +42,16 @@ class GenerateController extends Controller
                     throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate translation files.'));
                 }
                 break;
-            case 'formie-files':
-                if (!$user->checkPermission('translationManager:generateFormieTranslations')) {
-                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate Formie translation files.'));
-                }
-                break;
             case 'provider-files':
-                if (!$user->checkPermission('translationManager:generateFormieTranslations')) {
-                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate Formie translation files.'));
+                $provider = (string)Craft::$app->getRequest()->getBodyParam('provider', '');
+                /** @var IntegrationService $integrationService */
+                $integrationService = TranslationManager::getInstance()->get('integrations');
+                $integration = $integrationService->get($provider);
+                $providerLabel = $integration !== null
+                    ? PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()))
+                    : $provider;
+                if ($integration === null || !$integrationService->currentUserCanProviderAction('generate', $provider)) {
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate {name} translation files.', ['name' => $providerLabel]));
                 }
                 break;
             case 'site-files':
@@ -63,11 +65,13 @@ class GenerateController extends Controller
                 }
                 break;
             default:
+                /** @var IntegrationService $integrationService */
+                $integrationService = TranslationManager::getInstance()->get('integrations');
                 // Index page — any generate permission is sufficient
                 $hasGenerateAccess =
                     $user->checkPermission('translationManager:generateTranslations') ||
                     $user->checkPermission('translationManager:generateAllTranslations') ||
-                    $user->checkPermission('translationManager:generateFormieTranslations') ||
+                    $integrationService->currentUserCanAnyFormsProviderAction('generate') ||
                     $user->checkPermission('translationManager:generateSiteTranslations');
 
                 if (!$hasGenerateAccess) {
@@ -179,58 +183,6 @@ class GenerateController extends Controller
                         'integrations' => $integrationResults,
                         'site' => $siteResult,
                     ],
-                ]);
-            }
-
-            Craft::$app->getSession()->setNotice($message);
-            return $this->redirect('translation-manager');
-        } catch (\Exception $e) {
-            if (Craft::$app->getRequest()->getAcceptsJson()) {
-                return $this->asJson([
-                    'success' => false,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-
-            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Failed to generate translation files: {error}', ['error' => $e->getMessage()]));
-            return $this->redirect('translation-manager');
-        }
-    }
-
-    /**
-     * Generate Formie translation files
-     *
-     * @return Response
-     */
-    public function actionFormieFiles(): Response
-    {
-        $this->requirePostRequest();
-
-        try {
-            $this->logInfo('User requested Formie generation only');
-            $translationsService = TranslationManager::getInstance()->translations;
-            $formieCount = count($translationsService->getTranslations([
-                'type' => 'forms',
-                'category' => 'formie',
-                'status' => 'translated',
-                'allSites' => true,
-            ]));
-
-            $this->logInfo("Formie generation preparation", ['formieCount' => $formieCount]);
-
-            $pluginName = TranslationManager::getFormiePluginName();
-            if ($formieCount > 0) {
-                TranslationManager::getInstance()->generate->generateFormieTranslations();
-                $message = Craft::t('translation-manager', '{name} translation files generated successfully ({count} translations)', ['name' => $pluginName, 'count' => $formieCount]);
-                $this->logInfo("Formie generation completed", ['message' => $message]);
-            } else {
-                $message = Craft::t('translation-manager', 'No translated {name} translations found. Add translations first.', ['name' => $pluginName]);
-            }
-
-            if (Craft::$app->getRequest()->getAcceptsJson()) {
-                return $this->asJson([
-                    'success' => true,
-                    'message' => $message,
                 ]);
             }
 

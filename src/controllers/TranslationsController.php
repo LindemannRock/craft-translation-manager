@@ -158,10 +158,12 @@ class TranslationsController extends Controller
         $canDelete = $user->checkPermission('translationManager:deleteTranslations');
         $canExport = $user->checkPermission('translationManager:exportTranslations');
         $canGenerateAll = $user->checkPermission('translationManager:generateAllTranslations');
-        $canGenerateFormie = $user->checkPermission('translationManager:generateFormieTranslations');
+        /** @var \lindemannrock\translationmanager\services\IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $canGenerateProviders = $integrationService->currentUserCanAnyFormsProviderAction('generate');
         $canGenerateSite = $user->checkPermission('translationManager:generateSiteTranslations');
         $canGenerate = $user->checkPermission('translationManager:generateTranslations');
-        $hasAnyGeneratePermission = $canGenerate || $canGenerateAll || $canGenerateFormie || $canGenerateSite;
+        $hasAnyGeneratePermission = $canGenerate || $canGenerateAll || $canGenerateProviders || $canGenerateSite;
 
         return $this->renderTemplate('translation-manager/translations/index', [
             'translations' => $translations,
@@ -190,7 +192,7 @@ class TranslationsController extends Controller
             'canDelete' => $canDelete,
             'canExport' => $canExport,
             'canGenerateAll' => $canGenerateAll,
-            'canGenerateFormie' => $canGenerateFormie,
+            'canGenerateProviders' => $canGenerateProviders,
             'canGenerateSite' => $canGenerateSite,
             'hasAnyGeneratePermission' => $hasAnyGeneratePermission,
         ]);

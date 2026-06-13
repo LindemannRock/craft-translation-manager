@@ -38,10 +38,16 @@ class SettingsController extends Controller
         $user = Craft::$app->getUser();
 
         switch ($action->id) {
-            case 'clear-formie':
             case 'clear-provider':
-                if (!$user->checkPermission('translationManager:clearFormie')) {
-                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clear Formie translations.'));
+                $provider = (string)Craft::$app->getRequest()->getBodyParam('provider', '');
+                /** @var IntegrationService $integrationService */
+                $integrationService = TranslationManager::getInstance()->get('integrations');
+                $integration = $integrationService->get($provider);
+                $providerLabel = $integration !== null
+                    ? PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()))
+                    : $provider;
+                if ($integration === null || !$integrationService->currentUserCanProviderAction('clear', $provider)) {
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clear {name} translations.', ['name' => $providerLabel]));
                 }
                 break;
             case 'clear-site':
@@ -330,16 +336,6 @@ class SettingsController extends Controller
         return $this->redirectToPostedUrl();
     }
     
-    /**
-     * Clear Formie translations
-     *
-     * @return Response
-     */
-    public function actionClearFormie(): Response
-    {
-        return $this->clearProvider('formie');
-    }
-
     /**
      * Clear translations for a specific form provider.
      *
