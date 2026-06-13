@@ -27,7 +27,7 @@ Translation Manager registers granular permissions that can be assigned to user 
 |------------|-------------|
 | **`translationManager:generateTranslations`** | Parent — access the Generate section |
 | └─ `translationManager:generateAllTranslations` | Generate PHP translation files for all types |
-| └─ `translationManager:generateFormieTranslations` | Generate PHP translation files for Formie only |
+| └─ `translationManager:generateProvider:{provider}` | Generate PHP translation files for a registered form provider |
 | └─ `translationManager:generateSiteTranslations` | Generate PHP translation files for site only |
 
 ### Backups
@@ -47,14 +47,14 @@ Translation Manager registers granular permissions that can be assigned to user 
 | **`translationManager:maintenance`** | Parent — access the Maintenance section |
 | └─ `translationManager:cleanUnused` | Clean up unused translations |
 | └─ `translationManager:scanTemplates` | Run template scanner to identify unused translations |
-| └─ `translationManager:recaptureFormie` | Recapture all Formie form translations |
+| └─ `translationManager:recaptureProvider:{provider}` | Recapture all translations for a registered form provider |
 
 ### Clear Translations
 
 | Permission | Description |
 |------------|-------------|
 | **`translationManager:clearTranslations`** | Parent — access clear operations |
-| └─ `translationManager:clearFormie` | Delete all Formie translations |
+| └─ `translationManager:clearProvider:{provider}` | Delete all translations for a registered form provider |
 | └─ `translationManager:clearSite` | Delete all site translations |
 | └─ `translationManager:clearAll` | Delete all translations |
 

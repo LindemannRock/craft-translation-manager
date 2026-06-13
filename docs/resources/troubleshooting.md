@@ -18,9 +18,10 @@ Solutions to common issues and debugging tips.
 
 ## Translations Not Being Captured
 
-**Formie**: Save the form after adding fields, or run:
+**Form providers**: Save the form after adding fields, or run:
 ```bash
-php craft translation-manager/translations/capture-formie
+php craft translation-manager/translations/capture-provider formie
+php craft translation-manager/translations/capture-provider freeform
 ```
 
 **Site**: Use correct category and visit the frontend page:
@@ -59,8 +60,9 @@ php craft clear-caches/all
 ## Useful Commands
 
 ```bash
-# Recapture Formie forms
-php craft translation-manager/translations/capture-formie
+# Recapture form provider translations
+php craft translation-manager/translations/capture-provider formie
+php craft translation-manager/translations/capture-provider freeform
 ```
 
 ## Log Files

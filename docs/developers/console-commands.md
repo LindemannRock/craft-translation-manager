@@ -28,21 +28,23 @@ ddev craft help translation-manager/maintenance/clean-by-type
 
 ## Translation Commands
 
-### `translation-manager/translations/capture-formie`
+### `translation-manager/translations/capture-provider`
 
-Capture all translations from existing Formie forms and store them in the database.
+Capture all translations from an existing form provider and store them in the database.
 
 ```bash title="PHP"
-php craft translation-manager/translations/capture-formie
+php craft translation-manager/translations/capture-provider formie
+php craft translation-manager/translations/capture-provider freeform
 ```
 
 ```bash title="DDEV"
-ddev craft translation-manager/translations/capture-formie
+ddev craft translation-manager/translations/capture-provider formie
+ddev craft translation-manager/translations/capture-provider freeform
 ```
 
 ### `translation-manager/translations/generate-all`
 
-Generate all PHP translation files (Formie + site) from the database.
+Generate all PHP translation files (enabled form providers + site) from the database.
 
 ```bash title="PHP"
 php craft translation-manager/translations/generate-all
@@ -52,16 +54,18 @@ php craft translation-manager/translations/generate-all
 ddev craft translation-manager/translations/generate-all
 ```
 
-### `translation-manager/translations/generate-formie`
+### `translation-manager/translations/generate-provider`
 
-Generate Formie PHP translation files only.
+Generate PHP translation files for one form provider.
 
 ```bash title="PHP"
-php craft translation-manager/translations/generate-formie
+php craft translation-manager/translations/generate-provider formie
+php craft translation-manager/translations/generate-provider freeform
 ```
 
 ```bash title="DDEV"
-ddev craft translation-manager/translations/generate-formie
+ddev craft translation-manager/translations/generate-provider formie
+ddev craft translation-manager/translations/generate-provider freeform
 ```
 
 ### `translation-manager/translations/generate-site`

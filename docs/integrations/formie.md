@@ -101,10 +101,10 @@ Enable Formie integration in **Settings → Translation Manager**:
 If translations are missing, manually capture all Formie fields:
 
 ```bash
-php craft translation-manager/translations/capture-formie
+php craft translation-manager/translations/capture-provider formie
 ```
 
-Or use **Translation Manager → Maintenance → Recapture Formie Translations**.
+Or use **Translation Manager → Maintenance** and run the Formie scanner.
 
 ## Plugin Name Detection
 
