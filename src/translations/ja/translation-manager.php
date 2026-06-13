@@ -519,6 +519,7 @@ return [
     'Clear Selected Translations' => '選択した翻訳を削除する',
     'Clean Up Unused Translations' => '未使用翻訳を整理する',
     'Remove translations that are no longer used in templates or forms' => 'テンプレートまたはフォームで使用されなくなった翻訳を削除',
+    'You have {total} unused translation(s): {site} site translations and {forms} form translations' => '{total} 件の未使用翻訳があります: サイト翻訳 {site} 件、フォーム翻訳 {forms} 件',
     'All Unused ({count})' => 'すべての未使用（{count}）',
     'Type to Clean' => '整理するタイプ',
     'No unused translations found for the selected type.' => '選択したタイプの未使用翻訳が見つかりませんでした。',

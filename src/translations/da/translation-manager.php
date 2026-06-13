@@ -519,6 +519,7 @@ return [
     'Clear Selected Translations' => 'Ryd valgte oversættelser',
     'Clean Up Unused Translations' => 'Ryd ubrugte oversættelser',
     'Remove translations that are no longer used in templates or forms' => 'Fjern oversættelser, der ikke længere bruges i skabeloner eller formularer',
+    'You have {total} unused translation(s): {site} site translations and {forms} form translations' => 'Du har {total} ubrugte oversættelse(r): {site} webstedsoversættelser og {forms} formularoversættelser',
     'All Unused ({count})' => 'Alle ubrugte ({count})',
     'Type to Clean' => 'Type der skal ryddes',
     'No unused translations found for the selected type.' => 'Ingen ubrugte oversættelser fundet for den valgte type.',

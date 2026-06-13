@@ -13,11 +13,10 @@
         {% if totalUnused > 0 %}
             <div style="margin-bottom: 15px;">
                 <p class="light">
-                    {{ "You have {total} unused translation(s): {site} site translations and {formie} {formieName} translations"|t('translation-manager', {
+                    {{ "You have {total} unused translation(s): {site} site translations and {forms} form translations"|t('translation-manager', {
                         total: totalUnused|number_format,
                         site: unusedCounts.site|number_format,
-                        formie: unusedCounts.forms|number_format,
-                        formieName: 'form'
+                        forms: unusedCounts.forms|number_format,
                     }) }}
                 </p>
             </div>

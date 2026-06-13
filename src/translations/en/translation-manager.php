@@ -516,6 +516,7 @@ return [
     'Clear Selected Translations' => 'Clear Selected Translations',
     'Clean Up Unused Translations' => 'Clean Up Unused Translations',
     'Remove translations that are no longer used in templates or forms' => 'Remove translations that are no longer used in templates or forms',
+    'You have {total} unused translation(s): {site} site translations and {forms} form translations' => 'You have {total} unused translation(s): {site} site translations and {forms} form translations',
     'All Unused ({count})' => 'All Unused ({count})',
     'Type to Clean' => 'Type to Clean',
     'No unused translations found for the selected type.' => 'No unused translations found for the selected type.',

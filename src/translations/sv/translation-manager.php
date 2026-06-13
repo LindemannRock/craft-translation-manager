@@ -519,6 +519,7 @@ return [
     'Clear Selected Translations' => 'Rensa valda översättningar',
     'Clean Up Unused Translations' => 'Rensa oanvända översättningar',
     'Remove translations that are no longer used in templates or forms' => 'Ta bort översättningar som inte längre används i mallar eller formulär',
+    'You have {total} unused translation(s): {site} site translations and {forms} form translations' => 'Du har {total} oanvända översättning(ar): {site} webbplatsöversättningar och {forms} formuläröversättningar',
     'All Unused ({count})' => 'Alla oanvända ({count})',
     'Type to Clean' => 'Typ att rensa',
     'No unused translations found for the selected type.' => 'Inga oanvända översättningar hittades för den valda typen.',

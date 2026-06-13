@@ -519,6 +519,7 @@ return [
     'Clear Selected Translations' => 'Geselecteerde vertalingen wissen',
     'Clean Up Unused Translations' => 'Ongebruikte vertalingen opruimen',
     'Remove translations that are no longer used in templates or forms' => 'Vertalingen verwijderen die niet meer worden gebruikt in templates of formulieren',
+    'You have {total} unused translation(s): {site} site translations and {forms} form translations' => 'U heeft {total} ongebruikte vertaling(en): {site} sitevertalingen en {forms} formuliervertalingen',
     'All Unused ({count})' => 'Alle ongebruikte ({count})',
     'Type to Clean' => 'Op te ruimen type',
     'No unused translations found for the selected type.' => 'Geen ongebruikte vertalingen gevonden voor het geselecteerde type.',

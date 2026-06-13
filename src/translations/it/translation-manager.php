@@ -519,6 +519,7 @@ return [
     'Clear Selected Translations' => 'Cancella traduzioni selezionate',
     'Clean Up Unused Translations' => 'Pulisci traduzioni non utilizzate',
     'Remove translations that are no longer used in templates or forms' => 'Rimuovi le traduzioni che non sono più usate nei template o nei moduli',
+    'You have {total} unused translation(s): {site} site translations and {forms} form translations' => 'Sono presenti {total} traduzioni inutilizzate: {site} traduzioni del sito e {forms} traduzioni dei moduli',
     'All Unused ({count})' => 'Tutti i non utilizzati ({count})',
     'Type to Clean' => 'Tipo da pulire',
     'No unused translations found for the selected type.' => 'Nessuna traduzione non utilizzata trovata per il tipo selezionato.',
