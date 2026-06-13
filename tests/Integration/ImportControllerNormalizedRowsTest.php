@@ -14,7 +14,9 @@ use Craft;
 use craft\helpers\Db;
 use craft\helpers\StringHelper;
 use lindemannrock\translationmanager\controllers\ImportController;
+use lindemannrock\translationmanager\integrations\BaseIntegration;
 use lindemannrock\translationmanager\records\TranslationRecord;
+use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
 
@@ -283,6 +285,59 @@ final class ImportControllerNormalizedRowsTest extends TestCase
         self::assertSame('After import', $rows[0]['translation']);
     }
 
+    public function testImportTranslationsDerivesRegisteredProviderCategoryBeforeLookup(): void
+    {
+        $this->requireLatinSourceLanguage();
+        $this->requireAtLeastOneSite();
+
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $integrationService->register(
+            CsvImportProviderTestIntegration::NAME,
+            new CsvImportProviderTestIntegration(),
+        );
+
+        $controller = $this->createImportController();
+        $language = Craft::$app->getSites()->getPrimarySite()->language;
+        $source = self::MARKER . 'csv_provider_' . bin2hex(random_bytes(4));
+        $context = CsvImportProviderTestIntegration::CONTEXT_PREFIX . '.field';
+
+        $this->createTranslationRecord(
+            $source,
+            'Before provider import',
+            $language,
+            CsvImportProviderTestIntegration::CATEGORY,
+            $context,
+        );
+
+        $result = $this->invokePrivate($controller, 'importTranslations', [
+            [[
+                'translationKey' => $source,
+                'translation' => 'After provider import',
+                'language' => $language,
+                'category' => '',
+                'context' => $context,
+                'type' => 'forms',
+                'status' => 'draft',
+                'origin' => 'ai',
+                'rowNumber' => 2,
+            ]],
+            false,
+        ]);
+
+        self::assertSame(0, $result['imported']);
+        self::assertSame(1, $result['updated']);
+        self::assertSame(0, $result['skipped']);
+
+        $rows = $this->fetchRowsForSource($source);
+        self::assertCount(1, $rows);
+        self::assertSame(CsvImportProviderTestIntegration::CATEGORY, $rows[0]['category']);
+        self::assertSame($context, $rows[0]['context']);
+        self::assertSame('After provider import', $rows[0]['translation']);
+        self::assertSame('draft', $rows[0]['status']);
+        self::assertSame('ai', $rows[0]['translationOrigin']);
+    }
+
     public function testImportTranslationsHandlesDuplicateRowsInSameImport(): void
     {
         $this->requireLatinSourceLanguage();
@@ -369,5 +424,62 @@ final class ImportControllerNormalizedRowsTest extends TestCase
         $reflection->setAccessible(true);
 
         return $reflection->invokeArgs($controller, $args);
+    }
+}
+
+final class CsvImportProviderTestIntegration extends BaseIntegration
+{
+    public const NAME = 'csv-import-provider-test';
+
+    public const CONTEXT_PREFIX = 'csvprovider';
+
+    public const CATEGORY = 'csvprovider';
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getPluginHandle(): string
+    {
+        return self::NAME;
+    }
+
+    public function isAvailable(): bool
+    {
+        return true;
+    }
+
+    public function registerHooks(): void
+    {
+    }
+
+    public function captureTranslations($element): array
+    {
+        return [];
+    }
+
+    public function checkUsage(): void
+    {
+    }
+
+    public function getSupportedContentTypes(): array
+    {
+        return [];
+    }
+
+    public function getContextPrefix(): string
+    {
+        return self::CONTEXT_PREFIX;
+    }
+
+    public function getCategory(): string
+    {
+        return self::CATEGORY;
+    }
+
+    protected function getTranslationType(): string
+    {
+        return 'forms';
     }
 }
