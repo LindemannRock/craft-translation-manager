@@ -13,7 +13,9 @@ namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
 use craft\web\Controller;
+use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
@@ -41,6 +43,11 @@ class GenerateController extends Controller
                 }
                 break;
             case 'formie-files':
+                if (!$user->checkPermission('translationManager:generateFormieTranslations')) {
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate Formie translation files.'));
+                }
+                break;
+            case 'provider-files':
                 if (!$user->checkPermission('translationManager:generateFormieTranslations')) {
                     throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate Formie translation files.'));
                 }
@@ -86,7 +93,7 @@ class GenerateController extends Controller
     }
 
     /**
-     * Generate all translation files (Formie + site)
+     * Generate all translation files (enabled form providers + site)
      *
      * @return Response
      */
@@ -98,34 +105,47 @@ class GenerateController extends Controller
             $this->logInfo('User requested all-files generation');
             $generationService = TranslationManager::getInstance()->generate;
             $translationsService = TranslationManager::getInstance()->translations;
+            /** @var IntegrationService $integrationService */
+            $integrationService = TranslationManager::getInstance()->get('integrations');
+            $formIntegrations = $integrationService->getIntegrationsBySourceType('forms', true);
 
             // Check what's available to generate first
-            $formieCount = count($translationsService->getTranslations([
-                'type' => 'forms',
-                'category' => 'formie',
-                'status' => 'translated',
-                'allSites' => true,
-            ]));
+            $integrationCounts = [];
+            foreach ($formIntegrations as $integration) {
+                $integrationCounts[$integration->getName()] = count($translationsService->getTranslations([
+                    'type' => $integration->getSourceType(),
+                    'category' => $integration->getCategory(),
+                    'status' => 'translated',
+                    'allSites' => true,
+                ]));
+            }
             $siteCount = count($translationsService->getTranslations(['type' => 'site', 'status' => 'translated', 'allSites' => true]));
 
             $this->logInfo("Generation preparation", [
-                'formieCount' => $formieCount,
+                'integrationCounts' => $integrationCounts,
                 'siteCount' => $siteCount,
             ]);
 
-            $formieResult = false;
+            $integrationResults = [];
             $siteResult = false;
             $messages = [];
             $warnings = [];
 
             // Only generate if there are translations to generate
-            if ($formieCount > 0) {
-                $formieResult = $generationService->generateFormieTranslations();
-                if ($formieResult) {
-                    $messages[] = Craft::t('translation-manager', '{name} files ({count} translations)', ['name' => TranslationManager::getFormiePluginName(), 'count' => $formieCount]);
+            foreach ($formIntegrations as $integration) {
+                $integrationName = $integration->getName();
+                $integrationCount = $integrationCounts[$integrationName] ?? 0;
+                $pluginName = PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integrationName));
+
+                if ($integrationCount > 0) {
+                    $integrationResults[$integrationName] = $generationService->generateProviderTranslations($integrationName);
+                    if ($integrationResults[$integrationName]) {
+                        $messages[] = Craft::t('translation-manager', '{name} files ({count} translations)', ['name' => $pluginName, 'count' => $integrationCount]);
+                    }
+                } else {
+                    $integrationResults[$integrationName] = false;
+                    $warnings[] = Craft::t('translation-manager', 'No translated {name} translations found', ['name' => $pluginName]);
                 }
-            } else {
-                $warnings[] = Craft::t('translation-manager', 'No translated {name} translations found', ['name' => TranslationManager::getFormiePluginName()]);
             }
 
             if ($siteCount > 0) {
@@ -156,7 +176,7 @@ class GenerateController extends Controller
                     'success' => true,
                     'message' => $message,
                     'debug' => [
-                        'formie' => $formieResult,
+                        'integrations' => $integrationResults,
                         'site' => $siteResult,
                     ],
                 ]);
@@ -205,6 +225,80 @@ class GenerateController extends Controller
                 $this->logInfo("Formie generation completed", ['message' => $message]);
             } else {
                 $message = Craft::t('translation-manager', 'No translated {name} translations found. Add translations first.', ['name' => $pluginName]);
+            }
+
+            if (Craft::$app->getRequest()->getAcceptsJson()) {
+                return $this->asJson([
+                    'success' => true,
+                    'message' => $message,
+                ]);
+            }
+
+            Craft::$app->getSession()->setNotice($message);
+            return $this->redirect('translation-manager');
+        } catch (\Exception $e) {
+            if (Craft::$app->getRequest()->getAcceptsJson()) {
+                return $this->asJson([
+                    'success' => false,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Failed to generate translation files: {error}', ['error' => $e->getMessage()]));
+            return $this->redirect('translation-manager');
+        }
+    }
+
+    /**
+     * Generate one form provider's translation files.
+     */
+    public function actionProviderFiles(): Response
+    {
+        $this->requirePostRequest();
+
+        try {
+            $provider = Craft::$app->getRequest()->getRequiredBodyParam('provider');
+            /** @var IntegrationService $integrationService */
+            $integrationService = TranslationManager::getInstance()->get('integrations');
+            $integration = $integrationService->get($provider);
+
+            if ($integration === null || $integration->getSourceType() !== 'forms') {
+                throw new \Exception(Craft::t('translation-manager', 'Provider not found.'));
+            }
+
+            if (!$integrationService->isIntegrationEnabled($integration->getName())) {
+                throw new \Exception(Craft::t('translation-manager', 'Provider is not enabled.'));
+            }
+
+            $pluginName = PluginHelper::getPluginName(
+                $integration->getPluginHandle(),
+                ucfirst($integration->getName()),
+            );
+            $category = $integration->getCategory();
+            $translationsService = TranslationManager::getInstance()->translations;
+            $count = count($translationsService->getTranslations([
+                'type' => 'forms',
+                'category' => $category,
+                'status' => 'translated',
+                'allSites' => true,
+            ]));
+
+            $this->logInfo('Provider generation preparation', [
+                'provider' => $provider,
+                'category' => $category,
+                'count' => $count,
+            ]);
+
+            if ($count > 0) {
+                TranslationManager::getInstance()->generate->generateProviderTranslations($integration->getName());
+                $message = Craft::t('translation-manager', '{name} translation files generated successfully ({count} translations)', [
+                    'name' => $pluginName,
+                    'count' => $count,
+                ]);
+            } else {
+                $message = Craft::t('translation-manager', 'No translated {name} translations found. Add translations first.', [
+                    'name' => $pluginName,
+                ]);
             }
 
             if (Craft::$app->getRequest()->getAcceptsJson()) {

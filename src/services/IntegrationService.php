@@ -59,6 +59,7 @@ class IntegrationService extends Component
      */
     private array $_builtInIntegrations = [
         'formie' => \lindemannrock\translationmanager\integrations\FormieIntegration::class,
+        'freeform' => \lindemannrock\translationmanager\integrations\FreeformIntegration::class,
         // Future integrations:
         // 'commerce' => \lindemannrock\translationmanager\integrations\CommerceIntegration::class,
         // 'seomatic' => \lindemannrock\translationmanager\integrations\SeomaticIntegration::class,
@@ -86,6 +87,10 @@ class IntegrationService extends Component
         // Register FormieIntegration event handlers directly
         if (PluginHelper::isPluginEnabled('formie')) {
             $this->registerIntegrationHooks('formie', new \lindemannrock\translationmanager\integrations\FormieIntegration());
+        }
+
+        if (PluginHelper::isPluginEnabled('freeform') && $this->isIntegrationEnabled('freeform')) {
+            $this->registerIntegrationHooks('freeform', new \lindemannrock\translationmanager\integrations\FreeformIntegration());
         }
     }
 

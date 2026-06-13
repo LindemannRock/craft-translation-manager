@@ -51,8 +51,9 @@ return [
         'captureMissingTranslations' => false,  // Enable runtime capture of missing translations
         'captureMissingOnlyDevMode' => true,    // Only capture when Craft is in devMode (recommended)
 
-        // Formie Integration
+        // Form Integrations
         'enableFormieIntegration' => true,
+        'enableFreeformIntegration' => true,
 
         // AI Translation Provider
         // Controls provider selection for AI-assisted translation workflows

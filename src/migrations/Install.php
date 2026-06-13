@@ -98,6 +98,7 @@ class Install extends Migration
                 'sourceLanguage' => $this->string(10)->notNull()->defaultValue('en'),
                 'localeMapping' => $this->text()->null()->comment('JSON array of locale mappings'),
                 'enableFormieIntegration' => $this->boolean()->notNull()->defaultValue(true),
+                'enableFreeformIntegration' => $this->boolean()->notNull()->defaultValue(true),
                 'enableAiTranslations' => $this->boolean()->notNull()->defaultValue(false),
                 'aiProvider' => $this->string(20)->notNull()->defaultValue('openai'),
                 'openAiApiKey' => $this->string()->null(),

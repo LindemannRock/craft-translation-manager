@@ -91,6 +91,11 @@ class Settings extends Model
     public bool $enableFormieIntegration = true;
 
     /**
+     * @var bool Whether to enable Freeform form translation integration
+     */
+    public bool $enableFreeformIntegration = true;
+
+    /**
      * @var bool Whether to enable site translation capture
      */
     public bool $enableSiteTranslations = true;
@@ -285,7 +290,7 @@ class Settings extends Model
             [['geminiModel'], 'match', 'pattern' => '/^[a-zA-Z0-9._-]+$/',
              'message' => 'Gemini model must contain only letters, numbers, dots, hyphens, and underscores.', ],
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
-            [['enableFormieIntegration', 'enableSiteTranslations', 'autoGenerate',
+            [['enableFormieIntegration', 'enableFreeformIntegration', 'enableSiteTranslations', 'autoGenerate',
               'enableSuggestions', 'autoSaveEnabled', 'backupEnabled',
               'backupOnImport', 'enableAiTranslations', 'requireApproval', ], 'boolean'],
             [['skipPatterns', 'excludeFormHandlePatterns', 'translationCategories', 'localeMapping'], 'safe'],
@@ -330,6 +335,7 @@ class Settings extends Model
             'translationCategories' => Craft::t('translation-manager', 'Translation Categories'),
             'sourceLanguage' => Craft::t('translation-manager', 'Source Language'),
             'enableFormieIntegration' => Craft::t('translation-manager', 'Enable Formie Integration'),
+            'enableFreeformIntegration' => Craft::t('translation-manager', 'Enable Freeform Integration'),
             'enableSiteTranslations' => Craft::t('translation-manager', 'Enable Site Translations'),
             'autoGenerate' => Craft::t('translation-manager', 'Auto Generate'),
             'generationPath' => Craft::t('translation-manager', 'Generation Path'),
@@ -580,6 +586,9 @@ class Settings extends Model
         if ($category === 'formie') {
             return $this->enableFormieIntegration;
         }
+        if ($category === 'freeform') {
+            return $this->enableFreeformIntegration;
+        }
 
         return in_array($category, $this->getEnabledCategories(), true);
     }
@@ -597,6 +606,9 @@ class Settings extends Model
         // Add formie if integration is enabled and not already in list
         if ($this->enableFormieIntegration && !in_array('formie', $categories, true)) {
             $categories[] = 'formie';
+        }
+        if ($this->enableFreeformIntegration && !in_array('freeform', $categories, true)) {
+            $categories[] = 'freeform';
         }
 
         return $categories;
@@ -1001,6 +1013,7 @@ class Settings extends Model
     {
         return [
             'enableFormieIntegration',
+            'enableFreeformIntegration',
             'enableSiteTranslations',
             'autoGenerate',
             'requireApproval',
@@ -1048,6 +1061,13 @@ class Settings extends Model
      */
     protected static function excludeFromSave(): array
     {
-        return ['integrationSettings'];
+        $exclude = ['integrationSettings'];
+        $schema = Craft::$app->getDb()->getTableSchema('{{%' . static::tableName() . '}}');
+
+        if ($schema !== null && $schema->getColumn('enableFreeformIntegration') === null) {
+            $exclude[] = 'enableFreeformIntegration';
+        }
+
+        return $exclude;
     }
 }

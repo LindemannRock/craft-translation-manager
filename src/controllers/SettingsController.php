@@ -610,6 +610,7 @@ class SettingsController extends Controller
             ],
             'integrations' => [
                 'enableFormieIntegration',
+                'enableFreeformIntegration',
                 'excludeFormHandlePatterns',
             ],
             'ai' => [

@@ -729,6 +729,7 @@ class TranslationManager extends Plugin
             'translation-manager/generate' => 'translation-manager/generate/index',
             'translation-manager/generate/files' => 'translation-manager/generate/files',
             'translation-manager/generate/formie-files' => 'translation-manager/generate/formie-files',
+            'translation-manager/generate/provider-files' => 'translation-manager/generate/provider-files',
             'translation-manager/generate/site-files' => 'translation-manager/generate/site-files',
             'translation-manager/generate/category-files' => 'translation-manager/generate/category-files',
 

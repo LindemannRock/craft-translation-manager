@@ -202,6 +202,58 @@ class TranslationManagerVariable
     }
 
     /**
+     * Get form providers for CP dropdowns and labels.
+     *
+     * @return array<int,array{name:string,label:string,category:string,contextPrefix:string,pluginHandle:string,available:bool}>
+     */
+    public function getFormProviders(): array
+    {
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $providers = [];
+
+        foreach ($integrationService->getIntegrationsBySourceType('forms') as $integration) {
+            $providers[] = [
+                'name' => $integration->getName(),
+                'label' => \lindemannrock\base\helpers\PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName())),
+                'category' => $integration->getCategory(),
+                'contextPrefix' => $integration->getContextPrefix(),
+                'pluginHandle' => $integration->getPluginHandle(),
+                'available' => $integration->isAvailable(),
+            ];
+        }
+
+        return $providers;
+    }
+
+    /**
+     * @return array<int,array{name:string,label:string,category:string,contextPrefix:string,pluginHandle:string,available:bool}>
+     */
+    public function getEnabledFormProviders(): array
+    {
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+
+        return array_values(array_filter(
+            $this->getFormProviders(),
+            static fn(array $provider): bool => $integrationService->isIntegrationEnabled($provider['name']),
+        ));
+    }
+
+    public function getFormProviderLabelForContext(string $context): ?string
+    {
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $integration = $integrationService->getIntegrationForContext($context);
+
+        if ($integration === null || $integration->getSourceType() !== 'forms') {
+            return null;
+        }
+
+        return \lindemannrock\base\helpers\PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()));
+    }
+
+    /**
      * Get cleanup candidates for language-level data cleanup.
      *
      * - mappedSource: languages that are mapped source locales and still exist in DB
