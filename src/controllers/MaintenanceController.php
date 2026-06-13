@@ -54,6 +54,7 @@ class MaintenanceController extends Controller
                 }
                 break;
             case 'recapture-formie':
+            case 'recapture-provider':
                 if (!$user->checkPermission('translationManager:recaptureFormie')) {
                     throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to recapture Formie translations.'));
                 }
@@ -174,38 +175,58 @@ class MaintenanceController extends Controller
      */
     public function actionRecaptureFormie(): Response
     {
+        return $this->recaptureProvider('formie');
+    }
+
+    /**
+     * Recapture all translations for one form provider.
+     *
+     * @return Response
+     */
+    public function actionRecaptureProvider(): Response
+    {
+        $this->requirePostRequest();
+        $this->requireAcceptsJson();
+        $this->requirePermission('translationManager:recaptureFormie');
+
+        return $this->recaptureProvider((string)Craft::$app->getRequest()->getRequiredBodyParam('provider'));
+    }
+
+    private function recaptureProvider(string $provider): Response
+    {
         $this->requirePostRequest();
         $this->requireAcceptsJson();
         $this->requirePermission('translationManager:recaptureFormie');
 
         try {
-            $count = 0;
-            $pluginName = TranslationManager::getFormiePluginName();
+            /** @var IntegrationService $integrationService */
+            $integrationService = TranslationManager::getInstance()->get('integrations');
+            $integration = $integrationService->get($provider);
 
-            if (PluginHelper::isPluginEnabled('formie')) {
-                /** @var IntegrationService $integrationService */
-                $integrationService = TranslationManager::getInstance()->get('integrations');
-                $formieIntegration = $integrationService->get('formie');
-                if ($formieIntegration === null) {
-                    return $this->asJson([
-                        'success' => false,
-                        'error' => Craft::t('translation-manager', 'Formie integration is not available.'),
-                    ]);
-                }
-
-                $forms = \verbb\formie\Formie::getInstance()->getForms()->getAllForms();
-
-                foreach ($forms as $form) {
-                    $formieIntegration->captureTranslations($form);
-                    $count++;
-                }
-
-                $formieIntegration->checkUsage();
+            if ($integration === null || $integration->getSourceType() !== 'forms') {
+                return $this->asJson([
+                    'success' => false,
+                    'error' => Craft::t('translation-manager', 'Invalid type specified'),
+                ]);
             }
+
+            if (!$integrationService->isIntegrationEnabled($integration->getName()) || !$integration->isAvailable()) {
+                return $this->asJson([
+                    'success' => false,
+                    'error' => Craft::t('translation-manager', 'Formie integration is not available.'),
+                ]);
+            }
+
+            $result = $integration->recaptureAll();
+            $pluginName = PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()));
 
             return $this->asJson([
                 'success' => true,
-                'message' => Craft::t('translation-manager', 'Recaptured {name} translations from {count} form(s)', ['name' => $pluginName, 'count' => $count]),
+                'message' => Craft::t('translation-manager', 'Recaptured {name} translations from {count} form(s)', [
+                    'name' => $pluginName,
+                    'count' => $result['processed'],
+                ]),
+                'results' => $result,
             ]);
         } catch (\Exception $e) {
             return $this->asJson([
@@ -237,7 +258,13 @@ class MaintenanceController extends Controller
             $type = 'category';
         }
 
-        if (!in_array($type, ['all', 'category', 'formie'])) {
+        $provider = null;
+        if (str_starts_with($type, 'provider:')) {
+            $provider = substr($type, 9);
+            $type = 'provider';
+        }
+
+        if (!in_array($type, ['all', 'category', 'provider', 'formie'])) {
             return $this->asJson([
                 'success' => false,
                 'error' => Craft::t('translation-manager', 'Invalid type specified'),
@@ -255,6 +282,20 @@ class MaintenanceController extends Controller
                     // Filter by specific category
                     $query->andWhere(['category' => $category]);
                     $displayType = $category;
+                    break;
+                case 'provider':
+                    /** @var IntegrationService $integrationService */
+                    $integrationService = TranslationManager::getInstance()->get('integrations');
+                    $integration = $provider !== null ? $integrationService->get($provider) : null;
+                    if ($integration === null) {
+                        return $this->asJson([
+                            'success' => false,
+                            'error' => Craft::t('translation-manager', 'Invalid type specified'),
+                        ]);
+                    }
+
+                    $query->andWhere($this->buildContextPrefixCondition([$integration->getContextPrefix()]) ?? '0=1');
+                    $displayType = PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()));
                     break;
                 case 'formie':
                     $query->andWhere(['or',
@@ -779,8 +820,13 @@ class MaintenanceController extends Controller
             ->all();
 
         $enabledCategories = $settings->getEnabledCategories();
-        if ($settings->enableFormieIntegration && !in_array('formie', $enabledCategories, true)) {
-            $enabledCategories[] = 'formie';
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        foreach ($integrationService->getEnabledIntegrations() as $integration) {
+            $category = $integration->getCategory();
+            if (!in_array($category, $enabledCategories, true)) {
+                $enabledCategories[] = $category;
+            }
         }
         $enabledLookup = array_fill_keys(array_map('strtolower', array_filter($enabledCategories)), true);
 
@@ -813,5 +859,23 @@ class MaintenanceController extends Controller
         usort($result['removed'], static fn(array $a, array $b): int => strcmp($a['category'], $b['category']));
 
         return $result;
+    }
+
+    /**
+     * Build a context-prefix query condition.
+     *
+     * @param string[] $prefixes
+     * @return array<int, mixed>|null
+     */
+    private function buildContextPrefixCondition(array $prefixes): ?array
+    {
+        $conditions = [];
+
+        foreach (array_values(array_unique(array_filter($prefixes))) as $prefix) {
+            $conditions[] = ['like', 'context', $prefix . '.%', false];
+            $conditions[] = ['=', 'context', $prefix];
+        }
+
+        return $conditions === [] ? null : array_merge(['or'], $conditions);
     }
 }

@@ -751,6 +751,7 @@ class TranslationManager extends Plugin
             'translation-manager/maintenance' => 'translation-manager/maintenance/index',
             'translation-manager/maintenance/clean-unused' => 'translation-manager/maintenance/clean-unused',
             'translation-manager/maintenance/recapture-formie' => 'translation-manager/maintenance/recapture-formie',
+            'translation-manager/maintenance/recapture-provider' => 'translation-manager/maintenance/recapture-provider',
 
             // Backup routes
             'translation-manager/backups' => 'translation-manager/backup/index',

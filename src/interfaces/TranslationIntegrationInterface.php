@@ -87,6 +87,13 @@ interface TranslationIntegrationInterface
     public function getActiveTranslationTexts(): array;
 
     /**
+     * Recapture all source content owned by this integration.
+     *
+     * @return array{processed:int,captured:int}
+     */
+    public function recaptureAll(): array;
+
+    /**
      * Check usage of existing translations and mark unused ones
      * Called after content changes to clean up orphaned translations
      */

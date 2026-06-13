@@ -1370,17 +1370,36 @@ class TranslationsService extends Component
      */
     public function clearFormieTranslations(): int
     {
+        return $this->clearProviderTranslations('formie');
+    }
+
+    /**
+     * Clear all translations for one integration provider.
+     */
+    public function clearProviderTranslations(string $provider): int
+    {
+        $integration = $this->getIntegrationService()->get($provider);
+        if ($integration === null) {
+            return 0;
+        }
+
+        $contextPrefix = $integration->getContextPrefix();
+        $category = $integration->getCategory();
         $count = Db::delete(
             TranslationRecord::tableName(),
-            $this->buildContextPrefixCondition(['formie']) ?? '0=1',
+            $this->buildContextPrefixCondition([$contextPrefix]) ?? '0=1',
         );
         
         // Delete corresponding translation files
         if ($count > 0) {
-            $this->deleteFormieTranslationFiles();
+            $this->deleteCategoryTranslationFiles($category);
         }
         
-        $this->logInfo("Cleared Formie translations", ['count' => $count]);
+        $this->logInfo('Cleared provider translations', [
+            'provider' => $provider,
+            'category' => $category,
+            'count' => $count,
+        ]);
         
         return $count;
     }
@@ -1414,7 +1433,9 @@ class TranslationsService extends Component
         
         // Delete all translation files
         if ($count > 0) {
-            $this->deleteFormieTranslationFiles();
+            foreach ($this->getIntegrationService()->getAll() as $integration) {
+                $this->deleteCategoryTranslationFiles($integration->getCategory());
+            }
             $this->deleteSiteTranslationFiles();
         }
         
@@ -1442,25 +1463,6 @@ class TranslationsService extends Component
         $this->logInfo("Cleared category translations", ['category' => $category, 'count' => $count]);
 
         return $count;
-    }
-
-    /**
-     * Delete Formie translation files
-     */
-    private function deleteFormieTranslationFiles(): void
-    {
-        $settings = TranslationManager::getInstance()->getSettings();
-        $basePath = $settings->getGenerationPath();
-
-        // Get actual site languages dynamically
-        $sites = TranslationManager::getInstance()->getAllowedSites();
-        foreach ($sites as $site) {
-            $file = $basePath . '/' . $site->language . '/formie.php';
-            if (file_exists($file)) {
-                @unlink($file);
-                $this->logInfo("Deleted Formie translation file", ['file' => $file]);
-            }
-        }
     }
 
     /**

@@ -12,9 +12,11 @@ namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
 use craft\web\Controller;
+use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\base\helpers\SettingsPostHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\models\Settings;
+use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
@@ -37,6 +39,7 @@ class SettingsController extends Controller
 
         switch ($action->id) {
             case 'clear-formie':
+            case 'clear-provider':
                 if (!$user->checkPermission('translationManager:clearFormie')) {
                     throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clear Formie translations.'));
                 }
@@ -334,28 +337,60 @@ class SettingsController extends Controller
      */
     public function actionClearFormie(): Response
     {
+        return $this->clearProvider('formie');
+    }
+
+    /**
+     * Clear translations for a specific form provider.
+     *
+     * @return Response
+     */
+    public function actionClearProvider(): Response
+    {
         $this->requirePostRequest();
 
-        $this->logInfo("User requested clear Formie translations");
+        return $this->clearProvider((string)Craft::$app->getRequest()->getRequiredBodyParam('provider'));
+    }
+
+    private function clearProvider(string $provider): Response
+    {
+        $this->requirePostRequest();
+
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $integration = $integrationService->get($provider);
+
+        if ($integration === null || $integration->getSourceType() !== 'forms') {
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Invalid type specified'));
+            return $this->redirectToPostedUrl();
+        }
+
+        $pluginName = PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()));
+
+        $this->logInfo('User requested clear provider translations', ['provider' => $provider]);
 
         // Create backup if enabled
         $settings = TranslationManager::getInstance()->getSettings();
         if ($settings->backupEnabled) {
             try {
                 $backupService = TranslationManager::getInstance()->backup;
-                $pluginName = TranslationManager::getFormiePluginName();
-                $backupPath = $backupService->createBackup('before_clear');
+                $backupPath = $backupService->createBackup("before_clear_{$provider}");
                 if ($backupPath) {
-                    $this->logInfo("Created backup before clearing Formie translations", ['backupPath' => $backupPath]);
+                    $this->logInfo('Created backup before clearing provider translations', [
+                        'provider' => $provider,
+                        'backupPath' => $backupPath,
+                    ]);
                 }
             } catch (\Exception $e) {
-                $this->logError("Failed to create backup before clearing Formie translations", ['error' => $e->getMessage()]);
+                $this->logError('Failed to create backup before clearing provider translations', [
+                    'provider' => $provider,
+                    'error' => $e->getMessage(),
+                ]);
                 // Continue with the operation even if backup fails
             }
         }
-        $count = TranslationManager::getInstance()->translations->clearFormieTranslations();
+        $count = TranslationManager::getInstance()->translations->clearProviderTranslations($provider);
         
-        $pluginName = TranslationManager::getFormiePluginName();
         $message = $count > 0
             ? Craft::t('translation-manager', '{count} {plugin} translations and corresponding files have been deleted.', ['count' => $count, 'plugin' => $pluginName])
             : Craft::t('translation-manager', 'No {plugin} translations found to delete.', ['plugin' => $pluginName]);

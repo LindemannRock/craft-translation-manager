@@ -131,6 +131,28 @@ class FreeformIntegration extends BaseIntegration
     /**
      * @inheritdoc
      */
+    public function recaptureAll(): array
+    {
+        $processed = 0;
+        $captured = 0;
+
+        if (!$this->isAvailable()) {
+            return ['processed' => 0, 'captured' => 0];
+        }
+
+        foreach ($this->getAllForms() as $form) {
+            $captured += count($this->captureTranslations($form));
+            $processed++;
+        }
+
+        $this->checkUsage();
+
+        return ['processed' => $processed, 'captured' => $captured];
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getSupportedContentTypes(): array
     {
         return [

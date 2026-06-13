@@ -181,6 +181,14 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
     /**
      * @inheritdoc
      */
+    public function recaptureAll(): array
+    {
+        return ['processed' => 0, 'captured' => 0];
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getCategory(): string
     {
         return $this->getContextPrefix();
