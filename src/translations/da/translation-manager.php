@@ -79,6 +79,7 @@ return [
     'AI Draft' => 'AI-udkast',
     'All' => 'Alle',
     'All Types' => 'Alle typer',
+    'Forms' => 'Formularer',
     'All Origins' => 'Alle oprindelser',
     'AI' => 'AI',
     'Reviewed By' => 'Gennemgået af',
@@ -129,6 +130,7 @@ return [
     'This may capture unwanted system translations' => 'Dette kan optage uønskede systemoversættelser',
     'Changing this will affect all existing site translations' => 'Ændring af dette påvirker alle eksisterende webstedsoversættelser',
     'Formie plugin is not installed' => 'Formie-plugin er ikke installeret',
+    '{name} plugin is not installed' => '{name}-plugin er ikke installeret',
     'Enable Translation Suggestions' => 'Aktiver oversættelsesforslag',
     'Export Path' => 'Eksportsti',
 
@@ -137,6 +139,8 @@ return [
 
     // Controller messages
     'Invalid AI provider selected.' => 'Ugyldig AI-udbyder valgt.',
+    'Provider not found.' => 'Provider blev ikke fundet.',
+    'Provider is not enabled.' => 'Provider er ikke aktiveret.',
     'AI test successful ({provider}, {model}). Translation: {translation}' => 'AI-test lykkedes ({provider}, {model}). Oversættelse: {translation}',
     'AI test failed: {error}' => 'AI-test mislykkedes: {error}',
     'Could not save settings.' => 'Kunne ikke gemme indstillingerne.',
@@ -379,6 +383,9 @@ return [
     'Plugin Integrations' => 'Plugin-integrationer',
     'Configure integrations with other Craft plugins.' => 'Konfigurer integrationer med andre Craft-plugins.',
     'Enable Formie Integration' => 'Aktiver Formie-integration',
+    'Enable Freeform Integration' => 'Aktiver Freeform-integration',
+    'Enable {name} Integration' => 'Aktiver {name}-integration',
+    'Automatically capture translations from {name} forms.' => 'Registrer automatisk oversættelser fra {name}-formularer.',
     'Exclude Form Patterns' => 'Ekskluder formmønstre',
     'Exclude Form Handle Patterns' => 'Ekskluder formhåndtagsmønstre',
     'Forms with handles OR titles containing these patterns will be skipped (one per line, case-insensitive). Use this to exclude language-specific duplicates like \'booking-ar\' or forms named \'Contact Form (Ar)\'.' => 'Formularer med handles ELLER titler, der indeholder disse mønstre, springes over (ét pr. linje, ufølsom over for store/små bogstaver). Brug dette til at ekskludere sprogspecifikke dubletter som \'booking-ar\' eller formularer med navnet \'Contact Form (Ar)\'.',
@@ -702,6 +709,7 @@ return [
     'This is being overridden by the <code>captureMissingTranslations</code> setting in <code>config/translation-manager.php</code>.' => 'Denne indstilling tilsidesættes af indstillingen <code>captureMissingTranslations</code> i <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>enableAiTranslations</code> setting in <code>config/translation-manager.php</code>.' => 'Denne indstilling tilsidesættes af indstillingen <code>enableAiTranslations</code> i <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>enableFormieIntegration</code> setting in <code>config/translation-manager.php</code>.' => 'Denne indstilling tilsidesættes af indstillingen <code>enableFormieIntegration</code> i <code>config/translation-manager.php</code>.',
+    'This is being overridden by the <code>enableFreeformIntegration</code> setting in <code>config/translation-manager.php</code>.' => 'Denne indstilling tilsidesættes af indstillingen <code>enableFreeformIntegration</code> i <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>enableSiteTranslations</code> setting in <code>config/translation-manager.php</code>.' => 'Denne indstilling tilsidesættes af indstillingen <code>enableSiteTranslations</code> i <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>excludeFormHandlePatterns</code> setting in <code>config/translation-manager.php</code>.' => 'Denne indstilling tilsidesættes af indstillingen <code>excludeFormHandlePatterns</code> i <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>geminiApiKey</code> setting in <code>config/translation-manager.php</code>.' => 'Denne indstilling tilsidesættes af indstillingen <code>geminiApiKey</code> i <code>config/translation-manager.php</code>.',

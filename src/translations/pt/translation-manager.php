@@ -79,6 +79,7 @@ return [
     'AI Draft' => 'Rascunho AI',
     'All' => 'Todos',
     'All Types' => 'Todos os tipos',
+    'Forms' => 'Formulários',
     'All Origins' => 'Todas as origens',
     'AI' => 'AI',
     'Reviewed By' => 'Revisado por',
@@ -129,6 +130,7 @@ return [
     'This may capture unwanted system translations' => 'Isto pode capturar traduções do sistema indesejadas',
     'Changing this will affect all existing site translations' => 'Alterar isto afetará todas as traduções do site existentes',
     'Formie plugin is not installed' => 'O plugin Formie não está instalado',
+    '{name} plugin is not installed' => 'O plugin {name} não está instalado',
     'Enable Translation Suggestions' => 'Ativar sugestões de tradução',
     'Export Path' => 'Caminho de exportação',
 
@@ -137,6 +139,8 @@ return [
 
     // Controller messages
     'Invalid AI provider selected.' => 'Fornecedor de IA selecionado inválido.',
+    'Provider not found.' => 'Fornecedor não encontrado.',
+    'Provider is not enabled.' => 'O fornecedor não está ativado.',
     'AI test successful ({provider}, {model}). Translation: {translation}' => 'Teste de IA bem-sucedido ({provider}, {model}). Tradução: {translation}',
     'AI test failed: {error}' => 'Teste de IA falhou: {error}',
     'Could not save settings.' => 'Não foi possível guardar as definições.',
@@ -379,6 +383,9 @@ return [
     'Plugin Integrations' => 'Integrações de plugins',
     'Configure integrations with other Craft plugins.' => 'Configure integrações com outros plugins Craft.',
     'Enable Formie Integration' => 'Ativar integração Formie',
+    'Enable Freeform Integration' => 'Ativar integração Freeform',
+    'Enable {name} Integration' => 'Ativar integração {name}',
+    'Automatically capture translations from {name} forms.' => 'Capturar automaticamente traduções de formulários {name}.',
     'Exclude Form Patterns' => 'Excluir padrões de formulários',
     'Exclude Form Handle Patterns' => 'Excluir padrões de handle de formulários',
     'Forms with handles OR titles containing these patterns will be skipped (one per line, case-insensitive). Use this to exclude language-specific duplicates like \'booking-ar\' or forms named \'Contact Form (Ar)\'.' => 'Os formulários cujos handles OU títulos contêm estes padrões serão ignorados (um por linha, sem distinção de maiúsculas/minúsculas). Utilize isto para excluir duplicados específicos de idioma como \'booking-ar\' ou formulários com o nome \'Contact Form (Ar)\'.',
@@ -702,6 +709,7 @@ return [
     'This is being overridden by the <code>captureMissingTranslations</code> setting in <code>config/translation-manager.php</code>.' => 'Esta definição está a ser substituída pela definição <code>captureMissingTranslations</code> em <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>enableAiTranslations</code> setting in <code>config/translation-manager.php</code>.' => 'Esta definição está a ser substituída pela definição <code>enableAiTranslations</code> em <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>enableFormieIntegration</code> setting in <code>config/translation-manager.php</code>.' => 'Esta definição está a ser substituída pela definição <code>enableFormieIntegration</code> em <code>config/translation-manager.php</code>.',
+    'This is being overridden by the <code>enableFreeformIntegration</code> setting in <code>config/translation-manager.php</code>.' => 'Esta definição está a ser substituída pela definição <code>enableFreeformIntegration</code> em <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>enableSiteTranslations</code> setting in <code>config/translation-manager.php</code>.' => 'Esta definição está a ser substituída pela definição <code>enableSiteTranslations</code> em <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>excludeFormHandlePatterns</code> setting in <code>config/translation-manager.php</code>.' => 'Esta definição está a ser substituída pela definição <code>excludeFormHandlePatterns</code> em <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>geminiApiKey</code> setting in <code>config/translation-manager.php</code>.' => 'Esta definição está a ser substituída pela definição <code>geminiApiKey</code> em <code>config/translation-manager.php</code>.',

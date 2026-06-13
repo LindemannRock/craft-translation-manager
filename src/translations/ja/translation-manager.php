@@ -79,6 +79,7 @@ return [
     'AI Draft' => 'AI ドラフト',
     'All' => 'すべて',
     'All Types' => 'すべてのタイプ',
+    'Forms' => 'フォーム',
     'All Origins' => 'すべてのソース',
     'AI' => 'AI',
     'Reviewed By' => 'レビュー者',
@@ -129,6 +130,7 @@ return [
     'This may capture unwanted system translations' => '不要なシステム翻訳が取得される可能性があります',
     'Changing this will affect all existing site translations' => 'この変更はすべての既存サイト翻訳に影響します',
     'Formie plugin is not installed' => 'Formie プラグインがインストールされていません',
+    '{name} plugin is not installed' => '{name} プラグインがインストールされていません',
     'Enable Translation Suggestions' => '翻訳提案を有効にする',
     'Export Path' => 'エクスポートパス',
 
@@ -137,6 +139,8 @@ return [
 
     // Controller messages
     'Invalid AI provider selected.' => '無効な AI プロバイダーが選択されました。',
+    'Provider not found.' => 'プロバイダーが見つかりません。',
+    'Provider is not enabled.' => 'プロバイダーが有効になっていません。',
     'AI test successful ({provider}, {model}). Translation: {translation}' => 'AI テストに成功しました（{provider}, {model}）。翻訳: {translation}',
     'AI test failed: {error}' => 'AI テストに失敗しました: {error}',
     'Could not save settings.' => '設定を保存できませんでした。',
@@ -379,6 +383,9 @@ return [
     'Plugin Integrations' => 'プラグインインテグレーション',
     'Configure integrations with other Craft plugins.' => '他の Craft プラグインとのインテグレーションを設定します。',
     'Enable Formie Integration' => 'Formie インテグレーションを有効にする',
+    'Enable Freeform Integration' => 'Freeform インテグレーションを有効にする',
+    'Enable {name} Integration' => '{name} インテグレーションを有効にする',
+    'Automatically capture translations from {name} forms.' => '{name} フォームから翻訳を自動取得します。',
     'Exclude Form Patterns' => 'フォームパターンを除外',
     'Exclude Form Handle Patterns' => 'フォームハンドルパターンを除外',
     'Forms with handles OR titles containing these patterns will be skipped (one per line, case-insensitive). Use this to exclude language-specific duplicates like \'booking-ar\' or forms named \'Contact Form (Ar)\'.' => 'ハンドルまたはタイトルにこれらのパターンを含むフォームはスキップされます（1 行に 1 つ、大文字・小文字区別なし）。\'booking-ar\' や \'Contact Form (Ar)\' のような言語固有の重複を除外するために使用してください。',
@@ -702,6 +709,7 @@ return [
     'This is being overridden by the <code>captureMissingTranslations</code> setting in <code>config/translation-manager.php</code>.' => 'この設定は <code>config/translation-manager.php</code> の <code>captureMissingTranslations</code> 設定で上書きされています。',
     'This is being overridden by the <code>enableAiTranslations</code> setting in <code>config/translation-manager.php</code>.' => 'この設定は <code>config/translation-manager.php</code> の <code>enableAiTranslations</code> 設定で上書きされています。',
     'This is being overridden by the <code>enableFormieIntegration</code> setting in <code>config/translation-manager.php</code>.' => 'この設定は <code>config/translation-manager.php</code> の <code>enableFormieIntegration</code> 設定で上書きされています。',
+    'This is being overridden by the <code>enableFreeformIntegration</code> setting in <code>config/translation-manager.php</code>.' => 'この設定は <code>config/translation-manager.php</code> の <code>enableFreeformIntegration</code> 設定で上書きされています。',
     'This is being overridden by the <code>enableSiteTranslations</code> setting in <code>config/translation-manager.php</code>.' => 'この設定は <code>config/translation-manager.php</code> の <code>enableSiteTranslations</code> 設定で上書きされています。',
     'This is being overridden by the <code>excludeFormHandlePatterns</code> setting in <code>config/translation-manager.php</code>.' => 'この設定は <code>config/translation-manager.php</code> の <code>excludeFormHandlePatterns</code> 設定で上書きされています。',
     'This is being overridden by the <code>geminiApiKey</code> setting in <code>config/translation-manager.php</code>.' => 'この設定は <code>config/translation-manager.php</code> の <code>geminiApiKey</code> 設定で上書きされています。',

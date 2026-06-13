@@ -79,6 +79,7 @@ return [
     'AI Draft' => 'مسودة AI',
     'All' => 'الكل',
     'All Types' => 'جميع الأنواع',
+    'Forms' => 'النماذج',
     'All Origins' => 'جميع المصادر',
     'AI' => 'AI',
     'Reviewed By' => 'مراجعة بواسطة',
@@ -129,6 +130,7 @@ return [
     'This may capture unwanted system translations' => 'قد يؤدي هذا إلى التقاط ترجمات نظام غير مرغوب فيها',
     'Changing this will affect all existing site translations' => 'تغيير هذا سيؤثر على جميع ترجمات الموقع الحالية',
     'Formie plugin is not installed' => 'Plugin Formie غير مثبّت',
+    '{name} plugin is not installed' => 'Plugin {name} غير مثبّت',
     'Enable Translation Suggestions' => 'تفعيل اقتراحات الترجمة',
     'Export Path' => 'مسار التصدير',
 
@@ -137,6 +139,8 @@ return [
 
     // Controller messages
     'Invalid AI provider selected.' => 'تم اختيار مزوّد ذكاء اصطناعي غير صالح.',
+    'Provider not found.' => 'لم يتم العثور على المزوّد.',
+    'Provider is not enabled.' => 'المزوّد غير مفعّل.',
     'AI test successful ({provider}, {model}). Translation: {translation}' => 'نجح اختبار الذكاء الاصطناعي ({provider}, {model}). الترجمة: {translation}',
     'AI test failed: {error}' => 'فشل اختبار الذكاء الاصطناعي: {error}',
     'Could not save settings.' => 'تعذّر حفظ الإعدادات.',
@@ -379,6 +383,9 @@ return [
     'Plugin Integrations' => 'تكاملات Plugin',
     'Configure integrations with other Craft plugins.' => 'تكوين التكاملات مع ملحقات Craft الأخرى.',
     'Enable Formie Integration' => 'تفعيل تكامل Formie',
+    'Enable Freeform Integration' => 'تفعيل تكامل Freeform',
+    'Enable {name} Integration' => 'تفعيل تكامل {name}',
+    'Automatically capture translations from {name} forms.' => 'التقاط الترجمات تلقائيًا من نماذج {name}.',
     'Exclude Form Patterns' => 'استبعاد أنماط النماذج',
     'Exclude Form Handle Patterns' => 'استبعاد أنماط handle النماذج',
     'Forms with handles OR titles containing these patterns will be skipped (one per line, case-insensitive). Use this to exclude language-specific duplicates like \'booking-ar\' or forms named \'Contact Form (Ar)\'.' => 'سيتم تخطي النماذج التي تحتوي handles أو عناوينها على هذه الأنماط (نمط واحد في كل سطر، غير حساسة لحالة الأحرف). استخدم هذا لاستبعاد التكرارات الخاصة باللغة مثل \'booking-ar\' أو النماذج المسماة \'Contact Form (Ar)\'.',
@@ -702,6 +709,7 @@ return [
     'This is being overridden by the <code>captureMissingTranslations</code> setting in <code>config/translation-manager.php</code>.' => 'يتم تجاوز هذا الإعداد بواسطة <code>captureMissingTranslations</code> في <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>enableAiTranslations</code> setting in <code>config/translation-manager.php</code>.' => 'يتم تجاوز هذا الإعداد بواسطة <code>enableAiTranslations</code> في <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>enableFormieIntegration</code> setting in <code>config/translation-manager.php</code>.' => 'يتم تجاوز هذا الإعداد بواسطة <code>enableFormieIntegration</code> في <code>config/translation-manager.php</code>.',
+    'This is being overridden by the <code>enableFreeformIntegration</code> setting in <code>config/translation-manager.php</code>.' => 'يتم تجاوز هذا الإعداد بواسطة <code>enableFreeformIntegration</code> في <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>enableSiteTranslations</code> setting in <code>config/translation-manager.php</code>.' => 'يتم تجاوز هذا الإعداد بواسطة <code>enableSiteTranslations</code> في <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>excludeFormHandlePatterns</code> setting in <code>config/translation-manager.php</code>.' => 'يتم تجاوز هذا الإعداد بواسطة <code>excludeFormHandlePatterns</code> في <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>geminiApiKey</code> setting in <code>config/translation-manager.php</code>.' => 'يتم تجاوز هذا الإعداد بواسطة <code>geminiApiKey</code> في <code>config/translation-manager.php</code>.',
