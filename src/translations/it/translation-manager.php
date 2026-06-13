@@ -290,7 +290,7 @@ return [
     'Require Approval' => 'Approvazione richiesta',
     'Require Approval Before Publish' => 'Richiedi approvazione prima della pubblicazione',
     'When enabled, users without approval permission can only save drafts. Approvers can publish as translated.' => 'Se abilitato, gli utenti senza permesso di approvazione possono solo salvare bozze. Gli approvatori possono pubblicare come tradotto.',
-    'Logging Settings' => 'Impostazioni log',
+    'Logging Settings' => 'Impostazioni di log',
 
     // Settings: Translation Sources
     'Translation Sources' => 'Sorgenti di traduzione',

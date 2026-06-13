@@ -46,7 +46,7 @@ return [
     'Clear all {plural}' => 'Rensa alla {plural}',
     'View logs' => 'Visa loggar',
     'View system logs' => 'Visa systemloggar',
-    'Download system logs' => 'Ladda ned systemloggar',
+    'Download system logs' => 'Ladda ner systemloggar',
     'Edit plugin settings' => 'Redigera plugin-inställningar',
 
     // Common

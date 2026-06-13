@@ -21,7 +21,7 @@ return [
     'Import/Export' => 'Import/Eksport',
     'Maintenance' => 'Vedlikehold',
     'Backups' => 'Sikkerhetskopier',
-    'Logs' => 'Loggfiler',
+    'Logs' => 'Logger',
     'Settings' => 'Innstillinger',
 
     // Permissions
@@ -45,8 +45,8 @@ return [
     'Clear site {plural}' => 'Tøm nettstedets {plural}',
     'Clear all {plural}' => 'Tøm alle {plural}',
     'View logs' => 'Vis logger',
-    'View system logs' => 'Vis systemloggfiler',
-    'Download system logs' => 'Last ned systemloggfiler',
+    'View system logs' => 'Vis systemlogger',
+    'Download system logs' => 'Last ned systemlogger',
     'Edit plugin settings' => 'Rediger plugin-innstillinger',
 
     // Common
@@ -168,8 +168,8 @@ return [
     '{skipped} skipped.' => '{skipped} hoppet over.',
     'Import failed: {error}' => 'Import mislyktes: {error}',
     'Row {row}: Malicious content blocked ({threats})' => 'Rad {row}: Ondsinnet innhold blokkert ({threats})',
-    'Import logs cleared successfully.' => 'Importloggfiler tømt.',
-    'Failed to clear import logs.' => 'Tømming av importloggfiler mislyktes.',
+    'Import logs cleared successfully.' => 'Importlogger tømt.',
+    'Failed to clear import logs.' => 'Tømming av importlogger mislyktes.',
     'Cleaned up {count} unused translation(s) and regenerated translation files.' => '{count} ubrukt(e) oversettelse(r) ryddet og oversettelsesfiler regenerert.',
     'No unused translations found.' => 'Ingen ubrukte oversettelser funnet.',
     'Failed to clean up translations: {error}' => 'Opprydding av oversettelser mislyktes: {error}',
@@ -597,7 +597,7 @@ return [
     'No changes' => 'Ingen endringer',
     'View backup' => 'Vis sikkerhetskopi',
     'No imports found yet.' => 'Ingen importer funnet ennå.',
-    'Are you sure you want to clear all import logs? This action cannot be undone.' => 'Er du sikker på at du vil tømme alle importloggfiler? Denne handlingen kan ikke angres.',
+    'Are you sure you want to clear all import logs? This action cannot be undone.' => 'Er du sikker på at du vil tømme alle importlogger? Denne handlingen kan ikke angres.',
     'Failed to clear history.' => 'Kunne ikke fjerne historikken.',
     'Select a Different File' => 'Velg en annen fil',
     'No PHP files found in translations folder' => 'Ingen PHP-filer funnet i oversettelsesmappen',
