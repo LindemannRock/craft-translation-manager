@@ -14,7 +14,6 @@ use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\console\Application as ConsoleApplication;
-use craft\db\Query;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
@@ -28,6 +27,7 @@ use lindemannrock\base\helpers\ColorHelper;
 use lindemannrock\base\helpers\CpNavHelper;
 use lindemannrock\base\helpers\DateFormatHelper;
 use lindemannrock\base\helpers\PluginHelper;
+use lindemannrock\base\helpers\RecurringQueueHelper;
 use lindemannrock\base\helpers\ScheduleHelper;
 use lindemannrock\logginglibrary\LoggingLibrary;
 
@@ -860,42 +860,44 @@ class TranslationManager extends Plugin
      */
     private function scheduleBackupJob(): void
     {
-        $settings = $this->getSettings();
+        $this->queueBackupJob($this->getSettings());
+    }
 
+    /**
+     * Queue the next scheduled backup row for the provided settings.
+     */
+    private function queueBackupJob(Settings $settings): void
+    {
         $schedule = $settings->getEffectiveBackupSchedule();
 
         if (!$settings->backupEnabled || $schedule === 'disabled') {
             return;
         }
 
-        $existingJob = $this->hasPendingBackupJob();
+        $nextRun = ScheduleHelper::calculateNext($schedule);
+        $delay = ScheduleHelper::calculateDelaySeconds($schedule);
 
-        if (!$existingJob) {
-            $nextRun = ScheduleHelper::calculateNext($schedule);
-            $delay = ScheduleHelper::calculateDelaySeconds($schedule);
+        if ($nextRun === null || $delay <= 0) {
+            return;
+        }
 
-            if ($nextRun === null || $delay <= 0) {
-                return;
-            }
+        $nextRunTime = DateFormatHelper::formatCompactDatetimeFromSettings(
+            $nextRun,
+            $settings,
+            false,
+            false,
+        );
 
-            $job = new CreateBackupJob([
+        RecurringQueueHelper::ensurePending(
+            pluginToken: 'translationmanager',
+            jobClass: CreateBackupJob::class,
+            delay: $delay,
+            jobFactory: fn() => new CreateBackupJob([
                 'reason' => 'scheduled',
                 'reschedule' => true,
-                'nextRunTime' => DateFormatHelper::formatCompactDatetimeFromSettings(
-                    $nextRun,
-                    $settings,
-                    false,
-                    false,
-                ),
-            ]);
-
-            Craft::$app->getQueue()->delay($delay)->push($job);
-
-            $this->logInfo('Scheduled initial backup job', [
-                'delay_seconds' => $delay,
-                'schedule' => $schedule,
-            ]);
-        }
+                'nextRunTime' => $nextRunTime,
+            ]),
+        );
     }
 
     /**
@@ -921,26 +923,7 @@ class TranslationManager extends Plugin
             return;
         }
 
-        $nextRun = ScheduleHelper::calculateNext($schedule);
-        $delay = ScheduleHelper::calculateDelaySeconds($schedule);
-        if ($nextRun === null || $delay <= 0) {
-            return;
-        }
-
-        $job = new CreateBackupJob([
-            'reason' => 'scheduled',
-            'reschedule' => true,
-            'nextRunTime' => DateFormatHelper::formatCompactDatetimeFromSettings(
-                $nextRun,
-                $settings,
-                false,
-                false,
-            ),
-        ]);
-
-        Craft::$app->getQueue()->delay($delay)->push($job);
-
-        $this->logInfo('Scheduled backup job queued', ['schedule' => $schedule]);
+        $this->queueBackupJob($settings);
     }
 
     /**
@@ -948,30 +931,7 @@ class TranslationManager extends Plugin
      */
     private function cancelScheduledBackupJobs(): void
     {
-        $db = Craft::$app->getDb();
-
-        // Delete any pending CreateBackupJob from queue
-        $db->createCommand()
-            ->delete('{{%queue}}', [
-                'and',
-                ['like', 'job', 'translationmanager'],
-                ['like', 'job', 'CreateBackupJob'],
-            ])
-            ->execute();
-    }
-
-    /**
-     * Check whether a pending scheduled backup job is already queued.
-     */
-    private function hasPendingBackupJob(): bool
-    {
-        return (new Query())
-            ->from('{{%queue}}')
-            ->where(['like', 'job', 'translationmanager'])
-            ->andWhere(['like', 'job', 'CreateBackupJob'])
-            ->andWhere(['fail' => false])
-            ->andWhere(['timeUpdated' => null])
-            ->exists();
+        RecurringQueueHelper::deletePending('translationmanager', CreateBackupJob::class);
     }
 
     /**
