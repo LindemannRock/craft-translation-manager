@@ -1,3 +1,5 @@
+![Translation Manager](docs/images/hero.webp)
+
 # Translation Manager Plugin for Craft CMS
 
 [![Latest Version](https://img.shields.io/packagist/v/lindemannrock/craft-translation-manager.svg)](https://packagist.org/packages/lindemannrock/craft-translation-manager)

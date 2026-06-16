@@ -57,6 +57,8 @@ return [
 | `weekly` | Weekly |
 | `monthly` | Monthly |
 
+Craft stores scheduled backup queue descriptions when rows are queued, so date/time format changes apply to newly queued rows. Existing delayed rows keep their old label until they run or are requeued. Queue labels stay compact: numeric months render numerically, while short and long month settings both render as short month names.
+
 ## Using the Control Panel
 
 ### Creating Backups
@@ -103,7 +105,7 @@ php craft translation-manager/backup/create
 # Create with custom reason
 php craft translation-manager/backup/create --reason="Before update"
 
-# Run scheduled backup (for cron)
+# Run scheduled backup manually or from direct cron
 php craft translation-manager/backup/scheduled
 
 # List all backups

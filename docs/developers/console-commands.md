@@ -219,7 +219,7 @@ ddev craft translation-manager/backup/create --reason="Before major update"
 
 ### `translation-manager/backup/scheduled`
 
-Run a scheduled backup. Use this for cron jobs — it respects the backup schedule settings.
+Run a scheduled backup. Translation Manager normally schedules backups through Craft's queue; this command is useful for manual checks or direct cron setups and respects the backup schedule settings.
 
 ```bash title="PHP"
 php craft translation-manager/backup/scheduled

@@ -15,6 +15,7 @@ Solutions to common issues and debugging tips.
 - Check queue status: `php craft queue/info`
 - For production, ensure queue runner is active
 - The plugin automatically recovers from queue failures on each page load
+- If a deployment or multiple web processes create duplicate pending backup rows, Translation Manager collapses the duplicate pending rows during bootstrap and keeps one row for the next scheduled run
 
 ## Translations Not Being Captured
 
