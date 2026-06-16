@@ -157,6 +157,11 @@ class PhpImportController extends Controller
         $updated = $result['updated'];
         $errors = $result['errors'];
 
+        // Regenerate translation files on disk so they reflect the imported
+        // rows. Mirrors ImportController; the auto-generate setting gate lives
+        // inside triggerAutoGenerate().
+        TranslationManager::getInstance()->generate->triggerAutoGenerate();
+
         $this->saveImportHistory($file, $imported, $updated, $errors, $backupPath);
 
         return $this->asJson([

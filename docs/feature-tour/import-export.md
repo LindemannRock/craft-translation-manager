@@ -90,7 +90,7 @@ translations/
 
 ### Auto Generate
 
-Enable auto-generation in settings to automatically update PHP files when translations are saved.
+Enable auto-generation in settings to automatically update PHP files when translations are saved or imported (CSV, Excel, and PHP file imports all refresh the generated files).
 
 ### Manual Generation
 
