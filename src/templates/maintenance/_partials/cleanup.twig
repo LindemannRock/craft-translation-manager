@@ -191,4 +191,60 @@
         {% endif %}
     </div>
 </div>
+
+<hr>
+
+<div class="field">
+    <div class="heading">
+        <label>{{ "Clean Up Generated Files"|t('translation-manager') }}</label>
+        <div class="instructions">
+            <p>{{ "Optionally remove generated PHP files whose language folder or category is no longer a current generation target."|t('translation-manager') }}</p>
+        </div>
+    </div>
+    <div class="input">
+        {% if generatedFileCleanup.totalCandidates > 0 %}
+            <div style="margin-bottom: 12px;">
+                {% set fileWord = generatedFileCleanup.totalCandidates == 1 ? "file"|t('translation-manager') : "files"|t('translation-manager') %}
+                <p class="light">{{ "Found {count} generated {fileWord} that can be reviewed for cleanup."|t('translation-manager', {count: generatedFileCleanup.totalCandidates|number_format, fileWord: fileWord}) }}</p>
+            </div>
+
+            <div>
+                {% set generatedFileOptions = [
+                    {value: '', label: 'Select generated file'|t('translation-manager')}
+                ] %}
+                {% for row in generatedFileCleanup.files %}
+                    {% set reason = row.reason == 'language' ? 'language folder no longer generated'|t('translation-manager') : (row.reason == 'category' ? 'category no longer generated'|t('translation-manager') : 'language folder and category no longer generated'|t('translation-manager')) %}
+                    {% set generatedFileOptions = generatedFileOptions|merge([{
+                        value: row.path,
+                        label: row.path ~ ' (' ~ reason ~ ')'
+                    }]) %}
+                {% endfor %}
+                {{ forms.selectField({
+                    label: "Generated File to Clean Up"|t('translation-manager'),
+                    id: 'cleanGeneratedFile',
+                    name: 'cleanGeneratedFile',
+                    options: generatedFileOptions,
+                    value: ''
+                }) }}
+                {% include 'lindemannrock-base/_components/info-box' with {
+                    message: '',
+                    type: 'warning',
+                    variant: 'colored',
+                    margin: 'both',
+                    boxId: 'generatedFileCleanupDescription',
+                    messageId: 'generatedFileCleanupDescriptionText',
+                    hidden: true,
+                    allowHtml: false,
+                } %}
+                <div style="margin-top: 8px;">
+                    <button type="button" class="btn secondary" id="clean-generated-file-btn" disabled>
+                        {{ "Delete Generated File"|t('translation-manager') }}
+                    </button>
+                </div>
+            </div>
+        {% else %}
+            <p class="light">{{ "No orphaned generated PHP files found."|t('translation-manager') }}</p>
+        {% endif %}
+    </div>
+</div>
 {% endif %}

@@ -16,6 +16,7 @@ use craft\helpers\StringHelper;
 use craft\web\Controller;
 use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\helpers\GeneratedFileCleanupHelper;
 use lindemannrock\translationmanager\helpers\SiteLanguageHelper;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\services\IntegrationService;
@@ -44,6 +45,7 @@ class MaintenanceController extends Controller
             case 'clean-unused-type':
             case 'clean-languages':
             case 'clean-categories':
+            case 'clean-generated-file':
                 if (!$user->checkPermission('translationManager:cleanUnused')) {
                     throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clean unused translations.'));
                 }
@@ -615,6 +617,40 @@ class MaintenanceController extends Controller
                 'error' => Craft::t('translation-manager', 'Failed to scan templates: {error}', ['error' => $e->getMessage()]),
             ]);
         }
+    }
+
+    /**
+     * Delete one orphaned generated PHP translation file.
+     *
+     * @return Response
+     * @since 5.25.1
+     */
+    public function actionCleanGeneratedFile(): Response
+    {
+        $this->requirePostRequest();
+        $this->requireAcceptsJson();
+        $this->requirePermission('translationManager:cleanUnused');
+
+        $path = trim((string)Craft::$app->getRequest()->getBodyParam('path', ''));
+        if ($path === '') {
+            return $this->asJson([
+                'success' => false,
+                'error' => Craft::t('translation-manager', 'No generated file selected.'),
+            ]);
+        }
+
+        if (!GeneratedFileCleanupHelper::deleteCandidate($path)) {
+            return $this->asJson([
+                'success' => false,
+                'error' => Craft::t('translation-manager', 'Generated file is no longer a cleanup candidate.'),
+            ]);
+        }
+
+        return $this->asJson([
+            'success' => true,
+            'deleted' => 1,
+            'message' => Craft::t('translation-manager', 'Deleted generated file {file}.', ['file' => $path]),
+        ]);
     }
 
     /**

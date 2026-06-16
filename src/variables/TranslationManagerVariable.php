@@ -10,6 +10,7 @@
 
 namespace lindemannrock\translationmanager\variables;
 
+use lindemannrock\translationmanager\helpers\GeneratedFileCleanupHelper;
 use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\TranslationManager;
 
@@ -275,6 +276,17 @@ class TranslationManagerVariable
         }
 
         return \lindemannrock\base\helpers\PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()));
+    }
+
+    /**
+     * Get cleanup candidates for orphaned generated PHP translation files.
+     *
+     * @return array{files: array<int, array{path:string,language:string,category:string,reason:string}>, totalCandidates:int}
+     * @since 5.25.1
+     */
+    public function getGeneratedFileCleanupCandidates(): array
+    {
+        return GeneratedFileCleanupHelper::getCandidates();
     }
 
     /**

@@ -77,6 +77,10 @@
     totalRows: 0,
     removed: [],
 } %}
+{% set generatedFileCleanup = {
+    totalCandidates: 0,
+    files: [],
+} %}
 {% set translationCounts = {
     total: 0,
     site: 0,
@@ -86,6 +90,7 @@
     {% set unusedCounts = craft.translationManager.getUnusedTranslationCounts() %}
     {% set languageCleanup = craft.translationManager.getLanguageCleanupCandidates() %}
     {% set categoryCleanup = craft.translationManager.getCategoryCleanupCandidates() %}
+    {% set generatedFileCleanup = craft.translationManager.getGeneratedFileCleanupCandidates() %}
 {% endif %}
 {% if canDanger %}
     {% set translationCounts = craft.translationManager.getTranslationCounts() %}
@@ -117,7 +122,8 @@
     #clean-unused-enhanced-btn:disabled,
     #migrate-clean-languages-btn:disabled,
     #clean-languages-btn:disabled,
-    #clean-categories-btn:disabled {
+    #clean-categories-btn:disabled,
+    #clean-generated-file-btn:disabled {
         opacity: 0.45;
         cursor: not-allowed;
     }
@@ -135,10 +141,14 @@
     const cleanCategoriesBtn = document.getElementById('clean-categories-btn');
     const cleanLanguageSelect = document.getElementById('cleanLanguage');
     const cleanCategorySelect = document.getElementById('cleanCategory');
+    const cleanGeneratedFileSelect = document.getElementById('cleanGeneratedFile');
     const languageCleanupDescription = document.getElementById('languageCleanupDescription');
     const languageCleanupDescriptionText = document.getElementById('languageCleanupDescriptionText');
     const categoryCleanupDescription = document.getElementById('categoryCleanupDescription');
     const categoryCleanupDescriptionText = document.getElementById('categoryCleanupDescriptionText');
+    const generatedFileCleanupDescription = document.getElementById('generatedFileCleanupDescription');
+    const generatedFileCleanupDescriptionText = document.getElementById('generatedFileCleanupDescriptionText');
+    const cleanGeneratedFileBtn = document.getElementById('clean-generated-file-btn');
 
     function withBackupDescription(message, backupSuffix) {
         return backupSuffix ? `${message} ${backupSuffix}` : message;
@@ -437,6 +447,75 @@
                 btn.classList.remove('loading');
                 updateCleanCategoriesState();
                 Craft.cp.displayError({{ 'Failed to clean categories: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
+            });
+        });
+    }
+
+    if (cleanGeneratedFileBtn && cleanGeneratedFileSelect) {
+        const generatedFileDescriptions = {
+            {% for row in generatedFileCleanup.files %}
+            '{{ row.path|e('js') }}': '{{ "This will permanently delete the generated PHP file {file}. Database translation rows are not changed."|t('translation-manager', {file: row.path})|e('js') }}',
+            {% endfor %}
+        };
+
+        function updateCleanGeneratedFileState() {
+            const selected = cleanGeneratedFileSelect.value;
+            const hasSelection = !!selected;
+            cleanGeneratedFileBtn.disabled = !hasSelection;
+            cleanGeneratedFileBtn.classList.toggle('disabled', !hasSelection);
+
+            if (hasSelection) {
+                generatedFileCleanupDescription.style.display = 'block';
+                generatedFileCleanupDescriptionText.textContent = generatedFileDescriptions[selected] || (
+                    `{{ "This will permanently delete the selected generated PHP file. Database translation rows are not changed."|t('translation-manager')|e('js') }}`
+                );
+            } else {
+                generatedFileCleanupDescription.style.display = 'none';
+            }
+        }
+
+        cleanGeneratedFileSelect.addEventListener('change', updateCleanGeneratedFileState);
+        updateCleanGeneratedFileState();
+
+        cleanGeneratedFileBtn.addEventListener('click', function() {
+            const selected = cleanGeneratedFileSelect.value;
+            if (!selected) {
+                return;
+            }
+
+            if (!confirm(`{{ "Delete selected generated PHP file?"|t('translation-manager')|e('js') }}\\n\\n${selected}`)) {
+                return;
+            }
+
+            const btn = this;
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            fetch('{{ actionUrl('translation-manager/maintenance/clean-generated-file') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({path: selected})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Craft.cp.displayNotice(data.message || {{ 'Generated file cleanup completed.'|t('translation-manager')|json_encode|raw }});
+                    setTimeout(() => window.location.reload(), 1200);
+                } else {
+                    btn.classList.remove('loading');
+                    updateCleanGeneratedFileState();
+                    Craft.cp.displayError(data.error || {{ 'Failed to clean generated file.'|t('translation-manager')|json_encode|raw }});
+                }
+            })
+            .catch(error => {
+                btn.classList.remove('loading');
+                updateCleanGeneratedFileState();
+                Craft.cp.displayError({{ 'Failed to clean generated file: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
             });
         });
     }

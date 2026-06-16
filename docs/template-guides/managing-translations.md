@@ -65,9 +65,10 @@ Identify unused translations:
 
 | Option | Description |
 |--------|-------------|
-| Clean All Unused | Remove all unused translations |
-| Clean Site Unused | Remove unused site translations |
-| Clean Forms Unused | Remove unused form translations |
+| Clean Up Unused Translations | Remove translations that are no longer used in templates or forms |
+| Clean Up Removed Categories | Remove database rows for categories that are no longer enabled |
+| Clean Up Languages | Optionally migrate or delete mapped-source and ghost language rows |
+| Clean Up Generated Files | Optionally delete generated PHP files whose language folder or category is no longer generated. Database translation rows are not changed |
 
 ### Danger Zone
 
