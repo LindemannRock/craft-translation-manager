@@ -233,6 +233,41 @@ class TranslationsController extends Controller
     }
 
     /**
+     * Generate site translation files for one category.
+     *
+     * @since 5.25.1
+     */
+    public function actionGenerateCategory(string $category): int
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $enabledCategories = $settings->getEnabledCategories();
+
+        if (!in_array($category, $enabledCategories, true)) {
+            $this->stderr("Category \"{$category}\" is not enabled.\n", Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+
+        $this->stdout("Generating {$category} translation files...\n", Console::FG_YELLOW);
+
+        try {
+            $result = TranslationManager::getInstance()->generate->generateCategoryTranslations($category);
+
+            if (!($result['success'] ?? false)) {
+                $this->stderr("Generation failed\n", Console::FG_RED);
+                return ExitCode::UNSPECIFIED_ERROR;
+            }
+
+            $count = (int)($result['translationCount'] ?? 0);
+            $this->stdout("Generated {$count} translated entries into {$category} translation files\n", Console::FG_GREEN);
+
+            return ExitCode::OK;
+        } catch (\Exception $e) {
+            $this->stderr("Error generating {$category} translation files: {$e->getMessage()}\n", Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+    }
+
+    /**
      * Generate all translation files (enabled form providers + site)
      */
     public function actionGenerateAll(): int

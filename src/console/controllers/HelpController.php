@@ -72,6 +72,15 @@ final class HelpController extends AbstractHelpController
                             ],
                         ],
                         [
+                            'path' => 'translations/generate-category',
+                            'summary' => 'Generate one site category file set.',
+                            'description' => 'Write translated site strings for one enabled category to PHP translation files.',
+                            'arguments' => '<category>',
+                            'examples' => [
+                                'translation-manager/translations/generate-category messages',
+                            ],
+                        ],
+                        [
                             'path' => 'translations/generate-all',
                             'summary' => 'Generate provider and site translation files.',
                             'description' => 'Run enabled form-provider and site translation file generation in one command.',

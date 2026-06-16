@@ -116,6 +116,9 @@ php craft translation-manager/translations/generate-all
 # Generate site translation files only
 php craft translation-manager/translations/generate-site
 
+# Generate one site category only
+php craft translation-manager/translations/generate-category messages
+
 # Generate one form provider's translation files only
 php craft translation-manager/translations/generate-provider formie
 php craft translation-manager/translations/generate-provider freeform

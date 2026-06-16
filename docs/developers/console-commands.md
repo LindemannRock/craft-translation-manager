@@ -80,6 +80,18 @@ php craft translation-manager/translations/generate-site
 ddev craft translation-manager/translations/generate-site
 ```
 
+### `translation-manager/translations/generate-category`
+
+Generate PHP translation files for one enabled site category.
+
+```bash title="PHP"
+php craft translation-manager/translations/generate-category messages
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/translations/generate-category messages
+```
+
 ### `translation-manager/translations/import`
 
 Import existing PHP translation files from disk into the database, preserving the translated values. Mirrors the Control Panel PHP import: it discovers every `{language}/{category}.php` file under the generation path and creates or updates rows for all languages.
