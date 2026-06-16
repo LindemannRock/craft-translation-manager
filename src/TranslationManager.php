@@ -140,8 +140,13 @@ class TranslationManager extends Plugin
                     'confettiPreset' => 'surprise',
                 ],
                 'colorSets' => [
-                    // Type filter — must NOT clash with status colors
-                    // (draft=blue, translated=teal, pending=orange, unused=gray)
+                    'translationStatus' => [
+                        'pending' => ColorHelper::getPaletteColor('orange'),
+                        'draft' => ColorHelper::getPaletteColor('blue'),
+                        'translated' => ColorHelper::getPaletteColor('green'),
+                        'unused' => ColorHelper::getPaletteColor('gray'),
+                    ],
+                    // Type filter — must NOT clash with status colors.
                     'translationTypes' => [
                         'forms' => ColorHelper::getPaletteColor('indigo'),
                         'site' => ColorHelper::getPaletteColor('cyan'),

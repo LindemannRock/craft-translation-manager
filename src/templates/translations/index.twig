@@ -60,12 +60,13 @@
         {
             param: 'status',
             current: status,
+            colorSet: 'translationStatus',
             options: [
                 { value: 'all', label: 'All'|t('translation-manager'), status: 'all' },
-                { value: 'pending', label: 'Pending'|t('translation-manager'), statusColor: '#f59e0b' },
-                { value: 'draft', label: 'Draft'|t('translation-manager'), statusColor: '#3b82f6' },
-                { value: 'translated', label: 'Translated'|t('translation-manager'), statusColor: '#14b8a6' },
-                { value: 'unused', label: 'Unused'|t('translation-manager'), statusColor: '#64748b' },
+                { value: 'pending', label: 'Pending'|t('translation-manager'), colorKey: 'pending' },
+                { value: 'draft', label: 'Draft'|t('translation-manager'), colorKey: 'draft' },
+                { value: 'translated', label: 'Translated'|t('translation-manager'), colorKey: 'translated' },
+                { value: 'unused', label: 'Unused'|t('translation-manager'), colorKey: 'unused' },
             ],
         }
     ],
@@ -77,10 +78,11 @@
             header: 'Type'|t('translation-manager'),
             param: 'type',
             current: type,
+            colorSet: 'translationTypes',
             options: [
                 { value: 'all', label: 'All Types'|t('translation-manager'), status: 'all' },
-                { value: 'forms', label: 'Forms'|t('translation-manager'), statusColor: lrSetColor('translationTypes', 'forms').color },
-                { value: 'site', label: 'Site'|t('translation-manager'), statusColor: lrSetColor('translationTypes', 'site').color },
+                { value: 'forms', label: 'Forms'|t('translation-manager'), colorKey: 'forms' },
+                { value: 'site', label: 'Site'|t('translation-manager'), colorKey: 'site' },
             ],
         }])
     }) %}
@@ -91,12 +93,13 @@
         header: 'Origin'|t('translation-manager'),
         param: 'origin',
         current: origin,
+        colorSet: 'translationOrigins',
         options: [
             { value: 'all', label: 'All Origins'|t('translation-manager'), status: 'all' },
-            { value: 'ai', label: 'AI'|t('translation-manager'), statusColor: lrSetColor('translationOrigins', 'ai').color },
-            { value: 'manual', label: 'Manual'|t('translation-manager'), statusColor: lrSetColor('translationOrigins', 'manual').color },
-            { value: 'import', label: 'Import'|t('translation-manager'), statusColor: lrSetColor('translationOrigins', 'import').color },
-            { value: 'system', label: 'System'|t('translation-manager'), statusColor: lrSetColor('translationOrigins', 'system').color },
+            { value: 'ai', label: 'AI'|t('translation-manager'), colorKey: 'ai' },
+            { value: 'manual', label: 'Manual'|t('translation-manager'), colorKey: 'manual' },
+            { value: 'import', label: 'Import'|t('translation-manager'), colorKey: 'import' },
+            { value: 'system', label: 'System'|t('translation-manager'), colorKey: 'system' },
         ],
     }])
 }) %}
@@ -222,11 +225,18 @@
     {% if showTypeCol %}
         <td data-column="type" class="lr-hideable-column">
             {% set providerLabel = craft.translationManager.getFormProviderLabelForContext(item.context) %}
+            {% set typeKey = providerLabel ? 'forms' : 'site' %}
             {% if providerLabel %}
-                <span class="light">{{ providerLabel }}</span>
+                {% set typeLabel = providerLabel %}
             {% else %}
-                <span class="light">{{ 'Site'|t('translation-manager') }}</span>
+                {% set typeLabel = 'Site'|t('translation-manager') %}
             {% endif %}
+
+            {% include 'lindemannrock-base/_components/badge' with {
+                label: typeLabel,
+                value: typeKey,
+                colorSet: 'translationTypes',
+            } only %}
         </td>
     {% endif %}
 
@@ -242,19 +252,20 @@
 
     <td data-column="status" class="lr-hideable-column">
         {% set statusMap = {
-            'unused': { label: 'Unused'|t('translation-manager'), color: 'gray' },
-            'pending': { label: 'Pending'|t('translation-manager'), color: 'orange' },
-            'draft': { label: 'Draft'|t('translation-manager'), color: 'blue' },
-            'translated': { label: 'Translated'|t('translation-manager'), color: 'teal' },
+            'unused': { label: 'Unused'|t('translation-manager'), value: 'unused' },
+            'pending': { label: 'Pending'|t('translation-manager'), value: 'pending' },
+            'draft': { label: 'Draft'|t('translation-manager'), value: 'draft' },
+            'translated': { label: 'Translated'|t('translation-manager'), value: 'translated' },
         } %}
-        {% set statusBadge = statusMap[item.status] ?? { label: item.status|title, color: 'gray' } %}
+        {% set statusBadge = statusMap[item.status] ?? { label: item.status|title, value: 'unused' } %}
         {% if item.status == 'draft' and (item.translationOrigin ?? '') == 'ai' %}
             {% set statusBadge = statusBadge|merge({ label: 'AI Draft'|t('translation-manager') }) %}
         {% endif %}
 
         {% include 'lindemannrock-base/_components/badge' with {
             label: statusBadge.label,
-            status: statusBadge.color,
+            value: statusBadge.value,
+            colorSet: 'translationStatus',
         } only %}
     </td>
 
@@ -269,13 +280,11 @@
         {% if originLabels[originKey] is not defined %}
             {% set originKey = 'system' %}
         {% endif %}
-        {% set originColor = lrSetColor('translationOrigins', originKey) %}
 
         {% include 'lindemannrock-base/_components/badge' with {
             label: originLabels[originKey],
-            color: originColor.color,
-            rgb: originColor.rgb,
-            textColor: originColor.text,
+            value: originKey,
+            colorSet: 'translationOrigins',
         } only %}
     </td>
 
