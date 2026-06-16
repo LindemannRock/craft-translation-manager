@@ -11,7 +11,6 @@
 
 namespace lindemannrock\translationmanager\services;
 
-use Craft;
 use craft\base\Component;
 use craft\helpers\FileHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
@@ -57,20 +56,40 @@ class GenerationService extends Component
     }
 
     /**
-     * Generate all translation files (enabled integrations + site)
+     * Generate all translation files (enabled integrations + site).
+     *
+     * @return array<string,mixed>
      */
     public function generateAll(): array
     {
         $this->logInfo('Starting generateAll()');
-        $results = [];
+        $results = [
+            'success' => true,
+            'translationCount' => 0,
+            'writtenFileCount' => 0,
+            'deletedFileCount' => 0,
+            'results' => [],
+        ];
 
         $this->logInfo('About to generate integration translations');
-        $results += $this->generateIntegrationTranslations();
-        $this->logInfo('Integration generation results', ['results' => $results]);
+        $integrationResults = $this->generateIntegrationTranslations();
+        foreach ($integrationResults as $provider => $result) {
+            $results['results'][$provider] = $result;
+            $results['success'] = $results['success'] && (bool)($result['success'] ?? false);
+            $results['translationCount'] += (int)($result['translationCount'] ?? 0);
+            $results['writtenFileCount'] += (int)($result['writtenFileCount'] ?? 0);
+            $results['deletedFileCount'] += (int)($result['deletedFileCount'] ?? 0);
+        }
+        $this->logInfo('Integration generation results', ['results' => $integrationResults]);
 
         $this->logInfo('About to generate site translations');
-        $results['site'] = $this->generateSiteTranslations();
-        $this->logInfo('Site generation result', ['success' => $results['site']]);
+        $siteResult = $this->generateSiteTranslations();
+        $results['results']['site'] = $siteResult;
+        $results['success'] = $results['success'] && (bool)($siteResult['success'] ?? false);
+        $results['translationCount'] += (int)($siteResult['translationCount'] ?? 0);
+        $results['writtenFileCount'] += (int)($siteResult['writtenFileCount'] ?? 0);
+        $results['deletedFileCount'] += (int)($siteResult['deletedFileCount'] ?? 0);
+        $this->logInfo('Site generation result', ['result' => $siteResult]);
 
         $this->logInfo('generateAll() completed');
         return $results;
@@ -79,7 +98,7 @@ class GenerationService extends Component
     /**
      * Generate translation files for every enabled integration.
      *
-     * @return array<string,bool> Results keyed by integration name
+     * @return array<string,array<string,mixed>> Results keyed by integration name
      */
     public function generateIntegrationTranslations(?string $sourceType = null): array
     {
@@ -99,8 +118,10 @@ class GenerationService extends Component
 
     /**
      * Generate translation files for one integration provider.
+     *
+     * @return array<string,mixed>
      */
-    public function generateProviderTranslations(string $provider): bool
+    public function generateProviderTranslations(string $provider): array
     {
         /** @var IntegrationService $integrationService */
         $integrationService = TranslationManager::getInstance()->get('integrations');
@@ -108,156 +129,141 @@ class GenerationService extends Component
 
         if (!$integration instanceof TranslationIntegrationInterface) {
             $this->logInfo('Integration provider is not registered', ['provider' => $provider]);
-            return false;
+            return $this->generationResult('provider', ucfirst($provider), [], false, $provider, [
+                'Integration provider is not registered.',
+            ]);
         }
 
-        $settings = TranslationManager::getInstance()->getSettings();
-        $translationsService = TranslationManager::getInstance()->translations;
         $category = $integration->getCategory();
-        $filename = $category . '.php';
 
         $this->logInfo('Starting integration translation generation', [
             'provider' => $provider,
             'category' => $category,
         ]);
 
-        $translations = $translationsService->getTranslations([
-            'type' => $integration->getSourceType(),
-            'category' => $category,
-            'status' => 'translated',
-            'allSites' => true,
-        ]);
-
-        $this->logInfo('Found integration translations to generate', [
-            'provider' => $provider,
-            'category' => $category,
-            'count' => count($translations),
-        ]);
-
-        if (empty($translations)) {
-            $this->logInfo('No integration translations to generate', [
-                'provider' => $provider,
+        return $this->generateScope(
+            [
+                'type' => $integration->getSourceType(),
                 'category' => $category,
-            ]);
-
-            // Delete existing files if they exist to prevent stale translations
-            $basePath = $settings->getGenerationPath();
-
-            // Get actual site languages dynamically
-            $sites = TranslationManager::getInstance()->getAllowedSites();
-            foreach ($sites as $site) {
-                $generationLanguage = $this->getGenerationLanguage($site);
-                $file = $basePath . '/' . $generationLanguage . '/' . $filename;
-                if (file_exists($file)) {
-                    @unlink($file);
-                    $this->logInfo('Deleted stale integration file', [
-                        'file' => $file,
-                        'provider' => $provider,
-                        'category' => $category,
-                    ]);
-                }
-            }
-
-            return true;
-        }
-
-        // NEW: Group translations by actual sites (not hardcoded languages)
-        $translationsBySite = [];
-
-        foreach ($translations as $translation) {
-            $siteId = $translation['siteId'];
-            if (!isset($translationsBySite[$siteId])) {
-                $translationsBySite[$siteId] = [];
-            }
-
-            // Only include if there's a translation (not empty)
-            if (!empty($translation['translation'])) {
-                $translationsBySite[$siteId][$translation['translationKey']] = $translation['translation'];
-            }
-        }
-
-        // Create translation files for each site
-        $basePath = $settings->getGenerationPath();
-
-        foreach ($translationsBySite as $siteId => $siteTranslations) {
-            $site = Craft::$app->getSites()->getSiteById($siteId);
-            if ($site) {
-                $generationLanguage = $this->getGenerationLanguage($site);
-                $sitePath = $basePath . '/' . $generationLanguage;
-                FileHelper::createDirectory($sitePath);
-
-                // Write translation file for this site
-                $this->writeTranslationFile($sitePath . '/' . $filename, $siteTranslations, $site->name);
-                $this->logInfo('Generated integration translations', [
-                    'count' => count($siteTranslations),
-                    'site' => $site->name,
-                    'language' => $generationLanguage,
-                    'provider' => $provider,
-                    'category' => $category,
-                ]);
-            }
-        }
-
-        // Don't clear caches - let them refresh naturally
-
-        return true;
+                'status' => 'translated',
+                'allSites' => true,
+            ],
+            [$category],
+            'provider',
+            ucfirst($provider),
+            $provider,
+        );
     }
 
     /**
-     * Generate site translation files (per category)
+     * Generate site translation files (per category).
+     *
+     * @return array<string,mixed>
      */
-    public function generateSiteTranslations(): bool
+    public function generateSiteTranslations(): array
     {
         $settings = TranslationManager::getInstance()->getSettings();
-        $translationsService = TranslationManager::getInstance()->translations;
         $categories = $settings->getEnabledCategories();
 
         $this->logInfo('Starting site translation generation', ['categories' => $categories]);
 
-        // Get site translations for ALL sites and ALL enabled categories
-        $translations = $translationsService->getTranslations([
-            'type' => 'site',
-            'status' => 'translated',
-            'allSites' => true,  // Get from all sites
+        return $this->generateScope(
+            [
+                'type' => 'site',
+                'status' => 'translated',
+                'allSites' => true,
+            ],
+            $categories,
+            'site',
+            'Site',
+        );
+    }
+
+    /**
+     * Generate a single category's translation files
+     *
+     * @return array<string,mixed>
+     * @since 5.0.0
+     */
+    public function generateCategoryTranslations(string $category): array
+    {
+        $this->logInfo('Starting single category translation generation', ['category' => $category]);
+
+        return $this->generateScope(
+            [
+                'type' => 'site',
+                'category' => $category,
+                'status' => 'translated',
+                'allSites' => true,
+            ],
+            [$category],
+            'category',
+            ucfirst($category),
+        );
+    }
+
+    /**
+     * @param array<string,mixed> $criteria
+     * @param string[] $categories
+     * @return array<string,mixed>
+     */
+    private function generateScope(
+        array $criteria,
+        array $categories,
+        string $type,
+        string $label,
+        ?string $provider = null,
+    ): array {
+        $translations = TranslationManager::getInstance()->translations->getTranslations($criteria);
+
+        $this->logInfo('Found translations to generate', [
+            'type' => $type,
+            'provider' => $provider,
+            'categories' => $categories,
+            'count' => count($translations),
         ]);
 
-        $this->logInfo('Found site translations to generate', ['count' => count($translations)]);
+        $writeResult = $this->writeCategoryLanguageFiles($translations, $categories);
 
+        return $this->generationResult(
+            $type,
+            $label,
+            $categories,
+            true,
+            $provider,
+            [],
+            count($translations),
+            $writeResult['writtenFileCount'],
+            $writeResult['deletedFileCount'],
+        );
+    }
+
+    /**
+     * Group translated rows by category and mapped language, write the matching
+     * PHP files, and delete stale files for categories with no generated output.
+     *
+     * @param array<int,array<string,mixed>> $translations Rows from getTranslations()
+     * @param string[] $categories Categories in scope for stale-file cleanup
+     * @return array{writtenFileCount:int,deletedFileCount:int}
+     */
+    private function writeCategoryLanguageFiles(array $translations, array $categories): array
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
         $basePath = $settings->getGenerationPath();
         $sites = TranslationManager::getInstance()->getAllowedSites();
+        $writtenFileCount = 0;
+        $deletedFileCount = 0;
 
-        if (empty($translations)) {
-            $this->logInfo('No site translations to generate');
-
-            // Delete existing files for all categories to prevent stale translations
-            foreach ($categories as $category) {
-                $filename = $category . '.php';
-                foreach ($sites as $site) {
-                    $generationLanguage = $this->getGenerationLanguage($site);
-                    $file = $basePath . '/' . $generationLanguage . '/' . $filename;
-                    if (file_exists($file)) {
-                        @unlink($file);
-                        $this->logInfo("Deleted stale file", ['file' => $file, 'category' => $category]);
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        // Group translations by category, then by MAPPED language (not siteId)
-        // This ensures translations saved under mapped language (e.g., 'en') are generated correctly
+        // Group by category, then by MAPPED language (not siteId) so rows saved
+        // under a mapped language (e.g. 'en') generate correctly and sites that
+        // share a language merge into a single file.
         $translationsByCategoryAndLanguage = [];
 
         foreach ($translations as $translation) {
             $category = $translation['category'] ?? $settings->getPrimaryCategory();
-            // Use the translation's language field, then apply mapping
             $language = $translation['language'] ?? 'en';
             $mappedLanguage = $settings->mapLanguage($language);
 
-            if (!isset($translationsByCategoryAndLanguage[$category])) {
-                $translationsByCategoryAndLanguage[$category] = [];
-            }
             if (!isset($translationsByCategoryAndLanguage[$category][$mappedLanguage])) {
                 $translationsByCategoryAndLanguage[$category][$mappedLanguage] = [];
             }
@@ -268,7 +274,7 @@ class GenerationService extends Component
             }
         }
 
-        // Create translation files for each category and language
+        // Write one file per category and language.
         foreach ($translationsByCategoryAndLanguage as $category => $translationsByLanguage) {
             $filename = $category . '.php';
 
@@ -276,9 +282,9 @@ class GenerationService extends Component
                 $sitePath = $basePath . '/' . $generationLanguage;
                 FileHelper::createDirectory($sitePath);
 
-                // Write translation file for this language and category
                 $this->writeTranslationFile($sitePath . '/' . $filename, $langTranslations, $generationLanguage);
-                $this->logInfo("Generated site translations", [
+                $writtenFileCount++;
+                $this->logInfo('Generated translation file', [
                     'count' => count($langTranslations),
                     'language' => $generationLanguage,
                     'category' => $category,
@@ -286,102 +292,57 @@ class GenerationService extends Component
             }
         }
 
-        // Clean up stale files for categories that have no translations
+        // Delete stale files for in-scope categories that produced no output.
         foreach ($categories as $category) {
-            if (!isset($translationsByCategoryAndLanguage[$category])) {
-                $filename = $category . '.php';
-                foreach ($sites as $site) {
-                    $generationLanguage = $this->getGenerationLanguage($site);
-                    $file = $basePath . '/' . $generationLanguage . '/' . $filename;
-                    if (file_exists($file)) {
-                        @unlink($file);
-                        $this->logInfo("Deleted stale file (no translations)", ['file' => $file, 'category' => $category]);
-                    }
-                }
+            if (isset($translationsByCategoryAndLanguage[$category])) {
+                continue;
             }
-        }
 
-        return true;
-    }
-
-    /**
-     * Generate a single category's translation files
-     *
-     * @since 5.0.0
-     */
-    public function generateCategoryTranslations(string $category): bool
-    {
-        $settings = TranslationManager::getInstance()->getSettings();
-        $translationsService = TranslationManager::getInstance()->translations;
-
-        $this->logInfo('Starting single category translation generation', ['category' => $category]);
-
-        // Get translations for this specific category across ALL sites
-        $translations = $translationsService->getTranslations([
-            'type' => 'site',
-            'category' => $category,
-            'status' => 'translated',
-            'allSites' => true,
-        ]);
-
-        $this->logInfo('Found translations to generate', ['count' => count($translations), 'category' => $category]);
-
-        $basePath = $settings->getGenerationPath();
-        $sites = TranslationManager::getInstance()->getAllowedSites();
-        $filename = $category . '.php';
-
-        if (empty($translations)) {
-            $this->logInfo('No translations to generate for category', ['category' => $category]);
-
-            // Delete existing files for this category to prevent stale translations
+            $filename = $category . '.php';
             foreach ($sites as $site) {
                 $generationLanguage = $this->getGenerationLanguage($site);
                 $file = $basePath . '/' . $generationLanguage . '/' . $filename;
                 if (file_exists($file)) {
                     @unlink($file);
-                    $this->logInfo("Deleted stale file", ['file' => $file, 'category' => $category]);
+                    $deletedFileCount++;
+                    $this->logInfo('Deleted stale generated file', ['file' => $file, 'category' => $category]);
                 }
             }
-
-            return true;
         }
 
-        // Group translations by site
-        $translationsBySite = [];
+        return [
+            'writtenFileCount' => $writtenFileCount,
+            'deletedFileCount' => $deletedFileCount,
+        ];
+    }
 
-        foreach ($translations as $translation) {
-            $siteId = $translation['siteId'];
-
-            if (!isset($translationsBySite[$siteId])) {
-                $translationsBySite[$siteId] = [];
-            }
-
-            // Only include if there's a translation (not empty)
-            if (!empty($translation['translation'])) {
-                $translationsBySite[$siteId][$translation['translationKey']] = $translation['translation'];
-            }
-        }
-
-        // Create translation files for each site
-        foreach ($translationsBySite as $siteId => $siteTranslations) {
-            $site = Craft::$app->getSites()->getSiteById($siteId);
-            if ($site) {
-                $generationLanguage = $this->getGenerationLanguage($site);
-                $sitePath = $basePath . '/' . $generationLanguage;
-                FileHelper::createDirectory($sitePath);
-
-                // Write translation file for this site and category
-                $this->writeTranslationFile($sitePath . '/' . $filename, $siteTranslations, $site->name);
-                $this->logInfo("Generated category translations", [
-                    'count' => count($siteTranslations),
-                    'site' => $site->name,
-                    'language' => $generationLanguage,
-                    'category' => $category,
-                ]);
-            }
-        }
-
-        return true;
+    /**
+     * @param string[] $categories
+     * @param string[] $warnings
+     * @return array<string,mixed>
+     */
+    private function generationResult(
+        string $type,
+        string $label,
+        array $categories,
+        bool $success,
+        ?string $provider = null,
+        array $warnings = [],
+        int $translationCount = 0,
+        int $writtenFileCount = 0,
+        int $deletedFileCount = 0,
+    ): array {
+        return [
+            'success' => $success,
+            'type' => $type,
+            'provider' => $provider,
+            'label' => $label,
+            'categories' => $categories,
+            'translationCount' => $translationCount,
+            'writtenFileCount' => $writtenFileCount,
+            'deletedFileCount' => $deletedFileCount,
+            'warnings' => $warnings,
+        ];
     }
 
     /**

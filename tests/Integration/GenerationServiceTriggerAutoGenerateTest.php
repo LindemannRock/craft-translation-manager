@@ -72,7 +72,7 @@ final class GenerationServiceTriggerAutoGenerateTest extends TestCase
             public function generateAll(): array
             {
                 $this->generateAllCalls++;
-                return ['formie' => true, 'site' => true];
+                return ['success' => true, 'results' => []];
             }
         };
     }

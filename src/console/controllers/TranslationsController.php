@@ -194,20 +194,14 @@ class TranslationsController extends Controller
         }
 
         try {
-            $success = TranslationManager::getInstance()->generate->generateProviderTranslations($provider);
+            $result = TranslationManager::getInstance()->generate->generateProviderTranslations($provider);
 
-            if (!$success) {
+            if (!($result['success'] ?? false)) {
                 $this->stderr("Generation failed\n", Console::FG_RED);
                 return ExitCode::UNSPECIFIED_ERROR;
             }
 
-            $translations = TranslationManager::getInstance()->translations->getTranslations([
-                'type' => 'forms',
-                'category' => $integration->getCategory(),
-                'status' => 'translated',
-                'allSites' => true,
-            ]);
-            $count = count($translations);
+            $count = (int)($result['translationCount'] ?? 0);
             $this->stdout("Generated {$count} translated entries into {$pluginName} translation files\n", Console::FG_GREEN);
 
             return ExitCode::OK;
@@ -226,10 +220,10 @@ class TranslationsController extends Controller
 
         try {
             $generationService = TranslationManager::getInstance()->generate;
-            $category = TranslationManager::getInstance()->getSettings()->translationCategory;
             $result = $generationService->generateSiteTranslations();
+            $count = (int)($result['translationCount'] ?? 0);
 
-            $this->stdout("Generated site translation files per language\n", Console::FG_GREEN);
+            $this->stdout("Generated {$count} translated entries into site translation files\n", Console::FG_GREEN);
 
             return ExitCode::OK;
         } catch (\Exception $e) {
@@ -246,25 +240,22 @@ class TranslationsController extends Controller
         $this->stdout("Generating all translation files...\n\n", Console::FG_YELLOW);
 
         $generationService = TranslationManager::getInstance()->generate;
-        $providerResults = $generationService->generateIntegrationTranslations('forms');
+        $result = $generationService->generateAll();
 
-        foreach ($providerResults as $provider => $success) {
-            $status = $success ? 'Done' : 'Failed';
+        foreach (($result['results'] ?? []) as $name => $scopeResult) {
+            if (!is_array($scopeResult)) {
+                continue;
+            }
+
+            $success = (bool)($scopeResult['success'] ?? false);
+            $count = (int)($scopeResult['translationCount'] ?? 0);
+            $status = $success ? "Done ({$count})" : 'Failed';
             $color = $success ? Console::FG_GREEN : Console::FG_RED;
-            $this->stdout("{$provider}: {$status}\n", $color);
+            $this->stdout("{$name}: {$status}\n", $color);
 
             if (!$success) {
                 return ExitCode::UNSPECIFIED_ERROR;
             }
-        }
-
-        $this->stdout("\n");
-
-        $this->stdout("Generating site translation files...\n", Console::FG_CYAN);
-        $siteResult = $this->actionGenerateSite();
-
-        if ($siteResult !== ExitCode::OK) {
-            return $siteResult;
         }
 
         $this->stdout("\nAll translation files generated successfully!\n", Console::FG_GREEN);

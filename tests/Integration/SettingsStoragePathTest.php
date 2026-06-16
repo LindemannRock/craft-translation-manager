@@ -44,7 +44,8 @@ final class SettingsStoragePathTest extends TestCase
         $settings = $this->settingsForGenerationPath('$' . self::ENV_NAME);
 
         self::assertTrue($settings->validate(['generationPath']), json_encode($settings->getErrors()));
-        self::assertSame(realpath(Craft::getAlias('@translations')), $settings->getGenerationPath());
+        $expected = realpath(Craft::getAlias('@translations')) ?: Craft::getAlias('@translations');
+        self::assertSame($expected, $settings->getGenerationPath());
     }
 
     public function testEnvGenerationPathResolvingInsideTranslationsPasses(): void
@@ -54,7 +55,8 @@ final class SettingsStoragePathTest extends TestCase
         $settings = $this->settingsForGenerationPath('$' . self::ENV_NAME);
 
         self::assertTrue($settings->validate(['generationPath']), json_encode($settings->getErrors()));
-        self::assertSame(realpath($path), $settings->getGenerationPath());
+        $expected = realpath($path) ?: $path;
+        self::assertSame($expected, $settings->getGenerationPath());
     }
 
     public function testRootGenerationPathFails(): void

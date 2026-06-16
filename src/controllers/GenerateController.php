@@ -108,57 +108,41 @@ class GenerateController extends Controller
         try {
             $this->logInfo('User requested all-files generation');
             $generationService = TranslationManager::getInstance()->generate;
-            $translationsService = TranslationManager::getInstance()->translations;
             /** @var IntegrationService $integrationService */
             $integrationService = TranslationManager::getInstance()->get('integrations');
-            $formIntegrations = $integrationService->getIntegrationsBySourceType('forms', true);
-
-            // Check what's available to generate first
-            $integrationCounts = [];
-            foreach ($formIntegrations as $integration) {
-                $integrationCounts[$integration->getName()] = count($translationsService->getTranslations([
-                    'type' => $integration->getSourceType(),
-                    'category' => $integration->getCategory(),
-                    'status' => 'translated',
-                    'allSites' => true,
-                ]));
-            }
-            $siteCount = count($translationsService->getTranslations(['type' => 'site', 'status' => 'translated', 'allSites' => true]));
-
-            $this->logInfo("Generation preparation", [
-                'integrationCounts' => $integrationCounts,
-                'siteCount' => $siteCount,
-            ]);
-
-            $integrationResults = [];
-            $siteResult = false;
+            $result = $generationService->generateAll();
             $messages = [];
             $warnings = [];
 
-            // Only generate if there are translations to generate
-            foreach ($formIntegrations as $integration) {
-                $integrationName = $integration->getName();
-                $integrationCount = $integrationCounts[$integrationName] ?? 0;
-                $pluginName = PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integrationName));
+            foreach (($result['results'] ?? []) as $key => $scopeResult) {
+                if (!is_array($scopeResult)) {
+                    continue;
+                }
 
-                if ($integrationCount > 0) {
-                    $integrationResults[$integrationName] = $generationService->generateProviderTranslations($integrationName);
-                    if ($integrationResults[$integrationName]) {
-                        $messages[] = Craft::t('translation-manager', '{name} files ({count} translations)', ['name' => $pluginName, 'count' => $integrationCount]);
+                $count = (int)($scopeResult['translationCount'] ?? 0);
+                $type = (string)($scopeResult['type'] ?? '');
+
+                if ($count > 0) {
+                    if ($type === 'site') {
+                        $messages[] = Craft::t('translation-manager', 'Site files ({count} translations)', ['count' => $count]);
+                    } else {
+                        $provider = (string)($scopeResult['provider'] ?? $key);
+                        $integration = $integrationService->get($provider);
+                        $name = $integration !== null
+                            ? PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()))
+                            : (string)($scopeResult['label'] ?? ucfirst($provider));
+                        $messages[] = Craft::t('translation-manager', '{name} files ({count} translations)', ['name' => $name, 'count' => $count]);
                     }
+                } elseif ($type === 'site') {
+                    $warnings[] = Craft::t('translation-manager', 'No translated site translations found');
                 } else {
-                    $integrationResults[$integrationName] = false;
-                    $warnings[] = Craft::t('translation-manager', 'No translated {name} translations found', ['name' => $pluginName]);
+                    $provider = (string)($scopeResult['provider'] ?? $key);
+                    $integration = $integrationService->get($provider);
+                    $name = $integration !== null
+                        ? PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()))
+                        : (string)($scopeResult['label'] ?? ucfirst($provider));
+                    $warnings[] = Craft::t('translation-manager', 'No translated {name} translations found', ['name' => $name]);
                 }
-            }
-
-            if ($siteCount > 0) {
-                $siteResult = $generationService->generateSiteTranslations();
-                if ($siteResult) {
-                    $messages[] = Craft::t('translation-manager', 'Site files ({count} translations)', ['count' => $siteCount]);
-                }
-            } else {
-                $warnings[] = Craft::t('translation-manager', 'No translated site translations found');
             }
 
             // Build response message
@@ -180,8 +164,7 @@ class GenerateController extends Controller
                     'success' => true,
                     'message' => $message,
                     'debug' => [
-                        'integrations' => $integrationResults,
-                        'site' => $siteResult,
+                        'result' => $result,
                     ],
                 ]);
             }
@@ -227,13 +210,8 @@ class GenerateController extends Controller
                 ucfirst($integration->getName()),
             );
             $category = $integration->getCategory();
-            $translationsService = TranslationManager::getInstance()->translations;
-            $count = count($translationsService->getTranslations([
-                'type' => 'forms',
-                'category' => $category,
-                'status' => 'translated',
-                'allSites' => true,
-            ]));
+            $result = TranslationManager::getInstance()->generate->generateProviderTranslations($integration->getName());
+            $count = (int)($result['translationCount'] ?? 0);
 
             $this->logInfo('Provider generation preparation', [
                 'provider' => $provider,
@@ -242,7 +220,6 @@ class GenerateController extends Controller
             ]);
 
             if ($count > 0) {
-                TranslationManager::getInstance()->generate->generateProviderTranslations($integration->getName());
                 $message = Craft::t('translation-manager', '{name} translation files generated successfully ({count} translations)', [
                     'name' => $pluginName,
                     'count' => $count,
@@ -286,13 +263,12 @@ class GenerateController extends Controller
 
         try {
             $this->logInfo('User requested site/category generation only');
-            $translationsService = TranslationManager::getInstance()->translations;
-            $siteCount = count($translationsService->getTranslations(['type' => 'site', 'status' => 'translated', 'allSites' => true]));
+            $result = TranslationManager::getInstance()->generate->generateSiteTranslations();
+            $siteCount = (int)($result['translationCount'] ?? 0);
 
             $this->logInfo("Site generation preparation", ['siteCount' => $siteCount]);
 
             if ($siteCount > 0) {
-                TranslationManager::getInstance()->generate->generateSiteTranslations();
                 $message = Craft::t('translation-manager', 'Site translation files generated successfully ({count} translations)', ['count' => $siteCount]);
                 $this->logInfo("Site generation completed", ['message' => $message]);
             } else {
@@ -344,18 +320,12 @@ class GenerateController extends Controller
             }
 
             $this->logInfo('User requested single category generation', ['category' => $category]);
-            $translationsService = TranslationManager::getInstance()->translations;
-            $count = count($translationsService->getTranslations([
-                'type' => 'site',
-                'category' => $category,
-                'status' => 'translated',
-                'allSites' => true,
-            ]));
+            $result = TranslationManager::getInstance()->generate->generateCategoryTranslations($category);
+            $count = (int)($result['translationCount'] ?? 0);
 
             $this->logInfo("Category generation preparation", ['category' => $category, 'count' => $count]);
 
             if ($count > 0) {
-                TranslationManager::getInstance()->generate->generateCategoryTranslations($category);
                 $message = Craft::t('translation-manager', '{name} translation files generated successfully ({count} translations)', ['name' => ucfirst($category), 'count' => $count]);
                 $this->logInfo("Category generation completed", ['message' => $message]);
             } else {

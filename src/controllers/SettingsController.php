@@ -280,6 +280,7 @@ class SettingsController extends Controller
         // Capture old backup settings before applying new values (for schedule change detection)
         $oldBackupEnabled = $settings->backupEnabled;
         $oldBackupSchedule = $settings->backupSchedule;
+        $oldGenerationPath = $settings->getGenerationPath();
 
         // Get only the posted settings (fields from the current page)
         $settingsData = Craft::$app->getRequest()->getBodyParam('settings', []);
@@ -313,6 +314,9 @@ class SettingsController extends Controller
 
         // Save settings to database (same scoped attributes)
         if ($settings->saveToDatabase($attributesToValidate)) {
+            $shouldRegenerateGeneratedFiles = in_array('generationPath', $attributesToValidate, true)
+                && $oldGenerationPath !== $settings->getGenerationPath();
+
             // Detect backup schedule changes and update queue jobs
             if ($oldBackupEnabled !== $settings->backupEnabled ||
                 $oldBackupSchedule !== $settings->backupSchedule
@@ -327,6 +331,12 @@ class SettingsController extends Controller
                 $plugin->setSettings([]);
             }
 
+            if ($shouldRegenerateGeneratedFiles) {
+                $plugin->setSettings([]);
+                $settings = Settings::loadFromDatabase();
+                $this->regenerateGeneratedFilesAfterPathChange($oldGenerationPath, $settings->getGenerationPath());
+            }
+
             Craft::$app->getSession()->setNotice(Craft::t('translation-manager', 'Settings saved.'));
         } else {
             Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Could not save settings.'));
@@ -334,6 +344,36 @@ class SettingsController extends Controller
         }
 
         return $this->redirectToPostedUrl();
+    }
+
+    /**
+     * Regenerate generated PHP files after the generation path changes.
+     */
+    private function regenerateGeneratedFilesAfterPathChange(string $oldPath, string $newPath): void
+    {
+        try {
+            $result = TranslationManager::getInstance()->generate->generateAll();
+
+            $this->logInfo('Regenerated translation files after generation path change', [
+                'oldPath' => $oldPath,
+                'newPath' => $newPath,
+                'translationCount' => $result['translationCount'] ?? 0,
+                'writtenFileCount' => $result['writtenFileCount'] ?? 0,
+                'deletedFileCount' => $result['deletedFileCount'] ?? 0,
+            ]);
+        } catch (\Throwable $e) {
+            $this->logError('Failed to regenerate translation files after generation path change', [
+                'oldPath' => $oldPath,
+                'newPath' => $newPath,
+                'error' => $e->getMessage(),
+            ]);
+
+            Craft::$app->getSession()->setError(Craft::t(
+                'translation-manager',
+                'Failed to generate translation files: {error}',
+                ['error' => $e->getMessage()]
+            ));
+        }
     }
     
     /**

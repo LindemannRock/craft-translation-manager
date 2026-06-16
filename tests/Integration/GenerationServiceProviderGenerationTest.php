@@ -94,8 +94,9 @@ final class GenerationServiceProviderGenerationTest extends TestCase
 
         $results = TranslationManager::getInstance()->generate->generateAll();
 
-        self::assertArrayHasKey(ProviderGenerationTestIntegration::NAME, $results);
-        self::assertTrue($results[ProviderGenerationTestIntegration::NAME]);
+        self::assertTrue((bool)($results['success'] ?? false));
+        self::assertArrayHasKey(ProviderGenerationTestIntegration::NAME, $results['results'] ?? []);
+        self::assertTrue((bool)($results['results'][ProviderGenerationTestIntegration::NAME]['success'] ?? false));
 
         $site = Craft::$app->getSites()->getSiteById((int) $translation->siteId);
         self::assertNotNull($site, 'The generated translation row should reference an existing site.');
@@ -111,6 +112,11 @@ final class GenerationServiceProviderGenerationTest extends TestCase
         self::assertIsArray($providerMessages);
         self::assertArrayHasKey($source, $providerMessages);
         self::assertSame($translationText, $providerMessages[$source]);
+        self::assertStringContainsString(
+            " * {$language} translations",
+            (string)file_get_contents($providerFile),
+            'Provider files should use the same mapped-language header convention as site/category files.',
+        );
 
         $formieFile = $this->tempTranslationsPath . '/' . $language . '/formie.php';
         if (is_file($formieFile)) {
