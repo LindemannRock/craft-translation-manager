@@ -36,6 +36,22 @@ Configure Translation Manager by creating a config file at `config/translation-m
 | `autoGenerate` | `bool` | `true` | Automatically generate PHP translation files when translations are saved |
 | `generationPath` | `string` | `'@translations'` | Generation directory. Supports `@translations` or `$VARIABLE` env vars that resolve exactly to `@translations` |
 
+Generated PHP files must live at Craft's translations root. Translation Manager
+validates `generationPath` against `@translations` exactly because Craft loads
+runtime translation files from that root. Values such as
+`@root/translations/test`, `@translations/test`, or any other subfolder are
+rejected and generation falls back to `@translations`.
+
+Use this:
+
+```php
+'generationPath' => '@translations',
+```
+
+If your project needs the physical translations directory somewhere else,
+change Craft's `@translations` alias for the project instead of pointing
+Translation Manager at a subfolder.
+
 ### Backup
 
 | Option | Type | Default | Description |
@@ -72,6 +88,7 @@ return [
         'captureMissingTranslations' => false,
         'captureMissingOnlyDevMode' => true,
         'autoGenerate' => true,
+        // Must resolve to Craft's @translations root exactly.
         'generationPath' => '@translations',
         'itemsPerPage' => 100,
         'autoSaveEnabled' => false,

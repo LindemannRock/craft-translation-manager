@@ -76,6 +76,11 @@ English Text,Arabic Translation,Status,Context
 
 Generate production-ready PHP translation files.
 
+Translation Manager writes generated PHP files into Craft's `@translations`
+root. The generation path must resolve to that root exactly so Craft can load
+the files at runtime; subfolders such as `@root/translations/test` or
+`@translations/test` are not valid generation targets.
+
 ### Generated Structure
 
 ```
@@ -91,6 +96,10 @@ translations/
 ### Auto Generate
 
 Enable auto-generation in settings to automatically update PHP files when translations are saved or imported (CSV, Excel, and PHP file imports all refresh the generated files).
+
+If the configured generation path changes, Translation Manager regenerates the
+current files into the new valid `@translations` location after the settings
+save succeeds. It does not delete files from the previous physical location.
 
 ### Manual Generation
 

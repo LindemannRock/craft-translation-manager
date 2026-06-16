@@ -52,6 +52,13 @@ Numeric settings such as backup retention and items per page must be whole numbe
 
 When a setting is overridden in `config/translation-manager.php`, the Control Panel field is skipped during save. Change the config file value instead.
 
+If you see `Generation path must resolve to @translations exactly so Craft can
+load the generated files`, change `generationPath` back to `@translations`.
+Translation Manager does not generate into subfolders such as
+`@root/translations/test` or `@translations/test`; Craft expects PHP translation
+files at the translations root. To move the physical folder, configure Craft's
+`@translations` alias for the project.
+
 If error persists:
 ```bash
 php craft migrate/all
