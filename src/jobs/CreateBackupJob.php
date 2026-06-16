@@ -174,8 +174,9 @@ class CreateBackupJob extends BaseJob implements RetryableJobInterface
         return DateFormatHelper::formatCompactDatetimeFromSettings(
             $nextRun,
             TranslationManager::getInstance()->getSettings(),
+            null,
             false,
-            false,
+            pluginHandle: 'translation-manager',
         );
     }
 }

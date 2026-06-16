@@ -884,8 +884,9 @@ class TranslationManager extends Plugin
         $nextRunTime = DateFormatHelper::formatCompactDatetimeFromSettings(
             $nextRun,
             $settings,
+            null,
             false,
-            false,
+            pluginHandle: 'translation-manager',
         );
 
         RecurringQueueHelper::ensurePending(
