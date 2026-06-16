@@ -304,22 +304,25 @@
 {% endblock %}
 
 {% block bulkActions %}
-    {% if canEdit %}
-        <button type="button" class="btn secondary" id="mark-draft-btn">
-            <span id="mark-draft-label">{{ 'Mark Draft'|t('translation-manager') }}</span>
-        </button>
-    {% endif %}
-
-    {% if canApprove or (canEdit and not settings.requireApproval) %}
-        <button type="button" class="btn secondary" id="mark-translated-btn">
-            <span id="mark-translated-label">{{ 'Mark Translated'|t('translation-manager') }}</span>
-        </button>
+    {% if canEdit or canApprove %}
+        {% include 'lindemannrock-base/_components/bulk-status-menu' with {
+            label: 'Set status'|t('lindemannrock-base'),
+            countId: 'tm-bulk-status-count',
+            items: [
+                canEdit ? {id: 'mark-draft-btn', label: 'Mark Draft'|t('translation-manager'), value: 'draft', colorSet: 'translationStatus'} : null,
+                (canApprove or (canEdit and not settings.requireApproval)) ? {id: 'mark-translated-btn', label: 'Mark Translated'|t('translation-manager'), value: 'translated', colorSet: 'translationStatus'} : null,
+            ]|filter(v => v is not null),
+        } only %}
     {% endif %}
 
     {% if status == 'unused' and canDelete %}
-        <button type="button" class="btn secondary" id="delete-selected-btn">
-            <span id="delete-label">{{ 'Delete'|t('translation-manager') }}</span>
-        </button>
+        {% include 'lindemannrock-base/_components/bulk-actions-menu' with {
+            label: 'Actions'|t('translation-manager'),
+            countId: 'tm-bulk-actions-count',
+            items: [
+                {id: 'delete-selected-btn', label: 'Delete'|t('translation-manager'), class: 'error'},
+            ],
+        } only %}
     {% endif %}
 {% endblock %}
 
@@ -364,7 +367,6 @@
         const T = {
             markDraft: {{ 'Mark Draft'|t('translation-manager')|json_encode|raw }},
             markTranslated: {{ 'Mark Translated'|t('translation-manager')|json_encode|raw }},
-            deleteLabel: {{ 'Delete'|t('translation-manager')|json_encode|raw }},
             updateStatusFailed: {{ 'Failed to update status'|t('translation-manager')|json_encode|raw }},
             markDraftFailed: {{ 'Failed to mark as draft'|t('translation-manager')|json_encode|raw }},
             markTranslatedFailed: {{ 'Failed to mark as translated'|t('translation-manager')|json_encode|raw }},
@@ -391,34 +393,6 @@
             }
             return [];
         }
-
-        function updateActionButtons(count) {
-            {% if canEdit %}
-            const markDraftLabel = document.getElementById('mark-draft-label');
-            if (markDraftLabel) {
-                markDraftLabel.textContent = count > 0 ? `${T.markDraft} (${count})` : T.markDraft;
-            }
-            {% endif %}
-
-            {% if canApprove or (canEdit and not settings.requireApproval) %}
-            const markTranslatedLabel = document.getElementById('mark-translated-label');
-            if (markTranslatedLabel) {
-                markTranslatedLabel.textContent = count > 0 ? `${T.markTranslated} (${count})` : T.markTranslated;
-            }
-            {% endif %}
-
-            {% if status == 'unused' and canDelete %}
-            const deleteLabel = document.getElementById('delete-label');
-            if (deleteLabel) {
-                deleteLabel.textContent = count > 0 ? `${T.deleteLabel} (${count})` : T.deleteLabel;
-            }
-            {% endif %}
-        }
-
-        document.addEventListener('lr:selectionChanged', function(e) {
-            updateActionButtons(e.detail?.count || 0);
-        });
-        updateActionButtons(0);
 
         {% if canExport %}
         // Export uses a hand-rolled form because the response is a CSV file
