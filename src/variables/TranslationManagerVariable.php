@@ -238,7 +238,7 @@ class TranslationManagerVariable
                 'contextPrefix' => $integration->getContextPrefix(),
                 'pluginHandle' => $integration->getPluginHandle(),
                 'available' => $integration->isAvailable(),
-                'installed' => \lindemannrock\base\helpers\PluginHelper::isPluginEnabled($integration->getPluginHandle()),
+                'installed' => \lindemannrock\base\helpers\PluginHelper::isPluginInstalled($integration->getPluginHandle()),
                 'generatePermission' => $generatePermission,
                 'recapturePermission' => $recapturePermission,
                 'clearPermission' => $clearPermission,
