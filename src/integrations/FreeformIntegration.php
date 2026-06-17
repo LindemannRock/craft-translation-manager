@@ -141,6 +141,14 @@ class FreeformIntegration extends BaseIntegration
             return [];
         }
 
+        if ($this->isFormExcluded($element->getHandle(), $element->getName())) {
+            $this->logInfo('Skipping excluded Freeform form', [
+                'handle' => $element->getHandle(),
+                'name' => $element->getName(),
+            ]);
+            return [];
+        }
+
         $captured = [];
         foreach ($this->collectTranslationEntries($element) as $entry) {
             $captured[] = $this->createTranslation($entry['text'], $entry['context']);
@@ -166,6 +174,10 @@ class FreeformIntegration extends BaseIntegration
         $activeTexts = [];
 
         foreach ($this->getAllForms() as $form) {
+            if ($this->isFormExcluded($form->getHandle(), $form->getName())) {
+                continue;
+            }
+
             foreach ($this->collectTranslationEntries($form) as $entry) {
                 $activeTexts[$entry['text']] = true;
             }
@@ -438,9 +450,10 @@ class FreeformIntegration extends BaseIntegration
 
     private function contextSegment(string $value): string
     {
+        $originalValue = $value;
         $value = preg_replace('/[^a-zA-Z0-9_-]+/', '-', $value) ?: '';
         $value = trim($value, '-_');
 
-        return $value !== '' ? $value : substr(md5($value), 0, 8);
+        return $value !== '' ? $value : substr(md5($originalValue), 0, 8);
     }
 }
