@@ -39,6 +39,7 @@
 		"craftcms/ecs": "dev-main",
 		"craftcms/phpstan": "dev-main",
 		"phpunit/phpunit": "^11.0",
+		"solspace/craft-freeform": "^5.0",
 		"verbb/formie": "^3.0"
 	},
 	"autoload": {
