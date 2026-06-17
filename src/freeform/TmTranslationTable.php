@@ -25,6 +25,10 @@ class TmTranslationTable extends TranslationTable
 {
     private const MISSING = '__translation_manager_missing__';
 
+    private bool $fieldResolved = false;
+
+    private ?object $field = null;
+
     public function __construct(
         private TranslationTable $nativeTable,
         private Form $form,
@@ -122,13 +126,20 @@ class TmTranslationTable extends TranslationTable
 
     private function getField(): ?object
     {
+        if ($this->fieldResolved) {
+            return $this->field;
+        }
+
+        $this->fieldResolved = true;
+
         foreach ($this->form->getLayout()->getFields() as $field) {
             if (!method_exists($field, 'getUid')) {
                 continue;
             }
 
             if ($field->getUid() === $this->namespace) {
-                return $field;
+                $this->field = $field;
+                return $this->field;
             }
         }
 
