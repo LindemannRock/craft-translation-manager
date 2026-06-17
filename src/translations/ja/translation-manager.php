@@ -391,7 +391,6 @@ return [
     'Installed but Disabled' => 'インストール済み・無効',
     'Not Installed' => '未インストール',
     'Install Plugin' => 'プラグインをインストールする',
-    'Warning:' => '警告：',
     'Enable Formie Integration' => 'Formie インテグレーションを有効にする',
     'Enable Freeform Integration' => 'Freeform インテグレーションを有効にする',
     'Automatically capture translations from {name} forms.' => '{name} フォームから翻訳を自動取得します。',

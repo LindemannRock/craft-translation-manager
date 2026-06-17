@@ -388,7 +388,6 @@ return [
     'Installed but Disabled' => 'Installed but Disabled',
     'Not Installed' => 'Not Installed',
     'Install Plugin' => 'Install Plugin',
-    'Warning:' => 'Warning:',
     'Enable Formie Integration' => 'Enable Formie Integration',
     'Enable Freeform Integration' => 'Enable Freeform Integration',
     'Automatically capture translations from {name} forms.' => 'Automatically capture translations from {name} forms.',

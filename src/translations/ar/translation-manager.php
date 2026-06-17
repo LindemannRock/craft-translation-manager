@@ -391,7 +391,6 @@ return [
     'Installed but Disabled' => 'مثبّت لكن معطّل',
     'Not Installed' => 'غير مثبّت',
     'Install Plugin' => 'تثبيت الإضافة',
-    'Warning:' => 'تحذير:',
     'Enable Formie Integration' => 'تفعيل تكامل Formie',
     'Enable Freeform Integration' => 'تفعيل تكامل Freeform',
     'Automatically capture translations from {name} forms.' => 'التقاط الترجمات تلقائيًا من نماذج {name}.',

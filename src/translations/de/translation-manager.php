@@ -391,7 +391,6 @@ return [
     'Installed but Disabled' => 'Installiert, aber deaktiviert',
     'Not Installed' => 'Nicht installiert',
     'Install Plugin' => 'Plugin installieren',
-    'Warning:' => 'Warnung:',
     'Enable Formie Integration' => 'Formie-Integration aktivieren',
     'Enable Freeform Integration' => 'Freeform-Integration aktivieren',
     'Automatically capture translations from {name} forms.' => 'Übersetzungen aus {name} Formularen automatisch erfassen.',

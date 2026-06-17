@@ -391,7 +391,6 @@ return [
     'Installed but Disabled' => 'Installert men deaktivert',
     'Not Installed' => 'Ikke installert',
     'Install Plugin' => 'Installer plugin',
-    'Warning:' => 'Advarsel:',
     'Enable Formie Integration' => 'Aktiver Formie-integrasjon',
     'Enable Freeform Integration' => 'Aktiver Freeform-integrasjon',
     'Automatically capture translations from {name} forms.' => 'Fang automatisk opp oversettelser fra {name}-skjemaer.',

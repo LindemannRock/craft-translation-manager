@@ -73,11 +73,9 @@
             } %}
                 {% block body %}
                     {% if overrideWarning %}
-                        <p class="warning has-icon lr-config-override-note">
-                            <span class="icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">{{ "Warning:"|t('translation-manager') }} </span>
-                            <span>{{ overrideWarning|raw }}</span>
-                        </p>
+                        {% include 'lindemannrock-base/_components/config-override-warning' with {
+                            message: overrideWarning
+                        } only %}
                     {% endif %}
                     {% if settingErrors|length %}
                         {{ forms.errorList(settingErrors) }}
