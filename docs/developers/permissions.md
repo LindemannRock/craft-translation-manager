@@ -10,6 +10,7 @@ Translation Manager registers granular permissions that can be assigned to user 
 |------------|-------------|
 | **`translationManager:manageTranslations`** | Access the Translations section (view/manage) |
 | └─ `translationManager:editTranslations` | Modify and save translation values |
+| └─ `translationManager:approveTranslations` | Approve translated values |
 | └─ `translationManager:deleteTranslations` | Delete unused translations |
 
 ### Import / Export
@@ -105,3 +106,12 @@ Craft's nested permissions are a UI convenience — the parent permission does n
 - **Write permissions** (e.g., `editTranslations`, `deleteTranslations`) are nested under manage and control specific operations
 
 To give a user read-only access to translations, grant only `manageTranslations` (without any nested write permissions). For full access, also grant the specific write permissions needed.
+
+## Provider Permission Handles
+
+Provider permissions include the provider handle in the permission name. For the built-in providers, examples include:
+
+| Provider | Generate | Recapture | Clear |
+|----------|----------|-----------|-------|
+| Formie | `translationManager:generateProvider:formie` | `translationManager:recaptureProvider:formie` | `translationManager:clearProvider:formie` |
+| Freeform | `translationManager:generateProvider:freeform` | `translationManager:recaptureProvider:freeform` | `translationManager:clearProvider:freeform` |

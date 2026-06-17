@@ -53,7 +53,7 @@ Check if a translation exists for the given text and context.
 
 ### `getUnusedTranslationCounts()`
 
-Get unused translation counts by type and category. Returns counts for `formie`, each site category, and a combined `site` and `total`.
+Get unused translation counts by type and category. Returns counts for enabled form providers, each site category, and combined `site` and `total` values.
 
 **Returns:** `array`
 
@@ -61,15 +61,43 @@ Get unused translation counts by type and category. Returns counts for `formie`,
 
 ### `getTranslationCounts()`
 
-Get total translation counts (including used) by type and category. Returns counts for `formie`, each site category, and a combined `site` and `total`.
+Get total translation counts (including used) by type and category. Returns counts for enabled form providers, each site category, and combined `site` and `total` values.
 
 **Returns:** `array`
 
 ---
 
+### `getFormProviders()`
+
+Get registered form providers for the current installation.
+
+**Returns:** `array`
+
+---
+
+### `getEnabledFormProviders()`
+
+Get registered form providers that are enabled in Translation Manager settings and available in Craft.
+
+**Returns:** `array`
+
+---
+
+### `getFormProviderLabelForContext(context)`
+
+Get the provider label for a translation context such as `formie.contact.label` or `freeform.contact.label`.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `context` | `string` | required | Translation context |
+
+**Returns:** `string|null`
+
+---
+
 ### `getFormiePluginName()`
 
-Get the configured Formie plugin name
+Get the configured Formie plugin name. Prefer the provider helpers above for provider-generic UI.
 
 **Returns:** `string`
 
@@ -98,4 +126,3 @@ Get plugin settings
 **Returns:** `\lindemannrock\translationmanager\models\Settings`
 
 ---
-

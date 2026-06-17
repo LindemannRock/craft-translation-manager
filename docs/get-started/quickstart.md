@@ -22,6 +22,22 @@ Open any page on your site that uses `|t('messages')` in its templates. Translat
 4. Enter translations for any pending strings
 5. Click **Save All** (or press Ctrl/Cmd+S)
 
+## 5. Capture Form Translations
+
+If you use Formie or Freeform, enable the integration under **Translation Manager > Settings > Integrations**, then save a form or run a provider capture command:
+
+```bash
+php craft translation-manager/translations/capture-provider formie
+php craft translation-manager/translations/capture-provider freeform
+```
+
+Generate files after translating provider strings:
+
+```bash
+php craft translation-manager/translations/generate-provider formie
+php craft translation-manager/translations/generate-provider freeform
+```
+
 ## What's Next
 
 - [Configuration](configuration.md) — customize translation categories, auto-export, and locale mapping

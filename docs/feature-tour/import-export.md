@@ -44,6 +44,7 @@ English Text,Arabic Translation,Status,Context
 "Welcome to our website","مرحباً بكم في موقعنا","translated","site"
 "Contact Us","اتصل بنا","translated","site"
 "Submit","إرسال","translated","formie.contactForm"
+"Submit","إرسال","translated","freeform.contactForm"
 ```
 
 ### Required Columns
@@ -87,10 +88,12 @@ the files at runtime; subfolders such as `@root/translations/test` or
 translations/
 ├── en-US/
 │   ├── lindemannrock.php  (site translations)
-│   └── formie.php         (form translations)
+│   ├── formie.php         (Formie translations)
+│   └── freeform.php       (Freeform translations)
 └── ar/
     ├── lindemannrock.php
-    └── formie.php
+    ├── formie.php
+    └── freeform.php
 ```
 
 ### Auto Generate
@@ -104,7 +107,7 @@ save succeeds. It does not delete files from the previous physical location.
 ### Manual Generation
 
 1. Navigate to **Translation Manager → Generate**
-2. Select type: All, Site Only, or Forms Only
+2. Select type: All, Site Only, or a form provider
 3. Click Generate
 
 ### Console Commands

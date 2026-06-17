@@ -2,7 +2,7 @@
   "plugin": {
     "name": "Translation Manager",
     "handle": "translation-manager",
-    "description": "A comprehensive translation management system for Craft CMS with Formie integration"
+    "description": "Comprehensive translation management system for Craft CMS with Formie and Freeform integration"
   },
   "navigation": {
     "get-started": {
@@ -53,11 +53,11 @@
           "description": "Problems solved and use cases"
         },
         {
-          "slug": "formie-integration",
-          "title": "Formie Integration",
+          "slug": "form-provider-integrations",
+          "title": "Form Provider Integrations",
           "file": "README.md",
-          "section": "Formie Integration",
-          "description": "Managing Formie form translations"
+          "section": "Form Provider Integrations",
+          "description": "Managing Formie and Freeform form translations"
         },
         {
           "slug": "backups",

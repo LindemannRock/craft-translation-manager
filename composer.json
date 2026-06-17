@@ -1,6 +1,6 @@
 {
 	"name": "lindemannrock/craft-translation-manager",
-	"description": "Comprehensive translation management system for Craft CMS with Formie integration",
+	"description": "Comprehensive translation management system for Craft CMS with Formie and Freeform integration",
 	"type": "craft-plugin",
 	"version": "5.25.0",
 	"keywords": [
@@ -10,6 +10,7 @@
 		"craft-plugin",
 		"translation",
 		"formie",
+		"freeform",
 		"multilingual"
 	],
 	"license": "proprietary",

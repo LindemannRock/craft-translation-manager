@@ -13,6 +13,7 @@ Configure Translation Manager by creating a config file at `config/translation-m
 | `translationCategories` | `array` | `[]` | Multiple translation categories. Format: `[['key' => 'messages', 'enabled' => true]]`. Falls back to `translationCategory` if empty |
 | `sourceLanguage` | `string` | `'en'` | Source language of template strings (language your `\|t()` strings are written in) |
 | `enableFormieIntegration` | `bool` | `true` | Enable Formie form translation integration |
+| `enableFreeformIntegration` | `bool` | `true` | Enable Freeform form translation integration |
 | `enableSiteTranslations` | `bool` | `true` | Enable site translation capture from `\|t()` calls |
 | `captureMissingTranslations` | `bool` | `false` | Capture missing translations at runtime (auto-add when used) |
 | `captureMissingOnlyDevMode` | `bool` | `true` | Only capture missing translations when devMode is enabled (recommended) |
@@ -84,6 +85,7 @@ return [
         ],
         'sourceLanguage' => 'en',
         'enableFormieIntegration' => true,
+        'enableFreeformIntegration' => true,
         'enableSiteTranslations' => true,
         'captureMissingTranslations' => false,
         'captureMissingOnlyDevMode' => true,

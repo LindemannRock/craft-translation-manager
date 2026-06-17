@@ -1,13 +1,13 @@
 # Features Overview
 
-Translation Manager provides a comprehensive translation management system for Craft CMS 5 with Formie integration, advanced filtering, and enterprise-grade security.
+Translation Manager provides a comprehensive translation management system for Craft CMS 5 with Formie and Freeform integration, advanced filtering, and enterprise-grade security.
 
 ## Core Features
 
 - **Multi-Site Translation Support**: Site-aware translation management for any language combination
 - **Unified Translation Management**: Manage all translations in one place with an intuitive interface
 - **Smart Deduplication**: Each unique text is stored only once, regardless of how many forms use it
-- **Comprehensive Formie Support**: Automatic capture of ALL field types including options, subfields, and special properties
+- **Built-In Form Provider Support**: Automatic capture and generation for Formie and Freeform form translations
 - **Site Translations**: Custom translation category for site content with namespace protection
 - **Advanced Filtering**: Filter by type (Forms/Site), status (Pending/Translated/Not Used), and search
 - **Bulk Operations**: Save all changes at once, bulk delete unused translations

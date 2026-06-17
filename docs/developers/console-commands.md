@@ -193,12 +193,14 @@ Clean unused translations by type. The `--type` option is required. Use `--provi
 php craft translation-manager/maintenance/clean-by-type --type=all
 php craft translation-manager/maintenance/clean-by-type --type=forms
 php craft translation-manager/maintenance/clean-by-type --type=forms --provider=formie
+php craft translation-manager/maintenance/clean-by-type --type=forms --provider=freeform
 ```
 
 ```bash title="DDEV"
 ddev craft translation-manager/maintenance/clean-by-type --type=all
 ddev craft translation-manager/maintenance/clean-by-type --type=forms
 ddev craft translation-manager/maintenance/clean-by-type --type=forms --provider=formie
+ddev craft translation-manager/maintenance/clean-by-type --type=forms --provider=freeform
 ```
 
 ## Backup Commands

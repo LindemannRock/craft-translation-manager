@@ -39,13 +39,16 @@ Full support for regional language variants:
 translations/
 ├── en-US/
 │   ├── lindemannrock.php
-│   └── formie.php
+│   ├── formie.php
+│   └── freeform.php
 ├── ar/
 │   ├── lindemannrock.php
-│   └── formie.php
+│   ├── formie.php
+│   └── freeform.php
 └── fr/
     ├── lindemannrock.php
-    └── formie.php
+    ├── formie.php
+    └── freeform.php
 ```
 
 ## Site Switcher

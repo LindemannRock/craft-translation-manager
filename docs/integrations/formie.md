@@ -92,7 +92,7 @@ Translation contexts follow the pattern:
 
 ## Configuration
 
-Enable Formie integration in **Settings → Translation Manager**:
+Enable Formie integration in **Translation Manager → Settings → Integrations**:
 
 - **Enable Formie Integration**: Toggle to capture form translations
 
@@ -105,6 +105,20 @@ php craft translation-manager/translations/capture-provider formie
 ```
 
 Or use **Translation Manager → Maintenance** and run the Formie scanner.
+
+## Generate Files
+
+Generate only Formie translation files:
+
+```bash
+php craft translation-manager/translations/generate-provider formie
+```
+
+With DDEV:
+
+```bash
+ddev craft translation-manager/translations/generate-provider formie
+```
 
 ## Plugin Name Detection
 
