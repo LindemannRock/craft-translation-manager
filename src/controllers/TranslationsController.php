@@ -512,7 +512,7 @@ class TranslationsController extends Controller
                 continue;
             }
 
-            if ($translation->status === 'unused') {
+            if (!$this->canBulkSetStatus($translation, $targetStatus)) {
                 $skipped++;
                 continue;
             }
@@ -569,5 +569,16 @@ class TranslationsController extends Controller
 
         $canApprove = Craft::$app->getUser()->checkPermission('translationManager:approveTranslations');
         return $canApprove ? 'translated' : 'draft';
+    }
+
+    /**
+     * Bulk status changes are review-state changes for existing translated
+     * values. Empty rows must stay pending until text is actually entered.
+     */
+    private function canBulkSetStatus(TranslationRecord $translation, string $targetStatus): bool
+    {
+        return $translation->status !== 'unused'
+            && $translation->status !== $targetStatus
+            && trim((string) $translation->translation) !== '';
     }
 }
