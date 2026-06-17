@@ -85,7 +85,7 @@ class IntegrationService extends Component
     private function registerEventHandlers(): void
     {
         // Register FormieIntegration event handlers directly
-        if (PluginHelper::isPluginEnabled('formie')) {
+        if (PluginHelper::isPluginEnabled('formie') && $this->isIntegrationEnabled('formie')) {
             $this->registerIntegrationHooks('formie', new \lindemannrock\translationmanager\integrations\FormieIntegration());
         }
 
