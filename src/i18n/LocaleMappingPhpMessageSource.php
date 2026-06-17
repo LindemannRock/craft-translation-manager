@@ -47,6 +47,24 @@ class LocaleMappingPhpMessageSource extends PhpMessageSource
     }
 
     /**
+     * @inheritdoc
+     */
+    protected function translateMessage($category, $message, $language)
+    {
+        $translation = parent::translateMessage($category, $message, $language);
+        if ($translation !== false) {
+            return $translation;
+        }
+
+        $trimmedMessage = trim($message);
+        if ($trimmedMessage === $message || $trimmedMessage === '') {
+            return false;
+        }
+
+        return parent::translateMessage($category, $trimmedMessage, $language);
+    }
+
+    /**
      * Maps a language code using the configured locale mapping.
      *
      * @param string $language The original language code

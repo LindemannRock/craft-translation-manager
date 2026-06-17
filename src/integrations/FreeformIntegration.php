@@ -11,7 +11,12 @@
 namespace lindemannrock\translationmanager\integrations;
 
 use lindemannrock\base\helpers\PluginHelper;
+use lindemannrock\translationmanager\freeform\TmTranslationsService;
+use Solspace\Freeform\Bundles\Translations\TranslationProvider;
 use Solspace\Freeform\Form\Form;
+use Solspace\Freeform\Services\Form\LayoutsService;
+use Solspace\Freeform\Services\Form\TranslationsService as FreeformTranslationsService;
+use Solspace\Freeform\Services\FormsService;
 use yii\base\Event;
 
 /**
@@ -58,6 +63,9 @@ class FreeformIntegration extends BaseIntegration
             return;
         }
 
+        $this->registerTranslationFallbackService();
+        $this->registerFormAttributeFallback();
+
         Event::on(
             \Solspace\Freeform\controllers\api\FormsController::class,
             \Solspace\Freeform\controllers\api\FormsController::EVENT_AFTER_SAVE_FORM,
@@ -82,6 +90,46 @@ class FreeformIntegration extends BaseIntegration
                 $this->handleFormDelete($form);
             }
         );
+    }
+
+    private function registerFormAttributeFallback(): void
+    {
+        Event::on(
+            Form::class,
+            Form::EVENT_ATTACH_TAG_ATTRIBUTES,
+            static function(\Solspace\Freeform\Events\Forms\AttachFormAttributesEvent $event): void {
+                $form = $event->getForm();
+                $attributes = $form->getAttributes();
+                $behaviorSettings = $form->getSettings()->getBehavior();
+
+                if ($behaviorSettings->showProcessingText) {
+                    $attributes->replace('data-processing-text', $form->getProcessingText());
+                }
+
+                $attributes->replace('data-success-message', $form->getSuccessMessage());
+                $attributes->replace('data-error-message', $form->getErrorMessage());
+            }
+        );
+    }
+
+    private function registerTranslationFallbackService(): void
+    {
+        \Craft::$container->setSingleton(FreeformTranslationsService::class, TmTranslationsService::class);
+        \Craft::$container->setSingleton(TranslationProvider::class, static function(): TranslationProvider {
+            return new TranslationProvider(\Craft::$container->get(FreeformTranslationsService::class));
+        });
+        \Craft::$container->setSingleton(FormsService::class, FormsService::class);
+        \Craft::$container->setSingleton(LayoutsService::class, LayoutsService::class);
+
+        $freeform = \Solspace\Freeform\Freeform::getInstance();
+        $freeform->set('forms', FormsService::class);
+        $freeform->set('formLayouts', LayoutsService::class);
+
+        if ($freeform->get('translations') instanceof TmTranslationsService) {
+            return;
+        }
+
+        $freeform->set('translations', TmTranslationsService::class);
     }
 
     /**

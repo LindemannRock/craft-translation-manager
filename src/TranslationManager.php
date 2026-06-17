@@ -794,7 +794,7 @@ class TranslationManager extends Plugin
         // This intentionally does not use PluginHelper::registerTranslations().
         $i18n = Craft::$app->getI18n();
         $settings = $this->getSettings();
-        $categories = $settings->getEnabledCategories();
+        $categories = $this->getFileMessageSourceCategories();
         $basePath = $settings->getGenerationPath(); // Use the configured generation path
 
         // Use the configured source language (language your template strings are written in)
@@ -827,6 +827,28 @@ class TranslationManager extends Plugin
                 $i18n->translations[$category]['fallbackBasePath'] = $pluginTranslationsPath;
             }
         }
+    }
+
+    /**
+     * Return all categories whose generated files should be visible to Craft i18n.
+     *
+     * This includes normal configured site categories plus enabled integration
+     * categories such as Formie and Freeform, even when those provider
+     * categories are not also configured as manual template categories.
+     *
+     * @return string[]
+     */
+    private function getFileMessageSourceCategories(): array
+    {
+        $categories = $this->getSettings()->getEnabledCategories();
+
+        /** @var IntegrationService $integrationService */
+        $integrationService = $this->get('integrations');
+        foreach ($integrationService->getEnabledIntegrations() as $integration) {
+            $categories[] = $integration->getCategory();
+        }
+
+        return array_values(array_unique(array_filter($categories)));
     }
 
     /**

@@ -35,7 +35,7 @@ final class MergedLocaleMappingPhpMessageSourceTest extends TestCase
 
         file_put_contents(
             $this->managedPath . '/de/example-plugin.php',
-            "<?php\nreturn [\n    'Managed only' => 'Managed only DE',\n    'Shared' => 'Managed shared DE',\n];\n",
+            "<?php\nreturn [\n    'Managed only' => 'Managed only DE',\n    'Shared' => 'Managed shared DE',\n    'Trim me' => 'Trim me DE',\n];\n",
         );
         file_put_contents(
             $this->fallbackPath . '/de/example-plugin.php',
@@ -79,6 +79,13 @@ final class MergedLocaleMappingPhpMessageSourceTest extends TestCase
 
         self::assertSame('Native only DE', $source->translate('example-plugin', 'Native only', 'de-CH'));
         self::assertSame('Managed shared DE', $source->translate('example-plugin', 'Shared', 'de-CH'));
+    }
+
+    public function testManagedMessagesFallBackToTrimmedSourceKey(): void
+    {
+        $source = $this->createSource();
+
+        self::assertSame('Trim me DE', $source->translate('example-plugin', ' Trim me ', 'de'));
     }
 
     private function createSource(): MergedLocaleMappingPhpMessageSource
