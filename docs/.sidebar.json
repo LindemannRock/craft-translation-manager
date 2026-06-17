@@ -35,6 +35,7 @@
         "collapsable": true,
         "open": false,
         "children": [
+            "integrations/overview",
             "integrations/formie",
             "integrations/freeform"
         ]

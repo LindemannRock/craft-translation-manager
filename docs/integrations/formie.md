@@ -96,6 +96,8 @@ Enable Formie integration in **Translation Manager → Settings → Integrations
 
 - **Enable Formie Integration**: Toggle to capture form translations
 
+See [Integrations Overview](overview.md) for the shared provider lifecycle, permissions, generation, maintenance, and import/export behavior.
+
 ## Manual Capture
 
 If translations are missing, manually capture all Formie fields:

@@ -44,6 +44,8 @@ Enable Freeform integration in **Translation Manager → Settings → Integratio
 
 The Freeform section is only available when the Freeform plugin is installed and enabled.
 
+See [Integrations Overview](overview.md) for the shared provider lifecycle, permissions, generation, maintenance, and import/export behavior.
+
 ## Manual Capture
 
 If translations are missing after changing a form, save the form again or manually recapture all Freeform strings:

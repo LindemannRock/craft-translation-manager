@@ -107,8 +107,10 @@ save succeeds. It does not delete files from the previous physical location.
 ### Manual Generation
 
 1. Navigate to **Translation Manager → Generate**
-2. Select type: All, Site Only, or a form provider
+2. Select **All**, **Site**, a site category, or a form provider such as Formie or Freeform
 3. Click Generate
+
+Provider generation writes the provider's category file only. For example, Formie writes `formie.php` and Freeform writes `freeform.php`.
 
 ### Console Commands
 
@@ -170,6 +172,8 @@ PHP Import automatically scans your configured translations folder and detects:
 - Target language translations use the imported values
 - Existing translations are updated (not duplicated)
 - Automatic backup created before import (if enabled)
+
+Provider files such as `formie.php` and `freeform.php` import into their matching provider categories. Custom site categories import into the configured category with the same filename.
 
 ### Example Workflow
 

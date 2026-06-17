@@ -71,6 +71,12 @@ Get total translation counts (including used) by type and category. Returns coun
 
 Get registered form providers for the current installation.
 
+```twig
+{% for provider in craft.translationManager.getFormProviders() %}
+    {{ provider.label }}
+{% endfor %}
+```
+
 **Returns:** `array`
 
 ---
@@ -78,6 +84,12 @@ Get registered form providers for the current installation.
 ### `getEnabledFormProviders()`
 
 Get registered form providers that are enabled in Translation Manager settings and available in Craft.
+
+```twig
+{% for provider in craft.translationManager.getEnabledFormProviders() %}
+    {{ provider.handle }}: {{ provider.label }}
+{% endfor %}
+```
 
 **Returns:** `array`
 
@@ -90,6 +102,10 @@ Get the provider label for a translation context such as `formie.contact.label` 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `context` | `string` | required | Translation context |
+
+```twig
+{{ craft.translationManager.getFormProviderLabelForContext('freeform.contact.label') }}
+```
 
 **Returns:** `string|null`
 

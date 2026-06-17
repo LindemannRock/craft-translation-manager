@@ -55,8 +55,7 @@
         {
           "slug": "form-provider-integrations",
           "title": "Form Provider Integrations",
-          "file": "README.md",
-          "section": "Form Provider Integrations",
+          "file": "docs/integrations/overview.md",
           "description": "Managing Formie and Freeform form translations"
         },
         {

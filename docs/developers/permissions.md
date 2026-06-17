@@ -115,3 +115,5 @@ Provider permissions include the provider handle in the permission name. For the
 |----------|----------|-----------|-------|
 | Formie | `translationManager:generateProvider:formie` | `translationManager:recaptureProvider:formie` | `translationManager:clearProvider:formie` |
 | Freeform | `translationManager:generateProvider:freeform` | `translationManager:recaptureProvider:freeform` | `translationManager:clearProvider:freeform` |
+
+The provider handle is stable and does not change when the provider's display name changes. For example, a Formie install renamed to "Forms" still uses `formie` in permission handles.

@@ -8,7 +8,7 @@
 [![Logging Library](https://img.shields.io/badge/Logging%20Library-5.0+-green.svg)](https://github.com/LindemannRock/craft-logging-library)
 [![License](https://img.shields.io/packagist/l/lindemannrock/craft-translation-manager.svg)](LICENSE)
 
-Comprehensive translation management for Craft CMS 5 with Formie integration, multi-site support, and enterprise-grade security.
+Comprehensive translation management for Craft CMS 5 with Formie and Freeform integration.
 
 ## License
 
@@ -22,7 +22,7 @@ This plugin is in active development and not yet available on the Craft Plugin S
 
 - **Multi-Site Translations** — site-aware management for any language combination with locale variant support
 - **Multi-Category Support** — multiple translation categories (site, emails, errors) with separate file generation
-- **Formie Integration** — automatic capture of all field types including options, subfields, and complex fields
+- **Formie and Freeform Integration** — automatic capture of form fields, options, labels, messages, and button text
 - **Smart Deduplication** — each unique text stored once, context updated automatically
 - **Capture Missing Translations** — auto-add translations at runtime when `|t()` encounters unknown strings
 - **Locale Mapping** — consolidate regional variants (en-US, en-GB) to base locales
