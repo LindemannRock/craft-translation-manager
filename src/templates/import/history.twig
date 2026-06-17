@@ -88,29 +88,35 @@
                         </td>
                     </tr>
                     {% if import.hasErrors %}
+                        {% set errorsMessage %}
+                            <strong>{{ "Errors:"|t('translation-manager') }}</strong>
+                            <ul class="lr-mt-8">
+                                {% for error in import.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endset %}
                         <tr>
-                            <td colspan="8" style="padding: 0;">
-                                <div style="padding: 12px 24px; background: #FEF2F2; border-top: 1px solid #FCA5A5;">
-                                    <strong style="color: #DC2626;">{{ "Errors:"|t('translation-manager') }}</strong>
-                                    <ul style="margin: 8px 0 0 0; color: #991B1B;">
-                                        {% for error in import.errors %}
-                                            <li>{{ error }}</li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
+                            <td colspan="8">
+                                {% include 'lindemannrock-base/_components/info-box' with {
+                                    type: 'error',
+                                    variant: 'colored',
+                                    margin: 'none',
+                                    message: errorsMessage,
+                                } %}
                             </td>
                         </tr>
                     {% endif %}
                 {% endfor %}
             </tbody>
         </table>
-        
-        <div style="margin-top: 2rem; padding: 1rem; background: #f3f4f6; border-radius: 4px;">
-            <p class="light" style="margin: 0;">
-                <span class="icon" aria-hidden="true">{{ svg('@appicons/info.svg') }}</span>
-                {{ "Import history can be cleared from the Import/Export page. Backups created during import follow the configured retention policy."|t('translation-manager') }}
-            </p>
-        </div>
+
+        {% include 'lindemannrock-base/_components/info-box' with {
+            type: 'info',
+            margin: 'top',
+            message: "Import history can be cleared from the Import/Export page. Backups created during import follow the configured retention policy."|t('translation-manager'),
+            allowHtml: false,
+        } %}
     {% else %}
         <p class="light">{{ "No imports found"|t('translation-manager') }}</p>
     {% endif %}
