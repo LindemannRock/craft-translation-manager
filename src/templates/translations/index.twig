@@ -452,6 +452,11 @@
                 data: { ids: ids, status: targetStatus },
             }).then(function(response) {
                 if (response.data.success) {
+                    if (!response.data.updated) {
+                        Craft.cp.displayError(T.noChanges);
+                        return;
+                    }
+
                     const label = targetStatus === 'translated' ? T.translatedLabel : T.draftLabel;
                     Craft.cp.displayNotice(
                         T.updatedTemplate.replace('{count}', response.data.updated).replace('{status}', label)

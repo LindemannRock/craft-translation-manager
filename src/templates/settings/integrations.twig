@@ -41,6 +41,7 @@
         {% for provider in formProviders %}
             {% set settingName = 'enable' ~ provider.name|capitalize ~ 'Integration' %}
             {% set settingValue = attribute(settings, settingName) %}
+            {% set settingErrors = settings.getErrors(settingName) %}
             {% set overrideWarning = null %}
             {% if settings.isOverriddenByConfig(settingName) %}
                 {% if settingName == 'enableFreeformIntegration' %}
@@ -67,7 +68,8 @@
                 toggleOn: settingValue,
                 toggleDisabled: not provider.available or settings.isOverriddenByConfig(settingName),
                 bodyId: provider.name ~ '-integration-settings',
-                bodyVisible: settingValue or overrideWarning,
+                hasBody: overrideWarning or settingErrors|length,
+                bodyVisible: settingValue or overrideWarning or settingErrors|length,
             } %}
                 {% block body %}
                     {% if overrideWarning %}
@@ -77,8 +79,8 @@
                             <span>{{ overrideWarning|raw }}</span>
                         </p>
                     {% endif %}
-                    {% if settings.getErrors(settingName)|length %}
-                        {{ forms.errorList(settings.getErrors(settingName)) }}
+                    {% if settingErrors|length %}
+                        {{ forms.errorList(settingErrors) }}
                     {% endif %}
                 {% endblock %}
             {% endembed %}
