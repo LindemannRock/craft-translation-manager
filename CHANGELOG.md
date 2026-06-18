@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.28.2](https://github.com/LindemannRock/craft-translation-manager/compare/v5.28.1...v5.28.2) (2026-06-18)
+
+
+### Fixed
+
+* **generation:** trust successful queue generation for freshness check ([b82c443](https://github.com/LindemannRock/craft-translation-manager/commit/b82c443083b9d121a11b7609b57e941fdfb2d873))
+
 ## [5.28.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.28.0...v5.28.1) - 2026-06-18
 
 
