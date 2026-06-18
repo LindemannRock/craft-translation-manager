@@ -46,6 +46,7 @@ use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\translationmanager\services\AiTranslationService;
 use lindemannrock\translationmanager\services\BackupService;
 use lindemannrock\translationmanager\services\GenerationService;
+use lindemannrock\translationmanager\services\GenerationStatusService;
 use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\services\TranslationsService;
 use lindemannrock\translationmanager\utilities\TranslationStatsUtility;
@@ -64,6 +65,7 @@ use yii\i18n\MessageSource;
  * @property-read TranslationsService $translations
  * @property-read AiTranslationService $ai
  * @property-read GenerationService $generate
+ * @property-read GenerationStatusService $generationStatus
  * @property-read BackupService $backup
  * @property-read Settings $settings
  * @method Settings getSettings()
@@ -113,6 +115,7 @@ class TranslationManager extends Plugin
                 'translations' => TranslationsService::class,
                 'ai' => AiTranslationService::class,
                 'generate' => GenerationService::class,
+                'generationStatus' => GenerationStatusService::class,
                 'backup' => BackupService::class,
                 'integrations' => IntegrationService::class,
             ],
@@ -175,6 +178,7 @@ class TranslationManager extends Plugin
             'translations' => TranslationsService::class,
             'ai' => AiTranslationService::class,
             'generate' => GenerationService::class,
+            'generationStatus' => GenerationStatusService::class,
             'backup' => BackupService::class,
             'integrations' => IntegrationService::class,
         ]);
@@ -353,6 +357,10 @@ class TranslationManager extends Plugin
         if (Craft::$app instanceof ConsoleApplication) {
             $this->controllerNamespace = 'lindemannrock\translationmanager\console\controllers';
         }
+
+        // Queue live-runtime translation file generation when deployed files
+        // are stale or missing relative to translated DB rows.
+        $this->queueGeneratedTranslationFreshnessJob();
 
         // Schedule backup job if enabled
         $this->scheduleBackupJob();
@@ -927,6 +935,24 @@ class TranslationManager extends Plugin
             MessageSource::EVENT_MISSING_TRANSLATION,
             [MissingTranslationListener::class, 'handle']
         );
+    }
+
+    /**
+     * Queue live-runtime generation when generated translation files are stale.
+     */
+    private function queueGeneratedTranslationFreshnessJob(): void
+    {
+        if (Craft::$app instanceof ConsoleApplication) {
+            return;
+        }
+
+        try {
+            $this->generationStatus->maybeQueueFreshnessGeneration();
+        } catch (\Throwable $e) {
+            $this->logWarning('Failed to queue generated translation freshness job', [
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

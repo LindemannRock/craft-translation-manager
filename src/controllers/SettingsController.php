@@ -16,6 +16,7 @@ use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\base\helpers\SettingsPostHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\models\Settings;
+use lindemannrock\translationmanager\records\GenerationStatusRecord;
 use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
@@ -353,6 +354,11 @@ class SettingsController extends Controller
     {
         try {
             $result = TranslationManager::getInstance()->generate->generateAll();
+            TranslationManager::getInstance()->generationStatus->recordGenerationResult(
+                $result,
+                GenerationStatusRecord::REASON_SETTINGS_CHANGE,
+                GenerationStatusRecord::TRIGGER_CP,
+            );
 
             $this->logInfo('Regenerated translation files after generation path change', [
                 'oldPath' => $oldPath,

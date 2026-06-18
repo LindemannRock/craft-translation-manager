@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\tests\Integration;
 
 use lindemannrock\translationmanager\controllers\SettingsController;
 use lindemannrock\translationmanager\services\GenerationService;
+use lindemannrock\translationmanager\services\GenerationStatusService;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -26,9 +27,12 @@ final class SettingsControllerGenerationPathChangeTest extends TestCase
     {
         $plugin = TranslationManager::getInstance();
         $originalGenerate = $plugin->get('generate');
+        $originalGenerationStatus = $plugin->get('generationStatus');
         $spy = new SettingsControllerGenerationPathSpyService();
+        $statusSpy = new SettingsControllerGenerationStatusSpyService();
 
         $plugin->set('generate', $spy);
+        $plugin->set('generationStatus', $statusSpy);
 
         try {
             $controller = new SettingsController('settings', $plugin);
@@ -36,9 +40,24 @@ final class SettingsControllerGenerationPathChangeTest extends TestCase
             $method->invoke($controller, '/old/translations', '/new/translations');
 
             self::assertSame(1, $spy->generateAllCalls);
+            self::assertSame(1, $statusSpy->recordedGenerationResults);
         } finally {
             $plugin->set('generate', $originalGenerate);
+            $plugin->set('generationStatus', $originalGenerationStatus);
         }
+    }
+}
+
+final class SettingsControllerGenerationStatusSpyService extends GenerationStatusService
+{
+    public int $recordedGenerationResults = 0;
+
+    /**
+     * @param array<string,mixed> $result
+     */
+    public function recordGenerationResult(array $result, string $reason, string $triggerType): void
+    {
+        $this->recordedGenerationResults++;
     }
 }
 

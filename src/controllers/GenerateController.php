@@ -15,6 +15,7 @@ use Craft;
 use craft\web\Controller;
 use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\records\GenerationStatusRecord;
 use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
@@ -111,6 +112,11 @@ class GenerateController extends Controller
             /** @var IntegrationService $integrationService */
             $integrationService = TranslationManager::getInstance()->get('integrations');
             $result = $generationService->generateAll();
+            TranslationManager::getInstance()->generationStatus->recordGenerationResult(
+                $result,
+                GenerationStatusRecord::REASON_MANUAL,
+                GenerationStatusRecord::TRIGGER_CP,
+            );
             $messages = [];
             $warnings = [];
 

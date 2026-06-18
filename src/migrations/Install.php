@@ -88,6 +88,34 @@ class Install extends Migration
             $this->addForeignKey(null, '{{%translationmanager_import_history}}', ['userId'], '{{%users}}', ['id'], 'CASCADE');
         }
 
+        // Create the generation status table
+        if (!$this->tableExists('{{%translationmanager_generation_status}}')) {
+            $this->createTable('{{%translationmanager_generation_status}}', [
+                'id' => $this->primaryKey(),
+                'fingerprint' => $this->string(64)->null()->comment('Fingerprint of generated categories, languages, settings, and translated rows'),
+                'status' => $this->string(20)->notNull()->defaultValue('pending')->comment('pending|running|success|failed|noop'),
+                'reason' => $this->string(50)->notNull()->defaultValue('freshness-check')->comment('freshness-check|manual|cli|settings-change'),
+                'triggerType' => $this->string(20)->notNull()->defaultValue('runtime')->comment('runtime|queue|cp|cli'),
+                'generationPath' => $this->text()->null(),
+                'translationCount' => $this->integer()->notNull()->defaultValue(0),
+                'writtenFileCount' => $this->integer()->notNull()->defaultValue(0),
+                'deletedFileCount' => $this->integer()->notNull()->defaultValue(0),
+                'verificationStatus' => $this->string(20)->null()->comment('passed|failed|skipped'),
+                'message' => $this->text()->null(),
+                'details' => $this->text()->null()->comment('JSON generation report details'),
+                'dateStarted' => $this->dateTime()->null(),
+                'dateFinished' => $this->dateTime()->null(),
+                'dateCreated' => $this->dateTime()->notNull(),
+                'dateUpdated' => $this->dateTime()->notNull(),
+                'uid' => $this->uid(),
+            ]);
+
+            $this->createIndex(null, '{{%translationmanager_generation_status}}', ['status']);
+            $this->createIndex(null, '{{%translationmanager_generation_status}}', ['fingerprint']);
+            $this->createIndex(null, '{{%translationmanager_generation_status}}', ['dateCreated']);
+            $this->createIndex(null, '{{%translationmanager_generation_status}}', ['dateFinished']);
+        }
+
         // Create the settings table
         if (!$this->tableExists('{{%translationmanager_settings}}')) {
             $this->createTable('{{%translationmanager_settings}}', [
@@ -168,6 +196,10 @@ class Install extends Migration
         // Drop tables in reverse order due to foreign key constraints
         if ($this->tableExists('{{%translationmanager_import_history}}')) {
             $this->dropTable('{{%translationmanager_import_history}}');
+        }
+
+        if ($this->tableExists('{{%translationmanager_generation_status}}')) {
+            $this->dropTable('{{%translationmanager_generation_status}}');
         }
         
         if ($this->tableExists('{{%translationmanager_settings}}')) {
