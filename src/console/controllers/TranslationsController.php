@@ -274,7 +274,10 @@ class TranslationsController extends Controller
     {
         $this->stdout("Generating all translation files...\n\n", Console::FG_YELLOW);
 
+        $settings = TranslationManager::getInstance()->getSettings();
         $generationService = TranslationManager::getInstance()->generate;
+        $this->stdout("Generation path: {$settings->getGenerationPath()}\n", Console::FG_CYAN);
+
         $result = $generationService->generateAll();
 
         foreach (($result['results'] ?? []) as $name => $scopeResult) {
@@ -284,15 +287,27 @@ class TranslationsController extends Controller
 
             $success = (bool)($scopeResult['success'] ?? false);
             $count = (int)($scopeResult['translationCount'] ?? 0);
-            $status = $success ? "Done ({$count})" : 'Failed';
+            $written = (int)($scopeResult['writtenFileCount'] ?? 0);
+            $deleted = (int)($scopeResult['deletedFileCount'] ?? 0);
+            $categories = implode(', ', (array)($scopeResult['categories'] ?? []));
+            $status = $success
+                ? "Done ({$count} translations, {$written} file(s) written, {$deleted} stale file(s) deleted)"
+                : 'Failed';
             $color = $success ? Console::FG_GREEN : Console::FG_RED;
             $this->stdout("{$name}: {$status}\n", $color);
+            if ($categories !== '') {
+                $this->stdout("  Categories: {$categories}\n", Console::FG_GREY);
+            }
 
             if (!$success) {
                 return ExitCode::UNSPECIFIED_ERROR;
             }
         }
 
+        $this->stdout(
+            "\nTotal: {$result['translationCount']} translations, {$result['writtenFileCount']} file(s) written, {$result['deletedFileCount']} stale file(s) deleted\n",
+            Console::FG_CYAN
+        );
         $this->stdout("\nAll translation files generated successfully!\n", Console::FG_GREEN);
 
         return ExitCode::OK;
