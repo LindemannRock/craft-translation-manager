@@ -14,6 +14,7 @@ return [
     'Translation Manager' => 'Translation Manager',
     'Manage translations, exports, backups, and AI-assisted workflows from one control panel workspace.' => 'ひとつのコントロールパネルから、翻訳・エクスポート・バックアップおよび AI 支援ワークフローを管理できます。',
     'Open Translation Manager' => 'Translation Manager を開く',
+    'Query {name} data' => '{name} データを照会する',
 
     // Navigation
     'Translations' => '翻訳',

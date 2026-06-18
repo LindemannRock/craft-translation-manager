@@ -14,6 +14,7 @@ return [
     'Translation Manager' => 'Translation Manager',
     'Manage translations, exports, backups, and AI-assisted workflows from one control panel workspace.' => 'Hantera översättningar, exporter, säkerhetskopior och AI-stödda arbetsflöden från en arbetsyta i kontrollpanelen.',
     'Open Translation Manager' => 'Öppna Translation Manager',
+    'Query {name} data' => 'Fråga {name}-data',
 
     // Navigation
     'Translations' => 'Översättningar',

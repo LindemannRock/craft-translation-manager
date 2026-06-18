@@ -15,9 +15,13 @@ use craft\base\Model;
 use craft\base\Plugin;
 use craft\console\Application as ConsoleApplication;
 use craft\events\RegisterComponentTypesEvent;
+use craft\events\RegisterGqlQueriesEvent;
+use craft\events\RegisterGqlSchemaComponentsEvent;
+use craft\events\RegisterGqlTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\UrlHelper;
+use craft\services\Gql;
 use craft\services\UserPermissions;
 use craft\services\Utilities;
 use craft\web\twig\variables\Cp;
@@ -32,6 +36,8 @@ use lindemannrock\base\helpers\ScheduleHelper;
 use lindemannrock\logginglibrary\LoggingLibrary;
 
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\gql\queries\TranslationQuery;
+use lindemannrock\translationmanager\gql\types\TranslationType as GqlTranslationType;
 use lindemannrock\translationmanager\i18n\LocaleMappingPhpMessageSource;
 use lindemannrock\translationmanager\i18n\MergedLocaleMappingPhpMessageSource;
 use lindemannrock\translationmanager\jobs\CreateBackupJob;
@@ -172,6 +178,8 @@ class TranslationManager extends Plugin
             'backup' => BackupService::class,
             'integrations' => IntegrationService::class,
         ]);
+
+        $this->registerGraphql();
 
         // Register CP routes
         Event::on(
@@ -348,6 +356,46 @@ class TranslationManager extends Plugin
 
         // Schedule backup job if enabled
         $this->scheduleBackupJob();
+    }
+
+    /**
+     * Register Translation Manager GraphQL types, queries, and schema permissions.
+     */
+    private function registerGraphql(): void
+    {
+        Event::on(
+            Gql::class,
+            Gql::EVENT_REGISTER_GQL_TYPES,
+            static function(RegisterGqlTypesEvent $event) {
+                $event->types[] = GqlTranslationType::class;
+            }
+        );
+
+        Event::on(
+            Gql::class,
+            Gql::EVENT_REGISTER_GQL_QUERIES,
+            static function(RegisterGqlQueriesEvent $event) {
+                foreach (TranslationQuery::getQueries() as $key => $value) {
+                    $event->queries[$key] = $value;
+                }
+            }
+        );
+
+        Event::on(
+            Gql::class,
+            Gql::EVENT_REGISTER_GQL_SCHEMA_COMPONENTS,
+            static function(RegisterGqlSchemaComponentsEvent $event) {
+                if (self::$plugin === null) {
+                    return;
+                }
+
+                $pluginName = self::$plugin->getSettings()->getFullName();
+
+                $event->queries[$pluginName]['translationManager.all:read'] = [
+                    'label' => Craft::t('translation-manager', 'Query {name} data', ['name' => $pluginName]),
+                ];
+            }
+        );
     }
 
     /**

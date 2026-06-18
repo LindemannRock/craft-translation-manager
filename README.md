@@ -27,6 +27,7 @@ This plugin is in active development and not yet available on the Craft Plugin S
 - **Capture Missing Translations** — auto-add translations at runtime when `|t()` encounters unknown strings
 - **Locale Mapping** — consolidate regional variants (en-US, en-GB) to base locales
 - **Import/Export** — CSV import with preview and validation, PHP file import/export
+- **GraphQL** — Read-only translation lookup and catalog queries for headless frontends
 - **Backup System** — scheduled backups with cloud storage (S3, Servd, Wasabi) and one-click restore
 - **Maintenance Tools** — template scanner, usage detection, granular cleanup
 - **Security** — XSS protection, CSRF validation, path traversal prevention, CSV injection guards

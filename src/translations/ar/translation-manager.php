@@ -14,6 +14,7 @@ return [
     'Translation Manager' => 'Translation Manager',
     'Manage translations, exports, backups, and AI-assisted workflows from one control panel workspace.' => 'إدارة الترجمات والتصديرات والنسخ الاحتياطية وسير العمل المدعومة بالذكاء الاصطناعي من مساحة عمل واحدة في لوحة التحكم.',
     'Open Translation Manager' => 'فتح Translation Manager',
+    'Query {name} data' => 'الاستعلام عن بيانات {name}',
 
     // Navigation
     'Translations' => 'الترجمات',

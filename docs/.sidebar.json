@@ -47,6 +47,7 @@
         "children": [
             "developers/permissions",
             "developers/console-commands",
+            "developers/graphql",
             "developers/template-variables",
             "developers/twig-globals",
             "developers/logging",
