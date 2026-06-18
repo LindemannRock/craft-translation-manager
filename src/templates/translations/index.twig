@@ -349,7 +349,21 @@
     {% endif %}
 
     {% if canExport %}
-        <button type="button" class="btn" id="export-btn" tabindex="0" aria-expanded="false" title="{{ 'Export translations as CSV file'|t('translation-manager') }}">{{ 'Export...'|t('translation-manager') }}</button>
+        {% include 'lindemannrock-base/_components/export-menu' with {
+            action: 'translation-manager/export',
+            permission: 'translationManager:exportTranslations',
+            pluginHandle: 'translation-manager',
+            selectionAware: true,
+            idsParam: 'ids',
+            extraParams: {
+                language: currentLanguage,
+                type: type,
+                status: status,
+                origin: origin,
+                search: search,
+                category: category,
+            },
+        } only %}
     {% endif %}
 
     {% if canEdit %}
@@ -393,56 +407,6 @@
             }
             return [];
         }
-
-        {% if canExport %}
-        // Export uses a hand-rolled form because the response is a CSV file
-        // download — Craft.sendActionRequest is for AJAX/JSON exchanges, not
-        // streamed file downloads.
-        document.getElementById('export-btn')?.addEventListener('click', function(e) {
-            e.preventDefault();
-
-            const selectedIds = getSelectedIds();
-            if (selectedIds.length > 0) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '{{ actionUrl('translation-manager/export/selected') }}';
-
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = '{{ craft.app.config.general.csrfTokenName }}';
-                csrfInput.value = '{{ craft.app.request.csrfToken }}';
-                form.appendChild(csrfInput);
-
-                const idsInput = document.createElement('input');
-                idsInput.type = 'hidden';
-                idsInput.name = 'ids';
-                idsInput.value = JSON.stringify(selectedIds);
-                form.appendChild(idsInput);
-
-                document.body.appendChild(form);
-                form.submit();
-                document.body.removeChild(form);
-            } else {
-                const actionUrl = '{{ actionUrl('translation-manager/export') }}';
-                const type = {{ type|json_encode|raw }};
-                const status = {{ status|json_encode|raw }};
-                const origin = {{ origin|json_encode|raw }};
-                const search = {{ search|json_encode|raw }};
-                const category = {{ category|json_encode|raw }};
-                const language = {{ currentLanguage|json_encode|raw }};
-
-                let url = actionUrl;
-                url += (actionUrl.indexOf('?') === -1 ? '?' : '&') + 'language=' + encodeURIComponent(language);
-                url += '&type=' + encodeURIComponent(type);
-                url += '&status=' + encodeURIComponent(status);
-                url += '&origin=' + encodeURIComponent(origin);
-                url += '&search=' + encodeURIComponent(search);
-                url += '&category=' + encodeURIComponent(category);
-
-                window.location.href = url;
-            }
-        });
-        {% endif %}
 
         function bulkSetStatus(targetStatus, errorFallback) {
             const ids = getSelectedIds();

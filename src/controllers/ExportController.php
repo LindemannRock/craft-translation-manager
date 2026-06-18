@@ -49,9 +49,11 @@ class ExportController extends Controller
     }
 
     /**
-     * Export translations as CSV download
-     * Respects filters when called from translations page
-     * Exports all when called from settings page
+     * Export translations.
+     *
+     * The translations table posts an explicit format from the base export menu.
+     * The Import/Export page intentionally posts no format and remains CSV-only
+     * through the default below.
      *
      * @return Response
      */
@@ -59,141 +61,25 @@ class ExportController extends Controller
     {
         try {
             $request = Craft::$app->getRequest();
-            $translationsService = TranslationManager::getInstance()->translations;
             $settings = TranslationManager::$plugin->getSettings();
+            $format = (string)($request->getBodyParam('format') ?? $request->getParam('format', 'csv'));
+            ExportHelper::assertFormatEnabled($format, 'translation-manager');
 
-            // Check if we have filters from the translations page
-            $criteria = [];
+            $ids = $this->parseIds($request->getBodyParam('ids'));
+            $export = $ids ? $this->buildSelectedExport($ids) : $this->buildFilteredExport();
+            $extension = ExportHelper::extensionForFormat($format);
+            $filename = ExportHelper::filename($settings, $export['filenameParts'], $extension);
 
-            // Language filter
-            $languageParam = $request->getParam('language') ?: $request->getBodyParam('language');
-            $exportAll = empty($languageParam);
-
-            if (!empty($languageParam)) {
-                $languageParam = $settings->mapLanguage($languageParam);
-                $criteria['language'] = $languageParam;
-            } else {
-                // Export all languages
-                $criteria['allSites'] = true;
-            }
-            
-            $typeParam = $request->getParam('type') ?: $request->getBodyParam('type');
-            if ($typeParam && $typeParam !== 'all') {
-                $criteria['type'] = $typeParam;
-            }
-            $statusParam = $request->getParam('status') ?: $request->getBodyParam('status');
-            if ($statusParam && $statusParam !== 'all') {
-                $criteria['status'] = $statusParam;
-            }
-            $originParam = $request->getParam('origin') ?: $request->getBodyParam('origin');
-            if ($originParam && $originParam !== 'all') {
-                $criteria['origin'] = $originParam;
-            }
-            $searchParam = $request->getParam('search') ?: $request->getBodyParam('search');
-            if ($searchParam) {
-                $criteria['search'] = $searchParam;
-            }
-
-            // Category filter
-            $categoryParam = $request->getParam('category') ?: $request->getBodyParam('category');
-            if ($categoryParam && $categoryParam !== 'all') {
-                $integration = $this->getIntegrationService()->getIntegrationForCategory($categoryParam);
-                if ($integration !== null) {
-                    $criteria['type'] = $integration->getSourceType();
-                    $criteria['category'] = $categoryParam;
-                } else {
-                    $criteria['type'] = 'site';
-                    $criteria['category'] = $categoryParam;
-                }
-            }
-
-            // Get translations with filters
-            $translations = $translationsService->getTranslations($criteria);
-            $allowedExportLanguages = $this->getAllowedExportLanguages();
-            
-            // If no translations found, still export empty CSV with headers
-            $headers = [
-                'Translation Key',
-                'Translation',
-                'Category',
-                'Type',
-                'Context',
-                'Status',
-                'Origin',
-                'Language',
-                'Created By',
-                'Reviewed By',
-                'Reviewed At',
-                'Updated At',
-            ];
-
-            $rows = [];
-            $userIds = [];
-            foreach ($translations as $translation) {
-                if (!empty($translation['createdByUserId'])) {
-                    $userIds[] = (int) $translation['createdByUserId'];
-                }
-                if (!empty($translation['reviewedByUserId'])) {
-                    $userIds[] = (int) $translation['reviewedByUserId'];
-                }
-            }
-
-            $userEmailMap = $this->getUserEmailMap($userIds);
-
-            foreach ($translations as $translation) {
-                $mappedLanguage = $settings->mapLanguage((string)($translation['language'] ?? ''));
-                if ($mappedLanguage === '' || !in_array(strtolower($mappedLanguage), $allowedExportLanguages, true)) {
-                    continue;
-                }
-
-                $context = $translation['context'] ?? '';
-                $typeLabel = $this->getTypeLabelForContext($context);
-
-                $row = [
-                    'translationKey' => $translation['translationKey'] ?? '',
-                    'translation' => $translation['translation'] ?? '',
-                    'category' => $translation['category'] ?? 'messages',
-                    'type' => $typeLabel,
-                ];
-
-                $row['context'] = $context;
-
-                $row['status'] = $translation['status'] ?? '';
-                $row['origin'] = $translation['translationOrigin'] ?? 'system';
-                $row['language'] = $mappedLanguage;
-                $row['createdBy'] = $this->resolveUserEmail($translation['createdByUserId'] ?? null, $userEmailMap);
-                $row['reviewedBy'] = $this->resolveUserEmail($translation['reviewedByUserId'] ?? null, $userEmailMap);
-                $row['reviewedAt'] = $translation['reviewedAt'] ?? '';
-                $row['dateUpdated'] = $translation['dateUpdated'] ?? '';
-
-                $rows[] = $row;
-            }
-
-            $filenameParts = ['export'];
-
-            if ($exportAll) {
-                $filenameParts[] = 'all-languages';
-            } elseif (!empty($languageParam)) {
-                $filenameParts[] = $languageParam;
-            }
-
-            if ($categoryParam && $categoryParam !== 'all') {
-                $filenameParts[] = $categoryParam;
-            }
-
-            if ($typeParam && $typeParam !== 'all') {
-                $filenameParts[] = $typeParam;
-            }
-            if ($statusParam && $statusParam !== 'all') {
-                $filenameParts[] = $statusParam;
-            }
-            if ($originParam && $originParam !== 'all') {
-                $filenameParts[] = $originParam;
-            }
-
-            $filename = ExportHelper::filename($settings, $filenameParts, 'csv');
-
-            return ExportHelper::dispatchTable($rows, $headers, 'csv', $filename, ['reviewedAt', 'dateUpdated']);
+            return ExportHelper::dispatchTable(
+                rows: $export['rows'],
+                headers: $export['headers'],
+                format: $format,
+                filename: $filename,
+                dateColumns: $export['dateColumns'],
+                excelOptions: [
+                    'sheetTitle' => Craft::t('translation-manager', 'Translations'),
+                ],
+            );
         } catch (\Exception $e) {
             $this->logError('Export failed', ['error' => $e->getMessage()]);
             throw $e;
@@ -221,26 +107,37 @@ class ExportController extends Controller
 
         $request = Craft::$app->getRequest();
         $ids = $request->getRequiredBodyParam('ids');
+        $settings = TranslationManager::$plugin->getSettings();
+        $format = (string)$request->getBodyParam('format', 'csv');
+        ExportHelper::assertFormatEnabled($format, 'translation-manager');
+        $ids = $this->parseIds($ids);
 
-        if (!is_string($ids)) {
-            throw new \Exception('Invalid IDs provided');
-        }
-
-        $ids = json_decode($ids, true);
-        if (!is_array($ids)) {
-            throw new \Exception('Invalid IDs format');
-        }
-
-        // Filter to valid integer IDs only
-        $ids = array_filter($ids, fn($id) => is_numeric($id) && (int) $id > 0);
-        $ids = array_map('intval', $ids);
-
-        if (empty($ids)) {
+        if (!$ids) {
             throw new \Exception('No valid IDs provided');
         }
 
-        $settings = TranslationManager::$plugin->getSettings();
-        $headers = [
+        $export = $this->buildSelectedExport($ids);
+        $extension = ExportHelper::extensionForFormat($format);
+        $filename = ExportHelper::filename($settings, $export['filenameParts'], $extension);
+
+        return ExportHelper::dispatchTable(
+            rows: $export['rows'],
+            headers: $export['headers'],
+            format: $format,
+            filename: $filename,
+            dateColumns: $export['dateColumns'],
+            excelOptions: [
+                'sheetTitle' => Craft::t('translation-manager', 'Translations'),
+            ],
+        );
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private function exportHeaders(): array
+    {
+        return [
             'Translation Key',
             'Translation',
             'Category',
@@ -254,88 +151,240 @@ class ExportController extends Controller
             'Reviewed At',
             'Updated At',
         ];
+    }
 
+    /**
+     * @return array{rows: array<int,array<string,mixed>>, headers: array<int,string>, filenameParts: array<int,string>, dateColumns: array<int,string>}
+     */
+    private function buildFilteredExport(): array
+    {
+        $request = Craft::$app->getRequest();
+        $settings = TranslationManager::$plugin->getSettings();
+        $translationsService = TranslationManager::getInstance()->translations;
+
+        $criteria = [];
+        $languageParam = $request->getParam('language') ?: $request->getBodyParam('language');
+        $exportAll = empty($languageParam);
+
+        if (!empty($languageParam)) {
+            $languageParam = $settings->mapLanguage((string)$languageParam);
+            $criteria['language'] = $languageParam;
+        } else {
+            $criteria['allSites'] = true;
+        }
+
+        $typeParam = $request->getParam('type') ?: $request->getBodyParam('type');
+        if ($typeParam && $typeParam !== 'all') {
+            $criteria['type'] = $typeParam;
+        }
+
+        $statusParam = $request->getParam('status') ?: $request->getBodyParam('status');
+        if ($statusParam && $statusParam !== 'all') {
+            $criteria['status'] = $statusParam;
+        }
+
+        $originParam = $request->getParam('origin') ?: $request->getBodyParam('origin');
+        if ($originParam && $originParam !== 'all') {
+            $criteria['origin'] = $originParam;
+        }
+
+        $searchParam = $request->getParam('search') ?: $request->getBodyParam('search');
+        if ($searchParam) {
+            $criteria['search'] = $searchParam;
+        }
+
+        $categoryParam = $request->getParam('category') ?: $request->getBodyParam('category');
+        if ($categoryParam && $categoryParam !== 'all') {
+            $integration = $this->getIntegrationService()->getIntegrationForCategory((string)$categoryParam);
+            if ($integration !== null) {
+                $criteria['type'] = $integration->getSourceType();
+                $criteria['category'] = $categoryParam;
+            } else {
+                $criteria['type'] = 'site';
+                $criteria['category'] = $categoryParam;
+            }
+        }
+
+        $translations = $translationsService->getTranslations($criteria);
+        $rows = $this->buildRows($translations, true);
+        $filenameParts = ['export'];
+
+        if ($exportAll) {
+            $filenameParts[] = 'all-languages';
+        } elseif (!empty($languageParam)) {
+            $filenameParts[] = (string)$languageParam;
+        }
+
+        if ($categoryParam && $categoryParam !== 'all') {
+            $filenameParts[] = (string)$categoryParam;
+        }
+        if ($typeParam && $typeParam !== 'all') {
+            $filenameParts[] = (string)$typeParam;
+        }
+        if ($statusParam && $statusParam !== 'all') {
+            $filenameParts[] = (string)$statusParam;
+        }
+        if ($originParam && $originParam !== 'all') {
+            $filenameParts[] = (string)$originParam;
+        }
+
+        return $this->exportPayload($rows, $filenameParts);
+    }
+
+    /**
+     * @param array<int> $ids
+     * @return array{rows: array<int,array<string,mixed>>, headers: array<int,string>, filenameParts: array<int,string>, dateColumns: array<int,string>}
+     */
+    private function buildSelectedExport(array $ids): array
+    {
         /** @var array<int,TranslationRecord> $translationsById */
         $translationsById = TranslationRecord::find()
             ->where(['id' => $ids])
             ->indexBy('id')
             ->all();
 
-        $rows = [];
-        $languages = [];
-        $types = [];
-        $userIds = [];
-
+        $translations = [];
         foreach ($ids as $id) {
-            if (!isset($translationsById[$id])) {
-                continue;
-            }
-            $translation = $translationsById[$id];
-
-            if (!empty($translation->createdByUserId)) {
-                $userIds[] = (int) $translation->createdByUserId;
-            }
-            if (!empty($translation->reviewedByUserId)) {
-                $userIds[] = (int) $translation->reviewedByUserId;
+            if (isset($translationsById[$id])) {
+                $translations[] = $translationsById[$id];
             }
         }
 
-        $userEmailMap = $this->getUserEmailMap($userIds);
+        $rows = $this->buildRows($translations, false);
+        $languages = [];
+        $types = [];
 
-        foreach ($ids as $id) {
-            if (!isset($translationsById[$id])) {
-                continue;
-            }
-            $translation = $translationsById[$id];
-
-            $context = $translation->context ?? '';
-            $integration = $this->getIntegrationService()->getIntegrationForContext($context);
-            $typeLabel = $this->getTypeLabelForContext($context);
-
-            $row = [
-                'translationKey' => $translation->translationKey ?? '',
-                'translation' => $translation->translation ?? '',
-                'category' => $translation->category ?? 'messages',
-                'type' => $typeLabel,
-            ];
-
-            $row['context'] = $context;
-
-            $row['status'] = $translation->status ?? '';
-            $row['origin'] = $translation->translationOrigin ?? 'system';
-            $row['language'] = $settings->mapLanguage((string)($translation->language ?? ''));
-            $row['createdBy'] = $this->resolveUserEmail($translation->createdByUserId ?? null, $userEmailMap);
-            $row['reviewedBy'] = $this->resolveUserEmail($translation->reviewedByUserId ?? null, $userEmailMap);
-            $row['reviewedAt'] = $translation->reviewedAt ?? '';
-            $row['dateUpdated'] = $translation->dateUpdated ?? '';
-
-            $rows[] = $row;
+        foreach ($translations as $translation) {
             if (!empty($translation->language)) {
                 $languages[] = $translation->language;
             }
+
+            $context = $translation->context ?? '';
+            $integration = $this->getIntegrationService()->getIntegrationForContext($context);
             $types[] = $integration?->getName() ?? 'site';
         }
 
-        $languages = array_unique($languages);
-        $types = array_unique($types);
+        $languages = array_values(array_unique($languages));
+        $types = array_values(array_unique($types));
 
         $filenameParts = ['export-selected'];
 
         if (count($languages) === 1 && !empty($languages[0])) {
-            $filenameParts[] = $languages[0];
+            $filenameParts[] = (string)$languages[0];
         } else {
             $filenameParts[] = 'multi-language';
         }
 
         if (count($types) === 1) {
-            $filenameParts[] = $types[0];
+            $filenameParts[] = (string)$types[0];
         }
 
-        $filename = ExportHelper::filename($settings, $filenameParts, 'csv');
-
-        return ExportHelper::dispatchTable($rows, $headers, 'csv', $filename, ['reviewedAt', 'dateUpdated']);
+        return $this->exportPayload($rows, $filenameParts);
     }
 
+    /**
+     * @param array<int,array<string,mixed>|TranslationRecord> $translations
+     * @return array<int,array<string,mixed>>
+     */
+    private function buildRows(array $translations, bool $filterAllowedLanguages): array
+    {
+        $settings = TranslationManager::$plugin->getSettings();
+        $allowedExportLanguages = $filterAllowedLanguages ? $this->getAllowedExportLanguages() : [];
+        $userIds = [];
+
+        foreach ($translations as $translation) {
+            $createdByUserId = $this->translationValue($translation, 'createdByUserId');
+            $reviewedByUserId = $this->translationValue($translation, 'reviewedByUserId');
+            if (!empty($createdByUserId)) {
+                $userIds[] = (int)$createdByUserId;
+            }
+            if (!empty($reviewedByUserId)) {
+                $userIds[] = (int)$reviewedByUserId;
+            }
+        }
+
+        $userEmailMap = $this->getUserEmailMap($userIds);
+        $rows = [];
+
+        foreach ($translations as $translation) {
+            $mappedLanguage = $settings->mapLanguage((string)$this->translationValue($translation, 'language', ''));
+            if (
+                $filterAllowedLanguages
+                && ($mappedLanguage === '' || !in_array(strtolower($mappedLanguage), $allowedExportLanguages, true))
+            ) {
+                continue;
+            }
+
+            $context = (string)$this->translationValue($translation, 'context', '');
+            $typeLabel = $this->getTypeLabelForContext($context);
+
+            $row = [
+                'translationKey' => $this->translationValue($translation, 'translationKey', ''),
+                'translation' => $this->translationValue($translation, 'translation', ''),
+                'category' => $this->translationValue($translation, 'category', 'messages'),
+                'type' => $typeLabel,
+            ];
+
+            $row['context'] = $context;
+            $row['status'] = $this->translationValue($translation, 'status', '');
+            $row['origin'] = $this->translationValue($translation, 'translationOrigin', 'system');
+            $row['language'] = $mappedLanguage;
+            $row['createdBy'] = $this->resolveUserEmail($this->translationValue($translation, 'createdByUserId'), $userEmailMap);
+            $row['reviewedBy'] = $this->resolveUserEmail($this->translationValue($translation, 'reviewedByUserId'), $userEmailMap);
+            $row['reviewedAt'] = $this->translationValue($translation, 'reviewedAt', '');
+            $row['dateUpdated'] = $this->translationValue($translation, 'dateUpdated', '');
+
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $rows
+     * @param array<int,string> $filenameParts
+     * @return array{rows: array<int,array<string,mixed>>, headers: array<int,string>, filenameParts: array<int,string>, dateColumns: array<int,string>}
+     */
+    private function exportPayload(array $rows, array $filenameParts): array
+    {
+        return [
+            'rows' => $rows,
+            'headers' => $this->exportHeaders(),
+            'filenameParts' => $filenameParts,
+            'dateColumns' => ['reviewedAt', 'dateUpdated'],
+        ];
+    }
+
+    /**
+     * @return array<int>
+     */
+    private function parseIds(mixed $ids): array
+    {
+        if ($ids === null || $ids === '') {
+            return [];
+        }
+
+        if (is_string($ids)) {
+            $ids = json_decode($ids, true);
+        }
+
+        if (!is_array($ids)) {
+            return [];
+        }
+
+        $ids = array_filter($ids, fn($id) => is_numeric($id) && (int)$id > 0);
+
+        return array_values(array_map('intval', $ids));
+    }
+
+    private function translationValue(array|TranslationRecord $translation, string $key, mixed $default = null): mixed
+    {
+        if (is_array($translation)) {
+            return $translation[$key] ?? $default;
+        }
+
+        return $translation->{$key} ?? $default;
+    }
 
     /**
      * Build a map of userId => email for export metadata.
