@@ -61,6 +61,18 @@ migrations/project-config sync before generated translation files are written:
 php craft translation-manager/translations/generate-all --delay=10
 ```
 
+Use `--verify` to check a sample of generated rows after writing. Verification
+confirms the generated PHP files contain the expected values and that Craft can
+resolve them through `Craft::t()` in the current runtime:
+
+```bash title="PHP"
+php craft translation-manager/translations/generate-all --delay=10 --verify=1
+```
+
+Each `generate-all` run records its result in Translation Manager's generation
+status table. Live web requests use that status plus a generation fingerprint to
+queue a Craft job when generated files are missing or stale.
+
 ### `translation-manager/translations/generate-provider`
 
 Generate PHP translation files for one form provider.

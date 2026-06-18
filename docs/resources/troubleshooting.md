@@ -91,13 +91,28 @@ php craft project-config/sync --interactive=0
 php craft clear-caches/compiled-templates --interactive=0
 php craft clear-caches/cp-resources --interactive=0
 php craft clear-caches/data --interactive=0
-php craft translation-manager/translations/generate-all --delay=10
+php craft translation-manager/translations/generate-all --delay=10 --verify=1
 php craft clear-caches/data --interactive=0
 ```
 
 The `--delay` option waits before generation starts. It is useful on deploy
 platforms where the command hook can run before the final release state is fully
-settled.
+settled. The `--verify` option checks a sample of generated translations on
+disk and through Craft's translation runtime.
+
+Translation Manager also records `generate-all` runs in its generation status
+table. On live web requests, it compares the current translated rows, enabled
+categories/providers, mapped languages, and generation path against the last
+successful generation fingerprint. If files are missing or stale, it queues one
+Craft queue job to regenerate files from the live runtime.
+
+If translations still render in the source language after deploy:
+
+- Confirm the Craft queue is running and not stuck.
+- Check the latest rows in `translationmanager_generation_status`.
+- Run **Generate All Files** in the Control Panel once. If that fixes rendering
+  immediately, the CLI hook is not the live-runtime source of truth on that
+  platform, and the queue worker/freshness job should be checked next.
 
 ## Log Files
 

@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\tests\Integration;
 
 use lindemannrock\translationmanager\console\controllers\TranslationsController;
 use lindemannrock\translationmanager\services\GenerationService;
+use lindemannrock\translationmanager\services\GenerationStatusService;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -28,6 +29,7 @@ final class TranslationsConsoleGenerateCategoryTest extends TestCase
         $controller = new TranslationsConsoleGenerateAllSpyController('translations', TranslationManager::getInstance());
 
         self::assertContains('delay', $controller->options('generate-all'));
+        self::assertContains('verify', $controller->options('generate-all'));
     }
 
     public function testGenerateAllRejectsInvalidDelay(): void
@@ -56,9 +58,12 @@ final class TranslationsConsoleGenerateCategoryTest extends TestCase
     {
         $plugin = TranslationManager::getInstance();
         $originalGenerate = $plugin->get('generate');
+        $originalGenerationStatus = $plugin->get('generationStatus');
         $spy = new TranslationsConsoleGenerateCategorySpyService();
+        $statusSpy = new TranslationsConsoleGenerateStatusSpyService();
 
         $plugin->set('generate', $spy);
+        $plugin->set('generationStatus', $statusSpy);
 
         try {
             $controller = new TranslationsConsoleGenerateAllSpyController('translations', $plugin);
@@ -68,9 +73,66 @@ final class TranslationsConsoleGenerateCategoryTest extends TestCase
 
             self::assertSame(ExitCode::OK, $exitCode);
             self::assertTrue($spy->generatedAll);
+            self::assertSame(1, $statusSpy->recordedGenerationResults);
             self::assertSame([7], $controller->sleptSeconds);
         } finally {
             $plugin->set('generate', $originalGenerate);
+            $plugin->set('generationStatus', $originalGenerationStatus);
+        }
+    }
+
+    public function testGenerateAllRunsVerificationWhenRequested(): void
+    {
+        $plugin = TranslationManager::getInstance();
+        $originalGenerate = $plugin->get('generate');
+        $originalGenerationStatus = $plugin->get('generationStatus');
+        $spy = new TranslationsConsoleGenerateCategorySpyService();
+        $statusSpy = new TranslationsConsoleGenerateStatusSpyService();
+
+        $plugin->set('generate', $spy);
+        $plugin->set('generationStatus', $statusSpy);
+
+        try {
+            $controller = new TranslationsConsoleGenerateAllSpyController('translations', $plugin);
+            $controller->verify = true;
+
+            $exitCode = $controller->actionGenerateAll();
+
+            self::assertSame(ExitCode::OK, $exitCode);
+            self::assertTrue($spy->generatedAll);
+            self::assertTrue($controller->verified);
+            self::assertSame(1, $statusSpy->recordedGenerationResults);
+        } finally {
+            $plugin->set('generate', $originalGenerate);
+            $plugin->set('generationStatus', $originalGenerationStatus);
+        }
+    }
+
+    public function testGenerateAllFailsWhenVerificationFails(): void
+    {
+        $plugin = TranslationManager::getInstance();
+        $originalGenerate = $plugin->get('generate');
+        $originalGenerationStatus = $plugin->get('generationStatus');
+        $spy = new TranslationsConsoleGenerateCategorySpyService();
+        $statusSpy = new TranslationsConsoleGenerateStatusSpyService();
+
+        $plugin->set('generate', $spy);
+        $plugin->set('generationStatus', $statusSpy);
+
+        try {
+            $controller = new TranslationsConsoleGenerateAllSpyController('translations', $plugin);
+            $controller->verify = true;
+            $controller->verificationResult = false;
+
+            $exitCode = $controller->actionGenerateAll();
+
+            self::assertSame(ExitCode::UNSPECIFIED_ERROR, $exitCode);
+            self::assertTrue($spy->generatedAll);
+            self::assertTrue($controller->verified);
+            self::assertSame(1, $statusSpy->recordedGenerationResults);
+        } finally {
+            $plugin->set('generate', $originalGenerate);
+            $plugin->set('generationStatus', $originalGenerationStatus);
         }
     }
 
@@ -112,6 +174,19 @@ final class TranslationsConsoleGenerateCategoryTest extends TestCase
         } finally {
             $plugin->set('generate', $originalGenerate);
         }
+    }
+}
+
+final class TranslationsConsoleGenerateStatusSpyService extends GenerationStatusService
+{
+    public int $recordedGenerationResults = 0;
+
+    /**
+     * @param array<string,mixed> $result
+     */
+    public function recordGenerationResult(array $result, string $reason, string $triggerType): void
+    {
+        $this->recordedGenerationResults++;
     }
 }
 
@@ -172,8 +247,19 @@ final class TranslationsConsoleGenerateAllSpyController extends TranslationsCont
      */
     public array $sleptSeconds = [];
 
+    public bool $verified = false;
+
+    public bool $verificationResult = true;
+
     protected function sleepBeforeGenerate(int $seconds): void
     {
         $this->sleptSeconds[] = $seconds;
+    }
+
+    protected function verifyGeneratedTranslationRuntime(array $result): bool
+    {
+        $this->verified = true;
+
+        return $this->verificationResult;
     }
 }

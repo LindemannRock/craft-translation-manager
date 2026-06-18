@@ -14,10 +14,13 @@ use craft\console\Controller;
 use craft\helpers\Console;
 use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\translationmanager\helpers\PhpTranslationsHelper;
+use lindemannrock\translationmanager\records\GenerationStatusRecord;
+use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\services\TranslationsService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\console\ExitCode;
+use yii\db\Expression;
 
 /**
  * Console Translations Controller
@@ -73,6 +76,12 @@ class TranslationsController extends Controller
     public int $delay = 0;
 
     /**
+     * @var bool Verify generated files and runtime message-source resolution after `generate-all`.
+     * @since 5.28.0
+     */
+    public bool $verify = false;
+
+    /**
      * @inheritdoc
      */
     public function options($actionID): array
@@ -93,6 +102,7 @@ class TranslationsController extends Controller
 
         if ($actionID === 'generate-all') {
             $options[] = 'delay';
+            $options[] = 'verify';
         }
 
         return $options;
@@ -320,6 +330,12 @@ class TranslationsController extends Controller
             }
 
             if (!$success) {
+                $result['success'] = false;
+                TranslationManager::getInstance()->generationStatus->recordGenerationResult(
+                    $result,
+                    GenerationStatusRecord::REASON_CLI,
+                    GenerationStatusRecord::TRIGGER_CLI,
+                );
                 return ExitCode::UNSPECIFIED_ERROR;
             }
         }
@@ -328,6 +344,22 @@ class TranslationsController extends Controller
             "\nTotal: {$result['translationCount']} translations, {$result['writtenFileCount']} file(s) written, {$result['deletedFileCount']} stale file(s) deleted\n",
             Console::FG_CYAN
         );
+
+        $verificationPassed = !$this->verify || $this->verifyGeneratedTranslationRuntime($result);
+        if (!$verificationPassed) {
+            $result['success'] = false;
+        }
+
+        TranslationManager::getInstance()->generationStatus->recordGenerationResult(
+            $result,
+            GenerationStatusRecord::REASON_CLI,
+            GenerationStatusRecord::TRIGGER_CLI,
+        );
+
+        if (!$verificationPassed) {
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+
         $this->stdout("\nAll translation files generated successfully!\n", Console::FG_GREEN);
 
         return ExitCode::OK;
@@ -340,6 +372,85 @@ class TranslationsController extends Controller
     protected function sleepBeforeGenerate(int $seconds): void
     {
         sleep($seconds);
+    }
+
+    /**
+     * Verify that a small sample of generated rows exists on disk and resolves
+     * through Craft's message source in this runtime.
+     *
+     * @param array<string,mixed> $result
+     */
+    protected function verifyGeneratedTranslationRuntime(array $result): bool
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $basePath = $settings->getGenerationPath();
+        $categories = [];
+
+        foreach (($result['results'] ?? []) as $scopeResult) {
+            if (!is_array($scopeResult) || !($scopeResult['success'] ?? false)) {
+                continue;
+            }
+            foreach ((array)($scopeResult['categories'] ?? []) as $category) {
+                if (is_string($category) && $category !== '') {
+                    $categories[] = $category;
+                }
+            }
+        }
+
+        $categories = array_values(array_unique($categories));
+        if ($categories === []) {
+            $this->stdout("Verification skipped: no generated categories in result.\n", Console::FG_YELLOW);
+            return true;
+        }
+
+        $this->stdout("\nVerifying generated translations...\n", Console::FG_YELLOW);
+
+        /** @var TranslationRecord[] $records */
+        $records = TranslationRecord::find()
+            ->where([
+                'category' => $categories,
+                'status' => 'translated',
+            ])
+            ->andWhere(['not', ['translation' => null]])
+            ->andWhere(['<>', 'translation', ''])
+            ->andWhere(new Expression('[[translation]] <> [[source]]'))
+            ->orderBy(['category' => SORT_ASC, 'language' => SORT_ASC, 'id' => SORT_ASC])
+            ->limit(20)
+            ->all();
+
+        if ($records === []) {
+            $this->stdout("Verification skipped: no translated sample rows with non-source values were found.\n", Console::FG_YELLOW);
+            return true;
+        }
+
+        $checked = 0;
+        foreach ($records as $record) {
+            $language = $settings->mapLanguage((string) $record->language);
+            $category = (string) $record->category;
+            $file = $basePath . DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $category . '.php';
+
+            if (!is_file($file)) {
+                $this->stderr("Verification failed: missing generated file {$file}\n", Console::FG_RED);
+                return false;
+            }
+
+            $messages = require $file;
+            if (!is_array($messages) || ($messages[$record->source] ?? null) !== $record->translation) {
+                $this->stderr("Verification failed: {$file} does not contain the expected value for row {$record->id}.\n", Console::FG_RED);
+                return false;
+            }
+
+            $resolved = \Craft::t($category, (string) $record->source, [], (string) $record->language);
+            if ($resolved !== $record->translation) {
+                $this->stderr("Verification failed: Craft::t({$category}, row {$record->id}, {$record->language}) resolved a different value.\n", Console::FG_RED);
+                return false;
+            }
+
+            $checked++;
+        }
+
+        $this->stdout("Verification passed: {$checked} generated translation sample(s) resolved through Craft::t().\n", Console::FG_GREEN);
+        return true;
     }
 
     /**
