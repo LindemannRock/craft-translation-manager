@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.27.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.26.0...v5.27.0) - 2026-06-18
+
+
+### Added
+
+* enhance translation generation output with detailed summary ([4645c3d](https://github.com/LindemannRock/craft-translation-manager/commit/4645c3d503f1f279e31a92ad65f86024ae333b0b))
+
 ## [5.26.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.25.0...v5.26.0) - 2026-06-18
 
 
