@@ -1,5 +1,51 @@
 # Changelog
 
+## [5.26.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.25.0...v5.26.0) (2026-06-18)
+
+
+### Added
+
+* add field resolution caching in TmTranslationTable ([1459d93](https://github.com/LindemannRock/craft-translation-manager/commit/1459d93507f450c0eb07e807061df8f484241dc4))
+* **cli:** add action to generate translation files for a specific category ([9c8d1c3](https://github.com/LindemannRock/craft-translation-manager/commit/9c8d1c3975dbf290e1d909ab74ceb925f1feefd1))
+* **controllers:** add action to clean orphaned generated PHP files ([6f3d704](https://github.com/LindemannRock/craft-translation-manager/commit/6f3d7046582151cf2ba5280b2447a8c719bcb14d))
+* **controllers:** enhance provider file generation permissions and logic ([49e368f](https://github.com/LindemannRock/craft-translation-manager/commit/49e368fa08a4b786cb9734d7faff6e5b3f4c58c0))
+* **controllers:** update commands to capture and generate provider translations ([aeb0e3f](https://github.com/LindemannRock/craft-translation-manager/commit/aeb0e3f41c568ae0dcb89cc1cc1d66ad20bab7ca))
+* **freeform:** add translation fallback support ([31ac75c](https://github.com/LindemannRock/craft-translation-manager/commit/31ac75c8981d56f92ecb9271849e37c579ec6ada))
+* **freeform:** skip excluded forms during translation capture ([05d8187](https://github.com/LindemannRock/craft-translation-manager/commit/05d818724dc848d21c2bdff0ae98f4b6553919b6))
+* **gql:** add graphql support ([7f52f5c](https://github.com/LindemannRock/craft-translation-manager/commit/7f52f5c15929e660cb24cb793dd4875bdbc27097))
+* **i18n:** add MergedLocaleMappingPhpMessageSource for plugin translation overlay ([da98324](https://github.com/LindemannRock/craft-translation-manager/commit/da98324af289a31e3d172b435e97610758e09c27))
+* **i18n:** add MergedLocaleMappingPhpMessageSourceTest for translation overlay ([d236742](https://github.com/LindemannRock/craft-translation-manager/commit/d236742627f7a9fc8ff8e1300e6b9c9a801b65af))
+* **i18n:** add new translations for forms and provider messages ([9f50c89](https://github.com/LindemannRock/craft-translation-manager/commit/9f50c8987fdc203b636d0220f73ff875070b8ab9))
+* **i18n:** improve translations across multiple locales ([8375a1d](https://github.com/LindemannRock/craft-translation-manager/commit/8375a1db90d6879c41f97d8b832258f9f2809bc0))
+* **i18n:** update Formie references to dynamic {name} translations ([96a6fb6](https://github.com/LindemannRock/craft-translation-manager/commit/96a6fb6c809bb2453f16912d199b55af6f365a9e))
+* **import-export:** streamline export process with format handling and filters ([b212f44](https://github.com/LindemannRock/craft-translation-manager/commit/b212f4443676aa5b000ba19a48024f30081ac13b))
+* **integration:** add support for Freeform translation integration ([a47a507](https://github.com/LindemannRock/craft-translation-manager/commit/a47a50757f649f0c343e48a239f740221c37a579))
+* **integration:** enhance form provider integration for translation generation ([ec018a1](https://github.com/LindemannRock/craft-translation-manager/commit/ec018a108bbece2c71c79e52b07f0502b0c3ddaa))
+* **integration:** resolve integration context and category retrieval ([169af76](https://github.com/LindemannRock/craft-translation-manager/commit/169af76f9692948352bc327d080af816e704a0e0))
+* **integrations:** enhance plugin integration settings UI ([cc13555](https://github.com/LindemannRock/craft-translation-manager/commit/cc13555bd704154f4d8d6ef416e8c7fdd5bc17ad))
+* **maintenance:** add recapture and clear actions for providers ([24b54d9](https://github.com/LindemannRock/craft-translation-manager/commit/24b54d91a5fe2a3c626c0cebd6764ede4a4d04bf))
+* **permissions:** add provider permissions for form integrations ([87a4b07](https://github.com/LindemannRock/craft-translation-manager/commit/87a4b0782300afa51bcfb98d98131a3fde0c3068))
+* refactor translation context handling for integrations ([1eadd03](https://github.com/LindemannRock/craft-translation-manager/commit/1eadd03617b2c0a3ce8f056fe823641a6d0790a0))
+* refactor translation management for form providers ([a1b5ebe](https://github.com/LindemannRock/craft-translation-manager/commit/a1b5ebe5b20f5daf3f459b146b407eb41279f964))
+* register FormieIntegration event handlers only if enabled ([213d751](https://github.com/LindemannRock/craft-translation-manager/commit/213d751892a389ef6aa602c8e420b16bfb945395))
+* **tests:** add FreeformIntegration context segment test ([6fc9b13](https://github.com/LindemannRock/craft-translation-manager/commit/6fc9b13b55391e94970631e34c4aebb4696d5a91))
+* **tests:** add integration test for Freeform integration metadata registration ([d4c8de2](https://github.com/LindemannRock/craft-translation-manager/commit/d4c8de28de3ae1acf4fc27c1de6315de5ccb8ea7))
+* **tests:** add integration tests for provider generation and import handling ([f7d07a2](https://github.com/LindemannRock/craft-translation-manager/commit/f7d07a2205eed779272fd7aae6e99921197d31d3))
+* **tests:** add integration tests for provider permissions and maintenance ([c4337ba](https://github.com/LindemannRock/craft-translation-manager/commit/c4337baea833c7730c40c3790117acd0bd0676c7))
+* trigger auto-generation of translation files after import ([a9c1ebb](https://github.com/LindemannRock/craft-translation-manager/commit/a9c1ebbb0a89214416f12520aa461a1bed86ee31))
+
+
+### Fixed
+
+* correct bulk status change logic in TranslationsController ([5365222](https://github.com/LindemannRock/craft-translation-manager/commit/536522278a710c6d3e2c4aa66a20b6216631b13f))
+* correct plugin installation check for integrations ([77fa900](https://github.com/LindemannRock/craft-translation-manager/commit/77fa9008300e36e9f08f3c1dac3f53598f164432))
+* **i18n:** correct Swedish translations for backup and CSV preview strings ([a9d0af3](https://github.com/LindemannRock/craft-translation-manager/commit/a9d0af3f860d7f32a8320417d332b30c899ce96b))
+* **i18n:** correct translations across multiple locales ([04b023c](https://github.com/LindemannRock/craft-translation-manager/commit/04b023cf57f28a489329c626fe575ae96c51cae6))
+* **i18n:** correct translations across multiple locales ([fb9d4c2](https://github.com/LindemannRock/craft-translation-manager/commit/fb9d4c2c1d87247b298205374ec85e5802959091))
+* **i18n:** correct unused translation message for forms ([f4b7e53](https://github.com/LindemannRock/craft-translation-manager/commit/f4b7e537a5a000aae5c93046017a22750435cad5))
+* **integrations:** correct plugin installation check for form providers ([2d2ad8a](https://github.com/LindemannRock/craft-translation-manager/commit/2d2ad8a6527a3a8ae386fd85bb4515a50e729739))
+* **integrations:** handle no changes response in bulk status update ([1952088](https://github.com/LindemannRock/craft-translation-manager/commit/1952088368cfb4b24ac080df203828876082ec14))
+
 ## [5.25.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.24.0...v5.25.0) - 2026-06-07
 
 
