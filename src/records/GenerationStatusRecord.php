@@ -40,15 +40,11 @@ class GenerationStatusRecord extends ActiveRecord
     public const STATUS_RUNNING = 'running';
     public const STATUS_SUCCESS = 'success';
     public const STATUS_FAILED = 'failed';
-    public const STATUS_NOOP = 'noop';
 
-    public const REASON_FRESHNESS_CHECK = 'freshness-check';
     public const REASON_MANUAL = 'manual';
     public const REASON_CLI = 'cli';
     public const REASON_SETTINGS_CHANGE = 'settings-change';
 
-    public const TRIGGER_RUNTIME = 'runtime';
-    public const TRIGGER_QUEUE = 'queue';
     public const TRIGGER_CP = 'cp';
     public const TRIGGER_CLI = 'cli';
 
@@ -76,17 +72,13 @@ class GenerationStatusRecord extends ActiveRecord
                 self::STATUS_RUNNING,
                 self::STATUS_SUCCESS,
                 self::STATUS_FAILED,
-                self::STATUS_NOOP,
             ]],
             [['reason'], 'in', 'range' => [
-                self::REASON_FRESHNESS_CHECK,
                 self::REASON_MANUAL,
                 self::REASON_CLI,
                 self::REASON_SETTINGS_CHANGE,
             ]],
             [['triggerType'], 'in', 'range' => [
-                self::TRIGGER_RUNTIME,
-                self::TRIGGER_QUEUE,
                 self::TRIGGER_CP,
                 self::TRIGGER_CLI,
             ]],
@@ -96,8 +88,8 @@ class GenerationStatusRecord extends ActiveRecord
                 self::VERIFICATION_SKIPPED,
             ]],
             [['status'], 'default', 'value' => self::STATUS_PENDING],
-            [['reason'], 'default', 'value' => self::REASON_FRESHNESS_CHECK],
-            [['triggerType'], 'default', 'value' => self::TRIGGER_RUNTIME],
+            [['reason'], 'default', 'value' => self::REASON_MANUAL],
+            [['triggerType'], 'default', 'value' => self::TRIGGER_CP],
             [['translationCount', 'writtenFileCount', 'deletedFileCount'], 'default', 'value' => 0],
         ];
     }

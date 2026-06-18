@@ -93,9 +93,9 @@ class Install extends Migration
             $this->createTable('{{%translationmanager_generation_status}}', [
                 'id' => $this->primaryKey(),
                 'fingerprint' => $this->string(64)->null()->comment('Fingerprint of generated categories, languages, settings, and translated rows'),
-                'status' => $this->string(20)->notNull()->defaultValue('pending')->comment('pending|running|success|failed|noop'),
-                'reason' => $this->string(50)->notNull()->defaultValue('freshness-check')->comment('freshness-check|manual|cli|settings-change'),
-                'triggerType' => $this->string(20)->notNull()->defaultValue('runtime')->comment('runtime|queue|cp|cli'),
+                'status' => $this->string(20)->notNull()->defaultValue('pending')->comment('pending|running|success|failed'),
+                'reason' => $this->string(50)->notNull()->defaultValue('manual')->comment('manual|cli|settings-change'),
+                'triggerType' => $this->string(20)->notNull()->defaultValue('cp')->comment('cp|cli'),
                 'generationPath' => $this->text()->null(),
                 'translationCount' => $this->integer()->notNull()->defaultValue(0),
                 'writtenFileCount' => $this->integer()->notNull()->defaultValue(0),

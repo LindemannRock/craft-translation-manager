@@ -2,7 +2,7 @@
 /**
  * Translation Manager plugin for Craft CMS 5.x
  *
- * Tracks generated translation file freshness for live runtime regeneration.
+ * Records generated translation file runs for diagnostics.
  *
  * @link      https://lindemannrock.com
  * @copyright Copyright (c) 2026 LindemannRock
@@ -15,9 +15,7 @@ use craft\base\Component;
 use craft\db\Query;
 use craft\helpers\Db;
 use craft\helpers\Json;
-use lindemannrock\base\helpers\RecurringQueueHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
-use lindemannrock\translationmanager\jobs\GenerateTranslationsJob;
 use lindemannrock\translationmanager\records\GenerationStatusRecord;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\TranslationManager;
@@ -33,97 +31,11 @@ class GenerationStatusService extends Component
     use LoggingTrait;
 
     private const FINGERPRINT_VERSION = 1;
-    private const QUEUE_IDENTITY_TOKEN = 'generation-freshness';
-    private const FAILED_RETRY_GRACE_SECONDS = 900;
 
     public function init(): void
     {
         parent::init();
         $this->setLoggingHandle(TranslationManager::$plugin->id);
-    }
-
-    /**
-     * Queue one live-runtime generation job when current generated files are
-     * missing or stale relative to translated DB rows and generation settings.
-     */
-    public function maybeQueueFreshnessGeneration(): void
-    {
-        if (!$this->isStatusTableReady()) {
-            return;
-        }
-
-        $state = $this->getCurrentState();
-        if ($state['translatedRowCount'] === 0) {
-            $this->recordNoopState($state);
-            return;
-        }
-
-        $latest = $this->getLatestRecord();
-        if ($latest !== null && $latest->fingerprint === $state['fingerprint']) {
-            if ($this->isFreshRecord($latest, $state)) {
-                return;
-            }
-
-            if ($latest->status === GenerationStatusRecord::STATUS_FAILED && $this->isRecent($latest->dateFinished)) {
-                return;
-            }
-        }
-
-        RecurringQueueHelper::ensurePending(
-            pluginToken: 'translationmanager',
-            jobClass: GenerateTranslationsJob::class,
-            delay: 1,
-            jobFactory: fn() => new GenerateTranslationsJob([
-                'reason' => GenerationStatusRecord::REASON_FRESHNESS_CHECK,
-                'expectedFingerprint' => $state['fingerprint'],
-            ]),
-            extraLikeTokens: [self::QUEUE_IDENTITY_TOKEN],
-        );
-    }
-
-    /**
-     * Run generation from the queue and persist a status row.
-     */
-    public function runQueuedGeneration(string $reason, ?string $expectedFingerprint = null): GenerationStatusRecord
-    {
-        $state = $this->getCurrentState();
-        $record = $this->createStartedRecord($state, $reason, GenerationStatusRecord::TRIGGER_QUEUE);
-
-        try {
-            if ($expectedFingerprint !== null && $expectedFingerprint !== $state['fingerprint']) {
-                $record->status = GenerationStatusRecord::STATUS_NOOP;
-                $record->verificationStatus = GenerationStatusRecord::VERIFICATION_SKIPPED;
-                $record->message = 'Generation skipped because the freshness fingerprint changed before the job ran.';
-                $record->details = Json::encode([
-                    'expectedFingerprint' => $expectedFingerprint,
-                    'currentState' => $state,
-                ]);
-                $this->finishRecord($record);
-                return $record;
-            }
-
-            if ($state['translatedRowCount'] === 0) {
-                $record->status = GenerationStatusRecord::STATUS_NOOP;
-                $record->verificationStatus = GenerationStatusRecord::VERIFICATION_SKIPPED;
-                $record->message = 'Generation skipped because no translated rows were found.';
-                $record->details = Json::encode(['currentState' => $state]);
-                $this->finishRecord($record);
-                return $record;
-            }
-
-            $result = TranslationManager::getInstance()->generate->generateAll();
-            $this->applyResultToRecord($record, $result, $state);
-            $this->finishRecord($record);
-
-            return $record;
-        } catch (\Throwable $e) {
-            $record->status = GenerationStatusRecord::STATUS_FAILED;
-            $record->verificationStatus = GenerationStatusRecord::VERIFICATION_FAILED;
-            $record->message = $e->getMessage();
-            $record->details = Json::encode(['currentState' => $state]);
-            $this->finishRecord($record);
-            throw $e;
-        }
     }
 
     /**
@@ -199,16 +111,6 @@ class GenerationStatusService extends Component
             'latestTranslationDate' => $latestTranslationDate,
             'rows' => $rows,
         ];
-    }
-
-    public function getLatestRecord(): ?GenerationStatusRecord
-    {
-        /** @var GenerationStatusRecord|null $record */
-        $record = GenerationStatusRecord::find()
-            ->orderBy(['id' => SORT_DESC])
-            ->one();
-
-        return $record;
     }
 
     private function isStatusTableReady(): bool
@@ -295,73 +197,6 @@ class GenerationStatusService extends Component
         );
 
         return $summary;
-    }
-
-    /**
-     * @param array<string,mixed> $state
-     */
-    private function isFreshRecord(GenerationStatusRecord $record, array $state): bool
-    {
-        if (!in_array($record->status, [GenerationStatusRecord::STATUS_SUCCESS, GenerationStatusRecord::STATUS_NOOP], true)) {
-            return false;
-        }
-
-        if ($record->status === GenerationStatusRecord::STATUS_NOOP) {
-            return $state['translatedRowCount'] === 0;
-        }
-
-        if (in_array($record->triggerType, [GenerationStatusRecord::TRIGGER_QUEUE, GenerationStatusRecord::TRIGGER_CP], true)) {
-            return true;
-        }
-
-        return !$this->hasMissingGeneratedFiles($state);
-    }
-
-    /**
-     * @param array<string,mixed> $state
-     */
-    private function hasMissingGeneratedFiles(array $state): bool
-    {
-        $basePath = (string)$state['generationPath'];
-        foreach ($state['rows'] as $row) {
-            $file = $basePath . DIRECTORY_SEPARATOR . $row['language'] . DIRECTORY_SEPARATOR . $row['category'] . '.php';
-            if (!is_file($file)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function isRecent(?string $date): bool
-    {
-        if ($date === null) {
-            return false;
-        }
-
-        return strtotime($date) >= time() - self::FAILED_RETRY_GRACE_SECONDS;
-    }
-
-    /**
-     * @param array<string,mixed> $state
-     */
-    private function recordNoopState(array $state): void
-    {
-        $latest = $this->getLatestRecord();
-        if ($latest !== null && $latest->fingerprint === $state['fingerprint'] && $latest->status === GenerationStatusRecord::STATUS_NOOP) {
-            return;
-        }
-
-        $record = $this->createStartedRecord(
-            $state,
-            GenerationStatusRecord::REASON_FRESHNESS_CHECK,
-            GenerationStatusRecord::TRIGGER_RUNTIME,
-        );
-        $record->status = GenerationStatusRecord::STATUS_NOOP;
-        $record->verificationStatus = GenerationStatusRecord::VERIFICATION_SKIPPED;
-        $record->message = 'Generation skipped because no translated rows were found.';
-        $record->details = Json::encode(['currentState' => $state]);
-        $this->finishRecord($record);
     }
 
     /**

@@ -358,10 +358,6 @@ class TranslationManager extends Plugin
             $this->controllerNamespace = 'lindemannrock\translationmanager\console\controllers';
         }
 
-        // Queue live-runtime translation file generation when deployed files
-        // are stale or missing relative to translated DB rows.
-        $this->queueGeneratedTranslationFreshnessJob();
-
         // Schedule backup job if enabled
         $this->scheduleBackupJob();
     }
@@ -935,24 +931,6 @@ class TranslationManager extends Plugin
             MessageSource::EVENT_MISSING_TRANSLATION,
             [MissingTranslationListener::class, 'handle']
         );
-    }
-
-    /**
-     * Queue live-runtime generation when generated translation files are stale.
-     */
-    private function queueGeneratedTranslationFreshnessJob(): void
-    {
-        if (Craft::$app instanceof ConsoleApplication) {
-            return;
-        }
-
-        try {
-            $this->generationStatus->maybeQueueFreshnessGeneration();
-        } catch (\Throwable $e) {
-            $this->logWarning('Failed to queue generated translation freshness job', [
-                'error' => $e->getMessage(),
-            ]);
-        }
     }
 
     /**

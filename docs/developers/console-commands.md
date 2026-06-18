@@ -70,8 +70,7 @@ php craft translation-manager/translations/generate-all --delay=10 --verify=1
 ```
 
 Each `generate-all` run records its result in Translation Manager's generation
-status table. Live web requests use that status plus a generation fingerprint to
-queue a Craft job when generated files are missing or stale.
+status table so deploy-hook, CLI, and Control Panel runs can be compared.
 
 ### `translation-manager/translations/generate-provider`
 
