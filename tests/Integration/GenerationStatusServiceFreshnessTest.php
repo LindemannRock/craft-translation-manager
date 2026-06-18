@@ -14,6 +14,7 @@ use Craft;
 use craft\db\Query;
 use craft\helpers\Db;
 use craft\helpers\FileHelper;
+use lindemannrock\translationmanager\records\GenerationStatusRecord;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
@@ -30,6 +31,11 @@ final class GenerationStatusServiceFreshnessTest extends TestCase
     private ?string $tempTranslationsPath = null;
 
     private string $originalGenerationPath;
+
+    /**
+     * @var int[]
+     */
+    private array $generationStatusIds = [];
 
     protected function setUp(): void
     {
@@ -52,6 +58,7 @@ final class GenerationStatusServiceFreshnessTest extends TestCase
     protected function tearDown(): void
     {
         $this->deleteGenerationQueueRows();
+        $this->deleteGenerationStatusRows();
 
         TranslationManager::getInstance()->getSettings()->generationPath = $this->originalGenerationPath;
 
@@ -99,6 +106,67 @@ final class GenerationStatusServiceFreshnessTest extends TestCase
         self::assertSame(1, $this->countGenerationQueueRows());
     }
 
+    public function testFreshnessCheckTrustsSuccessfulQueueGenerationForSameFingerprint(): void
+    {
+        $this->requireLatinSourceLanguage();
+        $this->requireAtLeastOneSite();
+
+        $this->createTranslatedMarkerRow();
+        $state = TranslationManager::getInstance()->generationStatus->getCurrentState();
+        $this->createGenerationStatusRow((string)$state['fingerprint'], GenerationStatusRecord::TRIGGER_QUEUE);
+
+        TranslationManager::getInstance()->generationStatus->maybeQueueFreshnessGeneration();
+
+        self::assertSame(0, $this->countGenerationQueueRows());
+    }
+
+    private function createTranslatedMarkerRow(): void
+    {
+        $site = Craft::$app->getSites()->getAllSites()[0];
+        $source = self::MARKER . 'freshness_' . bin2hex(random_bytes(4));
+        $category = TranslationManager::getInstance()->getSettings()->getPrimaryCategory();
+        $now = Db::prepareDateForDb(new \DateTimeImmutable());
+
+        $record = new TranslationRecord();
+        $record->source = $source;
+        $record->sourceHash = md5($source);
+        $record->context = 'site.php-generation-status-test';
+        $record->category = $category;
+        $record->translationKey = $source;
+        $record->translation = 'Translated freshness value ' . bin2hex(random_bytes(4));
+        $record->siteId = (int)$site->id;
+        $record->language = (string)$site->language;
+        $record->status = 'translated';
+        $record->translationOrigin = 'manual';
+        $record->usageCount = 1;
+        $record->dateCreated = $now;
+        $record->dateUpdated = $now;
+
+        self::assertTrue($record->save(false));
+    }
+
+    private function createGenerationStatusRow(string $fingerprint, string $triggerType): void
+    {
+        $now = Db::prepareDateForDb(new \DateTimeImmutable());
+        $record = new GenerationStatusRecord();
+        $record->fingerprint = $fingerprint;
+        $record->status = GenerationStatusRecord::STATUS_SUCCESS;
+        $record->reason = GenerationStatusRecord::REASON_FRESHNESS_CHECK;
+        $record->triggerType = $triggerType;
+        $record->generationPath = TranslationManager::getInstance()->getSettings()->getGenerationPath();
+        $record->translationCount = 1;
+        $record->writtenFileCount = 1;
+        $record->verificationStatus = GenerationStatusRecord::VERIFICATION_PASSED;
+        $record->message = 'Translation files generated successfully.';
+        $record->dateStarted = $now;
+        $record->dateFinished = $now;
+        $record->dateCreated = $now;
+        $record->dateUpdated = $now;
+
+        self::assertTrue($record->save(false));
+        $this->generationStatusIds[] = (int)$record->id;
+    }
+
     private function countGenerationQueueRows(): int
     {
         return (int)$this->generationQueueQuery()->count();
@@ -114,6 +182,16 @@ final class GenerationStatusServiceFreshnessTest extends TestCase
                 ['like', 'job', 'generation-freshness'],
             ])
             ->execute();
+    }
+
+    private function deleteGenerationStatusRows(): void
+    {
+        if ($this->generationStatusIds === []) {
+            return;
+        }
+
+        GenerationStatusRecord::deleteAll(['id' => $this->generationStatusIds]);
+        $this->generationStatusIds = [];
     }
 
     private function generationQueueQuery(): Query

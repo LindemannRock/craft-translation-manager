@@ -310,6 +310,10 @@ class GenerationStatusService extends Component
             return $state['translatedRowCount'] === 0;
         }
 
+        if (in_array($record->triggerType, [GenerationStatusRecord::TRIGGER_QUEUE, GenerationStatusRecord::TRIGGER_CP], true)) {
+            return true;
+        }
+
         return !$this->hasMissingGeneratedFiles($state);
     }
 
