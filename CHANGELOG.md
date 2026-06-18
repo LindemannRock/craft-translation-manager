@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.28.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.28.0...v5.28.1) (2026-06-18)
+
+
+### Fixed
+
+* **console:** add generate-all delay and verification diagnostics ([19d83f0](https://github.com/LindemannRock/craft-translation-manager/commit/19d83f053ccc3e2297527aa1586e109f2214d898))
+* **generation:** queue stale translation file regeneration ([51940bd](https://github.com/LindemannRock/craft-translation-manager/commit/51940bd2e62aa92c760429388c4bc750904582a5))
+
 ## [5.28.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.27.0...v5.28.0) - 2026-06-18
 
 
