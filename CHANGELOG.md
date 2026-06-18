@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.28.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.27.0...v5.28.0) - 2026-06-18
+
+
+### Added
+
+* add delay option for translation generation commands ([569c762](https://github.com/LindemannRock/craft-translation-manager/commit/569c76261a0b056fb0da1a1f3ef186bf0d9e82bf))
+
 ## [5.27.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.26.0...v5.27.0) - 2026-06-18
 
 
