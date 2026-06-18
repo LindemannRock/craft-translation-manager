@@ -67,6 +67,12 @@ class TranslationsController extends Controller
     public ?string $provider = null;
 
     /**
+     * @var int Seconds to wait before running `generate-all`.
+     * @since 5.28.0
+     */
+    public int $delay = 0;
+
+    /**
      * @inheritdoc
      */
     public function options($actionID): array
@@ -83,6 +89,10 @@ class TranslationsController extends Controller
             $options[] = 'limit';
             $options[] = 'type';
             $options[] = 'provider';
+        }
+
+        if ($actionID === 'generate-all') {
+            $options[] = 'delay';
         }
 
         return $options;
@@ -274,6 +284,16 @@ class TranslationsController extends Controller
     {
         $this->stdout("Generating all translation files...\n\n", Console::FG_YELLOW);
 
+        if ($this->delay < 0 || $this->delay > 300) {
+            $this->stderr("Invalid delay. Use a value between 0 and 300 seconds.\n", Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+
+        if ($this->delay > 0) {
+            $this->stdout("Waiting {$this->delay} second(s) before generation...\n", Console::FG_YELLOW);
+            $this->sleepBeforeGenerate($this->delay);
+        }
+
         $settings = TranslationManager::getInstance()->getSettings();
         $generationService = TranslationManager::getInstance()->generate;
         $this->stdout("Generation path: {$settings->getGenerationPath()}\n", Console::FG_CYAN);
@@ -311,6 +331,15 @@ class TranslationsController extends Controller
         $this->stdout("\nAll translation files generated successfully!\n", Console::FG_GREEN);
 
         return ExitCode::OK;
+    }
+
+    /**
+     * Wait before generation. Extracted so tests can assert delay handling
+     * without slowing the suite down.
+     */
+    protected function sleepBeforeGenerate(int $seconds): void
+    {
+        sleep($seconds);
     }
 
     /**

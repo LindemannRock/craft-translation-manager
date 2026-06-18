@@ -81,6 +81,24 @@ php craft translation-manager/translations/generate-provider formie
 php craft translation-manager/translations/generate-provider freeform
 ```
 
+## Generated Files Are Stale After Deploy
+
+Run generation after migrations, project config sync, and cache clears:
+
+```bash
+php craft migrate/all --interactive=0
+php craft project-config/sync --interactive=0
+php craft clear-caches/compiled-templates --interactive=0
+php craft clear-caches/cp-resources --interactive=0
+php craft clear-caches/data --interactive=0
+php craft translation-manager/translations/generate-all --delay=10
+php craft clear-caches/data --interactive=0
+```
+
+The `--delay` option waits before generation starts. It is useful on deploy
+platforms where the command hook can run before the final release state is fully
+settled.
+
 ## Log Files
 
 Logs are stored in `storage/logs/translation-manager-YYYY-MM-DD.log`

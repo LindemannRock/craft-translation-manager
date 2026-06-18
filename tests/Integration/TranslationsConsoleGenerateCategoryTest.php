@@ -23,6 +23,57 @@ use yii\console\ExitCode;
 #[CoversClass(TranslationsController::class)]
 final class TranslationsConsoleGenerateCategoryTest extends TestCase
 {
+    public function testGenerateAllAcceptsDelayOption(): void
+    {
+        $controller = new TranslationsConsoleGenerateAllSpyController('translations', TranslationManager::getInstance());
+
+        self::assertContains('delay', $controller->options('generate-all'));
+    }
+
+    public function testGenerateAllRejectsInvalidDelay(): void
+    {
+        $plugin = TranslationManager::getInstance();
+        $originalGenerate = $plugin->get('generate');
+        $spy = new TranslationsConsoleGenerateCategorySpyService();
+
+        $plugin->set('generate', $spy);
+
+        try {
+            $controller = new TranslationsConsoleGenerateAllSpyController('translations', $plugin);
+            $controller->delay = 301;
+
+            $exitCode = $controller->actionGenerateAll();
+
+            self::assertSame(ExitCode::UNSPECIFIED_ERROR, $exitCode);
+            self::assertFalse($spy->generatedAll);
+            self::assertSame([], $controller->sleptSeconds);
+        } finally {
+            $plugin->set('generate', $originalGenerate);
+        }
+    }
+
+    public function testGenerateAllWaitsBeforeGenerationWhenDelayIsSet(): void
+    {
+        $plugin = TranslationManager::getInstance();
+        $originalGenerate = $plugin->get('generate');
+        $spy = new TranslationsConsoleGenerateCategorySpyService();
+
+        $plugin->set('generate', $spy);
+
+        try {
+            $controller = new TranslationsConsoleGenerateAllSpyController('translations', $plugin);
+            $controller->delay = 7;
+
+            $exitCode = $controller->actionGenerateAll();
+
+            self::assertSame(ExitCode::OK, $exitCode);
+            self::assertTrue($spy->generatedAll);
+            self::assertSame([7], $controller->sleptSeconds);
+        } finally {
+            $plugin->set('generate', $originalGenerate);
+        }
+    }
+
     public function testGenerateCategoryCallsGenerationServiceForEnabledCategory(): void
     {
         $plugin = TranslationManager::getInstance();
@@ -71,6 +122,32 @@ final class TranslationsConsoleGenerateCategorySpyService extends GenerationServ
      */
     public array $generatedCategories = [];
 
+    public bool $generatedAll = false;
+
+    public function generateAll(): array
+    {
+        $this->generatedAll = true;
+
+        return [
+            'success' => true,
+            'translationCount' => 3,
+            'writtenFileCount' => 1,
+            'deletedFileCount' => 0,
+            'results' => [
+                'site' => [
+                    'success' => true,
+                    'type' => 'site',
+                    'label' => 'Site',
+                    'categories' => ['messages'],
+                    'translationCount' => 3,
+                    'writtenFileCount' => 1,
+                    'deletedFileCount' => 0,
+                    'warnings' => [],
+                ],
+            ],
+        ];
+    }
+
     public function generateCategoryTranslations(string $category): array
     {
         $this->generatedCategories[] = $category;
@@ -85,5 +162,18 @@ final class TranslationsConsoleGenerateCategorySpyService extends GenerationServ
             'deletedFileCount' => 0,
             'warnings' => [],
         ];
+    }
+}
+
+final class TranslationsConsoleGenerateAllSpyController extends TranslationsController
+{
+    /**
+     * @var int[]
+     */
+    public array $sleptSeconds = [];
+
+    protected function sleepBeforeGenerate(int $seconds): void
+    {
+        $this->sleptSeconds[] = $seconds;
     }
 }

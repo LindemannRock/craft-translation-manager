@@ -54,6 +54,13 @@ php craft translation-manager/translations/generate-all
 ddev craft translation-manager/translations/generate-all
 ```
 
+Use `--delay` when a deploy platform needs a short settling period after
+migrations/project-config sync before generated translation files are written:
+
+```bash title="PHP"
+php craft translation-manager/translations/generate-all --delay=10
+```
+
 ### `translation-manager/translations/generate-provider`
 
 Generate PHP translation files for one form provider.
