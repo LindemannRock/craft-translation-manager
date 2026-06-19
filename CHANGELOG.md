@@ -1,6 +1,6 @@
 # Changelog
 
-## [5.29.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.28.2...v5.29.0) (2026-06-19)
+## [5.29.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.28.2...v5.29.0) - 2026-06-19
 
 
 ### Added
