@@ -34,6 +34,7 @@ final class SettingsControllerSectionScopeTest extends TestCase
             ],
             'generation' => [
                 'autoGenerate',
+                'runtimeTranslationSource',
                 'generationPath',
             ],
             'backup' => [

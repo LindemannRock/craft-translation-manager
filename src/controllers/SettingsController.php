@@ -654,6 +654,7 @@ class SettingsController extends Controller
             ],
             'generation' => [
                 'autoGenerate',
+                'runtimeTranslationSource',
                 'generationPath',
             ],
             'backup' => [

@@ -108,8 +108,10 @@ If translations still render in the source language after deploy:
 - Check the latest rows in `translationmanager_generation_status`.
 - Run **Generate All Files** in the Control Panel once. If that fixes rendering
   immediately, the CLI hook is not the live-runtime source of truth on that
-  platform. In split-runtime hosting environments, prefer a database-backed
-  runtime translation source when available.
+  platform. In split-runtime hosting environments, set **Runtime Translation
+  Source** to `database-with-php-fallback` so frontend requests read managed
+  translations from the database and keep native plugin PHP translations as a
+  fallback.
 
 ## Log Files
 

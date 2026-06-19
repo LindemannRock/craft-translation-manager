@@ -38,6 +38,8 @@ use lindemannrock\logginglibrary\LoggingLibrary;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\gql\queries\TranslationQuery;
 use lindemannrock\translationmanager\gql\types\TranslationType as GqlTranslationType;
+use lindemannrock\translationmanager\i18n\HybridLocaleMappingMessageSource;
+use lindemannrock\translationmanager\i18n\LocaleMappingDbMessageSource;
 use lindemannrock\translationmanager\i18n\LocaleMappingPhpMessageSource;
 use lindemannrock\translationmanager\i18n\MergedLocaleMappingPhpMessageSource;
 use lindemannrock\translationmanager\jobs\CreateBackupJob;
@@ -860,9 +862,7 @@ class TranslationManager extends Plugin
         // Register message source for each enabled category
         foreach ($categories as $category) {
             $pluginTranslationsPath = $this->getPluginTranslationsPath($category);
-            $messageSourceClass = $pluginTranslationsPath === null
-                ? LocaleMappingPhpMessageSource::class
-                : MergedLocaleMappingPhpMessageSource::class;
+            $messageSourceClass = $this->getRuntimeMessageSourceClass($settings, $pluginTranslationsPath);
 
             $i18n->translations[$category] = [
                 'class' => $messageSourceClass,
@@ -879,6 +879,20 @@ class TranslationManager extends Plugin
                 $i18n->translations[$category]['fallbackBasePath'] = $pluginTranslationsPath;
             }
         }
+    }
+
+    /**
+     * @return class-string<MessageSource>
+     */
+    private function getRuntimeMessageSourceClass(Settings $settings, ?string $pluginTranslationsPath): string
+    {
+        return match ($settings->runtimeTranslationSource) {
+            Settings::RUNTIME_SOURCE_DATABASE => LocaleMappingDbMessageSource::class,
+            Settings::RUNTIME_SOURCE_DATABASE_WITH_PHP_FALLBACK => HybridLocaleMappingMessageSource::class,
+            default => $pluginTranslationsPath === null
+                ? LocaleMappingPhpMessageSource::class
+                : MergedLocaleMappingPhpMessageSource::class,
+        };
     }
 
     /**

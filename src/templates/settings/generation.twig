@@ -28,6 +28,20 @@
 
 		<h2 class="first">{{ "File Generation Settings"|t('translation-manager') }}</h2>
 
+        {{ forms.selectField({
+            label: "Runtime Translation Source"|t('translation-manager'),
+            instructions: "Choose how frontend Craft translations are resolved for managed categories."|t('translation-manager'),
+            tip: "Use generated PHP files for legacy file-based rendering. Use database modes when CLI, queue, and web runtimes do not share generated translation files reliably."|t('translation-manager'),
+            id: 'runtimeTranslationSource',
+            name: 'settings[runtimeTranslationSource]',
+            value: settings.runtimeTranslationSource,
+            options: settings.getRuntimeTranslationSourceOptions(),
+            errors: settings.getErrors('runtimeTranslationSource'),
+            disabled: settings.isOverriddenByConfig('runtimeTranslationSource'),
+            warning: settings.isOverriddenByConfig('runtimeTranslationSource') ?
+                "This is being overridden by the <code>runtimeTranslationSource</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
+        }) }}
+
         {{ forms.lightswitchField({
             label: "Auto Generate"|t('translation-manager'),
             instructions: "Automatically generate translation files when translations are saved"|t('translation-manager'),

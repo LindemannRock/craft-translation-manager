@@ -53,6 +53,21 @@ class Settings extends Model
     ];
 
     /**
+     * @since 5.29.0
+     */
+    public const RUNTIME_SOURCE_GENERATED_FILES = 'generated-files';
+
+    /**
+     * @since 5.29.0
+     */
+    public const RUNTIME_SOURCE_DATABASE = 'database';
+
+    /**
+     * @since 5.29.0
+     */
+    public const RUNTIME_SOURCE_DATABASE_WITH_PHP_FALLBACK = 'database-with-php-fallback';
+
+    /**
      * @inheritdoc
      */
     public function init(): void
@@ -116,6 +131,12 @@ class Settings extends Model
      * @var bool Whether to automatically generate translation files when translations are saved
      */
     public bool $autoGenerate = true;
+
+    /**
+     * @var string Runtime source used by Craft::t() for managed categories
+     * @since 5.29.0
+     */
+    public string $runtimeTranslationSource = self::RUNTIME_SOURCE_GENERATED_FILES;
 
     /**
      * @var string The path where translation files should be generated
@@ -290,6 +311,11 @@ class Settings extends Model
             [['geminiModel'], 'match', 'pattern' => '/^[a-zA-Z0-9._-]+$/',
              'message' => 'Gemini model must contain only letters, numbers, dots, hyphens, and underscores.', ],
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
+            [['runtimeTranslationSource'], 'in', 'range' => [
+                self::RUNTIME_SOURCE_GENERATED_FILES,
+                self::RUNTIME_SOURCE_DATABASE,
+                self::RUNTIME_SOURCE_DATABASE_WITH_PHP_FALLBACK,
+            ]],
             [['enableFormieIntegration', 'enableFreeformIntegration', 'enableSiteTranslations', 'autoGenerate',
               'enableSuggestions', 'autoSaveEnabled', 'backupEnabled',
               'backupOnImport', 'enableAiTranslations', 'requireApproval', ], 'boolean'],
@@ -328,6 +354,30 @@ class Settings extends Model
         return ScheduleHelper::getOptions(self::BACKUP_SCHEDULE_OPTIONS);
     }
 
+    /**
+     * Get runtime translation source options for settings UI.
+     *
+     * @return array<int, array{value: string, label: string}>
+     * @since 5.29.0
+     */
+    public function getRuntimeTranslationSourceOptions(): array
+    {
+        return [
+            [
+                'label' => Craft::t('translation-manager', 'Generated PHP Files'),
+                'value' => self::RUNTIME_SOURCE_GENERATED_FILES,
+            ],
+            [
+                'label' => Craft::t('translation-manager', 'Database'),
+                'value' => self::RUNTIME_SOURCE_DATABASE,
+            ],
+            [
+                'label' => Craft::t('translation-manager', 'Database with PHP Fallback'),
+                'value' => self::RUNTIME_SOURCE_DATABASE_WITH_PHP_FALLBACK,
+            ],
+        ];
+    }
+
     public function attributeLabels(): array
     {
         return array_merge([
@@ -338,6 +388,7 @@ class Settings extends Model
             'enableFreeformIntegration' => Craft::t('translation-manager', 'Enable Freeform Integration'),
             'enableSiteTranslations' => Craft::t('translation-manager', 'Enable Site Translations'),
             'autoGenerate' => Craft::t('translation-manager', 'Auto Generate'),
+            'runtimeTranslationSource' => Craft::t('translation-manager', 'Runtime Translation Source'),
             'generationPath' => Craft::t('translation-manager', 'Generation Path'),
             'autoSaveEnabled' => Craft::t('translation-manager', 'Enable Auto-Save'),
             'autoSaveDelay' => Craft::t('translation-manager', 'Auto-Save Delay'),
