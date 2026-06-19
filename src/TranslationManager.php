@@ -53,6 +53,7 @@ use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\services\TranslationsService;
 use lindemannrock\translationmanager\utilities\TranslationStatsUtility;
 use lindemannrock\translationmanager\variables\TranslationManagerVariable;
+use yii\base\Application as YiiApplication;
 use yii\base\Event;
 use yii\i18n\MessageSource;
 
@@ -344,7 +345,16 @@ class TranslationManager extends Plugin
 
         // Register message source for translation category
         if ($this->getSettings()->enableSiteTranslations) {
-            $this->registerFileMessageSource(); // Use file-based translations
+            $this->registerFileMessageSource();
+            Event::on(
+                YiiApplication::class,
+                YiiApplication::EVENT_BEFORE_REQUEST,
+                function(): void {
+                    if ($this->getSettings()->enableSiteTranslations) {
+                        $this->registerFileMessageSource();
+                    }
+                }
+            );
         }
 
         // Register missing translation capture (runtime auto-capture)

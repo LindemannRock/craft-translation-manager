@@ -39,6 +39,11 @@ class LocaleMappingDbMessageSource extends MessageSource
     public array $fileMap = [];
 
     /**
+     * @var string|null Accepted for compatibility with provider category config.
+     */
+    public ?string $fallbackBasePath = null;
+
+    /**
      * @inheritdoc
      *
      * @return array<string,string>
