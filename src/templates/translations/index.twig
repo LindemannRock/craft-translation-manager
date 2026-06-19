@@ -387,7 +387,8 @@
             updatedTemplate: {{ 'Updated {count} translation(s) to {status}.'|t('translation-manager')|json_encode|raw }},
             translatedLabel: {{ 'status label: translated'|t('translation-manager')|json_encode|raw }},
             draftLabel: {{ 'status label: draft'|t('translation-manager')|json_encode|raw }},
-            deleteConfirmTemplate: {{ 'Are you sure you want to delete {count} translation(s)?'|t('translation-manager')|json_encode|raw }},
+            deleteConfirmSingular: {{ 'Are you sure you want to delete {count} translation?'|t('translation-manager')|json_encode|raw }},
+            deleteConfirmPlural: {{ 'Are you sure you want to delete {count} translations?'|t('translation-manager')|json_encode|raw }},
             deletedTemplate: {{ 'Deleted {count} translation(s).'|t('translation-manager')|json_encode|raw }},
             deleteFailed: {{ 'Failed to delete translations'|t('translation-manager')|json_encode|raw }},
             saveFailed: {{ 'Failed to save'|t('translation-manager')|json_encode|raw }},
@@ -452,7 +453,8 @@
             const ids = getSelectedIds();
             if (!ids.length) return;
 
-            if (!confirm(T.deleteConfirmTemplate.replace('{count}', ids.length))) return;
+            const confirmTemplate = ids.length === 1 ? T.deleteConfirmSingular : T.deleteConfirmPlural;
+            if (!confirm(confirmTemplate.replace('{count}', ids.length))) return;
 
             Craft.sendActionRequest('POST', 'translation-manager/translations/delete', {
                 data: { ids: ids },
