@@ -1,5 +1,18 @@
 # Changelog
 
+## [5.29.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.28.2...v5.29.0) - 2026-06-19
+
+
+### Added
+
+* add database runtime translation source ([8d2ef98](https://github.com/LindemannRock/craft-translation-manager/commit/8d2ef98bc0f3d7a4cf2e29728f264e2df773ecf6))
+* add database runtime translation source ([7b7b152](https://github.com/LindemannRock/craft-translation-manager/commit/7b7b152c8f68a6cbfae17ce089ffca6ec03f48e7))
+
+
+### Fixed
+
+* **generation:** remove runtime queue regeneration ([f406d2d](https://github.com/LindemannRock/craft-translation-manager/commit/f406d2d054079901d2dfde215bcded8ab93b357d))
+
 ## [5.28.2](https://github.com/LindemannRock/craft-translation-manager/compare/v5.28.1...v5.28.2) - 2026-06-18
 
 
