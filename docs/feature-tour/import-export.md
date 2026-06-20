@@ -82,6 +82,11 @@ root. The generation path must resolve to that root exactly so Craft can load
 the files at runtime; subfolders such as `@root/translations/test` or
 `@translations/test` are not valid generation targets.
 
+Generated files are still useful even when the frontend runtime source is set
+to `database-with-php-fallback`. In that mode, PHP files provide fallback values
+for enabled categories when no translated database row exists, while
+Translation Manager database rows override matching keys.
+
 ### Generated Structure
 
 ```
@@ -111,6 +116,12 @@ save succeeds. It does not delete files from the previous physical location.
 3. Click Generate
 
 Provider generation writes the provider's category file only. For example, Formie writes `formie.php` and Freeform writes `freeform.php`.
+
+On split-runtime hosting, a deploy command can generate and verify PHP files
+successfully while frontend requests still do not consume those files reliably.
+Use `database-with-php-fallback` as the runtime source in that environment, and
+keep generation enabled for PHP fallback files, exports, and compatibility with
+Craft's standard translation folder.
 
 ### Console Commands
 

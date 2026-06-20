@@ -113,6 +113,37 @@ If translations still render in the source language after deploy:
   translations from the database and keep native plugin PHP translations as a
   fallback.
 
+### Choosing a Runtime Source
+
+Use `generated-files` when generated PHP files are visible to the same runtime
+that serves frontend requests. This is the default and remains the simplest
+mode for standard hosting.
+
+Use `database-with-php-fallback` when deploy logs show successful generation and
+verification, but frontend requests still render source-language text until the
+Control Panel generates files manually. In this mode, Translation Manager reads
+managed rows from the database and falls back to PHP files for keys that are not
+managed in the database.
+
+Use pure `database` mode only when testing or when you intentionally want
+Translation Manager's database rows to be the only runtime source for managed
+categories. Missing database rows do not fall back to PHP files in this mode.
+
+For hybrid fallback, the category, enabled Translation Manager category, and
+PHP filename must match. A Twig call such as:
+
+```twig
+{{ 'Welcome'|t('valid') }}
+```
+
+uses:
+
+```text
+translations/{language}/valid.php
+```
+
+and database rows with category `valid`.
+
 ## Log Files
 
 Logs are stored in `storage/logs/translation-manager-YYYY-MM-DD.log`

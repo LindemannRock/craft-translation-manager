@@ -1,6 +1,6 @@
 # Integrations Overview
 
-Translation Manager includes built-in form integrations for Formie and Freeform. These integrations capture form text into Translation Manager, let editors translate the strings in the Control Panel, and generate Craft translation files for frontend rendering.
+Translation Manager includes built-in form integrations for Formie and Freeform. These integrations capture form text into Translation Manager, let editors translate the strings in the Control Panel, and make those strings available to Craft through generated PHP files, database runtime sources, or a hybrid of both.
 
 ## Built-In Providers
 
@@ -16,8 +16,12 @@ Provider categories are separate from site translation categories such as `messa
 1. Enable the provider integration under **Translation Manager → Settings → Integrations**.
 2. Save a form in the provider plugin, or run a manual capture command.
 3. Translate captured provider rows in **Translation Manager**.
-4. Generate the provider translation files from **Translation Manager → Generate** or with a console command.
-5. Re-run capture after changing form fields, options, pages, or button labels.
+4. Choose the runtime source in **Settings → Generation**:
+   `generated-files`, `database`, or `database-with-php-fallback`.
+5. Generate provider translation files when using `generated-files`, or when
+   using `database-with-php-fallback` and you want PHP files available as
+   fallback values.
+6. Re-run capture after changing form fields, options, pages, or button labels.
 
 Manual capture:
 
@@ -49,7 +53,9 @@ Provider actions only appear when the provider plugin is installed, enabled in C
 
 Formie and Freeform also have their own plugin translation categories. Translation Manager preserves those provider-owned static categories so provider Control Panel text can still come from the provider plugin.
 
-Translation Manager generated files are intended for the frontend form strings it captures. For Freeform, native per-site form translations remain authoritative for values managed directly by Freeform. When Freeform does not provide a native per-site value, Translation Manager's generated `freeform.php` value can be used as a fallback.
+Translation Manager generated files and database rows are intended for the frontend form strings it captures. In `database-with-php-fallback` mode, Translation Manager loads provider PHP files first and then overlays translated database rows, so translated database rows win and PHP files fill gaps.
+
+For Freeform, native per-site form translations remain authoritative for values managed directly by Freeform. When Freeform does not provide a native per-site value, Translation Manager's `freeform` category can provide the frontend value through generated files or the database runtime source.
 
 ## Permission Handles
 

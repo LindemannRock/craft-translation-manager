@@ -14,6 +14,19 @@ Formie translations are captured automatically when:
 - Configuring subfield labels (Address, Name, Date fields)
 - Setting up table columns, repeater buttons, or heading text
 
+Captured Formie strings are stored in Translation Manager under the `formie`
+category. Runtime rendering depends on the selected **Runtime Translation
+Source**:
+
+- `generated-files`: Formie values come from `translations/{language}/formie.php`.
+- `database`: Formie values come only from translated Translation Manager rows.
+- `database-with-php-fallback`: Translation Manager database rows override
+  Formie/PHP file values, and PHP files fill gaps when no database row exists.
+
+For split-runtime or edge hosting, use `database-with-php-fallback` so translated
+rows are read from the database while committed/generated `formie.php` files
+remain available as fallback.
+
 ## Supported Field Types
 
 ### Standard Fields
@@ -108,6 +121,9 @@ php craft translation-manager/translations/capture-provider formie
 
 Or use **Translation Manager → Maintenance** and run the Formie scanner.
 
+After capture, confirm the rows exist under category `formie`, have the target
+language, and are marked `translated` before testing the frontend.
+
 ## Generate Files
 
 Generate only Formie translation files:
@@ -121,6 +137,21 @@ With DDEV:
 ```bash
 ddev craft translation-manager/translations/generate-provider formie
 ```
+
+Generating files is required for `generated-files` runtime mode and remains
+useful in `database-with-php-fallback` mode because `formie.php` supplies
+fallback values for missing database rows.
+
+## Testing Checklist
+
+1. Save the Formie form after adding or changing fields.
+2. Confirm Translation Manager captured the expected rows in category `formie`.
+3. Translate the rows for the target language and mark them translated.
+4. If using `generated-files`, generate Formie files and confirm
+   `translations/{language}/formie.php` exists.
+5. If using `database-with-php-fallback`, confirm database rows override PHP file
+   values and PHP file values fill gaps when a DB row is absent.
+6. Load the frontend form in the target site language.
 
 ## Plugin Name Detection
 

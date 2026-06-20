@@ -57,6 +57,33 @@ requests read from, use `database-with-php-fallback`. That mode reads managed
 translations from Translation Manager's database rows while preserving native
 plugin PHP translations as a fallback.
 
+### Runtime Translation Source
+
+This setting controls what Craft uses when a managed category is requested with
+`Craft::t()` or Twig's `|t` filter.
+
+| Mode | What it reads | Use when | Limitations |
+|------|---------------|----------|-------------|
+| `generated-files` | Generated PHP files in `translations/{language}/{category}.php` | Default mode for traditional hosting where web and CLI runtimes share the same translation files | Frontend output depends on the live web runtime seeing the generated files |
+| `database` | Translated rows stored in Translation Manager's database tables | Diagnostics, testing, or installs where Translation Manager should fully own the runtime category | Does not fall back to committed PHP files or native provider files for missing keys |
+| `database-with-php-fallback` | PHP files first, then Translation Manager database rows override matching keys | Split-runtime, edge, or containerized hosting where deploy hooks can write and verify PHP files but frontend requests may not reliably consume them | The category still must be enabled in Translation Manager, and PHP fallback files must match the category name |
+
+Hybrid fallback follows Craft's normal category/file naming:
+
+```twig
+{{ 'Welcome'|t('valid') }}
+```
+
+looks for:
+
+```text
+translations/{language}/valid.php
+```
+
+Then Translation Manager overlays translated database rows for category
+`valid`. If no translated database row exists for `Welcome`, the PHP file value
+is used. If a translated database row exists, the database value wins.
+
 If your project needs the physical translations directory somewhere else,
 change Craft's `@translations` alias for the project instead of pointing
 Translation Manager at a subfolder.
