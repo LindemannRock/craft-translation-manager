@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.29.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.29.0...v5.29.1) - 2026-06-20
+
+
+### Fixed
+
+* **i18n:** correct translations for delete confirmation across locales ([e81ca77](https://github.com/LindemannRock/craft-translation-manager/commit/e81ca77994ca6ec5c43a1dd6df3c4d13094df429))
+
 ## [5.29.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.28.2...v5.29.0) - 2026-06-19
 
 
