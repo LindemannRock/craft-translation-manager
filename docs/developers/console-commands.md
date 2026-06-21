@@ -61,12 +61,20 @@ migrations/project-config sync before generated translation files are written:
 php craft translation-manager/translations/generate-all --delay=10
 ```
 
+```bash title="DDEV"
+ddev craft translation-manager/translations/generate-all --delay=10
+```
+
 Use `--verify` to check a sample of generated rows after writing. Verification
 confirms the generated PHP files contain the expected values and that Craft can
 resolve them through `Craft::t()` in the current runtime:
 
 ```bash title="PHP"
 php craft translation-manager/translations/generate-all --delay=10 --verify=1
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/translations/generate-all --delay=10 --verify=1
 ```
 
 Each `generate-all` run records its result in Translation Manager's generation
@@ -265,12 +273,12 @@ ddev craft translation-manager/backup/clean
 
 Daily backup at 3 AM:
 
-```bash
+```text
 0 3 * * * cd /path/to/project && php craft translation-manager/backup/scheduled
 ```
 
 Weekly template scan on Sunday at 2 AM:
 
-```bash
+```text
 0 2 * * 0 cd /path/to/project && php craft translation-manager/maintenance/scan-templates
 ```

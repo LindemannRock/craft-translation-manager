@@ -1,44 +1,54 @@
 # Quickstart
 
-Get Translation Manager running in under 5 minutes. By the end of this guide you'll have translations captured and editable from the CP.
+Capture your first translations and edit them in the Control Panel — no code beyond the `|t()` calls already in your templates. By the end of this guide you'll have runtime capture enabled, strings translated for a second site, and files ready to generate.
 
-## 1. Install the Plugin
+## 1. Install the plugin
 
-See [Installation](installation.md) for full details including DDEV and Composer options.
+See [Installation](installation.md) for the full Composer and DDEV options.
 
-## 2. Enable Site Translations
+## 2. Enable site translations and auto-capture
 
-Go to **Translation Manager > Settings > Translation Sources** and confirm that **Enable Site Translations** is turned on. This captures any `|t()` calls from your templates as translatable strings.
+Go to **Translation Manager → Settings → Translation Sources** and confirm **Enable Site Translations** is on. This captures the `|t()` calls in your templates as translatable strings.
 
-## 3. Visit a Frontend Page
+While you're here, check **Source Language** matches the language your `|t()` keys are written in (English by default). That language is treated as already translated, so you only translate *into* your other sites — set it correctly now, before you capture anything. See [Source Language](configuration.md#source-language).
 
-Open any page on your site that uses `|t('messages')` in its templates. Translation Manager automatically captures these strings as they render.
+Then go to **Translation Manager → Settings → Auto-Capture** and enable **Capture Missing Translations**. If **Only in devMode** is enabled, do this on a devMode environment.
 
-## 4. Translate a String
+## 3. Visit a frontend page
 
-1. Go to **Translation Manager** in the CP
-2. You should see captured strings with a **Pending** status
-3. Switch to a secondary site using the site selector
-4. Enter translations for any pending strings
-5. Click **Save All** (or press Ctrl/Cmd+S)
+Open any page that uses `|t('messages')` in its templates. With auto-capture enabled, Translation Manager captures those strings as they render.
 
-## 5. Capture Form Translations
+## 4. Translate a string
 
-If you use Formie or Freeform, enable the integration under **Translation Manager > Settings > Integrations**, then save a form or run a provider capture command:
+1. Go to **Translation Manager** in the Control Panel.
+2. You'll see the captured strings with a **Pending** status.
+3. Switch to a secondary site using the site selector.
+4. Enter translations for the pending strings.
+5. Click **Save All Changes** (or press Ctrl/Cmd + S).
 
-```bash
+## 5. Capture form translations
+
+If you use Formie or Freeform, enable the integration under **Translation Manager → Settings → Integrations**, then save a form — or run a provider capture command:
+
+```bash title="PHP"
 php craft translation-manager/translations/capture-provider formie
-php craft translation-manager/translations/capture-provider freeform
 ```
 
-Generate files after translating provider strings:
+```bash title="DDEV"
+ddev craft translation-manager/translations/capture-provider formie
+```
 
-```bash
+Generate files after translating the provider strings:
+
+```bash title="PHP"
 php craft translation-manager/translations/generate-provider formie
-php craft translation-manager/translations/generate-provider freeform
 ```
 
-## What's Next
+```bash title="DDEV"
+ddev craft translation-manager/translations/generate-provider formie
+```
 
-- [Configuration](configuration.md) — customize translation categories, auto-export, and locale mapping
-- [Feature Tour](../feature-tour/overview.md) — explore multi-site support, import/export, and backups
+## What's next
+
+- [Configuration](configuration.md) — customize translation categories, auto-generation, and locale mapping
+- [Feature tour](../feature-tour/overview.md) — explore multi-site support, import/export, and backups

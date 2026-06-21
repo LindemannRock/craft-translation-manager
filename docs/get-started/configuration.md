@@ -11,15 +11,25 @@ Configure Translation Manager by creating a config file at `config/translation-m
 | `pluginName` | `string` | `'Translation Manager'` | Display name for the plugin (shown in CP menu and breadcrumbs) |
 | `translationCategory` | `string` | `'messages'` | **Deprecated** — use `translationCategories` instead. Single translation category for site translations |
 | `translationCategories` | `array` | `[]` | Multiple translation categories. Format: `[['key' => 'messages', 'enabled' => true]]`. Falls back to `translationCategory` if empty |
-| `sourceLanguage` | `string` | `'en'` | Source language of template strings (language your `\|t()` strings are written in) |
+| `sourceLanguage` | `string` | `'en'` | Source language of template strings — the language your `\|t()` keys are written in (see [Source Language](#source-language)) |
 | `enableFormieIntegration` | `bool` | `true` | Enable Formie form translation integration |
 | `enableFreeformIntegration` | `bool` | `true` | Enable Freeform form translation integration |
 | `enableSiteTranslations` | `bool` | `true` | Enable site translation capture from `\|t()` calls |
 | `captureMissingTranslations` | `bool` | `false` | Capture missing translations at runtime (auto-add when used) |
 | `captureMissingOnlyDevMode` | `bool` | `true` | Only capture missing translations when devMode is enabled (recommended) |
 | `excludeFormHandlePatterns` | `array` | `[]` | Form handle patterns to exclude from Formie capture (e.g., `['-ar', '_ar']`) @since(5.14.0) |
-| `skipPatterns` | `array` | `[]` | Text patterns to skip when capturing translations |
+| `skipPatterns` | `array` | `[]` | Text patterns to skip when capturing site translations (see [Skip Patterns](#skip-patterns)) |
 | `localeMapping` | `array` | `[]` | Maps regional locale variants to base locales (see [Locale Mapping](#locale-mapping)) @since(5.17.0) |
+
+### Source Language
+
+**Source Language** (set under **Settings → Translation Sources**) is the language your `|t()` keys are written in — the literal text inside `{{ 'Copyright'|t('messages') }}`. It defaults to `en` and should match your *keys*, not necessarily your primary site language.
+
+Why it matters: Translation Manager treats the source language as **already translated**. A string in that language is stored with the key as its own value and a **Translated** status, so it never lands in your Pending queue — you translate *into* your other site languages, never into the source. At runtime, a request in the source language returns the original key text as-is.
+
+The Control Panel offers your site languages; in `config/translation-manager.php` you can set any code matching `xx` or `xx-XX` (e.g. `en`, `en-US`). Region variants are matched by base language, so source `en` also covers `en-US`.
+
+> **Set this once, at setup, to match your `|t()` keys.** Changing it later only re-classifies which language is the "original" — it does **not** migrate, rewrite, or delete existing translations, and it does not regenerate files on its own (only a [generation path](#generation) change does that). Strings you already captured in the *old* source language stay in the database — still flagged Translated with the key as their value — but are now treated as an ordinary target language, while the *new* source language becomes the original going forward. If you must change it after translations exist, review those rows and regenerate afterwards.
 
 ### Interface
 
@@ -32,19 +42,31 @@ Configure Translation Manager by creating a config file at `config/translation-m
 
 ### Approval Workflow
 
-By default any user who can edit translations can also mark them as *Translated*. Enabling `requireApproval` splits those two responsibilities:
+By default any user who can edit translations can also publish them as *Translated*. Turning on **Require Approval Before Publish** (the `requireApproval` setting, under **Settings → General**) splits those two responsibilities:
 
-- **Editors** (users with *Edit Translations*) can change translation text, but cannot move a translation to *Translated* on their own.
-- **Approvers** (users with the *Approve Translations* permission) are the only ones who can mark a translation as *Translated*.
+- **Editors** (users with *Edit Translations*) can change translation text, but their saves land as **Draft** rather than going live.
+- **Approvers** (users with the *Approve Translations* permission) save straight to **Translated**, which stamps their name and the time into the Reviewed By / Reviewed At columns.
 
-Use this when translations are drafted by one team and signed off by another. Leave it `false` for a single-editor workflow where review is not needed.
+Use this when translations are drafted by one team and signed off by another. Leave it `false` for a single-editor workflow where review is not needed. For the day-to-day Draft → Translated flow and the bulk **Mark Draft** / **Mark Translated** actions, see [Managing translations → Approval workflow](../template-guides/managing-translations.md#approval-workflow).
+
+### Skip Patterns
+
+`skipPatterns` keeps noise out of your translation list by excluding matching strings from [auto-capture](../template-guides/basic-usage.md#auto-capture-missing-strings). Enter one pattern per line in **Settings → Translation Sources → Skip Patterns** (or as an array in config). Matching is a **case-insensitive substring** test — a string is skipped if any pattern appears anywhere within it (not a glob or regex). Common entries are field-name fragments you never want as copy, such as `ID`, `Title`, or `Status`.
+
+```php
+'skipPatterns' => ['ID', 'Title', 'Status'],
+```
+
+Skip patterns only affect **site** translation capture — they don't touch form-provider fields.
+
+> **Removing strings you've already captured.** Skip patterns only stop *new* captures. To purge existing rows that match, the Skip Patterns settings panel shows an **Apply Skip Patterns to Existing Translations** button once at least one pattern is set. This permanently deletes every matching site translation across all sites and **cannot be undone** — and unlike the [Maintenance](../feature-tour/maintenance.md) clears, it does not take a backup first. Export first if you're unsure.
 
 ### Generation
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `autoGenerate` | `bool` | `true` | Automatically generate PHP translation files when translations are saved |
-| `runtimeTranslationSource` | `string` | `'generated-files'` | Runtime source for managed Craft translation categories. Options: `generated-files`, `database`, `database-with-php-fallback` @since(5.29.0) |
+| `runtimeTranslationSource` | `string` | `'php-files'` | Runtime source for managed Craft translation categories. Options: `php-files`, `database`, `hybrid` @since(5.29.0) |
 | `generationPath` | `string` | `'@translations'` | Generation directory. Supports `@translations` or `$VARIABLE` env vars that resolve exactly to `@translations` |
 
 Generated PHP files must live at Craft's translations root. Translation Manager
@@ -59,23 +81,34 @@ Use this:
 'generationPath' => '@translations',
 ```
 
-For traditional single-runtime hosting, keep `runtimeTranslationSource` at the
-default `generated-files` mode. On split-runtime or edge-hosted deployments
-where deploy hooks write translation files in a different runtime than frontend
-requests read from, use `database-with-php-fallback`. That mode reads managed
-translations from Translation Manager's database rows while preserving native
-plugin PHP translations as a fallback.
-
 ### Runtime Translation Source
 
 This setting controls what Craft uses when a managed category is requested with
 `Craft::t()` or Twig's `|t` filter.
 
+Start with this rule of thumb:
+
+- Use `php-files` for standard hosting where the same filesystem is used
+  by deploy commands and frontend requests.
+- Use `hybrid` for edge, split-runtime, containerized, or
+  serverless-style hosting where a post-deploy command can generate and verify
+  PHP files, but live frontend requests may still not read those files
+  reliably.
+- Use `database` only when you intentionally want Translation Manager's database
+  rows to be the only runtime source, usually for diagnostics or a fully
+  database-owned category.
+
 | Mode | What it reads | Use when | Limitations |
 |------|---------------|----------|-------------|
-| `generated-files` | Generated PHP files in `translations/{language}/{category}.php` | Default mode for traditional hosting where web and CLI runtimes share the same translation files | Frontend output depends on the live web runtime seeing the generated files |
+| `php-files` | Generated PHP files in `translations/{language}/{category}.php` | Default mode for traditional hosting where web and CLI runtimes share the same translation files | Frontend output depends on the live web runtime seeing the generated files |
 | `database` | Translated rows stored in Translation Manager's database tables | Diagnostics, testing, or installs where Translation Manager should fully own the runtime category | Does not fall back to committed PHP files or native provider files for missing keys |
-| `database-with-php-fallback` | PHP files first, then Translation Manager database rows override matching keys | Split-runtime, edge, or containerized hosting where deploy hooks can write and verify PHP files but frontend requests may not reliably consume them | The category still must be enabled in Translation Manager, and PHP fallback files must match the category name |
+| `hybrid` | PHP files first, then Translation Manager database rows override matching keys | Split-runtime, edge, or containerized hosting where deploy hooks can write and verify PHP files but frontend requests may not reliably consume them | The category still must be enabled in Translation Manager, and PHP fallback files must match the category name |
+
+`hybrid` does not replace generation. Keep your post-deploy
+`generate-all --delay=10 --verify=1` step so PHP files stay current for
+standard Craft loading, exports, native plugin fallbacks, and any keys that do
+not have translated database rows yet. The difference is runtime priority:
+translated database rows win, and PHP files fill gaps.
 
 Hybrid fallback follows Craft's normal category/file naming:
 
@@ -134,7 +167,7 @@ return [
         'captureMissingTranslations' => false,
         'captureMissingOnlyDevMode' => true,
         'autoGenerate' => true,
-        'runtimeTranslationSource' => 'generated-files',
+        'runtimeTranslationSource' => 'php-files',
         // Must resolve to Craft's @translations root exactly.
         'generationPath' => '@translations',
         'itemsPerPage' => 100,

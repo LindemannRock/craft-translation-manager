@@ -1,43 +1,49 @@
-# Import/Export
+# Import / export
 
-Translation Manager provides comprehensive import and export functionality for managing translations at scale.
+Move translations in and out of Translation Manager in bulk. Export your strings as CSV to hand to a translator, import their work back with a preview before anything changes, and generate the production PHP files Craft loads at runtime — or pull existing PHP translation files in to manage them here.
 
-## CSV Export
+## What you'll use it for
 
-Export translations with current filters applied.
+- Sending strings to an external translator as a CSV and importing the finished file back
+- Onboarding a project that already has translations (CSV or PHP files)
+- Generating production-ready PHP translation files for deployment
+- Bringing another plugin's frontend translations under Translation Manager's management
 
-### Export Contents
+## Import a CSV in the Control Panel
 
-- English Text (translation key)
-- Translation (site-specific)
-- Type (Forms/Site)
-- Context (if enabled)
-- Status
+Importing is a guided four-step flow — upload, map columns, preview, confirm — so you always see exactly what will change before it's written.
 
-### Using Export
+1. Go to **Translation Manager → Import/Export**.
+2. **Upload.** Choose your CSV file (max 5 MB). Pick a **CSV Delimiter** if needed — the default **Auto (detect)** handles most files, with **Comma (,)**, **Semicolon (;)**, **Tab**, and **Pipe (|)** available. When backups are enabled, leave **Create Backup Before Import** on. Click **Upload & Map Columns**.
+3. **Map CSV Columns.** Translation Manager matches your headers to its fields automatically, but you can adjust each one on the **Map CSV Columns** screen — every CSV column maps to a field via the **Maps to Field** dropdown, with a **Sample Data** preview alongside. **Translation Key (required)** is the only mapping you must set; **Translation**, **Language**, **Category**, **Context**, **Type**, **Site ID**, **Status**, and **Origin** are optional, and **-- Do not import --** skips a column. Click **Preview Import**.
+4. **Preview.** Review the **new**, **updated**, and **skipped** counts — and any rows flagged by malicious-content detection — before anything is written.
+5. **Confirm** the import, then check the results and [history](#import-history).
 
-1. Navigate to **Translation Manager → Import/Export**
-2. Apply filters if needed (Type, Status)
-3. Click **Export CSV**
-4. File downloads with current filter applied
+![Import preview in the Translation Manager Control Panel](images/import-export-preview.webp)
 
-### Security
+A backup is taken automatically before the import (when backups are enabled), so you can roll back if the result isn't what you expected.
 
-Exports are protected against CSV injection - special characters are prefixed to prevent formula execution in spreadsheet applications.
+## Export
 
-## CSV Import
+Export translations with your current filters applied. Three formats are available — **CSV**, **Excel**, and **JSON** — each turned on or off under **Settings → Interface**.
 
-Import translations with preview and validation.
+**Export contents:** English text (the key), the site-specific translation, type (Forms/Site), context (if enabled), and status.
 
-### Import Process
+### From the Import/Export page
 
-1. Navigate to **Translation Manager → Import/Export**
-2. Upload CSV file (max 5MB)
-3. Preview changes (new, updated, skipped)
-4. Confirm import
-5. View results and history
+Go to **Translation Manager → Import/Export**, apply any Language / Category / Status filters, and click **Export CSV** — the file downloads with that filter applied.
 
-### CSV Format
+### From the translations list
+
+The **Translations** screen has its own **Export** menu that respects whatever you've filtered (or selected). Open it and choose **Export as CSV**, **Export as Excel**, or **Export as JSON** (only the formats you've enabled appear).
+
+To export just a subset, tick the rows you want first — the button shows the count, e.g. **Export (12)**, and the download contains only those rows, still honouring your active filters. Leave everything unticked to export the full filtered set.
+
+Exports are protected against CSV injection — leading special characters are prefixed so spreadsheet applications can't execute them as formulas.
+
+## CSV import
+
+### CSV format
 
 ```csv
 English Text,Arabic Translation,Status,Context
@@ -47,161 +53,160 @@ English Text,Arabic Translation,Status,Context
 "Contact Us","اتصل بنا","translated","freeform.contactForm.title"
 ```
 
-### Required Columns
+### Required columns
 
 | Column | Aliases | Required |
 |--------|---------|----------|
 | English Text | English, Source, Original | Yes |
 | Translation | Arabic, Translated | No |
-| Context | Category, Type | No (defaults to 'site') |
+| Context | Category, Type | No (defaults to `site`) |
 | Status | - | No |
 
-### Import Behavior
+### Import behavior
 
-- Updates existing translations with matching key + context
+- Updates existing translations with a matching key + context
 - Creates new translations for unmatched entries
 - Skips empty rows
 - Processes in batches (50 per batch) for large files
 
-### Security Features
+### Security
 
-- File type validation (CSV/TXT only)
-- Size limit (5MB)
-- MIME type verification
-- Malicious content detection (XSS, SQL injection, PHP code)
-- Input sanitization
-- CSRF protection
-- Automatic backup before import
+CSV import is guarded by file-type validation (CSV/TXT only), a 5 MB size limit, MIME-type verification, malicious-content detection (XSS, SQL injection, PHP code), input sanitization, CSRF protection, and an automatic pre-import backup.
 
-## PHP File Export
+## PHP file export (generation)
 
-Generate production-ready PHP translation files.
+Generate production-ready PHP translation files. Translation Manager writes them into Craft's `@translations` root — the generation path must resolve to that root exactly so Craft can load the files at runtime; subfolders such as `@root/translations/test` or `@translations/test` are not valid targets.
 
-Translation Manager writes generated PHP files into Craft's `@translations`
-root. The generation path must resolve to that root exactly so Craft can load
-the files at runtime; subfolders such as `@root/translations/test` or
-`@translations/test` are not valid generation targets.
+Generated files stay useful even when the runtime source is `hybrid`: in that mode they provide fallback values for enabled categories when no translated database row exists, while database rows override matching keys. See [Runtime translation source](../get-started/configuration.md#runtime-translation-source).
 
-Generated files are still useful even when the frontend runtime source is set
-to `database-with-php-fallback`. In that mode, PHP files provide fallback values
-for enabled categories when no translated database row exists, while
-Translation Manager database rows override matching keys.
+### Generated structure
 
-### Generated Structure
-
-```
+```text
 translations/
 ├── en-US/
-│   ├── lindemannrock.php  (site translations)
-│   ├── formie.php         (Formie translations)
-│   └── freeform.php       (Freeform translations)
+│   ├── messages.php   (site translations)
+│   ├── formie.php     (Formie translations)
+│   └── freeform.php   (Freeform translations)
 └── ar/
-    ├── lindemannrock.php
+    ├── messages.php
     ├── formie.php
     └── freeform.php
 ```
 
-### Auto Generate
+> The site-category filename matches your configured translation category — `messages.php` for the default `messages` category, or your own name if you changed it.
 
-Enable auto-generation in settings to automatically update PHP files when translations are saved or imported (CSV, Excel, and PHP file imports all refresh the generated files).
+### Auto generate
 
-If the configured generation path changes, Translation Manager regenerates the
-current files into the new valid `@translations` location after the settings
-save succeeds. It does not delete files from the previous physical location.
+Enable auto-generation in settings to refresh PHP files whenever translations are saved or imported (CSV, Excel, and PHP imports all trigger a refresh).
 
-### Manual Generation
+If the configured generation path changes, Translation Manager regenerates the current files into the new valid `@translations` location after the settings save succeeds. It does **not** delete files from the previous physical location.
 
-1. Navigate to **Translation Manager → Generate**
-2. Select **All**, **Site**, a site category, or a form provider such as Formie or Freeform
-3. Click Generate
+### Manual generation
 
-Provider generation writes the provider's category file only. For example, Formie writes `formie.php` and Freeform writes `freeform.php`.
+1. Go to **Translation Manager → Generate**.
+2. Choose **All**, **Site**, a single site category, or a form provider (such as Formie or Freeform).
+3. Click **Generate**.
 
-On split-runtime hosting, a deploy command can generate and verify PHP files
-successfully while frontend requests still do not consume those files reliably.
-Use `database-with-php-fallback` as the runtime source in that environment, and
-keep generation enabled for PHP fallback files, exports, and compatibility with
-Craft's standard translation folder.
+Provider generation writes only that provider's category file — Formie writes `formie.php`, Freeform writes `freeform.php`.
 
-### Console Commands
+On split-runtime hosting a deploy command can generate and verify PHP files successfully while frontend requests still don't consume them reliably. In that environment use `hybrid` as the runtime source, and keep generation enabled for PHP fallback files, exports, native plugin fallback values, and compatibility with Craft's standard translation folder.
 
-```bash
-# Generate all translation files
+### Console commands
+
+Generate all translation files:
+
+```bash title="PHP"
 php craft translation-manager/translations/generate-all
-
-# Generate site translation files only
-php craft translation-manager/translations/generate-site
-
-# Generate one site category only
-php craft translation-manager/translations/generate-category messages
-
-# Generate one form provider's translation files only
-php craft translation-manager/translations/generate-provider formie
-php craft translation-manager/translations/generate-provider freeform
 ```
 
-## PHP File Import
+```bash title="DDEV"
+ddev craft translation-manager/translations/generate-all
+```
+
+Generate site translation files only:
+
+```bash title="PHP"
+php craft translation-manager/translations/generate-site
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/translations/generate-site
+```
+
+Generate one site category only:
+
+```bash title="PHP"
+php craft translation-manager/translations/generate-category messages
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/translations/generate-category messages
+```
+
+Generate one form provider's files only:
+
+```bash title="PHP"
+php craft translation-manager/translations/generate-provider formie
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/translations/generate-provider formie
+```
+
+## PHP file import
 
 Import existing PHP translation files into Translation Manager. This is useful for:
 
 - Importing translations from other Craft plugins
 - Migrating from file-based translation management
-- Onboarding existing projects with translation files
+- Onboarding projects that already ship translation files
 
-### Importing Plugin Translations
+### Importing plugin translations
 
-If you want to manage translations for a third-party plugin that provides frontend content:
+To manage translations for a third-party plugin that provides frontend content:
 
-1. **Add the category** in Settings → Translation Sources → Translation Categories
-   - Add the plugin's handle (e.g., `commerce`, `events`, `pluginX`)
-
-2. **Copy or locate the translation file**
-   ```
+1. **Add the category** in **Settings → Translation Sources → Translation Categories** — use the plugin's handle (e.g. `commerce`, `events`, `pluginX`).
+2. **Locate or copy the translation file:**
+   ```text
    translations/
    └── ar/
        └── pluginX.php    ← Plugin translation file
    ```
+3. **Import via PHP Import:** go to **Translation Manager → Import/Export**, scroll to *Import from PHP Files*, select the file (e.g. `ar/pluginX.php`), let the category auto-detect from the filename, then preview and import.
 
-3. **Import via PHP Import**
-   - Navigate to **Translation Manager → Import/Export**
-   - Scroll to "Import from PHP Files"
-   - Select the file (e.g., `ar/pluginX.php`)
-   - Category auto-detects from filename
-   - Preview and import
+### File detection
 
-### File Detection
+PHP Import scans your configured translations folder and detects:
 
-PHP Import automatically scans your configured translations folder and detects:
+- **Language** from the folder name (e.g. `ar`, `en-US`, `fr`)
+- **Category** from the filename (e.g. `pluginX.php` → category `pluginX`)
 
-- **Language** from folder name (e.g., `ar`, `en-US`, `fr`)
-- **Category** from filename (e.g., `pluginX.php` → category `pluginX`)
+### Import behavior
 
-### Import Behavior
-
-- Creates translations for ALL configured site languages
-- Source language translations are pre-filled with the key
-- Target language translations use the imported values
-- Existing translations are updated (not duplicated)
-- Automatic backup created before import (if enabled)
+- Creates translations for **all** configured site languages
+- Pre-fills source-language translations with the key
+- Uses the imported values for the target language
+- Updates existing translations rather than duplicating them
+- Takes an automatic backup before import (when enabled)
 
 Provider files such as `formie.php` and `freeform.php` import into their matching provider categories. Custom site categories import into the configured category with the same filename.
 
-### Example Workflow
+### Example workflow
 
 Importing a plugin's Arabic translations:
 
-```bash
+```text
 # 1. Plugin provides translations at:
 plugins/my-plugin/src/translations/ar/my-plugin.php
 
-# 2. Copy to site translations folder:
+# 2. Copy to the site translations folder:
 cp plugins/my-plugin/src/translations/ar/my-plugin.php translations/ar/
 
-# 3. Add 'my-plugin' category in Translation Manager settings
+# 3. Add the 'my-plugin' category in Translation Manager settings
 
 # 4. Use PHP Import to import the file
 
-# 5. Manage translations in Translation Manager
+# 5. Manage the translations in Translation Manager
 
 # 6. Export updates back to translations/ar/my-plugin.php
 ```
@@ -209,14 +214,11 @@ cp plugins/my-plugin/src/translations/ar/my-plugin.php translations/ar/
 ### Requirements
 
 - PHP Import is only available in **devMode** (for security)
-- User must have **Import Translations** permission
-- Files must be in the configured generation path (default: `@translations`)
+- The user needs the **Import Translations** permission
+- Files must be in the configured generation path (default `@translations`)
 
-## Import History
+## Import history
 
-Track all imports with:
+Every import is tracked with its date and time, the user who ran it, the number of translations (new / updated / skipped), and a link to the pre-import backup.
 
-- Date and time
-- User who performed import
-- Number of translations (new/updated/skipped)
-- Link to pre-import backup
+To wipe the log — for example after testing imports — use the **Clear history** button on the Import History tab. It removes every history record (the backups themselves are untouched) and requires the **Clear Import History** permission. See [Permissions](../developers/permissions.md).

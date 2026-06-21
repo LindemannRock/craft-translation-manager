@@ -1,40 +1,36 @@
-# Backup System
+# Backup system
 
-The Translation Manager includes a comprehensive backup system that automatically protects your translations before any potentially destructive operations.
+Translation Manager protects your translations before anything destructive happens. Every import, cleanup, clear, and restore creates a backup first — and you can create your own restore points any time — so a bad import or an over-eager cleanup is always recoverable.
 
-## Backup Types
+## What you'll use it for
 
-### Manual Backups
+- Creating a restore point before a big import or a round of cleanup
+- Recovering after a CSV import goes wrong
+- Running scheduled (daily/weekly/monthly) safety backups without thinking about it
+- Keeping backups off-server in cloud storage (S3, Servd, Wasabi)
+- Handing a portable ZIP of translations to another environment
 
-- Created via the "Create Backup" button in the CP
-- Never automatically deleted, regardless of retention settings
-- Stored in `/manual/` subfolder
-- Perfect for creating restore points before major changes
+## Create and restore a backup in the Control Panel
 
-### Scheduled Backups
+1. Go to **Translation Manager → Backups**.
+2. Click **Create Backup Now** — the backup is captured with the current timestamp and a reason.
+3. To roll back, find a backup in the list, click the gear icon → **Restore**, and confirm. A fresh safety backup is taken before the restore runs, so the restore itself is reversible.
 
-- Automatically created based on your schedule (daily, weekly, monthly)
-- Uses Craft's queue system with automatic recovery
-- Stored in `/scheduled/` subfolder
-- Subject to retention policy
+![Backups list in the Translation Manager Control Panel](images/backups-list.webp)
 
-### Import Backups
+The list shows each backup's **date**, **type** (which folder it lives in), **reason**, **translation count**, and **size**.
 
-- Automatically created before CSV imports (if enabled)
-- Stored in `/imports/` subfolder
-- Helps recover from bad imports
+## Backup types
 
-### Maintenance Backups
+Each kind of backup lives in its own subfolder so you can tell at a glance why it was created:
 
-- Created before cleanup or clear operations
-- Stored in `/maintenance/` subfolder
-- Safety net for destructive operations
-
-### Restore/Other Backups
-
-- Created before restore operations
-- Stored in `/other/` subfolder
-- Safety backup when restoring previous backups
+| Type | When it's created | Folder | Retention |
+|------|-------------------|--------|-----------|
+| **Manual** | You click *Create Backup* | `/manual/` | Never auto-deleted |
+| **Scheduled** | On your daily/weekly/monthly schedule (via Craft's queue, with automatic recovery) | `/scheduled/` | Subject to retention policy |
+| **Import** | Before a CSV import (when enabled) | `/imports/` | Subject to retention policy |
+| **Maintenance** | Before a cleanup or clear operation | `/maintenance/` | Subject to retention policy |
+| **Restore / other** | Before a restore (the safety backup) | `/other/` | Subject to retention policy |
 
 ## Configuration
 
@@ -48,7 +44,7 @@ return [
 ];
 ```
 
-### Schedule Options
+### Schedule options
 
 | Schedule | Frequency |
 |----------|-----------|
@@ -57,64 +53,59 @@ return [
 | `weekly` | Weekly |
 | `monthly` | Monthly |
 
-Craft stores scheduled backup queue descriptions when rows are queued, so date/time format changes apply to newly queued rows. Existing delayed rows keep their old label until they run or are requeued. Queue labels stay compact: numeric months render numerically, while short and long month settings both render as short month names.
+Craft stores a scheduled backup's queue description when the row is queued, so date/time format changes apply to newly queued rows; existing delayed rows keep their old label until they run or are requeued. Queue labels stay compact: numeric months render numerically, while short and long month settings both render as short month names.
 
-## Using the Control Panel
+## Console commands
 
-### Creating Backups
+Create a manual backup:
 
-1. Navigate to **Translation Manager → Backups**
-2. Click **Create Backup Now**
-3. Backup is created with current timestamp
-
-### Viewing Backups
-
-The backup list shows:
-
-- **Date**: When created
-- **Type**: Folder organization
-- **Reason**: Why it was created
-- **Translations**: Number backed up
-- **Size**: Total size
-
-### Restoring Backups
-
-1. Find the backup to restore
-2. Click gear icon → **Restore**
-3. Confirm (safety backup created first)
-4. All translations replaced with backup version
-
-Restore requires an intact backup folder with `metadata.json` and a valid SHA-256 checksum. Backups with missing metadata, missing checksum data, or modified translation JSON contents are rejected before translations are replaced.
-
-### Downloading Backups
-
-Click gear icon → **Download** to get a ZIP containing:
-
-- Translation data (JSON)
-- Generated PHP files
-- Backup metadata
-
-Downloaded ZIP files are portable archives. To use one on another install without an upload flow, extract the ZIP and place its files in the expected backup folder structure under that install's configured backup storage.
-
-## Console Commands
-
-```bash
-# Create manual backup
+```bash title="PHP"
 php craft translation-manager/backup/create
+```
 
-# Create with custom reason
+```bash title="DDEV"
+ddev craft translation-manager/backup/create
+```
+
+Create one with a custom reason:
+
+```bash title="PHP"
 php craft translation-manager/backup/create --reason="Before update"
+```
 
-# Run scheduled backup manually or from direct cron
+```bash title="DDEV"
+ddev craft translation-manager/backup/create --reason="Before update"
+```
+
+Run a scheduled backup manually or from cron:
+
+```bash title="PHP"
 php craft translation-manager/backup/scheduled
+```
 
-# List all backups
+```bash title="DDEV"
+ddev craft translation-manager/backup/scheduled
+```
+
+List all backups:
+
+```bash title="PHP"
 php craft translation-manager/backup/list
 ```
 
-## Storage Structure
-
+```bash title="DDEV"
+ddev craft translation-manager/backup/list
 ```
+
+## Restoring, downloading, and integrity
+
+Restore replaces all current translations with the backup's version. It requires an intact backup folder with `metadata.json` and a valid SHA-256 checksum — backups with missing metadata, missing checksum data, or modified translation JSON are rejected *before* anything is replaced.
+
+Click the gear icon → **Download** to get a ZIP containing the translation data (JSON), the generated PHP files, and the backup metadata. Downloaded ZIPs are portable: to use one on another install without an upload flow, extract it and place its files into the expected backup folder structure under that install's configured backup storage.
+
+## Storage structure
+
+```text
 storage/translation-manager/backups/
 ├── scheduled/      # Automated backups
 ├── imports/        # Pre-import backups
@@ -123,21 +114,14 @@ storage/translation-manager/backups/
 └── other/          # Miscellaneous backups
 ```
 
-## Cloud Storage Support
+## Cloud storage
 
-Store backups in any Craft asset volume:
+Store backups in any Craft asset volume — Amazon S3, Servd, Wasabi, or any provider with Craft volume support. Configure it under **Settings → Backup → Backup Storage Volume**.
 
-- Amazon S3
-- Servd
-- Wasabi
-- Any cloud provider with Craft volume support
+Local volumes that resolve inside `@webroot` are rejected, because backup JSON files should not be web-accessible. Remote volumes such as S3 are allowed; set the bucket/object access policy in the storage provider so backups stay private.
 
-Configure in **Settings → Backup → Backup Storage Volume**.
+## Retention policy
 
-Local volumes that resolve inside `@webroot` are rejected because backup JSON files should not be web-accessible. Remote volumes such as Amazon S3 are allowed; configure bucket/object access policies in the storage provider so backups are private.
-
-## Retention Policy
-
-- Automatic cleanup based on `backupRetentionDays` setting
-- **Manual backups are never automatically deleted**
-- Set to `0` to keep all backups forever
+- Automatic cleanup is based on the `backupRetentionDays` setting.
+- **Manual backups are never automatically deleted.**
+- Set retention to `0` to keep all backups forever.

@@ -1,44 +1,46 @@
-# Freeform Integration
+# Freeform integration
 
-Translation Manager provides built-in integration with [Freeform](https://plugins.craftcms.com/freeform) for managing frontend form translations from the Translation Manager Control Panel.
+Manage your [Freeform](https://plugins.craftcms.com/freeform) form translations from the Translation Manager Control Panel. Frontend strings — titles, messages, page labels, buttons, fields, and options — are captured when forms are saved, translated alongside the rest of your site, and served through your chosen runtime source.
 
-## How It Works
+## What you'll use it for
 
-Freeform translations are captured when forms are saved or deleted, and can also be recaptured manually. Translation Manager stores captured strings under the `freeform` provider category and can generate Craft translation files such as `translations/ar/freeform.php`.
+- Localizing Freeform forms for a multi-language site
+- Capturing form text automatically when forms are saved (or on demand)
+- Letting Translation Manager own shared frontend form translations while Freeform keeps any per-site values it manages natively
 
-Runtime rendering depends on the selected **Runtime Translation Source**:
+## Turn it on
 
-- `generated-files`: Freeform values come from `translations/{language}/freeform.php`.
-- `database`: Freeform values come only from translated Translation Manager rows.
-- `database-with-php-fallback`: Translation Manager database rows override
-  Freeform/PHP file values, and PHP files fill gaps when no database row exists.
+Enable Freeform integration under **Translation Manager → Settings → Integrations** → **Enable Freeform Integration**. The Freeform section appears only when the Freeform plugin is installed and enabled.
 
-For split-runtime or edge hosting, use `database-with-php-fallback` so translated
-rows are read from the database while committed/generated `freeform.php` files
-remain available as fallback.
+See [Integrations overview](overview.md) for the shared provider lifecycle, permissions, generation, maintenance, and import/export behavior.
 
-If Freeform has its own native per-site translation for a value, Freeform's
-native translation wins. If Freeform does not have a native translation,
-Translation Manager's `freeform` category can provide the frontend value through
-generated files or the database runtime source.
+## How it works
 
-You do not need to enable Freeform's **Translatable** setting for Translation Manager generated files to work. If you do enable Freeform's native per-site translations, manage those values carefully because they override Translation Manager generated values for matching form content.
+Freeform strings are captured when forms are saved or deleted, and can be recaptured manually. They're stored under the `freeform` category, and Translation Manager can generate files such as `translations/ar/freeform.php`.
 
-## Site-Aware Forms
+How they render depends on the selected **Runtime Translation Source**:
 
-Freeform forms must be enabled for the site where they are rendered. If a form renders on one site but not another, check the Freeform form's site settings first.
+- `php-files` — Freeform values come from `translations/{language}/freeform.php`.
+- `database` — Freeform values come only from translated Translation Manager rows.
+- `hybrid` — database rows override PHP-file values, and PHP files fill gaps when no database row exists.
 
-Freeform's site-aware and native **Translatable** settings are separate from
-Translation Manager:
+For split-runtime or edge hosting, use `hybrid` so translated rows are read from the database while committed or generated `freeform.php` files remain available as fallback.
+
+If Freeform has its own native per-site translation for a value, **Freeform's native translation wins**. When it doesn't, Translation Manager's `freeform` category provides the frontend value through generated files or the database runtime source.
+
+## Freeform Translatable vs Translation Manager
+
+You don't need to enable Freeform's native **Translatable** setting for Translation Manager generated files to work. The two are separate:
 
 - Enable the form for every site where it should render.
-- Leave Freeform's native **Translatable** setting disabled when Translation
-  Manager should own shared frontend form translations.
-- Enable Freeform's native **Translatable** setting only when you intentionally
-  want per-site values managed inside Freeform. Those values can override
-  Translation Manager values on the frontend.
+- Leave Freeform's native **Translatable** setting **disabled** when Translation Manager should own shared frontend form translations.
+- Enable Freeform's native **Translatable** setting **only** when you intentionally want per-site values managed inside Freeform — those values override Translation Manager values on the frontend.
 
-## Captured Content
+### Site-aware forms
+
+Freeform forms must be enabled for the site where they're rendered. If a form renders on one site but not another, check the Freeform form's site settings first.
+
+## Captured content
 
 Translation Manager captures common Freeform frontend strings, including:
 
@@ -50,9 +52,9 @@ Translation Manager captures common Freeform frontend strings, including:
 - HTML/content field text
 - Dropdown, radio, checkbox, multi-select, and optgroup labels
 - Table labels and option labels
-- Add/remove labels for repeatable structures where exposed by Freeform
+- Add/remove labels for repeatable structures where Freeform exposes them
 
-For manual or custom Freeform templates, keep using Craft translation filters where you render raw values yourself, especially for option labels:
+For manual or custom Freeform templates, keep using Craft translation filters where you render raw values yourself — especially for option labels:
 
 ```twig
 {{ option.label|t('freeform') }}
@@ -60,82 +62,61 @@ For manual or custom Freeform templates, keep using Craft translation filters wh
 
 Freeform's render helpers and Translation Manager's runtime fallback cover the common frontend output paths, but custom templates can bypass those helpers if they print raw values directly.
 
-## Configuration
+## Capture and generate
 
-Enable Freeform integration in **Translation Manager → Settings → Integrations**:
+> This section is for re-capturing or generating files from the command line; saving a form already captures its strings.
 
-- **Enable Freeform Integration**: Toggle to capture and generate Freeform translations
+If translations are missing after changing a form, save it again or recapture all Freeform strings:
 
-The Freeform section is only available when the Freeform plugin is installed and enabled.
-
-See [Integrations Overview](overview.md) for the shared provider lifecycle, permissions, generation, maintenance, and import/export behavior.
-
-## Manual Capture
-
-If translations are missing after changing a form, save the form again or manually recapture all Freeform strings:
-
-```bash
+```bash title="PHP"
 php craft translation-manager/translations/capture-provider freeform
 ```
 
-With DDEV:
-
-```bash
+```bash title="DDEV"
 ddev craft translation-manager/translations/capture-provider freeform
 ```
 
-You can also use **Translation Manager → Maintenance** and run the Freeform scanner.
-
-After capture, confirm the rows exist under category `freeform`, have the target
-language, and are marked `translated` before testing the frontend.
-
-## Generate Files
+You can also run the Freeform scanner under **Translation Manager → Maintenance**. After capture, confirm the rows exist under category `freeform`, have the target language, and are marked `translated` before testing the frontend.
 
 Generate only Freeform translation files:
 
-```bash
+```bash title="PHP"
 php craft translation-manager/translations/generate-provider freeform
 ```
 
-With DDEV:
-
-```bash
+```bash title="DDEV"
 ddev craft translation-manager/translations/generate-provider freeform
 ```
 
 Generating all files also includes Freeform when the integration is enabled:
 
-```bash
+```bash title="PHP"
 php craft translation-manager/translations/generate-all
 ```
 
-Generating files is required for `generated-files` runtime mode and remains
-useful in `database-with-php-fallback` mode because `freeform.php` supplies
-fallback values for missing database rows.
+```bash title="DDEV"
+ddev craft translation-manager/translations/generate-all
+```
 
-## Testing Checklist
+Generating files is required for `php-files` mode. Keep it in place for `hybrid` too, because database rows protect the live frontend runtime while `freeform.php` supplies fallback values for missing database rows.
+
+## Testing checklist
 
 1. Confirm the Freeform form is enabled for the current site.
-2. Decide whether Freeform native **Translatable** should be disabled or
-   intentionally used for per-site values.
-3. Save the Freeform form after adding or changing fields, pages, options, or
-   buttons.
-4. Confirm Translation Manager captured the expected rows in category
-   `freeform`.
+2. Decide whether Freeform native **Translatable** should be disabled or intentionally used for per-site values.
+3. Save the Freeform form after adding or changing fields, pages, options, or buttons.
+4. Confirm Translation Manager captured the expected rows in category `freeform`.
 5. Translate the rows for the target language and mark them translated.
-6. If using `generated-files`, generate Freeform files and confirm
-   `translations/{language}/freeform.php` exists.
-7. If using `database-with-php-fallback`, confirm database rows override PHP file
-   values and PHP file values fill gaps when a DB row is absent.
-8. Test fields with options, page labels, and button labels separately because
-   Freeform uses mixed rendering paths.
+6. If using `php-files`, generate Freeform files and confirm `translations/{language}/freeform.php` exists in the same runtime that serves frontend requests.
+7. If using `hybrid`, keep generation enabled, then confirm database rows override PHP-file values and PHP-file values fill gaps when a database row is absent.
+8. Test fields with options, page labels, and button labels separately, because Freeform uses mixed rendering paths.
 
 ## Troubleshooting
 
-If a Freeform string is captured but does not translate on the frontend:
+If a Freeform string is captured but doesn't translate on the frontend:
 
 - Confirm the Freeform form is enabled for the current site.
 - Confirm the Freeform integration is enabled in Translation Manager settings.
-- Regenerate Freeform files with `translation-manager/translations/generate-provider freeform`.
-- Check whether Freeform's native **Translatable** setting has a per-site value that overrides the generated value.
+- Regenerate Freeform files with `translation-manager/translations/generate-provider freeform`; in hybrid mode those files still provide fallback values.
+- Check whether Freeform's native **Translatable** setting has a per-site value overriding the generated value.
 - In custom templates, wrap raw labels/options/messages with `|t('freeform')`.

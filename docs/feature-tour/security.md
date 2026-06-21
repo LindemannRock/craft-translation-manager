@@ -1,84 +1,70 @@
 # Security
 
-Translation Manager includes comprehensive security measures to protect your data and system.
+Translation Manager is built to keep your translation data and your server safe — translations are user-supplied content, imports touch the filesystem, and exports leave the system, so each of those paths is hardened. This page lists the protections that are on by default and the practices that keep them effective.
 
-## Built-in Protection
+## What's protected
 
-### Input Validation
+- **The strings themselves** — escaped on output and length-limited on input
+- **File operations** — imports, exports, and generated files are path-restricted and validated
+- **PHP imports** — parsed without ever executing the file's code
+- **Access** — every operation is gated by a granular permission and requires authentication
 
-- **XSS Protection**: All template output properly escaped
-- **CSRF Protection**: All forms validate CSRF tokens
-- **SQL Injection Protection**: Parameterized queries throughout
-- **Length Limits**: 5000 character max on translations
-- **Category Validation**: Letters, numbers, hyphens, underscores only
+## Built-in protection
 
-### Path Security
+### Input validation
 
-- **Symlink Attack Prevention**: Real path resolution prevents symlink traversal
-- **Path Restriction**: Export paths limited to secure aliases (@root, @storage, @translations)
-- **Backup Security**: Backup paths restricted to non-web-accessible locations
+- **XSS protection** — all template output is properly escaped
+- **CSRF protection** — every form validates CSRF tokens
+- **SQL injection protection** — parameterized queries throughout
+- **Length limits** — 5000-character maximum per translation
+- **Category validation** — letters, numbers, hyphens, and underscores only
 
-### File Operations
+### Path security
 
-- **Atomic Writes**: Temp files with proper locking
-- **CSV Injection Protection**: Special characters prefixed in exports
-- **File Type Validation**: Strict MIME type checking on uploads
+- **Symlink-attack prevention** — real-path resolution blocks symlink traversal
+- **Path restriction** — export paths are limited to secure aliases (`@root`, `@storage`, `@translations`)
+- **Backup security** — backup paths are restricted to non-web-accessible locations
 
-### PHP Import Security
+### File operations
+
+- **Atomic writes** — temp files with proper locking
+- **CSV injection protection** — leading special characters are prefixed in exports
+- **File-type validation** — strict MIME-type checking on uploads
+
+### PHP import security
 
 > [!IMPORTANT]
 > Only import PHP files from trusted sources.
 
-- **Safe Parsing**: PHP translation files are parsed using tokenization without code execution
-- **Token Validation**: Only safe tokens allowed (return, array syntax, strings, whitespace, comments)
-- **No Code Execution**: Malicious code in PHP files is rejected before any execution
-- **Path Restriction**: PHP import limited to configured translations directory
-- **DevMode Only**: PHP import feature only available when devMode is enabled
+- **Safe parsing** — PHP translation files are read by tokenization, with no code execution
+- **Token validation** — only safe tokens are allowed (return, array syntax, strings, whitespace, comments)
+- **No code execution** — malicious code in a PHP file is rejected before anything runs
+- **Path restriction** — PHP import is limited to the configured translations directory
+- **devMode only** — PHP import is available only when devMode is enabled
 
-### Access Control
+### Access control
 
-- **Permission-based Access**: Granular permissions for all operations
-- **Anonymous Access Prevention**: All actions require authentication
-- **Security Event Logging**: Comprehensive audit trail with user tracking
+- **Permission-based access** — granular permissions for every operation ([Permissions](../developers/permissions.md))
+- **Anonymous-access prevention** — all actions require authentication
+- **Security event logging** — a full audit trail with user tracking
 
-## Security Best Practices
+## Best practices
 
-### For Administrators
+### For administrators
 
-1. **Permission Management**
-   - Grant only necessary permissions to user groups
-   - Regularly audit user permissions
-   - Use separate accounts for different roles
-   - Enable two-factor authentication for admin accounts
+1. **Permission management** — grant only the permissions a group needs, audit them regularly, use separate accounts for different roles, and enable two-factor authentication for admins.
+2. **Export security** — point exports at secure directories, limit export permissions to trusted users, clean up old export files, and watch export logs for unusual activity.
+3. **System maintenance** — keep Craft and all plugins updated, review security logs, watch for failed permission attempts, and back up translation data regularly.
 
-2. **Export Security**
-   - Configure export paths to secure directories
-   - Limit export permissions to trusted users
-   - Regularly clean up old export files
-   - Monitor export logs for unusual activity
+### For developers
 
-3. **System Maintenance**
-   - Keep Craft CMS and all plugins updated
-   - Review security logs regularly
-   - Monitor for failed permission attempts
-   - Backup translation data regularly
+> The rest of this section is for developers integrating with the plugin in code.
 
-### For Developers
+1. **Template usage** — always use the proper translation filter syntax, never output translation data without escaping, and avoid inline JavaScript built from translation data.
+2. **Custom integrations** — validate all input when calling the plugin's services, use Craft's permission system for access control, and log security-relevant operations.
 
-1. **Template Usage**
-   - Always use the proper translation filter syntax
-   - Never output translation data without escaping
-   - Avoid inline JavaScript with translation data
+## Reporting security issues
 
-2. **Custom Integrations**
-   - Validate all input when using the plugin's services
-   - Use Craft's permission system for access control
-   - Log security-relevant operations
+For security vulnerabilities, contact us directly at **security@lindemannrock.com**.
 
-## Reporting Security Issues
-
-For security vulnerabilities, contact us directly:
-
-**Email**: security@lindemannrock.com
-
-**DO NOT** create public GitHub issues for security vulnerabilities.
+**Do not** open public GitHub issues for security vulnerabilities.

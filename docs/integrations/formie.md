@@ -1,100 +1,70 @@
-# Formie Integration
+# Formie integration
 
-Translation Manager provides comprehensive integration with [Formie](https://verbb.io/craft-plugins/formie/features) for form translations.
+Translate your [Formie](https://verbb.io/craft-plugins/formie/features) forms without leaving Translation Manager. Field labels, options, buttons, subfields, and messages are captured automatically as you build and edit forms, then translated in the Control Panel and served to the frontend through your chosen runtime source.
 
-## How It Works
+## What you'll use it for
 
-Formie translations are captured automatically when:
+- Localizing Formie forms for a multi-language site
+- Capturing form text automatically as editors change fields, options, and buttons
+- Keeping form translations in the same list as the rest of your site copy
 
-- Creating or editing forms
-- Adding or modifying fields
-- Changing field labels, instructions, placeholders, or error messages
-- Modifying button text
-- Adding/changing dropdown, radio, or checkbox options
-- Configuring subfield labels (Address, Name, Date fields)
-- Setting up table columns, repeater buttons, or heading text
+## Turn it on
 
-Captured Formie strings are stored in Translation Manager under the `formie`
-category. Runtime rendering depends on the selected **Runtime Translation
-Source**:
+Enable Formie integration under **Translation Manager → Settings → Integrations** → **Enable Formie Integration**. Once it's on, saving a form captures its translatable strings into the `formie` category.
 
-- `generated-files`: Formie values come from `translations/{language}/formie.php`.
-- `database`: Formie values come only from translated Translation Manager rows.
-- `database-with-php-fallback`: Translation Manager database rows override
-  Formie/PHP file values, and PHP files fill gaps when no database row exists.
+See [Integrations overview](overview.md) for the shared provider lifecycle, permissions, generation, maintenance, and import/export behavior.
 
-For split-runtime or edge hosting, use `database-with-php-fallback` so translated
-rows are read from the database while committed/generated `formie.php` files
-remain available as fallback.
+## How it works
 
-## Supported Field Types
+Formie strings are captured automatically when you:
 
-### Standard Fields
+- Create or edit forms
+- Add or modify fields
+- Change field labels, instructions, placeholders, or error messages
+- Modify button text
+- Add or change dropdown, radio, or checkbox options
+- Configure subfield labels (Address, Name, Date fields)
+- Set up table columns, repeater buttons, or heading text
 
-SingleLineText, MultiLineText, Email, Number, Phone, Password, etc.
+Captured strings are stored under the `formie` category. How they render on the frontend depends on the selected **Runtime Translation Source**:
 
-Captured properties:
-- Label
-- Placeholder
-- Instructions
-- Error message
+- `php-files` — Formie values come from `translations/{language}/formie.php`.
+- `database` — Formie values come only from translated Translation Manager rows.
+- `hybrid` — database rows override PHP-file values, and PHP files fill gaps when no database row exists.
 
-### Options Fields
+For split-runtime or edge hosting, use `hybrid` so translated rows are read from the database while committed or generated `formie.php` files remain available as fallback.
 
-Dropdown, Radio, Checkboxes, Categories, Entries, Products, Tags, Users
+## Supported field types
 
-Captured properties:
-- All option labels
+### Standard fields
 
-### Complex Fields
+SingleLineText, MultiLineText, Email, Number, Phone, Password, etc. — captures label, placeholder, instructions, and error message.
 
-#### Address
+### Options fields
 
-All enabled subfield labels and placeholders:
-- Address Line 1/2/3
-- City, State, ZIP
-- Country
+Dropdown, Radio, Checkboxes, Categories, Entries, Products, Tags, Users — captures all option labels.
 
-#### Name
+### Complex fields
 
-- Prefix
-- First Name
-- Middle Name
-- Last Name
+- **Address** — all enabled subfield labels and placeholders (Address Line 1/2/3, City, State, ZIP, Country)
+- **Name** — Prefix, First, Middle, Last
+- **Date** — Day, Month, Year, Hour, Minute, Second, AM/PM labels
+- **Table** — column headers, "Add Row" button text
+- **Repeater** — Add/Remove button labels
+- **Agree** — description text, checked/unchecked values
+- **Recipients** — recipient option labels
+- **Heading** — heading text content
+- **Group** — all nested field translations (recursive)
 
-#### Date
+## Smart deduplication
 
-- Day, Month, Year
-- Hour, Minute, Second
-- AM/PM labels
+- If "First Name" appears in multiple forms or fields, it's stored only once.
+- When text moves between forms, the context updates automatically.
+- Translations marked "unused" are reactivated when the text is used again.
 
-#### Table
+## Context format
 
-- Column headers
-- "Add Row" button text
-
-#### Repeater
-
-- Add/Remove button labels
-
-#### Other
-
-- **Agree**: Description text, checked/unchecked values
-- **Recipients**: Recipient option labels
-- **Heading**: Heading text content
-- **Group**: All nested field translations (recursive)
-
-## Smart Deduplication
-
-The system prevents duplicate translations:
-
-- If "First Name" appears in multiple forms/fields, it's stored only once
-- When text moves between forms, the context updates automatically
-- Translations marked as "unused" are reactivated when text is used again
-
-## Context Format
-
-Translation contexts follow the pattern:
+Translation contexts follow these patterns:
 
 | Type | Format |
 |------|--------|
@@ -103,61 +73,46 @@ Translation contexts follow the pattern:
 | Subfield labels | `formie.{formHandle}.{fieldHandle}.{subfield}.label` |
 | Button text | `formie.{formHandle}.button.{type}` |
 
-## Configuration
+## Capture and generate
 
-Enable Formie integration in **Translation Manager → Settings → Integrations**:
-
-- **Enable Formie Integration**: Toggle to capture form translations
-
-See [Integrations Overview](overview.md) for the shared provider lifecycle, permissions, generation, maintenance, and import/export behavior.
-
-## Manual Capture
+> This section is for re-capturing or generating files from the command line; the day-to-day flow above needs no commands.
 
 If translations are missing, manually capture all Formie fields:
 
-```bash
+```bash title="PHP"
 php craft translation-manager/translations/capture-provider formie
 ```
 
-Or use **Translation Manager → Maintenance** and run the Formie scanner.
+```bash title="DDEV"
+ddev craft translation-manager/translations/capture-provider formie
+```
 
-After capture, confirm the rows exist under category `formie`, have the target
-language, and are marked `translated` before testing the frontend.
-
-## Generate Files
+You can also run the Formie scanner under **Translation Manager → Maintenance**. After capture, confirm the rows exist under category `formie`, have the target language, and are marked `translated` before testing the frontend.
 
 Generate only Formie translation files:
 
-```bash
+```bash title="PHP"
 php craft translation-manager/translations/generate-provider formie
 ```
 
-With DDEV:
-
-```bash
+```bash title="DDEV"
 ddev craft translation-manager/translations/generate-provider formie
 ```
 
-Generating files is required for `generated-files` runtime mode and remains
-useful in `database-with-php-fallback` mode because `formie.php` supplies
-fallback values for missing database rows.
+Generating files is required for `php-files` mode. Keep it in place for `hybrid` too, because database rows protect the live frontend runtime while `formie.php` supplies fallback values for missing database rows.
 
-## Testing Checklist
+## Testing checklist
 
 1. Save the Formie form after adding or changing fields.
 2. Confirm Translation Manager captured the expected rows in category `formie`.
 3. Translate the rows for the target language and mark them translated.
-4. If using `generated-files`, generate Formie files and confirm
-   `translations/{language}/formie.php` exists.
-5. If using `database-with-php-fallback`, confirm database rows override PHP file
-   values and PHP file values fill gaps when a DB row is absent.
+4. If using `php-files`, generate Formie files and confirm `translations/{language}/formie.php` exists in the same runtime that serves frontend requests.
+5. If using `hybrid`, keep generation enabled, then confirm database rows override PHP-file values and PHP-file values fill gaps when a database row is absent.
 6. Load the frontend form in the target site language.
 
-## Plugin Name Detection
+## Plugin name detection
 
-The plugin automatically detects Formie's configured plugin name (e.g., "Forms" instead of "Formie") and uses it throughout the interface.
-
-Configure in `config/formie.php`:
+Translation Manager detects Formie's configured plugin name (e.g. "Forms" instead of "Formie") and uses it throughout the interface. Configure it in `config/formie.php`:
 
 ```php
 return [

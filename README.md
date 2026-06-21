@@ -24,7 +24,7 @@ This plugin is in active development and not yet available on the Craft Plugin S
 - **Multi-Category Support** — multiple translation categories (site, emails, errors) with separate file generation
 - **Formie and Freeform Integration** — automatic capture of form fields, options, labels, messages, and button text
 - **Smart Deduplication** — each unique text stored once, context updated automatically
-- **Capture Missing Translations** — auto-add translations at runtime when `|t()` encounters unknown strings
+- **Capture Missing Translations** — when enabled, auto-add translations at runtime when `|t()` encounters unknown strings
 - **Locale Mapping** — consolidate regional variants (en-US, en-GB) to base locales
 - **Import/Export** — CSV import with preview and validation, PHP file import/export
 - **GraphQL** — Read-only translation lookup and catalog queries for headless frontends
@@ -43,24 +43,12 @@ This plugin is in active development and not yet available on the Craft Plugin S
 
 ## Installation
 
-### Via Composer
-
-```bash
-composer require lindemannrock/craft-translation-manager
+```bash title="Composer"
+composer require lindemannrock/craft-translation-manager && php craft plugin/install translation-manager
 ```
 
-```bash
-php craft plugin/install translation-manager
-```
-
-### Using DDEV
-
-```bash
-ddev composer require lindemannrock/craft-translation-manager
-```
-
-```bash
-ddev craft plugin/install translation-manager
+```bash title="DDEV"
+ddev composer require lindemannrock/craft-translation-manager && ddev craft plugin/install translation-manager
 ```
 
 ## Documentation

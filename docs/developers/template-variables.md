@@ -87,7 +87,7 @@ Get registered form providers that are enabled in Translation Manager settings a
 
 ```twig
 {% for provider in craft.translationManager.getEnabledFormProviders() %}
-    {{ provider.handle }}: {{ provider.label }}
+    {{ provider.name }}: {{ provider.label }}
 {% endfor %}
 ```
 

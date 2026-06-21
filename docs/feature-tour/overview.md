@@ -1,39 +1,53 @@
-# Features Overview
+# Features overview
 
-Translation Manager provides a comprehensive translation management system for Craft CMS 5 with Formie and Freeform integration, multi-site support, and advanced filtering.
+Translation Manager gives you one place to translate every string your Craft site shows — template text, form fields, and content from other plugins — across all of your sites. It can capture template strings as they're used, captures provider strings as forms are saved, lets your team translate everything in the Control Panel, and generates the production PHP files Craft loads at runtime.
 
-## Core Features
+## What you'll use it for
 
-- **Multi-Site Translation Support**: Site-aware translation management for any language combination
-- **Unified Translation Management**: Manage all translations in one place with an intuitive interface
-- **Smart Deduplication**: Each unique text is stored only once, regardless of how many forms use it
-- **Built-In Form Provider Support**: Automatic capture and generation for Formie and Freeform form translations
-- **Site Translations**: Custom translation category for site content with namespace protection
-- **Advanced Filtering**: Filter by type (Forms/Site), status (Pending/Translated/Not Used), and search
-- **Bulk Operations**: Save all changes at once, bulk delete unused translations
+- Translating site copy and labels for a multi-language site without hand-editing PHP files
+- Localizing Formie and Freeform forms — field labels, options, buttons, and messages — automatically
+- Letting non-developers manage translations in the Control Panel while developers keep working in templates
+- Importing existing translations (CSV or PHP files) when onboarding a project, and exporting them for translators
+- Keeping a safety net — backups before every destructive operation — so cleanup and imports are never one-way
 
-## Smart Features
+![Translation Manager translations list in the Control Panel](images/overview-translations-list.webp)
 
-- **Smart Usage Detection**: Automatically identifies unused translations when forms/fields are deleted
-- **Capture Missing Translations**: Automatically add translations at runtime when `|t()` calls encounter unknown strings
-- **Advanced Maintenance Tools**: Template scanner to identify unused translations automatically
-- **Statistics Utility**: A **Utilities** panel (Control Panel → Utilities) showing per-site translation counts — total, translated, pending, and unused — with a site selector
-- **Locale Mapping**: Consolidate regional variants (en-US, en-GB) to base locales to reduce duplication
-- **Import/Export Functionality**: CSV export with current filters, CSV import with preview and malicious content detection
-- **PHP Translation Files**: Generate and import production-ready PHP translation files
+## What's in the box
 
-## Enterprise Features
+### Core
 
-- **Dedicated Logging**: All operations logged to `storage/logs/translation-manager-YYYY-MM-DD.log`
-- **Security Hardened**: XSS protection, CSRF validation, symlink attack prevention
-- **Advanced Backup System**: Manual and automatic backups with cloud storage support
-- **RTL Support**: Full support for Arabic text editing with proper RTL display
-- **Keyboard Shortcuts**: Ctrl/Cmd+S to save all changes
+- **Multi-site translation support** — site-aware management for any language combination ([Multi-site](multi-site.md))
+- **Unified management** — every translation in one searchable, filterable list
+- **Smart deduplication** — each unique string is stored once, no matter how many forms reuse it
+- **Built-in form provider support** — automatic capture and generation for Formie and Freeform ([Integrations](../integrations/overview.md))
+- **Site translations** — a dedicated category for your own site copy, kept separate from plugin UI strings
+- **Advanced filtering** — filter by type (Forms / Site), status (Pending / Draft / Translated / Unused), origin (Manual / Import / System), and free-text search
+- **Bulk operations** — save every change at once, or bulk-delete unused translations
 
-## Feature Details
+### Smart
 
-- [Multi-Site Support](multi-site.md) - Site-aware translation management
-- [Integrations](../integrations/overview.md) - Formie and Freeform provider lifecycle
-- [Backup System](backups.md) - Comprehensive backup and restore
-- [Import/Export](import-export.md) - CSV and PHP file operations
-- [Security](security.md) - Built-in security measures
+- **Usage detection** — flags translations as unused when the form or field behind them is deleted
+- **Capture missing translations** — when enabled, adds strings at runtime when a `|t()` call hits text that isn't stored yet
+- **Approval workflow** — require sign-off so translations publish as Draft until an approver marks them Translated ([Managing translations](managing-translations.md#approval-workflow))
+- **Maintenance tools** — scan, cleanup, and danger-zone clears, each backed up first ([Maintenance](maintenance.md))
+- **Statistics utility** — a Control Panel **Utilities** panel showing coverage %, the pending/unused work queue, and the Forms/Site split ([Managing translations](managing-translations.md#monitor-coverage))
+- **Locale mapping** — consolidate regional variants (en-US, en-GB) onto a base locale to cut duplication ([Configuration](../get-started/configuration.md#locale-mapping))
+- **Import / export** — CSV export with your current filters, CSV import with preview and malicious-content detection ([Import / export](import-export.md))
+- **PHP translation files** — generate and import production-ready PHP files
+
+### Operations
+
+- **Dedicated logging** — all operations written to `storage/logs/translation-manager-YYYY-MM-DD.log` with a Control Panel viewer
+- **Security hardened** — XSS escaping, CSRF validation, and symlink-attack prevention ([Security](security.md))
+- **Backup system** — manual and scheduled backups with cloud-storage support and one-click restore ([Backups](backups.md))
+- **RTL support** — full right-to-left editing for languages such as Arabic
+- **Keyboard shortcuts** — Ctrl/Cmd + S to save all changes
+
+## Explore the features
+
+- [Multi-site support](multi-site.md) — manage one key across every site language
+- [Integrations](../integrations/overview.md) — the Formie and Freeform provider lifecycle
+- [Import / export](import-export.md) — CSV and PHP file operations
+- [Maintenance](maintenance.md) — scan, clean up, and clear translations safely
+- [Backup system](backups.md) — protect translations before destructive operations
+- [Security](security.md) — the built-in protections

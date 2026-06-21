@@ -17,6 +17,7 @@
             "feature-tour/overview",
             "feature-tour/multi-site",
             "feature-tour/import-export",
+            "feature-tour/maintenance",
             "feature-tour/backups",
             "feature-tour/security"
         ]

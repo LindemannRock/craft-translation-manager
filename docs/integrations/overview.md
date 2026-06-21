@@ -1,69 +1,78 @@
-# Integrations Overview
+# Integrations overview
 
-Translation Manager includes built-in form integrations for Formie and Freeform. These integrations capture form text into Translation Manager, let editors translate the strings in the Control Panel, and make those strings available to Craft through generated PHP files, database runtime sources, or a hybrid of both.
+Translate your Formie and Freeform forms from the same Control Panel you use for the rest of your site. Translation Manager captures form text into its own list, lets editors translate it, and feeds the results back to Craft through generated PHP files, a database runtime source, or a hybrid of both — no separate per-form translation workflow.
 
-## Built-In Providers
+## What you'll use it for
 
-| Provider | Category | Generated file | Notes |
-|----------|----------|----------------|-------|
-| Formie | `formie` | `translations/{language}/formie.php` | Captures Formie form, page, field, option, subfield, and button text. |
-| Freeform | `freeform` | `translations/{language}/freeform.php` | Captures Freeform form, page, field, option, content, behavior, and button text. |
+- Localizing form fields, options, buttons, and messages for a multi-language site
+- Keeping form translations next to your site translations instead of in a separate tool
+- Re-capturing automatically as editors change forms, with manual capture when you need it
 
-Provider categories are separate from site translation categories such as `messages` or `site`. Site categories are configured under **Translation Sources**. Provider categories are controlled by their integration toggles under **Settings → Integrations**.
+## Built-in providers
 
-## Provider Lifecycle
+| Provider | Category | Generated file | Captures |
+|----------|----------|----------------|----------|
+| Formie | `formie` | `translations/{language}/formie.php` | Form, page, field, option, subfield, and button text ([details](formie.md)) |
+| Freeform | `freeform` | `translations/{language}/freeform.php` | Form, page, field, option, content, behavior, and button text ([details](freeform.md)) |
+
+Provider categories are separate from site translation categories such as `messages` or `site`. Site categories are configured under **Translation Sources**; provider categories are controlled by their integration toggles under **Settings → Integrations**.
+
+![Integration toggles under Translation Manager settings](images/integrations-settings.webp)
+
+## Provider lifecycle
 
 1. Enable the provider integration under **Translation Manager → Settings → Integrations**.
 2. Save a form in the provider plugin, or run a manual capture command.
-3. Translate captured provider rows in **Translation Manager**.
-4. Choose the runtime source in **Settings → Generation**:
-   `generated-files`, `database`, or `database-with-php-fallback`.
-5. Generate provider translation files when using `generated-files`, or when
-   using `database-with-php-fallback` and you want PHP files available as
-   fallback values.
+3. Translate the captured provider rows in **Translation Manager**.
+4. Choose the runtime source in **Settings → Generation**: use `php-files` for standard hosting, `hybrid` for edge/split-runtime hosting, or `database` for DB-only diagnostics (see [Runtime translation source](../get-started/configuration.md#runtime-translation-source)).
+5. Keep provider generation in your workflow for `php-files` and `hybrid`. In hybrid mode, database rows protect the live frontend runtime and PHP files remain the fallback.
 6. Re-run capture after changing form fields, options, pages, or button labels.
 
-Manual capture:
+Manually capture a provider's strings:
 
-```bash
+```bash title="PHP"
 php craft translation-manager/translations/capture-provider formie
-php craft translation-manager/translations/capture-provider freeform
 ```
 
-Manual generation:
+```bash title="DDEV"
+ddev craft translation-manager/translations/capture-provider formie
+```
 
-```bash
+Manually generate a provider's files:
+
+```bash title="PHP"
 php craft translation-manager/translations/generate-provider formie
-php craft translation-manager/translations/generate-provider freeform
 ```
 
-## Control Panel Actions
+```bash title="DDEV"
+ddev craft translation-manager/translations/generate-provider formie
+```
 
-Provider integrations appear in several Translation Manager areas:
+## Where providers appear in the Control Panel
 
-- **Settings → Integrations**: Enable or disable each available provider.
-- **Generate**: Generate all files, site files, site category files, or one provider's files.
-- **Maintenance**: Recapture provider strings and clean unused provider rows.
-- **Danger zone**: Clear provider rows when a provider's translation data must be reset.
-- **Import/Export**: Import or export provider rows through CSV/XLSX/PHP workflows.
+- **Settings → Integrations** — enable or disable each available provider.
+- **Generate** — generate all files, site files, a site category, or one provider's files.
+- **Maintenance** — recapture provider strings and clean unused provider rows.
+- **Danger zone** — clear a provider's rows when its translation data must be reset.
+- **Import/Export** — import or export provider rows through the CSV/XLSX/PHP workflows.
 
-Provider actions only appear when the provider plugin is installed, enabled in Craft, and enabled in Translation Manager settings.
+Provider actions appear only when the provider plugin is installed, enabled in Craft, and enabled in Translation Manager settings.
 
-## Native Plugin Translations
+## Native plugin translations
 
-Formie and Freeform also have their own plugin translation categories. Translation Manager preserves those provider-owned static categories so provider Control Panel text can still come from the provider plugin.
+Formie and Freeform also ship their own plugin translation categories. Translation Manager preserves those provider-owned static categories, so provider Control Panel text can still come from the provider plugin.
 
-Translation Manager generated files and database rows are intended for the frontend form strings it captures. In `database-with-php-fallback` mode, Translation Manager loads provider PHP files first and then overlays translated database rows, so translated database rows win and PHP files fill gaps.
+Translation Manager's generated files and database rows are for the frontend form strings it captures. In `php-files` mode, frontend output comes from the provider PHP files. In `hybrid` mode, Translation Manager loads provider PHP files first and then overlays translated database rows — so translated database rows win and PHP files fill gaps.
 
-For Freeform, native per-site form translations remain authoritative for values managed directly by Freeform. When Freeform does not provide a native per-site value, Translation Manager's `freeform` category can provide the frontend value through generated files or the database runtime source.
+For Freeform, native per-site form translations remain authoritative for values Freeform manages directly. When Freeform has no native per-site value, Translation Manager's `freeform` category can supply the frontend value through generated files or the database runtime source.
 
-## Permission Handles
+## Permission handles
 
-Provider permissions use the stable provider handle, even if the provider's display name is customized in its own settings.
+Provider permissions use the stable provider handle, even when the provider's display name is customized in its own settings.
 
 | Provider | Generate | Recapture | Clear |
 |----------|----------|-----------|-------|
 | Formie | `translationManager:generateProvider:formie` | `translationManager:recaptureProvider:formie` | `translationManager:clearProvider:formie` |
 | Freeform | `translationManager:generateProvider:freeform` | `translationManager:recaptureProvider:freeform` | `translationManager:clearProvider:freeform` |
 
-For example, if Formie is renamed to "Forms" in Formie settings, Translation Manager may show that label in the interface, but the permission handle remains `formie`.
+For example, if Formie is renamed to "Forms" in Formie's settings, Translation Manager may show that label in the interface, but the permission handle stays `formie`.

@@ -1,6 +1,19 @@
 # Logging
 
-Translation Manager uses the [LindemannRock Logging Library](https://github.com/LindemannRock/craft-logging-library) for centralized logging.
+Translation Manager writes structured, per-day log files through the bundled [Logging Library](https://github.com/LindemannRock/craft-logging-library).
+
+> [!NOTE]
+> Logging Library is included as a Composer dependency and downloaded automatically. Activate it in Craft to enable log viewing.
+
+```bash title="PHP"
+php craft plugin/install logging-library
+```
+
+```bash title="DDEV"
+ddev craft plugin/install logging-library
+```
+
+Or via the Control Panel: **Settings → Plugins → Logging Library → Install**
 
 ## Log Levels
 
@@ -28,14 +41,17 @@ return [
 - **Retention**: 30 days (automatic cleanup)
 - **Format**: Structured JSON logs with context data
 
-## Web Interface
+## Web interface
 
-Access logs through the Control Panel:
+The **Translation Manager → Logs** screen reads, filters, and downloads these log files without leaving the Control Panel.
 
-1. Navigate to **Translation Manager → Logs**
-2. Filter by date, level, or search terms
-3. Download log files for external analysis
-4. View file sizes and entry counts
+![Translation Manager log viewer in the Control Panel](images/logging-log-viewer.webp)
+
+From there you can:
+
+- Filter by date, level, or search terms
+- Download log files for external analysis
+- View file sizes and entry counts
 
 ## What's Logged
 
@@ -90,7 +106,3 @@ TranslationManager::getInstance()->logDebug('Processing translation', [
     'site' => $siteId,
 ]);
 ```
-
-## Requirements
-
-Requires `lindemannrock/logginglibrary` plugin (installed automatically as dependency).

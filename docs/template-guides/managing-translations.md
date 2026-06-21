@@ -1,89 +1,85 @@
-# Managing Translations
+# Managing translations
 
-Learn how to manage translations in the Control Panel.
+Do the day-to-day translation work in **Translation Manager → Translations**: find the strings that need attention, translate them, track who reviewed what, and watch your coverage climb. This is where your translators spend their time — no code required.
 
-## Translations Interface
+## What you'll use it for
 
-Navigate to **Translation Manager → Translations** to manage all translations.
+- Finding and translating pending strings across your sites
+- Searching by source text, translation, or context
+- Running an approval step so drafts are signed off before they publish
+- Keeping an eye on coverage and the work still in the queue
 
-### Filtering
+![The Translations list in the Translation Manager Control Panel](images/managing-translations-list.webp)
 
-Use the filter dropdown to filter by:
+## Translate a string
 
-- **Status**: All, Pending, Translated, Unused
-- **Type**: All Types, Forms, Site
+1. Go to **Translation Manager → Translations**.
+2. Narrow the list with the **filter** dropdown — by **Status** (All, Pending, Draft, Translated, Unused), **Type** (All, Forms, Site), or **Origin** (All Origins, Manual, Import, System) — or **search** by source text, translated text, or context.
+3. Type the translation into the input field. Right-to-left languages display with the correct text direction automatically.
+4. Save with **Save All Changes**, the **Ctrl/Cmd + S** shortcut, or by turning on **Enable Auto-Save** in settings (with a configurable delay).
 
-### Searching
+## Statuses and origins
 
-Search for translations by:
+Two columns tell you where each string stands.
 
-- English text (translation key)
-- Translated text
-- Context
+**Status** is the translation's progress:
 
-### Editing
+| Status | Meaning |
+|--------|---------|
+| **Pending** | No translation yet — this is the queue. New auto-captured strings start here. |
+| **Draft** | Translated, but awaiting approval (only when [approval](#approval-workflow) is on). |
+| **Translated** | Done and published — Craft will serve it. |
+| **Unused** | The template or form behind it is gone. The [template scanner](../feature-tour/maintenance.md#template-scanner) marks these; saving text won't revive an unused row. |
 
-1. Find the translation to edit
-2. Enter the translated text in the input field
-3. RTL languages display with proper text direction
-4. Save changes
+**Origin** is where the string came from:
 
-### Saving
+| Origin | Set when |
+|--------|----------|
+| **Manual** | You saved it in the Control Panel. |
+| **Import** | It arrived through a CSV or PHP [import](../feature-tour/import-export.md). |
+| **System** | It was captured automatically at runtime — see [Auto-capture](basic-usage.md#auto-capture-missing-strings). |
 
-Multiple ways to save:
+The **Created By**, **Reviewed By**, and **Reviewed At** columns track who last edited a string, who approved it, and when. They're hidden by default — use the column toggle to show them when you need an audit trail.
 
-- Click **Save All Changes** button
-- Use **Ctrl/Cmd+S** keyboard shortcut
-- Enable **Auto Save** in settings (configurable delay)
+## Approval workflow
 
-## Bulk Operations
+For teams where one person translates and another signs off, turn on **Require Approval Before Publish** in **Settings → General**. Once it's on:
 
-### Delete Unused
+- A translator **without** the *Approve Translations* permission saves to **Draft** instead of Translated — nothing goes live yet.
+- An **approver** (with *Approve Translations*) saves straight to **Translated**, and their name and the time are stamped into **Reviewed By** / **Reviewed At**.
 
-Remove translations no longer used in templates:
+To move several strings at once, select them and use the **Set status** bulk menu:
 
-1. Filter by **Status → Unused**
-2. Select translations to delete
-3. Click **Delete Selected**
+- **Mark Draft** — send strings back for more work (available to anyone who can edit).
+- **Mark Translated** — publish them (only approvers see this when approval is required).
 
-### Clean All Unused
+Leave **Require Approval Before Publish** off for a single-editor workflow where every save publishes immediately. The setting pairs with the *Approve Translations* permission — see [Permissions](../developers/permissions.md).
 
-Navigate to **Translation Manager → Maintenance** for bulk cleanup options.
+## Delete unused
 
-## Maintenance
+Remove translations that are no longer referenced:
 
-### Template Scanner
+1. Filter by **Status → Unused**.
+2. Select the translations to remove.
+3. Open the **Actions** menu and click **Delete**.
 
-Identify unused translations:
+For larger sweeps — cleaning a whole category, language, or provider at once — use the [Maintenance](../feature-tour/maintenance.md) screen, which takes a backup first.
 
-1. Go to **Translation Manager → Maintenance**
-2. Click **Rescan Templates**
-3. Templates are scanned for translation usage
-4. Unused translations are marked
+## Monitor coverage
 
-### Cleanup Options
+Craft's **Utilities** section includes a Translation Manager panel that shows where you stand at a glance:
 
-| Option | Description |
-|--------|-------------|
-| Clean Up Unused Translations | Remove translations that are no longer used in templates or forms |
-| Clean Up Removed Categories | Remove database rows for categories that are no longer enabled |
-| Clean Up Languages | Optionally migrate or delete mapped-source and ghost language rows |
-| Clean Up Generated Files | Optionally delete generated PHP files whose language folder or category is no longer generated. Database translation rows are not changed |
+![The Translation Manager statistics utility](images/managing-translations-statistics.webp)
 
-### Danger Zone
+- **Translation Coverage** — the percentage translated, with a status badge (Needs Attention → In Progress → Good → Complete)
+- **Work Queue** — how many translations are still **Pending**, plus the **Unused** count
+- **Translation Types** — the split between form (Formie/Freeform) and **Site** strings
 
-Clear all translations (with backup):
-
-1. Go to **Translation Manager → Maintenance**
-2. Scroll to Danger Zone
-3. Select type to clear
-4. Confirm action
-
-A backup is automatically created before clearing (if backups enabled).
+Use the site selector at the top to switch which site's numbers you're looking at, and the quick links to jump straight into managing, importing, backing up, or maintenance.
 
 ## Tips
 
-1. **Regular Cleanup**: Periodically clean unused translations
-2. **Use Filters**: Narrow down translations with filters
-3. **Check Status**: Review pending translations regularly
-4. **Backup First**: Always backup before major changes
+1. **Filter before you translate** — narrow to **Pending** for your language and work the queue down.
+2. **Use approval for handoffs** — Draft → Translated keeps unreviewed copy off the live site.
+3. **Watch coverage** — the Utilities panel is the fastest read on what's left.
+4. **Back up before big changes** — bulk cleanup and clears run from [Maintenance](../feature-tour/maintenance.md), which backs up first.
