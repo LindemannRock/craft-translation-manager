@@ -43,8 +43,8 @@ Import translations with preview and validation.
 English Text,Arabic Translation,Status,Context
 "Welcome to our website","مرحباً بكم في موقعنا","translated","site"
 "Contact Us","اتصل بنا","translated","site"
-"Submit","إرسال","translated","formie.contactForm"
-"Submit","إرسال","translated","freeform.contactForm"
+"Submit","إرسال","translated","formie.contactForm.button.submit"
+"Contact Us","اتصل بنا","translated","freeform.contactForm.title"
 ```
 
 ### Required Columns

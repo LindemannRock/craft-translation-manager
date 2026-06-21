@@ -127,6 +127,30 @@ Get count of unused translations (forms that no longer exist)
 
 ---
 
+### `getGeneratedFileCleanupCandidates()` @since(5.25.1)
+
+Get orphaned generated PHP translation files that no longer correspond to an enabled category or allowed language. Backs the maintenance tools in the Control Panel. Returns a `files` list (each with `path`, `language`, `category`, and `reason`) plus a `totalCandidates` count.
+
+**Returns:** `array`
+
+---
+
+### `getLanguageCleanupCandidates()`
+
+Get database rows stored under languages that are no longer canonical: `mappedSource` (locales that are now mapped to a base locale via locale mapping) and `ghost` (languages not in the active site/locale set), with row counts and totals.
+
+**Returns:** `array`
+
+---
+
+### `getCategoryCleanupCandidates()`
+
+Get database rows stored under categories that are present in the data but not currently enabled in settings (including disabled provider categories), with row counts.
+
+**Returns:** `array`
+
+---
+
 ### `getBackup()`
 
 Get the backup service

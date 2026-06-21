@@ -98,7 +98,7 @@ php craft translation-manager/translations/generate-site
 ddev craft translation-manager/translations/generate-site
 ```
 
-### `translation-manager/translations/generate-category`
+### `translation-manager/translations/generate-category` @since(5.25.1)
 
 Generate PHP translation files for one enabled site category.
 

@@ -22,7 +22,7 @@ Full support for regional language variants:
 
 ```twig
 {# Template uses same translation key #}
-{{ 'Welcome'|t('lindemannrock') }}
+{{ 'Welcome'|t('messages') }}
 ```
 
 **Database Storage:**
@@ -38,15 +38,15 @@ Full support for regional language variants:
 ```
 translations/
 ├── en-US/
-│   ├── lindemannrock.php
+│   ├── messages.php
 │   ├── formie.php
 │   └── freeform.php
 ├── ar/
-│   ├── lindemannrock.php
+│   ├── messages.php
 │   ├── formie.php
 │   └── freeform.php
 └── fr/
-    ├── lindemannrock.php
+    ├── messages.php
     ├── formie.php
     └── freeform.php
 ```

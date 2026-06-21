@@ -7,12 +7,12 @@ Use Translation Manager to manage translations in your Twig templates.
 Use your configured translation category in templates:
 
 ```twig
-{{ 'Welcome to our site'|t('lindemannrock') }}
-{{ 'Contact Us'|t('lindemannrock') }}
-{{ 'All Rights Reserved.'|t('lindemannrock') }}
+{{ 'Welcome to our site'|t('messages') }}
+{{ 'Contact Us'|t('messages') }}
+{{ 'All Rights Reserved.'|t('messages') }}
 ```
 
-The category (e.g., `lindemannrock`) is configured in **Settings → Translation Manager → Site Translation Category**.
+The category (e.g., `messages`) is configured in **Settings → Translation Manager → Site Translation Category**.
 
 ## How It Works
 
@@ -26,21 +26,21 @@ The category (e.g., `lindemannrock`) is configured in **Settings → Translation
 ### Simple Text
 
 ```twig
-<h1>{{ 'Welcome'|t('lindemannrock') }}</h1>
-<p>{{ 'Thank you for visiting our website.'|t('lindemannrock') }}</p>
+<h1>{{ 'Welcome'|t('messages') }}</h1>
+<p>{{ 'Thank you for visiting our website.'|t('messages') }}</p>
 ```
 
 ### With Variables
 
 ```twig
-{{ 'Hello, {name}!'|t('lindemannrock', { name: user.name }) }}
-{{ '{count} items in cart'|t('lindemannrock', { count: cart.count }) }}
+{{ 'Hello, {name}!'|t('messages', { name: user.name }) }}
+{{ '{count} items in cart'|t('messages', { count: cart.count }) }}
 ```
 
 ### Pluralization
 
 ```twig
-{{ '{count, plural, =0{No items} =1{One item} other{# items}}'|t('lindemannrock', { count: items|length }) }}
+{{ '{count, plural, =0{No items} =1{One item} other{# items}}'|t('messages', { count: items|length }) }}
 ```
 
 ## Status Indicators
@@ -58,4 +58,4 @@ In the Control Panel, translations show status:
 1. **Consistent Category**: Always use the same translation category
 2. **Meaningful Keys**: Use readable English text as keys
 3. **Avoid Twig in Keys**: Text with `{{`, `{%`, `{#` is automatically excluded
-4. **Frontend Only**: Translations are only captured from frontend requests
+4. **Enabled Categories Only**: Runtime capture stores only strings in your enabled categories and allowed site languages — it is not limited to front-end requests, so strings rendered in the Control Panel or console can also be captured

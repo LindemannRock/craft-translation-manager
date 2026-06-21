@@ -28,14 +28,23 @@ Configure Translation Manager by creating a config file at `config/translation-m
 | `itemsPerPage` | `int` | `100` | Items per page in the translation list (10–500) |
 | `autoSaveEnabled` | `bool` | `false` | Enable auto-save after typing stops |
 | `autoSaveDelay` | `int` | `2` | Auto-save delay in seconds (1–10) |
-| `enableSuggestions` | `bool` | `false` | Enable automatic translation suggestions (future feature) |
+| `requireApproval` | `bool` | `false` | Require an approver before edited translations become *Translated*. When enabled, editors can change text but only users with the *Approve Translations* permission can mark a translation as *Translated* (see [Approval Workflow](#approval-workflow)) |
+
+### Approval Workflow
+
+By default any user who can edit translations can also mark them as *Translated*. Enabling `requireApproval` splits those two responsibilities:
+
+- **Editors** (users with *Edit Translations*) can change translation text, but cannot move a translation to *Translated* on their own.
+- **Approvers** (users with the *Approve Translations* permission) are the only ones who can mark a translation as *Translated*.
+
+Use this when translations are drafted by one team and signed off by another. Leave it `false` for a single-editor workflow where review is not needed.
 
 ### Generation
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `autoGenerate` | `bool` | `true` | Automatically generate PHP translation files when translations are saved |
-| `runtimeTranslationSource` | `string` | `'generated-files'` | Runtime source for managed Craft translation categories. Options: `generated-files`, `database`, `database-with-php-fallback` |
+| `runtimeTranslationSource` | `string` | `'generated-files'` | Runtime source for managed Craft translation categories. Options: `generated-files`, `database`, `database-with-php-fallback` @since(5.29.0) |
 | `generationPath` | `string` | `'@translations'` | Generation directory. Supports `@translations` or `$VARIABLE` env vars that resolve exactly to `@translations` |
 
 Generated PHP files must live at Craft's translations root. Translation Manager
@@ -131,6 +140,7 @@ return [
         'itemsPerPage' => 100,
         'autoSaveEnabled' => false,
         'autoSaveDelay' => 2,
+        'requireApproval' => false,
         'logLevel' => 'error',
         'skipPatterns' => [],
         'backupEnabled' => true,

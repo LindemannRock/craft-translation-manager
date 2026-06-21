@@ -17,13 +17,14 @@ Translation Manager provides a comprehensive translation management system for C
 - **Smart Usage Detection**: Automatically identifies unused translations when forms/fields are deleted
 - **Capture Missing Translations**: Automatically add translations at runtime when `|t()` calls encounter unknown strings
 - **Advanced Maintenance Tools**: Template scanner to identify unused translations automatically
+- **Statistics Utility**: A **Utilities** panel (Control Panel → Utilities) showing per-site translation counts — total, translated, pending, and unused — with a site selector
 - **Locale Mapping**: Consolidate regional variants (en-US, en-GB) to base locales to reduce duplication
 - **Import/Export Functionality**: CSV export with current filters, CSV import with preview and malicious content detection
 - **PHP Translation Files**: Generate and import production-ready PHP translation files
 
 ## Enterprise Features
 
-- **Dedicated Logging**: All operations logged to `storage/logs/translation-manager.log`
+- **Dedicated Logging**: All operations logged to `storage/logs/translation-manager-YYYY-MM-DD.log`
 - **Security Hardened**: XSS protection, CSRF validation, symlink attack prevention
 - **Advanced Backup System**: Manual and automatic backups with cloud storage support
 - **RTL Support**: Full support for Arabic text editing with proper RTL display

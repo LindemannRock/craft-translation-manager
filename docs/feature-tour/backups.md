@@ -138,6 +138,6 @@ Local volumes that resolve inside `@webroot` are rejected because backup JSON fi
 
 ## Retention Policy
 
-- Automatic cleanup based on `backupRetention` setting
+- Automatic cleanup based on `backupRetentionDays` setting
 - **Manual backups are never automatically deleted**
 - Set to `0` to keep all backups forever
