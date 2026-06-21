@@ -129,7 +129,6 @@ return [
     'System' => 'Systeem',
     'This may capture unwanted system translations' => 'Dit kan ongewenste systeemvertalingen vastleggen',
     'Changing this will affect all existing site translations' => 'Het wijzigen hiervan heeft invloed op alle bestaande sitevertalingen',
-    'Enable Translation Suggestions' => 'Vertaalsuggesties inschakelen',
     'Export Path' => 'Exportpad',
 
     // Jobs

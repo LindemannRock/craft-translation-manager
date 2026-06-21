@@ -229,11 +229,6 @@ class Settings extends Model
     public array $localeMapping = [];
 
     /**
-     * @var bool Whether to enable automatic translation suggestions (future feature)
-     */
-    public bool $enableSuggestions = false;
-    
-    /**
      * @var bool Whether to enable automatic backups
      */
     public bool $backupEnabled = true;
@@ -317,7 +312,7 @@ class Settings extends Model
                 self::RUNTIME_SOURCE_DATABASE_WITH_PHP_FALLBACK,
             ]],
             [['enableFormieIntegration', 'enableFreeformIntegration', 'enableSiteTranslations', 'autoGenerate',
-              'enableSuggestions', 'autoSaveEnabled', 'backupEnabled',
+              'autoSaveEnabled', 'backupEnabled',
               'backupOnImport', 'enableAiTranslations', 'requireApproval', ], 'boolean'],
             [['skipPatterns', 'excludeFormHandlePatterns', 'translationCategories', 'localeMapping'], 'safe'],
             [['localeMapping'], 'validateLocaleMapping'],
@@ -405,7 +400,6 @@ class Settings extends Model
             'geminiModel' => Craft::t('translation-manager', 'Gemini Model'),
             'anthropicApiKey' => Craft::t('translation-manager', 'Anthropic API Key'),
             'anthropicModel' => Craft::t('translation-manager', 'Anthropic Model'),
-            'enableSuggestions' => Craft::t('translation-manager', 'Enable Translation Suggestions'),
             'backupEnabled' => Craft::t('translation-manager', 'Enable Backups'),
             'backupRetentionDays' => Craft::t('translation-manager', 'Backup Retention Days'),
             'backupOnImport' => Craft::t('translation-manager', 'Backup Before Import'),
@@ -1068,7 +1062,6 @@ class Settings extends Model
             'enableSiteTranslations',
             'autoGenerate',
             'requireApproval',
-            'enableSuggestions',
             'autoSaveEnabled',
             'backupEnabled',
             'backupOnImport',

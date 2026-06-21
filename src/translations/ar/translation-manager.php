@@ -129,7 +129,6 @@ return [
     'System' => 'النظام',
     'This may capture unwanted system translations' => 'قد يؤدي هذا إلى التقاط ترجمات نظام غير مرغوب فيها',
     'Changing this will affect all existing site translations' => 'تغيير هذا سيؤثر على جميع ترجمات الموقع الحالية',
-    'Enable Translation Suggestions' => 'تفعيل اقتراحات الترجمة',
     'Export Path' => 'مسار التصدير',
 
     // Jobs

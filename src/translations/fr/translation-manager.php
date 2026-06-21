@@ -129,7 +129,6 @@ return [
     'System' => 'Système',
     'This may capture unwanted system translations' => 'Cela peut capturer des traductions système indésirables',
     'Changing this will affect all existing site translations' => 'Modifier ceci affectera toutes les traductions du site existantes',
-    'Enable Translation Suggestions' => 'Activer les suggestions de traduction',
     'Export Path' => 'Chemin d\'export',
 
     // Jobs

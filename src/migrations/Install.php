@@ -145,7 +145,6 @@ class Install extends Migration
                 'autoSaveEnabled' => $this->boolean()->notNull()->defaultValue(false),
                 'autoSaveDelay' => $this->integer()->notNull()->defaultValue(2),
                 'requireApproval' => $this->boolean()->notNull()->defaultValue(false),
-                'enableSuggestions' => $this->boolean()->notNull()->defaultValue(false),
                 'backupEnabled' => $this->boolean()->defaultValue(true),
                 'backupRetentionDays' => $this->integer()->defaultValue(30),
                 'backupOnImport' => $this->boolean()->defaultValue(true),

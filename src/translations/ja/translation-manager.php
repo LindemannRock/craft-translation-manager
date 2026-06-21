@@ -129,7 +129,6 @@ return [
     'System' => 'システム',
     'This may capture unwanted system translations' => '不要なシステム翻訳が取得される可能性があります',
     'Changing this will affect all existing site translations' => 'この変更はすべての既存サイト翻訳に影響します',
-    'Enable Translation Suggestions' => '翻訳提案を有効にする',
     'Export Path' => 'エクスポートパス',
 
     // Jobs

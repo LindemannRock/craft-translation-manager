@@ -96,7 +96,6 @@ return [
 
         'itemsPerPage' => 100,         // Number of translations to show per page
         'requireApproval' => false,    // If true, translators save to draft and approvers publish as translated
-        'enableSuggestions' => false,  // Enable translation suggestions (future feature)
 
         // Auto-save Settings
         'autoSaveEnabled' => false,    // Automatically save each translation when you click outside the field

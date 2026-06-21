@@ -129,7 +129,6 @@ return [
     'System' => 'System',
     'This may capture unwanted system translations' => 'Dette kan optage uønskede systemoversættelser',
     'Changing this will affect all existing site translations' => 'Ændring af dette påvirker alle eksisterende webstedsoversættelser',
-    'Enable Translation Suggestions' => 'Aktiver oversættelsesforslag',
     'Export Path' => 'Eksportsti',
 
     // Jobs
