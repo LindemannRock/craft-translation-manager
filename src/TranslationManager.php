@@ -38,6 +38,7 @@ use lindemannrock\logginglibrary\LoggingLibrary;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\gql\queries\TranslationQuery;
 use lindemannrock\translationmanager\gql\types\TranslationType as GqlTranslationType;
+use lindemannrock\translationmanager\helpers\FeatureGate;
 use lindemannrock\translationmanager\i18n\HybridLocaleMappingMessageSource;
 use lindemannrock\translationmanager\i18n\LocaleMappingDbMessageSource;
 use lindemannrock\translationmanager\i18n\LocaleMappingPhpMessageSource;
@@ -145,7 +146,7 @@ class TranslationManager extends Plugin
             [
                 'installExperience' => [
                     'headline' => Craft::t('translation-manager', 'Translation Manager'),
-                    'body' => Craft::t('translation-manager', 'Manage translations, exports, backups, and AI-assisted workflows from one control panel workspace.'),
+                    'body' => Craft::t('translation-manager', 'Manage translations, exports, and backups from one control panel workspace.'),
                     'ctaLabel' => Craft::t('translation-manager', 'Open Translation Manager'),
                     'ctaUrl' => 'translation-manager',
                     'redirectUri' => 'translation-manager',
@@ -635,7 +636,19 @@ class TranslationManager extends Plugin
      */
     public function getAi(): AiTranslationService
     {
+        FeatureGate::requireAiTranslationsEnabled();
+
         return $this->get('ai');
+    }
+
+    /**
+     * Whether the internal AI translation feature is available for this request.
+     *
+     * @since 5.30.0
+     */
+    public function isAiFeatureEnabled(): bool
+    {
+        return FeatureGate::aiTranslationsEnabled();
     }
 
     private function normalizeLegacyPathSettings(Settings $settings): void

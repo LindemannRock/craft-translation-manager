@@ -15,6 +15,7 @@ use craft\elements\User;
 use craft\web\Controller;
 use lindemannrock\base\helpers\ExportHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\helpers\FeatureGate;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\TranslationManager;
@@ -327,7 +328,7 @@ class ExportController extends Controller
 
             $row['context'] = $context;
             $row['status'] = $this->translationValue($translation, 'status', '');
-            $row['origin'] = $this->translationValue($translation, 'translationOrigin', 'system');
+            $row['origin'] = $this->exportOrigin((string)$this->translationValue($translation, 'translationOrigin', 'system'));
             $row['language'] = $mappedLanguage;
             $row['createdBy'] = $this->resolveUserEmail($this->translationValue($translation, 'createdByUserId'), $userEmailMap);
             $row['reviewedBy'] = $this->resolveUserEmail($this->translationValue($translation, 'reviewedByUserId'), $userEmailMap);
@@ -338,6 +339,15 @@ class ExportController extends Controller
         }
 
         return $rows;
+    }
+
+    private function exportOrigin(string $origin): string
+    {
+        if ($origin === 'ai' && !FeatureGate::aiTranslationsEnabled()) {
+            return 'system';
+        }
+
+        return $origin;
     }
 
     /**

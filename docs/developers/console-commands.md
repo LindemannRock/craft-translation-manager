@@ -136,30 +136,6 @@ ddev craft translation-manager/translations/import --all
 ddev craft translation-manager/translations/import --language=ar --category=formie
 ```
 
-### `translation-manager/translations/ai-draft`
-
-Translate pending rows into AI drafts for a required target language. The command uses the AI provider from settings unless `--provider` is supplied.
-
-| Argument | Description |
-|----------|-------------|
-| `language` | Required target language, such as `ar` or `de` |
-
-| Option | Values | Default | Description |
-|--------|--------|---------|-------------|
-| `--limit` | integer | `50` | Maximum number of pending rows to process |
-| `--type` | `all`, `forms`, `site` | `all` | Translation type filter |
-| `--provider` | provider handle | settings default | AI provider to use for this run |
-
-```bash title="PHP"
-php craft translation-manager/translations/ai-draft ar
-php craft translation-manager/translations/ai-draft de --limit=100 --type=site --provider=mock
-```
-
-```bash title="DDEV"
-ddev craft translation-manager/translations/ai-draft ar
-ddev craft translation-manager/translations/ai-draft de --limit=100 --type=site --provider=mock
-```
-
 ## Maintenance Commands
 
 ### `translation-manager/maintenance/scan-templates`
@@ -283,30 +259,6 @@ php craft translation-manager/backup/clean
 
 ```bash title="DDEV"
 ddev craft translation-manager/backup/clean
-```
-
-## Debug Commands
-
-### `translation-manager/debug/test-ai`
-
-Test the configured AI provider, or an explicit provider, with a live sample translation.
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--provider` | settings default | AI provider handle to test |
-| `--target-language` | `de` | Target language for the sample translation. `--targetLanguage` is also accepted for backward compatibility |
-| `--text` | `Welcome to our agency website.` | Sample text to translate |
-
-```bash title="PHP"
-php craft translation-manager/debug/test-ai
-php craft translation-manager/debug/test-ai --provider=openai
-php craft translation-manager/debug/test-ai --provider=gemini --target-language=ar --text="Welcome to our agency"
-```
-
-```bash title="DDEV"
-ddev craft translation-manager/debug/test-ai
-ddev craft translation-manager/debug/test-ai --provider=openai
-ddev craft translation-manager/debug/test-ai --provider=gemini --target-language=ar --text="Welcome to our agency"
 ```
 
 ## Cron Examples

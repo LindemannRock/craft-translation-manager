@@ -13,6 +13,7 @@ namespace lindemannrock\translationmanager\console\controllers;
 use craft\console\Controller;
 use craft\helpers\Console;
 use lindemannrock\base\helpers\PluginHelper;
+use lindemannrock\translationmanager\helpers\FeatureGate;
 use lindemannrock\translationmanager\helpers\PhpTranslationsHelper;
 use lindemannrock\translationmanager\records\GenerationStatusRecord;
 use lindemannrock\translationmanager\records\TranslationRecord;
@@ -119,6 +120,11 @@ class TranslationsController extends Controller
      */
     public function actionAiDraft(string $language): int
     {
+        if (!FeatureGate::aiTranslationsEnabled()) {
+            $this->stderr("AI translation is not available.\n", Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+
         $this->stdout("AI draft translation batch\n", Console::FG_YELLOW);
         $this->stdout("Language: {$language}\n", Console::FG_CYAN);
         $this->stdout("Limit: {$this->limit}\n", Console::FG_CYAN);

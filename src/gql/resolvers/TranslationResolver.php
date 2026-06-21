@@ -11,6 +11,7 @@ namespace lindemannrock\translationmanager\gql\resolvers;
 use craft\db\Query;
 use craft\gql\base\Resolver;
 use GraphQL\Type\Definition\ResolveInfo;
+use lindemannrock\translationmanager\helpers\FeatureGate;
 use lindemannrock\translationmanager\records\TranslationRecord;
 
 /**
@@ -62,7 +63,12 @@ class TranslationResolver extends Resolver
         }
 
         if (!empty($arguments['origin'])) {
-            $query->andWhere(['translationOrigin' => trim((string)$arguments['origin'])]);
+            $origin = trim((string)$arguments['origin']);
+            if ($origin === 'ai' && !FeatureGate::aiTranslationsEnabled()) {
+                return [];
+            }
+
+            $query->andWhere(['translationOrigin' => $origin]);
         }
 
         if (!empty($arguments['search'])) {
@@ -121,6 +127,9 @@ class TranslationResolver extends Resolver
     {
         $row['id'] = isset($row['id']) ? (int)$row['id'] : null;
         $row['usageCount'] = isset($row['usageCount']) ? (int)$row['usageCount'] : null;
+        if (($row['origin'] ?? null) === 'ai' && !FeatureGate::aiTranslationsEnabled()) {
+            $row['origin'] = 'system';
+        }
 
         return $row;
     }

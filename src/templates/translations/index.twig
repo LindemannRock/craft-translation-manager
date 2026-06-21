@@ -7,6 +7,8 @@
 {% set formProviders = craft.translationManager.getEnabledFormProviders() %}
 {% set showTypeCol = formProviders|length and settings.enableSiteTranslations %}
 {% set showCategoryCol = allCategories|length > 1 %}
+{% set plugin = craft.app.plugins.getPlugin('translation-manager') %}
+{% set aiFeatureEnabled = plugin and plugin.isAiFeatureEnabled() %}
 
 {# Language switcher in crumbs #}
 {% set activeLocaleMapping = settings.getActiveLocaleMapping() %}
@@ -96,11 +98,10 @@
         colorSet: 'translationOrigins',
         options: [
             { value: 'all', label: 'All Origins'|t('translation-manager'), status: 'all' },
-            { value: 'ai', label: 'AI'|t('translation-manager'), colorKey: 'ai' },
             { value: 'manual', label: 'Manual'|t('translation-manager'), colorKey: 'manual' },
             { value: 'import', label: 'Import'|t('translation-manager'), colorKey: 'import' },
             { value: 'system', label: 'System'|t('translation-manager'), colorKey: 'system' },
-        ],
+        ]|merge(aiFeatureEnabled ? [{ value: 'ai', label: 'AI'|t('translation-manager'), colorKey: 'ai' }] : []),
     }])
 }) %}
 
@@ -258,7 +259,7 @@
             'translated': { label: 'Translated'|t('translation-manager'), value: 'translated' },
         } %}
         {% set statusBadge = statusMap[item.status] ?? { label: item.status|title, value: 'unused' } %}
-        {% if item.status == 'draft' and (item.translationOrigin ?? '') == 'ai' %}
+        {% if aiFeatureEnabled and item.status == 'draft' and (item.translationOrigin ?? '') == 'ai' %}
             {% set statusBadge = statusBadge|merge({ label: 'AI Draft'|t('translation-manager') }) %}
         {% endif %}
 
@@ -271,11 +272,13 @@
 
     <td data-column="origin" class="lr-hideable-column">
         {% set originLabels = {
-            'ai': 'AI'|t('translation-manager'),
             'manual': 'Manual'|t('translation-manager'),
             'import': 'Import'|t('translation-manager'),
             'system': 'System'|t('translation-manager'),
         } %}
+        {% if aiFeatureEnabled %}
+            {% set originLabels = originLabels|merge({'ai': 'AI'|t('translation-manager')}) %}
+        {% endif %}
         {% set originKey = item.translationOrigin ?? 'system' %}
         {% if originLabels[originKey] is not defined %}
             {% set originKey = 'system' %}

@@ -12,7 +12,7 @@
 return [
     // Plugin meta
     'Translation Manager' => 'Translation Manager',
-    'Manage translations, exports, backups, and AI-assisted workflows from one control panel workspace.' => 'Übersetzungen, Exporte, Backups und KI-gestützte Workflows zentral im Control Panel verwalten.',
+    'Manage translations, exports, and backups from one control panel workspace.' => 'Übersetzungen, Exporte und Backups zentral im Control Panel verwalten.',
     'Open Translation Manager' => 'Translation Manager öffnen',
     'Query {name} data' => '{name} Daten abfragen',
 

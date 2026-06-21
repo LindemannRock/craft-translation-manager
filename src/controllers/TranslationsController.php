@@ -16,6 +16,7 @@ use craft\helpers\Db;
 use craft\web\Controller;
 use lindemannrock\base\helpers\CpNavHelper;
 use lindemannrock\base\helpers\DateFormatHelper;
+use lindemannrock\translationmanager\helpers\FeatureGate;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
@@ -86,7 +87,10 @@ class TranslationsController extends Controller
         }
 
         $origin = (string) $request->getParam('origin', 'all');
-        $validOrigins = ['all', 'ai', 'manual', 'import', 'system'];
+        $validOrigins = ['all', 'manual', 'import', 'system'];
+        if (FeatureGate::aiTranslationsEnabled()) {
+            $validOrigins[] = 'ai';
+        }
         if (!in_array($origin, $validOrigins, true)) {
             $origin = 'all';
         }

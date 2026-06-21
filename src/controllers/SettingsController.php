@@ -15,6 +15,7 @@ use craft\web\Controller;
 use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\base\helpers\SettingsPostHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\helpers\FeatureGate;
 use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\translationmanager\records\GenerationStatusRecord;
 use lindemannrock\translationmanager\services\IntegrationService;
@@ -39,6 +40,13 @@ class SettingsController extends Controller
         $user = Craft::$app->getUser();
 
         switch ($action->id) {
+            case 'ai':
+            case 'test-ai':
+                FeatureGate::requireAiTranslationsEnabled();
+                if (!$user->checkPermission('translationManager:editSettings')) {
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to edit settings.'));
+                }
+                break;
             case 'clear-provider':
                 $provider = (string)Craft::$app->getRequest()->getBodyParam('provider', '');
                 /** @var IntegrationService $integrationService */
@@ -188,6 +196,8 @@ class SettingsController extends Controller
      */
     public function actionAi(): Response
     {
+        FeatureGate::requireAiTranslationsEnabled();
+
         $settings = TranslationManager::getInstance()->getSettings();
 
         return $this->renderTemplate('translation-manager/settings/ai', [
@@ -215,6 +225,7 @@ class SettingsController extends Controller
      */
     public function actionTestAi(): Response
     {
+        FeatureGate::requireAiTranslationsEnabled();
         $this->requirePostRequest();
 
         $provider = (string) $this->request->getBodyParam('provider', '');
@@ -636,7 +647,11 @@ class SettingsController extends Controller
      */
     private function _validSettingsSection(string $section): string
     {
-        $allowed = ['general', 'generation', 'backup', 'sources', 'interface', 'locale-mapping', 'integrations', 'ai', 'capture'];
+        $allowed = ['general', 'generation', 'backup', 'sources', 'interface', 'locale-mapping', 'integrations', 'capture'];
+
+        if (FeatureGate::aiTranslationsEnabled()) {
+            $allowed[] = 'ai';
+        }
 
         return in_array($section, $allowed, true) ? $section : 'general';
     }
@@ -691,7 +706,7 @@ class SettingsController extends Controller
                 'enableFreeformIntegration',
                 'excludeFormHandlePatterns',
             ],
-            'ai' => [
+            'ai' => FeatureGate::aiTranslationsEnabled() ? [
                 'enableAiTranslations',
                 'aiProvider',
                 'openAiApiKey',
@@ -700,7 +715,7 @@ class SettingsController extends Controller
                 'geminiModel',
                 'anthropicApiKey',
                 'anthropicModel',
-            ],
+            ] : [],
             'capture' => [
                 'captureMissingTranslations',
                 'captureMissingOnlyDevMode',

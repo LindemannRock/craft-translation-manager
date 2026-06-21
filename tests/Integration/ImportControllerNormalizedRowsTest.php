@@ -67,6 +67,13 @@ final class ImportControllerNormalizedRowsTest extends TestCase
         self::assertSame('manual', $translations[0]['origin']);
     }
 
+    public function testAiOriginIsNotImportedWhenExperimentalGateIsDisabled(): void
+    {
+        $controller = $this->createImportController();
+
+        self::assertNull($this->invokePrivate($controller, 'normalizeImportedOrigin', ['ai']));
+    }
+
     public function testAnalyzeTranslationsKeepsNeutralPreviewPayload(): void
     {
         $this->requireLatinSourceLanguage();
@@ -86,7 +93,7 @@ final class ImportControllerNormalizedRowsTest extends TestCase
             'category' => $category,
             'context' => 'site',
             'status' => 'draft',
-            'origin' => 'ai',
+            'origin' => 'import',
             '_rowNumber' => 2,
         ]]]);
 
@@ -94,7 +101,7 @@ final class ImportControllerNormalizedRowsTest extends TestCase
         self::assertSame($source, $analysis['toImport'][0]['translationKey']);
         self::assertSame('Preview translation', $analysis['toImport'][0]['translation']);
         self::assertSame('draft', $analysis['toImport'][0]['status']);
-        self::assertSame('ai', $analysis['toImport'][0]['origin']);
+        self::assertSame('import', $analysis['toImport'][0]['origin']);
         self::assertArrayNotHasKey('english', $analysis['toImport'][0]);
         self::assertArrayNotHasKey('arabic', $analysis['toImport'][0]);
     }
@@ -181,7 +188,7 @@ final class ImportControllerNormalizedRowsTest extends TestCase
                 'category' => $category,
                 'context' => 'site',
                 'status' => 'draft',
-                'origin' => 'ai',
+                'origin' => 'import',
                 'rowNumber' => 2,
             ]],
             false,
@@ -196,7 +203,7 @@ final class ImportControllerNormalizedRowsTest extends TestCase
         self::assertCount(1, $rows);
         self::assertSame('Imported translation', $rows[0]['translation']);
         self::assertSame('draft', $rows[0]['status']);
-        self::assertSame('ai', $rows[0]['translationOrigin']);
+        self::assertSame('import', $rows[0]['translationOrigin']);
         self::assertSame($expectedLanguage, $rows[0]['language']);
         self::assertSame($category, $rows[0]['category']);
     }
@@ -319,7 +326,7 @@ final class ImportControllerNormalizedRowsTest extends TestCase
                 'context' => $context,
                 'type' => 'forms',
                 'status' => 'draft',
-                'origin' => 'ai',
+                'origin' => 'import',
                 'rowNumber' => 2,
             ]],
             false,
@@ -335,7 +342,7 @@ final class ImportControllerNormalizedRowsTest extends TestCase
         self::assertSame($context, $rows[0]['context']);
         self::assertSame('After provider import', $rows[0]['translation']);
         self::assertSame('draft', $rows[0]['status']);
-        self::assertSame('ai', $rows[0]['translationOrigin']);
+        self::assertSame('import', $rows[0]['translationOrigin']);
     }
 
     public function testImportTranslationsHandlesDuplicateRowsInSameImport(): void

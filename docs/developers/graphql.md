@@ -2,7 +2,7 @@
 
 Use Translation Manager as a read-only translation catalog for headless frontends. GraphQL can look up one translated key or list translation rows for a language, category, status, origin, or search term.
 
-GraphQL does not create missing translation rows, generate PHP files, call AI services, or edit translations. Translation editing, import, review, generation, and maintenance stay in the Control Panel and console commands.
+GraphQL does not create missing translation rows, generate PHP files, or edit translations. Translation editing, import, review, generation, and maintenance stay in the Control Panel and console commands.
 
 ## Before you query
 
@@ -136,7 +136,7 @@ translationManagerTranslations(
 | `language` | `String` | No | Filter by language code |
 | `category` | `String` | No | Filter by Craft translation category |
 | `status` | `String` | No | Filter by `pending`, `draft`, `translated`, or `unused` |
-| `origin` | `String` | No | Filter by `system`, `ai`, `manual`, or `import` |
+| `origin` | `String` | No | Filter by `system`, `manual`, or `import` |
 | `context` | `String` | No | Filter by exact translation context |
 | `search` | `String` | No | Search keys, source text, translations, and contexts |
 | `limit` | `Int` | No | Maximum number of rows to return, capped at 500 |

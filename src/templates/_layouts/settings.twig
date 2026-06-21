@@ -15,7 +15,8 @@
 {% endif %}
 
 
-{# {% set plugin = craft.app.plugins.getPlugin('translation-manager') %} #}
+{% set plugin = craft.app.plugins.getPlugin('translation-manager') %}
+{% set aiFeatureEnabled = plugin and plugin.isAiFeatureEnabled() %}
 
 
 {% block sidebar %}
@@ -61,11 +62,13 @@
                     {{ 'Integrations'|t('translation-manager') }}
                 </a>
             </li>
-            <li>
-                <a href="{{ url('translation-manager/settings/ai') }}" {% if selectedSettingsItem == 'ai' %}class="sel"{% endif %} data-nav-item="ai">
-                    {{ 'AI Translation'|t('translation-manager') }}
-                </a>
-            </li>
+            {% if aiFeatureEnabled %}
+                <li>
+                    <a href="{{ url('translation-manager/settings/ai') }}" {% if selectedSettingsItem == 'ai' %}class="sel"{% endif %} data-nav-item="ai">
+                        {{ 'AI Translation'|t('translation-manager') }}
+                    </a>
+                </li>
+            {% endif %}
         </ul>
     </nav>
 {% endblock %}

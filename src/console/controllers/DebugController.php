@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\console\controllers;
 
 use craft\console\Controller;
 use craft\helpers\Console;
+use lindemannrock\translationmanager\helpers\FeatureGate;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\console\ExitCode;
 
@@ -78,6 +79,11 @@ class DebugController extends Controller
      */
     public function actionTestAi(): int
     {
+        if (!FeatureGate::aiTranslationsEnabled()) {
+            $this->stderr("AI translation is not available.\n", Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+
         $settings = TranslationManager::getInstance()->getSettings();
         $selectedProvider = $this->provider ?? $settings->aiProvider;
 

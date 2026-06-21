@@ -55,17 +55,6 @@ return [
         'enableFormieIntegration' => true,
         'enableFreeformIntegration' => true,
 
-        // AI Translation Provider
-        // Controls provider selection for AI-assisted translation workflows
-        'enableAiTranslations' => false,
-        'aiProvider' => 'openai',      // Options: 'openai', 'gemini', 'anthropic', 'mock'
-        'openAiApiKey' => null,        // Direct key or env var, e.g. '$OPENAI_API_KEY'
-        'openAiModel' => 'gpt-4o-mini',
-        'geminiApiKey' => null,        // Direct key or env var, e.g. '$GEMINI_API_KEY'
-        'geminiModel' => 'gemini-2.0-flash',
-        'anthropicApiKey' => null,     // Direct key or env var, e.g. '$ANTHROPIC_API_KEY'
-        'anthropicModel' => 'claude-3-haiku-20240307',
-
         // Form Exclusion Patterns
         // Forms with handles OR titles containing these patterns will be skipped entirely (case-insensitive)
         // Useful for excluding language-specific duplicates like 'booking-ar' or 'Contact Form (Ar)'
@@ -149,7 +138,6 @@ return [
         'logLevel' => 'debug',         // More detailed logging in development
         'autoGenerate' => false,         // Manual generation in dev
         'backupSchedule' => 'disabled', // Manual backups in dev
-        'aiProvider' => 'mock',        // Use mock provider by default in local dev
         // 'captureMissingTranslations' => true, // Uncomment to auto-capture in dev
     ],
 

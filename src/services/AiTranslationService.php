@@ -13,6 +13,7 @@ namespace lindemannrock\translationmanager\services;
 use craft\base\Component;
 use craft\helpers\Db;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\helpers\FeatureGate;
 use lindemannrock\translationmanager\interfaces\AiTranslationProviderInterface;
 use lindemannrock\translationmanager\providers\ai\AnthropicProvider;
 use lindemannrock\translationmanager\providers\ai\GeminiProvider;
@@ -48,6 +49,8 @@ class AiTranslationService extends Component
      */
     public function getAvailableProviders(): array
     {
+        FeatureGate::requireAiTranslationsEnabled();
+
         return ['openai', 'gemini', 'anthropic', 'mock'];
     }
 
@@ -56,6 +59,8 @@ class AiTranslationService extends Component
      */
     public function getProvider(?string $handle = null): AiTranslationProviderInterface
     {
+        FeatureGate::requireAiTranslationsEnabled();
+
         $settings = TranslationManager::getInstance()->getSettings();
         $providerHandle = $handle ?? $settings->aiProvider;
 
@@ -98,6 +103,8 @@ class AiTranslationService extends Component
      */
     public function testProvider(?string $handle = null): array
     {
+        FeatureGate::requireAiTranslationsEnabled();
+
         $provider = $this->getProvider($handle);
         return $provider->testConnection();
     }
@@ -111,6 +118,8 @@ class AiTranslationService extends Component
         string $targetLanguage,
         ?string $providerHandle = null,
     ): string {
+        FeatureGate::requireAiTranslationsEnabled();
+
         $provider = $this->getProvider($providerHandle);
         $translated = $provider->translate($text, $sourceLanguage, $targetLanguage);
 
@@ -131,6 +140,8 @@ class AiTranslationService extends Component
         string $type = 'all',
         ?string $providerHandle = null,
     ): array {
+        FeatureGate::requireAiTranslationsEnabled();
+
         $settings = TranslationManager::getInstance()->getSettings();
         $provider = $this->getProvider($providerHandle);
         $sourceLanguage = $settings->sourceLanguage;
