@@ -592,6 +592,7 @@ class TranslationManager extends Plugin
 
             // Normalize legacy absolute paths to aliases before strict validation.
             $this->normalizeLegacyPathSettings($settings);
+            $settings->runtimeTranslationSource = Settings::normalizeRuntimeTranslationSource($settings->runtimeTranslationSource);
 
             if (!$settings->validate()) {
                 $errors = $settings->getFirstErrors();
@@ -911,7 +912,7 @@ class TranslationManager extends Plugin
     {
         return match ($settings->runtimeTranslationSource) {
             Settings::RUNTIME_SOURCE_DATABASE => LocaleMappingDbMessageSource::class,
-            Settings::RUNTIME_SOURCE_DATABASE_WITH_PHP_FALLBACK => HybridLocaleMappingMessageSource::class,
+            Settings::RUNTIME_SOURCE_HYBRID => HybridLocaleMappingMessageSource::class,
             default => $pluginTranslationsPath === null
                 ? LocaleMappingPhpMessageSource::class
                 : MergedLocaleMappingPhpMessageSource::class,

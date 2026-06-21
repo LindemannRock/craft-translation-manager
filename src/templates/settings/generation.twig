@@ -21,6 +21,12 @@
 
 {% import "_includes/forms" as forms %}
 
+{% set runtimeSourceMessages = {
+    'php-files': "PHP files mode: Craft reads generated files from <code>translations/{language}/{category}.php</code>. Use this when the web and CLI runtimes share the same generated files."|t('translation-manager')|raw,
+    'database': "Database mode: Craft reads translated Translation Manager database rows only. Missing database rows do not fall back to PHP files."|t('translation-manager')|raw,
+    'hybrid': "Hybrid mode: PHP files fill gaps, and translated database rows override matching keys. Use this for edge or split-runtime hosting."|t('translation-manager')|raw,
+} %}
+
 {% block content %}
 	{{ actionInput('translation-manager/settings/save') }}
 	{{ redirectInput('translation-manager/settings/generation') }}
@@ -28,10 +34,11 @@
 
 		<h2 class="first">{{ "File Generation Settings"|t('translation-manager') }}</h2>
 
+        {% set runtimeSourceMessage = runtimeSourceMessages[settings.runtimeTranslationSource] ?? runtimeSourceMessages['php-files'] %}
+
         {{ forms.selectField({
             label: "Runtime Translation Source"|t('translation-manager'),
             instructions: "Choose how frontend Craft translations are resolved for managed categories."|t('translation-manager'),
-            tip: "Use generated PHP files for legacy file-based rendering. Use database modes when CLI, queue, and web runtimes do not share generated translation files reliably."|t('translation-manager'),
             id: 'runtimeTranslationSource',
             name: 'settings[runtimeTranslationSource]',
             value: settings.runtimeTranslationSource,
@@ -41,6 +48,12 @@
             warning: settings.isOverriddenByConfig('runtimeTranslationSource') ?
                 "This is being overridden by the <code>runtimeTranslationSource</code> setting in <code>config/translation-manager.php</code>."|t('translation-manager')|raw : null,
         }) }}
+
+        {% include 'lindemannrock-base/_components/info-box' with {
+            message: runtimeSourceMessage,
+            messageId: 'runtimeTranslationSource-info-message',
+            margin: 'bottom',
+        } %}
 
         {{ forms.lightswitchField({
             label: "Auto Generate"|t('translation-manager'),
@@ -79,3 +92,19 @@
 
 	{% include 'lindemannrock-base/_components/plugin-credit' %}
 {% endblock %}
+
+{% js %}
+(() => {
+    const select = document.getElementById('runtimeTranslationSource');
+    const message = document.getElementById('runtimeTranslationSource-info-message');
+    const messages = {{ runtimeSourceMessages|json_encode|raw }};
+
+    if (!select || !message) {
+        return;
+    }
+
+    select.addEventListener('change', () => {
+        message.innerHTML = messages[select.value] || messages['php-files'];
+    });
+})();
+{% endjs %}

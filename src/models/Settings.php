@@ -55,7 +55,7 @@ class Settings extends Model
     /**
      * @since 5.29.0
      */
-    public const RUNTIME_SOURCE_GENERATED_FILES = 'generated-files';
+    public const RUNTIME_SOURCE_PHP_FILES = 'php-files';
 
     /**
      * @since 5.29.0
@@ -65,7 +65,7 @@ class Settings extends Model
     /**
      * @since 5.29.0
      */
-    public const RUNTIME_SOURCE_DATABASE_WITH_PHP_FALLBACK = 'database-with-php-fallback';
+    public const RUNTIME_SOURCE_HYBRID = 'hybrid';
 
     /**
      * @inheritdoc
@@ -74,6 +74,16 @@ class Settings extends Model
     {
         parent::init();
         $this->setLoggingHandle(static::pluginHandle());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function beforeValidate(): bool
+    {
+        $this->runtimeTranslationSource = self::normalizeRuntimeTranslationSource($this->runtimeTranslationSource);
+
+        return parent::beforeValidate();
     }
 
     /**
@@ -136,7 +146,7 @@ class Settings extends Model
      * @var string Runtime source used by Craft::t() for managed categories
      * @since 5.29.0
      */
-    public string $runtimeTranslationSource = self::RUNTIME_SOURCE_GENERATED_FILES;
+    public string $runtimeTranslationSource = self::RUNTIME_SOURCE_PHP_FILES;
 
     /**
      * @var string The path where translation files should be generated
@@ -307,9 +317,9 @@ class Settings extends Model
              'message' => 'Gemini model must contain only letters, numbers, dots, hyphens, and underscores.', ],
             [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
             [['runtimeTranslationSource'], 'in', 'range' => [
-                self::RUNTIME_SOURCE_GENERATED_FILES,
+                self::RUNTIME_SOURCE_PHP_FILES,
                 self::RUNTIME_SOURCE_DATABASE,
-                self::RUNTIME_SOURCE_DATABASE_WITH_PHP_FALLBACK,
+                self::RUNTIME_SOURCE_HYBRID,
             ]],
             [['enableFormieIntegration', 'enableFreeformIntegration', 'enableSiteTranslations', 'autoGenerate',
               'autoSaveEnabled', 'backupEnabled',
@@ -359,18 +369,32 @@ class Settings extends Model
     {
         return [
             [
-                'label' => Craft::t('translation-manager', 'Generated PHP Files'),
-                'value' => self::RUNTIME_SOURCE_GENERATED_FILES,
+                'label' => Craft::t('translation-manager', 'PHP Files'),
+                'value' => self::RUNTIME_SOURCE_PHP_FILES,
             ],
             [
                 'label' => Craft::t('translation-manager', 'Database'),
                 'value' => self::RUNTIME_SOURCE_DATABASE,
             ],
             [
-                'label' => Craft::t('translation-manager', 'Database with PHP Fallback'),
-                'value' => self::RUNTIME_SOURCE_DATABASE_WITH_PHP_FALLBACK,
+                'label' => Craft::t('translation-manager', 'Hybrid'),
+                'value' => self::RUNTIME_SOURCE_HYBRID,
             ],
         ];
+    }
+
+    /**
+     * Normalize old runtime source values to their current public names.
+     *
+     * @since 5.29.0
+     */
+    public static function normalizeRuntimeTranslationSource(string $source): string
+    {
+        return match ($source) {
+            'generated-files' => self::RUNTIME_SOURCE_PHP_FILES,
+            'database-with-php-fallback' => self::RUNTIME_SOURCE_HYBRID,
+            default => $source,
+        };
     }
 
     public function attributeLabels(): array

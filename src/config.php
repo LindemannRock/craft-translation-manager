@@ -72,7 +72,7 @@ return [
         // PHP translation file generation settings
 
         'autoGenerate' => true,          // Automatically generate translation files when translations are saved
-        'runtimeTranslationSource' => 'generated-files', // Options: generated-files, database, database-with-php-fallback
+        'runtimeTranslationSource' => 'php-files', // Options: php-files, database, hybrid
         'generationPath' => '@translations', // Path where PHP translation files should be generated
 
 
