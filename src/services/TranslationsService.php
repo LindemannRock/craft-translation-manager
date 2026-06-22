@@ -1375,6 +1375,8 @@ class TranslationsService extends Component
     
     /**
      * Delete all translations for one integration provider.
+     *
+     * @since 5.26.0
      */
     public function deleteProviderTranslations(string $provider): int
     {

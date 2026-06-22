@@ -66,6 +66,7 @@ class GenerationService extends Component
     /**
      * @param string[] $sourceIds
      * @return array<string,array<string,mixed>>
+     * @since 5.30.0
      */
     public function generateSources(array $sourceIds): array
     {
@@ -91,6 +92,7 @@ class GenerationService extends Component
      * Generate all translation files (enabled integrations + site).
      *
      * @return array<string,mixed>
+     * @since 5.24.0
      */
     public function generateAll(): array
     {
@@ -131,6 +133,7 @@ class GenerationService extends Component
      * Generate translation files for every enabled integration.
      *
      * @return array<string,array<string,mixed>> Results keyed by integration name
+     * @since 5.26.0
      */
     public function generateIntegrationTranslations(?string $sourceType = null): array
     {
@@ -152,6 +155,7 @@ class GenerationService extends Component
      * Generate translation files for one integration provider.
      *
      * @return array<string,mixed>
+     * @since 5.26.0
      */
     public function generateProviderTranslations(string $provider): array
     {
@@ -191,6 +195,7 @@ class GenerationService extends Component
      * Generate site translation files (per category).
      *
      * @return array<string,mixed>
+     * @since 5.24.0
      */
     public function generateSiteTranslations(): array
     {

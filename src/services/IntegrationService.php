@@ -174,6 +174,7 @@ class IntegrationService extends Component
      * remain filterable and cleanable.
      *
      * @return TranslationIntegrationInterface[]
+     * @since 5.26.0
      */
     public function getIntegrationsBySourceType(string $sourceType, bool $enabledOnly = false): array
     {
@@ -189,6 +190,7 @@ class IntegrationService extends Component
      * Get context prefixes for registered integrations.
      *
      * @return string[]
+     * @since 5.26.0
      */
     public function getContextPrefixes(?string $sourceType = null, bool $enabledOnly = false): array
     {
@@ -208,6 +210,7 @@ class IntegrationService extends Component
      * Get context prefixes that do not belong to site translations.
      *
      * @return string[]
+     * @since 5.26.0
      */
     public function getIntegrationContextPrefixes(bool $enabledOnly = false): array
     {
@@ -216,6 +219,8 @@ class IntegrationService extends Component
 
     /**
      * Resolve the translation category for a context, if it belongs to an integration.
+     *
+     * @since 5.26.0
      */
     public function getCategoryForContext(string $context): ?string
     {
@@ -224,6 +229,8 @@ class IntegrationService extends Component
 
     /**
      * Resolve the context prefix for an integration category.
+     *
+     * @since 5.26.0
      */
     public function getContextPrefixForCategory(string $category): ?string
     {
@@ -232,6 +239,8 @@ class IntegrationService extends Component
 
     /**
      * Resolve the integration for a translation context.
+     *
+     * @since 5.26.0
      */
     public function getIntegrationForContext(string $context): ?TranslationIntegrationInterface
     {
@@ -248,6 +257,8 @@ class IntegrationService extends Component
 
     /**
      * Resolve the integration for a translation category.
+     *
+     * @since 5.26.0
      */
     public function getIntegrationForCategory(string $category): ?TranslationIntegrationInterface
     {
@@ -262,6 +273,8 @@ class IntegrationService extends Component
 
     /**
      * Check whether an integration category is registered and enabled.
+     *
+     * @since 5.26.0
      */
     public function isIntegrationCategoryEnabled(string $category): bool
     {
@@ -386,6 +399,8 @@ class IntegrationService extends Component
 
     /**
      * Ensure integrations are loaded (lazy loading)
+     *
+     * @since 1.14.1
      */
     public function ensureIntegrationsLoaded(): void
     {

@@ -42,6 +42,7 @@ class GenerationStatusService extends Component
      * Persist the result of an explicit CP/CLI generation run.
      *
      * @param array<string,mixed> $result
+     * @since 5.28.1
      */
     public function recordGenerationResult(array $result, string $reason, string $triggerType): void
     {
@@ -66,6 +67,7 @@ class GenerationStatusService extends Component
      *     latestTranslationDate:string|null,
      *     rows:list<array{category:string,language:string,count:int,latestId:int,latestDate:string|null}>
      * }
+     * @since 5.28.1
      */
     public function getCurrentState(): array
     {
