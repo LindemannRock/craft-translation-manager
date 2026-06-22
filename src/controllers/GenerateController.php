@@ -164,13 +164,18 @@ class GenerateController extends Controller
             $this->logInfo("Generation completed", ['message' => $message]);
 
             if (Craft::$app->getRequest()->getAcceptsJson()) {
-                return $this->asJson([
+                $response = [
                     'success' => true,
                     'message' => $message,
-                    'debug' => [
+                ];
+
+                if (Craft::$app->getConfig()->getGeneral()->devMode) {
+                    $response['debug'] = [
                         'result' => $result,
-                    ],
-                ]);
+                    ];
+                }
+
+                return $this->asJson($response);
             }
 
             Craft::$app->getSession()->setNotice($message);
