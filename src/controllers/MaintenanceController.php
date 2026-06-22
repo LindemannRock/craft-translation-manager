@@ -247,6 +247,7 @@ class MaintenanceController extends Controller
      * Capture all translations for one form provider.
      *
      * @return Response
+     * @since 5.26.0
      */
     public function actionCaptureProvider(): Response
     {

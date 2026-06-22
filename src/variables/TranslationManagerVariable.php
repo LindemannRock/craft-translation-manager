@@ -312,6 +312,11 @@ class TranslationManagerVariable
         return $sources;
     }
 
+    /**
+     * Whether the current user can generate files for the given source.
+     *
+     * @since 5.30.0
+     */
     public function canGenerateSource(string $sourceId): bool
     {
         /** @var SourceService $sourceService */
@@ -320,6 +325,11 @@ class TranslationManagerVariable
         return $sourceService->currentUserCan(SourceService::ACTION_GENERATE, $sourceId);
     }
 
+    /**
+     * Whether the current user can capture translations for the given source.
+     *
+     * @since 5.30.0
+     */
     public function canCaptureSource(string $sourceId): bool
     {
         /** @var SourceService $sourceService */
@@ -328,6 +338,11 @@ class TranslationManagerVariable
         return $sourceService->currentUserCan(SourceService::ACTION_CAPTURE, $sourceId);
     }
 
+    /**
+     * Whether the current user can delete translations for the given source.
+     *
+     * @since 5.30.0
+     */
     public function canDeleteSource(string $sourceId): bool
     {
         /** @var SourceService $sourceService */
@@ -336,6 +351,11 @@ class TranslationManagerVariable
         return $sourceService->currentUserCan(SourceService::ACTION_DELETE, $sourceId);
     }
 
+    /**
+     * Whether the current user can delete unused translations for the given source.
+     *
+     * @since 5.30.0
+     */
     public function canDeleteUnusedSource(string $sourceId): bool
     {
         /** @var SourceService $sourceService */
@@ -344,6 +364,11 @@ class TranslationManagerVariable
         return $sourceService->currentUserCan(SourceService::ACTION_DELETE_UNUSED, $sourceId);
     }
 
+    /**
+     * Whether the current user can generate files for all sources.
+     *
+     * @since 5.30.0
+     */
     public function canGenerateAllSources(): bool
     {
         /** @var SourceService $sourceService */
@@ -352,6 +377,11 @@ class TranslationManagerVariable
         return \Craft::$app->getUser()->checkPermission($sourceService->getAllPermission(SourceService::ACTION_GENERATE));
     }
 
+    /**
+     * Whether the current user can capture translations for all sources.
+     *
+     * @since 5.30.0
+     */
     public function canCaptureAllSources(): bool
     {
         /** @var SourceService $sourceService */
@@ -360,6 +390,11 @@ class TranslationManagerVariable
         return \Craft::$app->getUser()->checkPermission($sourceService->getAllPermission(SourceService::ACTION_CAPTURE));
     }
 
+    /**
+     * Whether the current user can delete translations for all sources.
+     *
+     * @since 5.30.0
+     */
     public function canDeleteAllSources(): bool
     {
         /** @var SourceService $sourceService */
@@ -368,6 +403,11 @@ class TranslationManagerVariable
         return \Craft::$app->getUser()->checkPermission($sourceService->getAllPermission(SourceService::ACTION_DELETE));
     }
 
+    /**
+     * Whether the current user can delete unused translations across all sources.
+     *
+     * @since 5.30.0
+     */
     public function canDeleteAllUnusedTranslations(): bool
     {
         /** @var SourceService $sourceService */
@@ -376,6 +416,11 @@ class TranslationManagerVariable
         return \Craft::$app->getUser()->checkPermission($sourceService->getAllPermission(SourceService::ACTION_DELETE_UNUSED));
     }
 
+    /**
+     * Whether the current user can delete unused translations for any source.
+     *
+     * @since 5.30.0
+     */
     public function canDeleteUnusedTranslations(): bool
     {
         /** @var SourceService $sourceService */

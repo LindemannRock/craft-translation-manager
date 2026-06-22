@@ -423,6 +423,7 @@ class SettingsController extends Controller
      * Delete translations for a specific form provider.
      *
      * @return Response
+     * @since 5.26.0
      */
     public function actionDeleteProvider(): Response
     {
