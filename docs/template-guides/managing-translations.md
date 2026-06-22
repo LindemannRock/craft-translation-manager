@@ -29,7 +29,7 @@ Two columns tell you where each string stands.
 | **Pending** | No translation yet — this is the queue. New auto-captured strings start here. |
 | **Draft** | Translated, but awaiting approval (only when [approval](#approval-workflow) is on). |
 | **Translated** | Done and published — Craft will serve it. |
-| **Unused** | The template or form behind it is gone. The [template scanner](../feature-tour/maintenance.md#template-scanner) marks these; saving text won't revive an unused row. |
+| **Unused** | The template or form behind it is gone. [Template Capture](../feature-tour/maintenance.md#template-capture) marks these; saving text won't revive an unused row. |
 
 **Origin** is where the string came from:
 

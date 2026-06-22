@@ -111,6 +111,48 @@ Get the provider label for a translation context such as `formie.contact.label` 
 
 ---
 
+### `getSources()` @since(5.30.0)
+
+Get every translation **source** — each site category and each enabled form provider — with the current user's per-source permissions resolved. Use it to build source-aware UI (capture/generate/delete menus) that only shows what the user is allowed to do.
+
+```twig
+{% for source in craft.translationManager.getSources() %}
+    {{ source.label }}{% if source.canCapture %} — can capture{% endif %}
+{% endfor %}
+```
+
+Each entry has: `id`, `label`, `type` (`category` or `provider`), `category`, `providerName` (or `null`), and the boolean flags `canGenerate`, `canCapture`, `canDelete`, `canDeleteUnused`.
+
+**Returns:** `array`
+
+---
+
+### Source permission checks @since(5.30.0)
+
+Boolean helpers for gating source actions in templates. The `*Source(sourceId)` variants take a source id (as returned by `getSources()`); the `*AllSources()` / `*Translations()` variants check the "all sources" permission.
+
+| Method | Returns true when the user can… |
+|--------|----------------------------------|
+| `canGenerateSource(sourceId)` | Generate files for that source |
+| `canCaptureSource(sourceId)` | Capture that source's translations |
+| `canDeleteSource(sourceId)` | Delete that source's translations |
+| `canDeleteUnusedSource(sourceId)` | Delete that source's unused translations |
+| `canGenerateAllSources()` | Generate files for all sources |
+| `canCaptureAllSources()` | Capture across all sources |
+| `canDeleteAllSources()` | Delete across all sources |
+| `canDeleteUnusedTranslations()` | Delete unused translations (any source) |
+| `canDeleteAllUnusedTranslations()` | Delete unused translations for all sources |
+
+```twig
+{% if craft.translationManager.canCaptureAllSources() %}
+    {# show the "Capture all" action #}
+{% endif %}
+```
+
+**Returns:** `bool`
+
+---
+
 ### `getFormiePluginName()`
 
 Get the configured Formie plugin name. Prefer the provider helpers above for provider-generic UI.
