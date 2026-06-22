@@ -68,11 +68,11 @@ For Freeform, native per-site form translations remain authoritative for values 
 
 ## Permission handles
 
-Provider actions are gated by source-based permissions keyed on the provider's category (its source id). The source id is stable even when the provider's display name is customized in its own settings.
+Provider actions are gated by source-based permissions keyed on the provider source id. Provider source ids are namespaced, so Formie uses `provider:formie` and Freeform uses `provider:freeform` even if a configured template category has the same name.
 
 | Provider | Capture | Generate | Delete |
 |----------|---------|----------|--------|
-| Formie | `translationManager:captureTranslations:formie` | `translationManager:generateSource:formie` | `translationManager:deleteSourceTranslations:formie` |
-| Freeform | `translationManager:captureTranslations:freeform` | `translationManager:generateSource:freeform` | `translationManager:deleteSourceTranslations:freeform` |
+| Formie | `translationManager:captureTranslations:provider:formie` | `translationManager:generateSource:provider:formie` | `translationManager:deleteSourceTranslations:provider:formie` |
+| Freeform | `translationManager:captureTranslations:provider:freeform` | `translationManager:generateSource:provider:freeform` | `translationManager:deleteSourceTranslations:provider:freeform` |
 
-For example, if Formie is renamed to "Forms" in Formie's settings, Translation Manager may show that label in the interface, but the permission handle stays `formie`. See [Permissions](../developers/permissions.md) for the full source-permission tree.
+For example, if Formie is renamed to "Forms" in Formie's settings, Translation Manager may show that label in the interface, but the permission handle stays `provider:formie`. See [Permissions](../developers/permissions.md) for the full source-permission tree.

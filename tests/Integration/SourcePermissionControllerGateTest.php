@@ -148,7 +148,7 @@ final class SourcePermissionControllerGateTest extends TestCase
         $this->installRequest(['category' => $category]);
         $this->installUser([
             'translationManager:maintenance',
-            $sourceService->getSourcePermission(SourceService::ACTION_DELETE, $category),
+            $sourceService->getSourcePermission(SourceService::ACTION_DELETE, $sourceService->categorySourceId($category)),
         ]);
         self::assertTrue($this->runBeforeAction(new SettingsController('settings', TranslationManager::getInstance()), 'delete-category', 'actionDeleteCategory'));
 
@@ -166,7 +166,7 @@ final class SourcePermissionControllerGateTest extends TestCase
         $sourceService = $this->sourceService();
 
         $this->installRequest(['category' => $category]);
-        $this->installUser([$sourceService->getSourcePermission(SourceService::ACTION_DELETE, $category)]);
+        $this->installUser([$sourceService->getSourcePermission(SourceService::ACTION_DELETE, $sourceService->categorySourceId($category))]);
 
         $this->expectException(ForbiddenHttpException::class);
 
@@ -179,7 +179,7 @@ final class SourcePermissionControllerGateTest extends TestCase
         $this->installRequest(['provider' => PermissionGateProviderIntegration::NAME]);
         $this->installUser([
             'translationManager:maintenance',
-            $sourceService->getSourcePermission(SourceService::ACTION_DELETE, PermissionGateProviderIntegration::CATEGORY),
+            $sourceService->getSourcePermission(SourceService::ACTION_DELETE, $sourceService->providerSourceId(PermissionGateProviderIntegration::NAME)),
         ]);
 
         self::assertTrue($this->runBeforeAction(new SettingsController('settings', TranslationManager::getInstance()), 'delete-provider', 'actionDeleteProvider'));
@@ -187,7 +187,7 @@ final class SourcePermissionControllerGateTest extends TestCase
         $this->installRequest(['provider' => PermissionGateProviderIntegration::NAME]);
         $this->installUser([
             'translationManager:maintenance',
-            $sourceService->getSourcePermission(SourceService::ACTION_DELETE, $this->primaryCategory()),
+            $sourceService->getSourcePermission(SourceService::ACTION_DELETE, $sourceService->categorySourceId($this->primaryCategory())),
         ]);
 
         $this->expectException(ForbiddenHttpException::class);
@@ -204,11 +204,11 @@ final class SourcePermissionControllerGateTest extends TestCase
         self::assertTrue($this->runBeforeAction(new GenerateController('generate', TranslationManager::getInstance()), 'files', 'actionFiles'));
 
         $this->installRequest(['category' => $category]);
-        $this->installUser([$sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $category)]);
+        $this->installUser([$sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $sourceService->categorySourceId($category))]);
         self::assertTrue($this->runBeforeAction(new GenerateController('generate', TranslationManager::getInstance()), 'category-files', 'actionCategoryFiles'));
 
         $this->installRequest(['provider' => PermissionGateProviderIntegration::NAME]);
-        $this->installUser([$sourceService->getSourcePermission(SourceService::ACTION_GENERATE, PermissionGateProviderIntegration::CATEGORY)]);
+        $this->installUser([$sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $sourceService->providerSourceId(PermissionGateProviderIntegration::NAME))]);
         self::assertTrue($this->runBeforeAction(new GenerateController('generate', TranslationManager::getInstance()), 'provider-files', 'actionProviderFiles'));
     }
 
@@ -227,14 +227,14 @@ final class SourcePermissionControllerGateTest extends TestCase
         $this->installRequest(['category' => $category]);
         $this->installUser([
             'translationManager:maintenance',
-            $sourceService->getSourcePermission(SourceService::ACTION_CAPTURE, $category),
+            $sourceService->getSourcePermission(SourceService::ACTION_CAPTURE, $sourceService->categorySourceId($category)),
         ]);
         self::assertTrue($this->runBeforeAction(new MaintenanceController('maintenance', TranslationManager::getInstance()), 'scan-templates-action', 'actionScanTemplatesAction'));
 
         $this->installRequest(['provider' => PermissionGateProviderIntegration::NAME]);
         $this->installUser([
             'translationManager:maintenance',
-            $sourceService->getSourcePermission(SourceService::ACTION_CAPTURE, PermissionGateProviderIntegration::CATEGORY),
+            $sourceService->getSourcePermission(SourceService::ACTION_CAPTURE, $sourceService->providerSourceId(PermissionGateProviderIntegration::NAME)),
         ]);
         self::assertTrue($this->runBeforeAction(new MaintenanceController('maintenance', TranslationManager::getInstance()), 'capture-provider', 'actionCaptureProvider'));
     }
@@ -254,14 +254,14 @@ final class SourcePermissionControllerGateTest extends TestCase
         $this->installRequest(['type' => 'category:' . $category]);
         $this->installUser([
             'translationManager:maintenance',
-            $sourceService->getSourcePermission(SourceService::ACTION_DELETE_UNUSED, $category),
+            $sourceService->getSourcePermission(SourceService::ACTION_DELETE_UNUSED, $sourceService->categorySourceId($category)),
         ]);
         self::assertTrue($this->runBeforeAction(new MaintenanceController('maintenance', TranslationManager::getInstance()), 'clean-unused-type', 'actionCleanUnusedType'));
 
         $this->installRequest(['type' => 'provider:' . PermissionGateProviderIntegration::NAME]);
         $this->installUser([
             'translationManager:maintenance',
-            $sourceService->getSourcePermission(SourceService::ACTION_DELETE_UNUSED, PermissionGateProviderIntegration::CATEGORY),
+            $sourceService->getSourcePermission(SourceService::ACTION_DELETE_UNUSED, $sourceService->providerSourceId(PermissionGateProviderIntegration::NAME)),
         ]);
         self::assertTrue($this->runBeforeAction(new MaintenanceController('maintenance', TranslationManager::getInstance()), 'clean-unused-type', 'actionCleanUnusedType'));
     }
@@ -285,7 +285,7 @@ final class SourcePermissionControllerGateTest extends TestCase
             $this->installUser([]);
             self::assertSame('draft', $method->invoke($controller, $record, 'Approved text'));
 
-            $this->installUser([$sourceService->getSourcePermission(SourceService::ACTION_APPROVE, $this->primaryCategory())]);
+            $this->installUser([$sourceService->getSourcePermission(SourceService::ACTION_APPROVE, $sourceService->categorySourceId($this->primaryCategory()))]);
             self::assertSame('translated', $method->invoke($controller, $record, 'Approved text'));
 
             $this->installUser([$sourceService->getAllPermission(SourceService::ACTION_APPROVE)]);
@@ -314,7 +314,7 @@ final class SourcePermissionControllerGateTest extends TestCase
                 'id' => $record->id,
                 'translation' => 'Draft text',
             ]);
-            $this->installUser([$sourceService->getSourcePermission(SourceService::ACTION_EDIT, $category)]);
+            $this->installUser([$sourceService->getSourcePermission(SourceService::ACTION_EDIT, $sourceService->categorySourceId($category))]);
 
             $response = (new PermissionGateTranslationsController('translations', TranslationManager::getInstance()))->actionSave();
 
@@ -348,8 +348,8 @@ final class SourcePermissionControllerGateTest extends TestCase
                 'translation' => 'Approved text',
             ]);
             $this->installUser([
-                $sourceService->getSourcePermission(SourceService::ACTION_EDIT, $category),
-                $sourceService->getSourcePermission(SourceService::ACTION_APPROVE, $category),
+                $sourceService->getSourcePermission(SourceService::ACTION_EDIT, $sourceService->categorySourceId($category)),
+                $sourceService->getSourcePermission(SourceService::ACTION_APPROVE, $sourceService->categorySourceId($category)),
             ]);
 
             $response = (new PermissionGateTranslationsController('translations', TranslationManager::getInstance()))->actionSave();
@@ -384,16 +384,16 @@ final class SourcePermissionControllerGateTest extends TestCase
                 'translation' => 'Approved text',
             ]);
             $this->installUser([
-                $sourceService->getSourcePermission(SourceService::ACTION_EDIT, $category),
-                $sourceService->getSourcePermission(SourceService::ACTION_APPROVE, $category),
-                $sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $category),
+                $sourceService->getSourcePermission(SourceService::ACTION_EDIT, $sourceService->categorySourceId($category)),
+                $sourceService->getSourcePermission(SourceService::ACTION_APPROVE, $sourceService->categorySourceId($category)),
+                $sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $sourceService->categorySourceId($category)),
             ]);
 
             $response = (new PermissionGateTranslationsController('translations', TranslationManager::getInstance()))->actionSave();
 
             self::assertSame(200, $response->statusCode);
             self::assertSame(0, $generationSpy->generateAllCalls);
-            self::assertSame([[$category]], $generationSpy->generateSourcesCalls);
+            self::assertSame([[$sourceService->categorySourceId($category)]], $generationSpy->generateSourcesCalls);
             self::assertSame('translated', TranslationRecord::findOne($record->id)?->status);
         } finally {
             $settings->requireApproval = $originalRequireApproval;

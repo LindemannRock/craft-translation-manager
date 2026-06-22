@@ -59,7 +59,7 @@ class SettingsController extends Controller
                 $providerLabel = $integration !== null
                     ? PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()))
                     : $provider;
-                if ($integration === null || !$sourceService->currentUserCan(SourceService::ACTION_DELETE, $integration->getCategory())) {
+                if ($integration === null || !$sourceService->currentUserCanProvider(SourceService::ACTION_DELETE, $integration->getName())) {
                     throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to delete {name} translations.', ['name' => $providerLabel]));
                 }
                 break;
@@ -84,7 +84,7 @@ class SettingsController extends Controller
                 $category = (string)Craft::$app->getRequest()->getBodyParam('category', '');
                 /** @var SourceService $sourceService */
                 $sourceService = TranslationManager::getInstance()->get('sources');
-                if (!$sourceService->currentUserCan(SourceService::ACTION_DELETE, $category)) {
+                if (!$sourceService->currentUserCanCategory(SourceService::ACTION_DELETE, $category)) {
                     throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to delete translations.'));
                 }
                 break;

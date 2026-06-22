@@ -69,7 +69,7 @@ class MaintenanceController extends Controller
                 $category = trim((string)Craft::$app->getRequest()->getBodyParam('category', ''));
                 $canScan = $category === ''
                     ? $user->checkPermission($sourceService->getAllPermission(SourceService::ACTION_CAPTURE))
-                    : $sourceService->currentUserCan(SourceService::ACTION_CAPTURE, $category);
+                    : $sourceService->currentUserCanCategory(SourceService::ACTION_CAPTURE, $category);
                 if (!$canScan) {
                     throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to capture template translations.'));
                 }
@@ -85,7 +85,7 @@ class MaintenanceController extends Controller
                 $providerLabel = $integration !== null
                     ? PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()))
                     : $provider;
-                if ($integration === null || !$sourceService->currentUserCan(SourceService::ACTION_CAPTURE, $integration->getCategory())) {
+                if ($integration === null || !$sourceService->currentUserCanProvider(SourceService::ACTION_CAPTURE, $integration->getName())) {
                     throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to capture {name} translations.', ['name' => $providerLabel]));
                 }
                 break;
@@ -122,11 +122,10 @@ class MaintenanceController extends Controller
     private function requireCleanUnusedTypePermission(): void
     {
         $type = (string)Craft::$app->getRequest()->getBodyParam('type', '');
-        $sourceId = null;
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
 
         if ($type === 'all') {
-            /** @var SourceService $sourceService */
-            $sourceService = TranslationManager::getInstance()->get('sources');
             if (Craft::$app->getUser()->checkPermission($sourceService->getAllPermission(SourceService::ACTION_DELETE_UNUSED))) {
                 return;
             }
@@ -134,20 +133,19 @@ class MaintenanceController extends Controller
             throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clean unused translations.'));
         }
 
+        $canClean = false;
         if (str_starts_with($type, 'category:')) {
-            $sourceId = substr($type, 9);
-        } elseif (str_starts_with($type, 'provider:')) {
-            $provider = substr($type, 9);
+            $canClean = $sourceService->currentUserCanCategory(SourceService::ACTION_DELETE_UNUSED, substr($type, 9));
+        } elseif (str_starts_with($type, 'provider:') || $type === 'formie') {
+            $provider = $type === 'formie' ? 'formie' : substr($type, 9);
             /** @var IntegrationService $integrationService */
             $integrationService = TranslationManager::getInstance()->get('integrations');
-            $sourceId = $integrationService->get($provider)?->getCategory();
-        } elseif ($type === 'formie') {
-            $sourceId = 'formie';
+            $integration = $integrationService->get($provider);
+            $canClean = $integration !== null
+                && $sourceService->currentUserCanProvider(SourceService::ACTION_DELETE_UNUSED, $integration->getName());
         }
 
-        /** @var SourceService $sourceService */
-        $sourceService = TranslationManager::getInstance()->get('sources');
-        if ($sourceId === null || !$sourceService->currentUserCan(SourceService::ACTION_DELETE_UNUSED, $sourceId)) {
+        if (!$canClean) {
             throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clean unused translations.'));
         }
     }
@@ -661,7 +659,7 @@ class MaintenanceController extends Controller
         $category = trim((string)Craft::$app->getRequest()->getBodyParam('category', ''));
         if ($category === '') {
             $this->requirePermission($sourceService->getAllPermission(SourceService::ACTION_CAPTURE));
-        } elseif (!$sourceService->currentUserCan(SourceService::ACTION_CAPTURE, $category)) {
+        } elseif (!$sourceService->currentUserCanCategory(SourceService::ACTION_CAPTURE, $category)) {
             throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to capture template translations.'));
         }
         

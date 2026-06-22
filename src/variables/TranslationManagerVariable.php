@@ -230,7 +230,7 @@ class TranslationManagerVariable
 
         foreach ($integrationService->getIntegrationsBySourceType('forms') as $integration) {
             $name = $integration->getName();
-            $sourceId = $integration->getCategory();
+            $sourceId = $sourceService->providerSourceId($name);
             $generatePermission = $sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $sourceId);
             $capturePermission = $sourceService->getSourcePermission(SourceService::ACTION_CAPTURE, $sourceId);
             $deletePermission = $sourceService->getSourcePermission(SourceService::ACTION_DELETE, $sourceId);

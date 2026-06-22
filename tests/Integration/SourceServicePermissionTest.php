@@ -30,7 +30,7 @@ final class SourceServicePermissionTest extends TestCase
 
         self::assertTrue($sourceService->hasPermission(
             SourceService::ACTION_DELETE,
-            'messages',
+            $sourceService->categorySourceId('messages'),
             static fn(string $permission): bool => $permission === $allPermission,
         ));
     }
@@ -39,18 +39,35 @@ final class SourceServicePermissionTest extends TestCase
     {
         /** @var SourceService $sourceService */
         $sourceService = TranslationManager::getInstance()->get('sources');
-        $messagesPermission = $sourceService->getSourcePermission(SourceService::ACTION_GENERATE, 'messages');
+        $messagesPermission = $sourceService->getSourcePermission(
+            SourceService::ACTION_GENERATE,
+            $sourceService->categorySourceId('messages'),
+        );
 
         self::assertTrue($sourceService->hasPermission(
             SourceService::ACTION_GENERATE,
-            'messages',
+            $sourceService->categorySourceId('messages'),
             static fn(string $permission): bool => $permission === $messagesPermission,
         ));
         self::assertFalse($sourceService->hasPermission(
             SourceService::ACTION_GENERATE,
-            'emails',
+            $sourceService->categorySourceId('emails'),
             static fn(string $permission): bool => $permission === $messagesPermission,
         ));
+    }
+
+    public function testCategoryAndProviderSourceIdsDoNotCollide(): void
+    {
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+
+        // A user category named 'formie' must not collide with the Formie provider source (10.5).
+        self::assertNotSame(
+            $sourceService->categorySourceId('formie'),
+            $sourceService->providerSourceId('formie'),
+        );
+        self::assertSame('category:formie', $sourceService->categorySourceId('formie'));
+        self::assertSame('provider:formie', $sourceService->providerSourceId('formie'));
     }
 
     public function testDeleteSourcePermissionUsesDeletePermissionName(): void
@@ -59,8 +76,8 @@ final class SourceServicePermissionTest extends TestCase
         $sourceService = TranslationManager::getInstance()->get('sources');
 
         self::assertSame(
-            'translationManager:deleteSourceTranslations:messages',
-            $sourceService->getSourcePermission(SourceService::ACTION_DELETE, 'messages'),
+            'translationManager:deleteSourceTranslations:category:messages',
+            $sourceService->getSourcePermission(SourceService::ACTION_DELETE, $sourceService->categorySourceId('messages')),
         );
     }
 
@@ -74,8 +91,8 @@ final class SourceServicePermissionTest extends TestCase
             $sourceService->getAllPermission(SourceService::ACTION_CAPTURE),
         );
         self::assertSame(
-            'translationManager:captureTranslations:messages',
-            $sourceService->getSourcePermission(SourceService::ACTION_CAPTURE, 'messages'),
+            'translationManager:captureTranslations:category:messages',
+            $sourceService->getSourcePermission(SourceService::ACTION_CAPTURE, $sourceService->categorySourceId('messages')),
         );
     }
 
@@ -94,9 +111,10 @@ final class SourceServicePermissionTest extends TestCase
         }
 
         $primaryCategory = TranslationManager::getInstance()->getSettings()->getPrimaryCategory();
-        self::assertArrayHasKey($primaryCategory, $sourcesById);
-        self::assertArrayHasKey(PermissionTestProviderIntegration::CATEGORY, $sourcesById);
-        self::assertTrue($sourcesById[PermissionTestProviderIntegration::CATEGORY]->isProvider());
+        $providerSourceId = $sourceService->providerSourceId(PermissionTestProviderIntegration::NAME);
+        self::assertArrayHasKey($sourceService->categorySourceId($primaryCategory), $sourcesById);
+        self::assertArrayHasKey($providerSourceId, $sourcesById);
+        self::assertTrue($sourcesById[$providerSourceId]->isProvider());
     }
 
     public function testRecordSourceResolutionPrefersProviderContext(): void
@@ -115,7 +133,39 @@ final class SourceServicePermissionTest extends TestCase
         $source = $sourceService->getSourceForRecord($record);
 
         self::assertNotNull($source);
-        self::assertSame(PermissionTestProviderIntegration::CATEGORY, $source->id);
+        self::assertSame($sourceService->providerSourceId(PermissionTestProviderIntegration::NAME), $source->id);
+    }
+
+    public function testRecordSourceResolutionKeepsConfiguredCategoryWhenNameMatchesProvider(): void
+    {
+        TranslationManager::getInstance()->integrations->register(
+            CollisionProviderIntegration::NAME,
+            new CollisionProviderIntegration(),
+        );
+
+        $settings = TranslationManager::getInstance()->getSettings();
+        $originalCategories = $settings->translationCategories;
+        $settings->translationCategories = [
+            [
+                'key' => CollisionProviderIntegration::CATEGORY,
+                'enabled' => true,
+            ],
+        ];
+
+        try {
+            $record = new TranslationRecord();
+            $record->category = CollisionProviderIntegration::CATEGORY;
+            $record->context = 'templates.fixture';
+
+            /** @var SourceService $sourceService */
+            $sourceService = TranslationManager::getInstance()->get('sources');
+            $source = $sourceService->getSourceForRecord($record);
+
+            self::assertNotNull($source);
+            self::assertSame($sourceService->categorySourceId(CollisionProviderIntegration::CATEGORY), $source->id);
+        } finally {
+            $settings->translationCategories = $originalCategories;
+        }
     }
 }
 
@@ -124,6 +174,61 @@ final class PermissionTestProviderIntegration extends BaseIntegration
     public const NAME = 'permission-test-provider';
     public const CONTEXT_PREFIX = 'permissiontest';
     public const CATEGORY = 'permissiontest';
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getPluginHandle(): string
+    {
+        return self::NAME;
+    }
+
+    public function getContextPrefix(): string
+    {
+        return self::CONTEXT_PREFIX;
+    }
+
+    public function getCategory(): string
+    {
+        return self::CATEGORY;
+    }
+
+    public function isAvailable(): bool
+    {
+        return true;
+    }
+
+    public function registerHooks(): void
+    {
+    }
+
+    public function captureTranslations($element): array
+    {
+        return [];
+    }
+
+    public function checkUsage(): void
+    {
+    }
+
+    public function getSupportedContentTypes(): array
+    {
+        return [];
+    }
+
+    protected function getTranslationType(): string
+    {
+        return 'forms';
+    }
+}
+
+final class CollisionProviderIntegration extends BaseIntegration
+{
+    public const NAME = 'formie';
+    public const CONTEXT_PREFIX = 'formie';
+    public const CATEGORY = 'formie';
 
     public function getName(): string
     {

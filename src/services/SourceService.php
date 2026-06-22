@@ -30,6 +30,29 @@ class SourceService extends Component
     public const ACTION_GENERATE = 'generate';
     public const ACTION_DELETE = 'delete';
 
+    private const ID_PREFIX_CATEGORY = 'category';
+    private const ID_PREFIX_PROVIDER = 'provider';
+
+    /**
+     * Build the namespaced source ID for a configured (site) category.
+     *
+     * @since 5.30.0
+     */
+    public function categorySourceId(string $category): string
+    {
+        return self::ID_PREFIX_CATEGORY . ':' . $category;
+    }
+
+    /**
+     * Build the namespaced source ID for a form provider.
+     *
+     * @since 5.30.0
+     */
+    public function providerSourceId(string $providerName): string
+    {
+        return self::ID_PREFIX_PROVIDER . ':' . $providerName;
+    }
+
     /**
      * @return TranslationSource[]
      */
@@ -40,7 +63,7 @@ class SourceService extends Component
 
         foreach ($settings->getEnabledCategories() as $category) {
             $sources[] = new TranslationSource(
-                id: $category,
+                id: $this->categorySourceId($category),
                 label: $this->labelFromCategory($category),
                 type: TranslationSource::TYPE_CATEGORY,
                 category: $category,
@@ -56,7 +79,7 @@ class SourceService extends Component
 
             $providerName = $integration->getName();
             $sources[] = new TranslationSource(
-                id: $integration->getCategory(),
+                id: $this->providerSourceId($providerName),
                 label: PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($providerName)),
                 type: TranslationSource::TYPE_PROVIDER,
                 category: $integration->getCategory(),
@@ -94,14 +117,23 @@ class SourceService extends Component
     {
         /** @var IntegrationService $integrationService */
         $integrationService = TranslationManager::getInstance()->get('integrations');
-        $integration = $integrationService->getIntegrationForContext($context)
-            ?? $integrationService->getIntegrationForCategory($category);
+        $integration = $integrationService->getIntegrationForContext($context);
 
         if ($integration !== null) {
-            return $this->getSourceById($integration->getCategory());
+            return $this->getSourceById($this->providerSourceId($integration->getName()));
         }
 
-        return $this->getSourceById($category);
+        $categorySource = $this->getSourceById($this->categorySourceId($category));
+        if ($categorySource !== null) {
+            return $categorySource;
+        }
+
+        $integration = $integrationService->getIntegrationForCategory($category);
+        if ($integration !== null) {
+            return $this->getSourceById($this->providerSourceId($integration->getName()));
+        }
+
+        return null;
     }
 
     public function getAllPermission(string $action): string
@@ -141,6 +173,28 @@ class SourceService extends Component
             $sourceId,
             static fn(string $permission): bool => $user->checkPermission($permission),
         );
+    }
+
+    /**
+     * Convenience check for a configured (site) category, resolving the
+     * namespaced source ID so callers can pass a plain category key.
+     *
+     * @since 5.30.0
+     */
+    public function currentUserCanCategory(string $action, string $category): bool
+    {
+        return $this->currentUserCan($action, $this->categorySourceId($category));
+    }
+
+    /**
+     * Convenience check for a form provider, resolving the namespaced source
+     * ID so callers can pass a plain provider name.
+     *
+     * @since 5.30.0
+     */
+    public function currentUserCanProvider(string $action, string $providerName): bool
+    {
+        return $this->currentUserCan($action, $this->providerSourceId($providerName));
     }
 
     /**

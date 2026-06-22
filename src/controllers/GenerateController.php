@@ -54,7 +54,7 @@ class GenerateController extends Controller
                 $providerLabel = $integration !== null
                     ? PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()))
                     : $provider;
-                if ($integration === null || !$sourceService->currentUserCan(SourceService::ACTION_GENERATE, $integration->getCategory())) {
+                if ($integration === null || !$sourceService->currentUserCanProvider(SourceService::ACTION_GENERATE, $integration->getName())) {
                     throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate {name} translation files.', ['name' => $providerLabel]));
                 }
                 break;
@@ -65,7 +65,7 @@ class GenerateController extends Controller
                 break;
             case 'category-files':
                 $category = (string)Craft::$app->getRequest()->getBodyParam('category', '');
-                if (!$sourceService->currentUserCan(SourceService::ACTION_GENERATE, $category)) {
+                if (!$sourceService->currentUserCanCategory(SourceService::ACTION_GENERATE, $category)) {
                     throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate category translation files.'));
                 }
                 break;

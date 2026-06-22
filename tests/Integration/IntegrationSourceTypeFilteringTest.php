@@ -84,26 +84,27 @@ final class IntegrationSourceTypeFilteringTest extends TestCase
         self::assertSame('freeform', $integrationService->getCategoryForContext('freeform.contact.label'));
 
         // Provider actions are gated by source-based permissions keyed on the
-        // integration's category (the source id), not legacy provider handles.
+        // namespaced provider source id (provider:{name}), not the raw category —
+        // so a same-named site category cannot collide with the provider (10.5).
         /** @var SourceService $sourceService */
         $sourceService = TranslationManager::getInstance()->get('sources');
-        $freeformCategory = $freeformIntegration->getCategory();
+        $freeformSourceId = $sourceService->providerSourceId($freeformIntegration->getName());
         self::assertSame(
-            'translationManager:generateSource:freeform',
-            $sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $freeformCategory),
+            'translationManager:generateSource:provider:freeform',
+            $sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $freeformSourceId),
         );
         self::assertSame(
-            'translationManager:captureTranslations:freeform',
-            $sourceService->getSourcePermission(SourceService::ACTION_CAPTURE, $freeformCategory),
+            'translationManager:captureTranslations:provider:freeform',
+            $sourceService->getSourcePermission(SourceService::ACTION_CAPTURE, $freeformSourceId),
         );
         self::assertSame(
-            'translationManager:deleteSourceTranslations:freeform',
-            $sourceService->getSourcePermission(SourceService::ACTION_DELETE, $freeformCategory),
+            'translationManager:deleteSourceTranslations:provider:freeform',
+            $sourceService->getSourcePermission(SourceService::ACTION_DELETE, $freeformSourceId),
         );
         self::assertNotSame(
-            $sourceService->getSourcePermission(SourceService::ACTION_GENERATE, 'formie'),
-            $sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $freeformCategory),
-            'Source permission handles must stay source-specific.',
+            $sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $sourceService->categorySourceId('freeform')),
+            $sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $freeformSourceId),
+            'A site category named like a provider must not share its source permission.',
         );
 
         $providerSource = self::MARKER . 'freeform_provider_' . bin2hex(random_bytes(4));
