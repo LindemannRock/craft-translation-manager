@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\console\controllers;
 
 use craft\console\Controller;
 use craft\helpers\Console;
+use craft\helpers\FileHelper;
 use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\translationmanager\helpers\FeatureGate;
 use lindemannrock\translationmanager\helpers\PhpTranslationsHelper;
@@ -433,10 +434,11 @@ class TranslationsController extends Controller
         foreach ($records as $record) {
             $language = $settings->mapLanguage((string) $record->language);
             $category = (string) $record->category;
-            $file = $basePath . DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $category . '.php';
+            $file = $this->resolveGeneratedFilePath($basePath, $language, $category);
 
-            if (!is_file($file)) {
-                $this->stderr("Verification failed: missing generated file {$file}\n", Console::FG_RED);
+            if ($file === null || !is_file($file)) {
+                $displayFile = $file ?? FileHelper::normalizePath($basePath . DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $category . '.php');
+                $this->stderr("Verification failed: missing generated file {$displayFile}\n", Console::FG_RED);
                 return false;
             }
 
@@ -457,6 +459,40 @@ class TranslationsController extends Controller
 
         $this->stdout("Verification passed: {$checked} generated translation sample(s) resolved through Craft::t().\n", Console::FG_GREEN);
         return true;
+    }
+
+    private function resolveGeneratedFilePath(string $basePath, string $language, string $category): ?string
+    {
+        $realBasePath = realpath($basePath);
+        if ($realBasePath === false) {
+            return null;
+        }
+
+        $realBasePath = FileHelper::normalizePath($realBasePath);
+        $targetFile = FileHelper::normalizePath($realBasePath . DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $category . '.php');
+        if (!$this->isPathInside($targetFile, $realBasePath)) {
+            return null;
+        }
+
+        $realTargetFile = realpath($targetFile);
+        if ($realTargetFile === false) {
+            return $targetFile;
+        }
+
+        $realTargetFile = FileHelper::normalizePath($realTargetFile);
+        if (!$this->isPathInside($realTargetFile, $realBasePath)) {
+            return null;
+        }
+
+        return $realTargetFile;
+    }
+
+    private function isPathInside(string $path, string $basePath): bool
+    {
+        $path = FileHelper::normalizePath($path);
+        $basePath = rtrim(FileHelper::normalizePath($basePath), '/\\');
+
+        return $path !== $basePath && str_starts_with($path, $basePath . DIRECTORY_SEPARATOR);
     }
 
     /**

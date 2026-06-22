@@ -308,13 +308,9 @@ class GenerationService extends Component
 
         // Write one file per category and language.
         foreach ($translationsByCategoryAndLanguage as $category => $translationsByLanguage) {
-            $filename = $category . '.php';
-
             foreach ($translationsByLanguage as $generationLanguage => $langTranslations) {
-                $sitePath = $basePath . '/' . $generationLanguage;
-                FileHelper::createDirectory($sitePath);
-
-                $this->writeTranslationFile($sitePath . '/' . $filename, $langTranslations, $generationLanguage);
+                $file = $this->resolveGeneratedFilePath($basePath, (string)$generationLanguage, (string)$category, true);
+                $this->writeTranslationFile($file, $langTranslations, (string)$generationLanguage);
                 $writtenFileCount++;
                 $this->logInfo('Generated translation file', [
                     'count' => count($langTranslations),
@@ -330,11 +326,10 @@ class GenerationService extends Component
                 continue;
             }
 
-            $filename = $category . '.php';
             foreach ($sites as $site) {
                 $generationLanguage = $this->getGenerationLanguage($site);
-                $file = $basePath . '/' . $generationLanguage . '/' . $filename;
-                if (file_exists($file)) {
+                $file = $this->resolveGeneratedFilePath($basePath, $generationLanguage, (string)$category, false);
+                if ($file !== null && file_exists($file)) {
                     @unlink($file);
                     $deletedFileCount++;
                     $this->logInfo('Deleted stale generated file', ['file' => $file, 'category' => $category]);
@@ -346,6 +341,67 @@ class GenerationService extends Component
             'writtenFileCount' => $writtenFileCount,
             'deletedFileCount' => $deletedFileCount,
         ];
+    }
+
+    private function resolveGeneratedFilePath(string $basePath, string $generationLanguage, string $category, bool $createDirectory): ?string
+    {
+        if ($createDirectory) {
+            FileHelper::createDirectory($basePath);
+        }
+
+        $realBasePath = realpath($basePath);
+        if ($realBasePath === false) {
+            if ($createDirectory) {
+                throw new \RuntimeException("Generation path does not exist: {$basePath}");
+            }
+
+            return null;
+        }
+
+        $realBasePath = FileHelper::normalizePath($realBasePath);
+        $targetDirectory = FileHelper::normalizePath($realBasePath . DIRECTORY_SEPARATOR . $generationLanguage);
+
+        if (!$this->isPathInside($targetDirectory, $realBasePath)) {
+            throw new \RuntimeException('Generated translation directory resolved outside the generation path.');
+        }
+
+        if ($createDirectory) {
+            FileHelper::createDirectory($targetDirectory);
+        }
+
+        $realTargetDirectory = realpath($targetDirectory);
+        if ($realTargetDirectory === false) {
+            if ($createDirectory) {
+                throw new \RuntimeException("Generated translation directory does not exist: {$targetDirectory}");
+            }
+
+            return null;
+        }
+
+        $realTargetDirectory = FileHelper::normalizePath($realTargetDirectory);
+        if (!$this->isPathInside($realTargetDirectory, $realBasePath)) {
+            throw new \RuntimeException('Generated translation directory resolved outside the generation path.');
+        }
+
+        $targetFile = FileHelper::normalizePath($realTargetDirectory . DIRECTORY_SEPARATOR . $category . '.php');
+        if (!$this->isPathInside($targetFile, $realTargetDirectory)) {
+            throw new \RuntimeException('Generated translation file resolved outside its language directory.');
+        }
+
+        $realTargetFile = realpath($targetFile);
+        if ($realTargetFile !== false && !$this->isPathInside(FileHelper::normalizePath($realTargetFile), $realBasePath)) {
+            throw new \RuntimeException('Generated translation file resolved outside the generation path.');
+        }
+
+        return $targetFile;
+    }
+
+    private function isPathInside(string $path, string $basePath): bool
+    {
+        $path = FileHelper::normalizePath($path);
+        $basePath = rtrim(FileHelper::normalizePath($basePath), '/\\');
+
+        return $path !== $basePath && str_starts_with($path, $basePath . DIRECTORY_SEPARATOR);
     }
 
     /**
