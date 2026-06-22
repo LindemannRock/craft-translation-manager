@@ -51,6 +51,7 @@ use lindemannrock\translationmanager\services\BackupService;
 use lindemannrock\translationmanager\services\GenerationService;
 use lindemannrock\translationmanager\services\GenerationStatusService;
 use lindemannrock\translationmanager\services\IntegrationService;
+use lindemannrock\translationmanager\services\SourceService;
 use lindemannrock\translationmanager\services\TranslationsService;
 use lindemannrock\translationmanager\utilities\TranslationStatsUtility;
 use lindemannrock\translationmanager\variables\TranslationManagerVariable;
@@ -71,6 +72,7 @@ use yii\i18n\MessageSource;
  * @property-read GenerationService $generate
  * @property-read GenerationStatusService $generationStatus
  * @property-read BackupService $backup
+ * @property-read SourceService $sources
  * @property-read Settings $settings
  * @method Settings getSettings()
  */
@@ -122,6 +124,7 @@ class TranslationManager extends Plugin
                 'generationStatus' => GenerationStatusService::class,
                 'backup' => BackupService::class,
                 'integrations' => IntegrationService::class,
+                'sources' => SourceService::class,
             ],
         ];
     }
@@ -165,7 +168,7 @@ class TranslationManager extends Plugin
                         'site' => ColorHelper::getPaletteColor('cyan'),
                     ],
                     // Origin filter + badge — must NOT clash with status or type
-                    // (above) and must avoid green/red (reserved for active/no)
+                    // (above) and must avoid green/red (reserved for active/no).
                     'translationOrigins' => [
                         'ai' => ColorHelper::getPaletteColor('purple'),
                         'manual' => ColorHelper::getPaletteColor('pink'),
@@ -185,6 +188,7 @@ class TranslationManager extends Plugin
             'generationStatus' => GenerationStatusService::class,
             'backup' => BackupService::class,
             'integrations' => IntegrationService::class,
+            'sources' => SourceService::class,
         ]);
 
         $this->registerGraphql();
@@ -206,28 +210,33 @@ class TranslationManager extends Plugin
                 $settings = $this->getSettings();
                 $fullName = $settings->getFullName();
                 $plural = $settings->getPluralLowerDisplayName();
-                /** @var IntegrationService $integrationService */
-                $integrationService = $this->get('integrations');
-                $generateProviderPermissions = [];
-                $recaptureProviderPermissions = [];
-                $clearProviderPermissions = [];
+                /** @var SourceService $sourceService */
+                $sourceService = $this->get('sources');
+                $editSourcePermissions = [];
+                $approveSourcePermissions = [];
+                $deleteUnusedSourcePermissions = [];
+                $captureTranslationPermissions = [];
+                $generateSourcePermissions = [];
+                $deleteSourcePermissions = [];
 
-                foreach ($integrationService->getIntegrationsBySourceType('forms') as $integration) {
-                    if (!$integration->isAvailable()) {
-                        continue;
-                    }
-
-                    $providerName = $integration->getName();
-                    $providerLabel = PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($providerName));
-
-                    $generateProviderPermissions[$integrationService->getGenerateProviderPermission($providerName)] = [
-                        'label' => Craft::t('translation-manager', 'Generate {name} files', ['name' => $providerLabel]),
+                foreach ($sourceService->getAllSources() as $source) {
+                    $editSourcePermissions[$sourceService->getSourcePermission(SourceService::ACTION_EDIT, $source->id)] = [
+                        'label' => Craft::t('translation-manager', 'Edit {name} translations', ['name' => $source->label]),
                     ];
-                    $recaptureProviderPermissions[$integrationService->getRecaptureProviderPermission($providerName)] = [
-                        'label' => Craft::t('translation-manager', 'Recapture {name} {plural}', ['name' => $providerLabel, 'plural' => $plural]),
+                    $approveSourcePermissions[$sourceService->getSourcePermission(SourceService::ACTION_APPROVE, $source->id)] = [
+                        'label' => Craft::t('translation-manager', 'Approve {name} translations', ['name' => $source->label]),
                     ];
-                    $clearProviderPermissions[$integrationService->getClearProviderPermission($providerName)] = [
-                        'label' => Craft::t('translation-manager', 'Clear {name} {plural}', ['name' => $providerLabel, 'plural' => $plural]),
+                    $deleteUnusedSourcePermissions[$sourceService->getSourcePermission(SourceService::ACTION_DELETE_UNUSED, $source->id)] = [
+                        'label' => Craft::t('translation-manager', 'Delete unused {name} translations', ['name' => $source->label]),
+                    ];
+                    $captureTranslationPermissions[$sourceService->getSourcePermission(SourceService::ACTION_CAPTURE, $source->id)] = [
+                        'label' => Craft::t('translation-manager', 'Capture {name} translations', ['name' => $source->label]),
+                    ];
+                    $generateSourcePermissions[$sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $source->id)] = [
+                        'label' => Craft::t('translation-manager', 'Generate {name} files', ['name' => $source->label]),
+                    ];
+                    $deleteSourcePermissions[$sourceService->getSourcePermission(SourceService::ACTION_DELETE, $source->id)] = [
+                        'label' => Craft::t('translation-manager', 'Delete {name} translations', ['name' => $source->label]),
                     ];
                 }
 
@@ -240,12 +249,19 @@ class TranslationManager extends Plugin
                             'nested' => [
                                 'translationManager:editTranslations' => [
                                     'label' => Craft::t('translation-manager', 'Edit {plural}', ['plural' => $plural]),
+                                    'nested' => [
+                                        $sourceService->getAllPermission(SourceService::ACTION_EDIT) => [
+                                            'label' => Craft::t('translation-manager', 'Edit all translations'),
+                                        ],
+                                    ] + $editSourcePermissions,
                                 ],
                                 'translationManager:approveTranslations' => [
                                     'label' => Craft::t('translation-manager', 'Approve {plural}', ['plural' => $plural]),
-                                ],
-                                'translationManager:deleteTranslations' => [
-                                    'label' => Craft::t('translation-manager', 'Delete unused {plural}', ['plural' => $plural]),
+                                    'nested' => [
+                                        $sourceService->getAllPermission(SourceService::ACTION_APPROVE) => [
+                                            'label' => Craft::t('translation-manager', 'Approve all translations'),
+                                        ],
+                                    ] + $approveSourcePermissions,
                                 ],
                             ],
                         ],
@@ -266,14 +282,10 @@ class TranslationManager extends Plugin
                         'translationManager:generateTranslations' => [
                             'label' => Craft::t('translation-manager', 'Generate {name} files', ['name' => $settings->getLowerDisplayName()]),
                             'nested' => [
-                                'translationManager:generateAllTranslations' => [
-                                    'label' => Craft::t('translation-manager', 'Generate all files'),
+                                $sourceService->getAllPermission(SourceService::ACTION_GENERATE) => [
+                                    'label' => Craft::t('translation-manager', 'Generate all source files'),
                                 ],
-                            ] + $generateProviderPermissions + [
-                                    'translationManager:generateSiteTranslations' => [
-                                    'label' => Craft::t('translation-manager', 'Generate site files'),
-                                ],
-                            ],
+                            ] + $generateSourcePermissions,
                         ],
                         'translationManager:manageBackups' => [
                             'label' => Craft::t('translation-manager', 'Manage Backups'),
@@ -295,22 +307,32 @@ class TranslationManager extends Plugin
                         'translationManager:maintenance' => [
                             'label' => Craft::t('translation-manager', 'Perform Maintenance'),
                             'nested' => [
-                                'translationManager:cleanUnused' => [
-                                    'label' => Craft::t('translation-manager', 'Clean unused {plural}', ['plural' => $plural]),
+                                'translationManager:captureTranslations' => [
+                                    'label' => Craft::t('translation-manager', 'Capture translations'),
+                                    'nested' => [
+                                        $sourceService->getAllPermission(SourceService::ACTION_CAPTURE) => [
+                                            'label' => Craft::t('translation-manager', 'Capture all translations'),
+                                        ],
+                                    ] + $captureTranslationPermissions,
                                 ],
-                                'translationManager:scanTemplates' => [
-                                    'label' => Craft::t('translation-manager', 'Scan Templates'),
+                                'translationManager:cleanMaintenanceArtifacts' => [
+                                    'label' => Craft::t('translation-manager', 'Clean artifacts'),
                                 ],
-                            ] + $recaptureProviderPermissions,
-                        ],
-                        'translationManager:clearTranslations' => [
-                            'label' => Craft::t('translation-manager', 'Clear {plural}', ['plural' => $plural]),
-                            'nested' => $clearProviderPermissions + [
-                                'translationManager:clearSite' => [
-                                    'label' => Craft::t('translation-manager', 'Clear site {plural}', ['plural' => $plural]),
+                                'translationManager:deleteUnusedTranslations' => [
+                                    'label' => Craft::t('translation-manager', 'Delete unused {plural}', ['plural' => $plural]),
+                                    'nested' => [
+                                        $sourceService->getAllPermission(SourceService::ACTION_DELETE_UNUSED) => [
+                                            'label' => Craft::t('translation-manager', 'Delete all unused translations'),
+                                        ],
+                                    ] + $deleteUnusedSourcePermissions,
                                 ],
-                                'translationManager:clearAll' => [
-                                    'label' => Craft::t('translation-manager', 'Clear all {plural}', ['plural' => $plural]),
+                                'translationManager:deleteSourceTranslations' => [
+                                    'label' => Craft::t('translation-manager', 'Delete {plural}', ['plural' => $plural]),
+                                    'nested' => [
+                                        $sourceService->getAllPermission(SourceService::ACTION_DELETE) => [
+                                            'label' => Craft::t('translation-manager', 'Delete all translations'),
+                                        ],
+                                    ] + $deleteSourcePermissions,
                                 ],
                             ],
                         ],
@@ -485,6 +507,8 @@ class TranslationManager extends Plugin
     public function getCpSections(Settings $settings, bool $includeTranslations = true, bool $includeLogs = false): array
     {
         $sections = [];
+        /** @var SourceService $sourceService */
+        $sourceService = $this->get('sources');
 
         if ($includeTranslations) {
             $sections[] = [
@@ -495,11 +519,18 @@ class TranslationManager extends Plugin
             ];
         }
 
+        $generatePermissions = [
+            $sourceService->getAllPermission(SourceService::ACTION_GENERATE),
+        ];
+        foreach ($sourceService->getAllSources() as $source) {
+            $generatePermissions[] = $sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $source->id);
+        }
+
         $sections[] = [
             'key' => 'generate',
             'label' => Craft::t('translation-manager', 'Generate'),
             'url' => 'translation-manager/generate',
-            'permissionsAll' => ['translationManager:generateTranslations'],
+            'permissionsAny' => $generatePermissions,
         ];
 
         $sections[] = [
@@ -509,14 +540,24 @@ class TranslationManager extends Plugin
             'permissionsAll' => ['translationManager:manageImportExport'],
         ];
 
+        $maintenancePermissions = [
+            'translationManager:cleanMaintenanceArtifacts',
+            $sourceService->getAllPermission(SourceService::ACTION_CAPTURE),
+            $sourceService->getAllPermission(SourceService::ACTION_DELETE_UNUSED),
+            $sourceService->getAllPermission(SourceService::ACTION_DELETE),
+        ];
+        foreach ($sourceService->getAllSources() as $source) {
+            $maintenancePermissions[] = $sourceService->getSourcePermission(SourceService::ACTION_CAPTURE, $source->id);
+            $maintenancePermissions[] = $sourceService->getSourcePermission(SourceService::ACTION_DELETE_UNUSED, $source->id);
+            $maintenancePermissions[] = $sourceService->getSourcePermission(SourceService::ACTION_DELETE, $source->id);
+        }
+
         $sections[] = [
             'key' => 'maintenance',
             'label' => Craft::t('translation-manager', 'Maintenance'),
             'url' => 'translation-manager/maintenance',
-            'permissionsAny' => [
-                'translationManager:maintenance',
-                'translationManager:clearTranslations',
-            ],
+            'permissionsAll' => ['translationManager:maintenance'],
+            'permissionsAny' => $maintenancePermissions,
         ];
 
         $sections[] = [
@@ -847,7 +888,7 @@ class TranslationManager extends Plugin
             // Maintenance routes
             'translation-manager/maintenance' => 'translation-manager/maintenance/index',
             'translation-manager/maintenance/clean-unused' => 'translation-manager/maintenance/clean-unused',
-            'translation-manager/maintenance/recapture-provider' => 'translation-manager/maintenance/recapture-provider',
+            'translation-manager/maintenance/capture-provider' => 'translation-manager/maintenance/capture-provider',
 
             // Backup routes
             'translation-manager/backups' => 'translation-manager/backup/index',

@@ -59,7 +59,7 @@ Use this when translations are drafted by one team and signed off by another. Le
 
 Skip patterns only affect **site** translation capture — they don't touch form-provider fields.
 
-> **Removing strings you've already captured.** Skip patterns only stop *new* captures. To purge existing rows that match, the Skip Patterns settings panel shows an **Apply Skip Patterns to Existing Translations** button once at least one pattern is set. This permanently deletes every matching site translation across all sites and **cannot be undone** — and unlike the [Maintenance](../feature-tour/maintenance.md) clears, it does not take a backup first. Export first if you're unsure.
+> **Removing strings you've already captured.** Skip patterns only stop *new* captures. To purge existing rows that match, the Skip Patterns settings panel shows an **Apply Skip Patterns to Existing Translations** button once at least one pattern is set. This permanently deletes every matching site translation across all sites and **cannot be undone** — and unlike the [Maintenance](../feature-tour/maintenance.md) deletes, it does not take a backup first. Export first if you're unsure.
 
 ### Generation
 

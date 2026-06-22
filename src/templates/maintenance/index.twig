@@ -18,22 +18,26 @@
 {% import "_includes/forms" as forms %}
 {% set formProviders = craft.translationManager.getFormProviders() %}
 {% set enabledFormProviders = craft.translationManager.getEnabledFormProviders() %}
-{% set recapturableFormProviders = [] %}
+{% set capturableFormProviders = [] %}
 {% for provider in enabledFormProviders %}
-    {% if provider.available and provider.canRecapture %}
-        {% set recapturableFormProviders = recapturableFormProviders|merge([provider]) %}
+    {% if provider.available and provider.canCapture %}
+        {% set capturableFormProviders = capturableFormProviders|merge([provider]) %}
     {% endif %}
 {% endfor %}
-{% set canScan = currentUser.can('translationManager:scanTemplates')
-    or recapturableFormProviders|length %}
-{% set canCleanup = currentUser.can('translationManager:cleanUnused') %}
-{% set canDanger = currentUser.can('translationManager:clearTranslations') %}
+{% set canScan = craft.translationManager.canCaptureAllSources()
+    or craft.translationManager.getSources()|filter(source => source.type == 'category' and source.canCapture)|length
+    or capturableFormProviders|length %}
+{% set deletableUnusedSources = craft.translationManager.getSources()|filter(source => source.canDeleteUnused) %}
+{% set canDeleteAnyUnusedTranslations = craft.translationManager.canDeleteAllUnusedTranslations() or deletableUnusedSources|length %}
+{% set canCleanup = canDeleteAnyUnusedTranslations or currentUser.can('translationManager:cleanMaintenanceArtifacts') %}
+{% set canDeleteTranslations = craft.translationManager.canDeleteAllSources()
+    or craft.translationManager.getSources()|filter(source => source.canDelete)|length %}
 
 {% set tabs = {} %}
 {% if canScan %}
     {% set tabs = tabs|merge({
         scan: {
-            label: 'Scan'|t('translation-manager'),
+            label: 'Capture'|t('translation-manager'),
             url: '#scan',
         },
     }) %}
@@ -46,10 +50,10 @@
         },
     }) %}
 {% endif %}
-{% if canDanger %}
+{% if canDeleteTranslations %}
     {% set tabs = tabs|merge({
         danger: {
-            label: 'Danger Zone'|t('translation-manager'),
+            label: 'Danger'|t('translation-manager'),
             url: '#danger',
         },
     }) %}
@@ -86,13 +90,13 @@
     site: 0,
     providers: {},
 } %}
-{% if currentUser.can('translationManager:cleanUnused') %}
+{% if canCleanup %}
     {% set unusedCounts = craft.translationManager.getUnusedTranslationCounts() %}
     {% set languageCleanup = craft.translationManager.getLanguageCleanupCandidates() %}
     {% set categoryCleanup = craft.translationManager.getCategoryCleanupCandidates() %}
     {% set generatedFileCleanup = craft.translationManager.getGeneratedFileCleanupCandidates() %}
 {% endif %}
-{% if canDanger %}
+{% if canDeleteTranslations %}
     {% set translationCounts = craft.translationManager.getTranslationCounts() %}
 {% endif %}
 
@@ -109,7 +113,7 @@
         </div>
     {% endif %}
 
-    {% if canDanger %}
+    {% if canDeleteTranslations %}
         <div id="danger" class="{{ selectedTab != 'danger' ? 'hidden' }}">
             {% include 'translation-manager/maintenance/_partials/danger' %}
         </div>
@@ -520,24 +524,42 @@
         });
     }
 
-    // Handle both scan templates buttons
-    const scanTemplatesBtn = document.getElementById('scan-templates-btn');
-    const rescanTemplatesBtn = document.getElementById('rescan-templates-btn');
+    const captureTemplateSelect = document.getElementById('captureTemplateCategory');
+    const captureTemplateBtn = document.getElementById('capture-template-btn');
 
-    function handleTemplateScan(btn) {
-        btn.addEventListener('click', function() {
-            const button = this;
-            button.classList.add('loading');
-            button.disabled = true;
+    function updateCaptureTemplateState() {
+        if (!captureTemplateSelect || !captureTemplateBtn) {
+            return;
+        }
+        const hasSelection = captureTemplateSelect.value !== '';
+        captureTemplateBtn.disabled = !hasSelection;
+        captureTemplateBtn.classList.toggle('disabled', !hasSelection);
+    }
+
+    if (captureTemplateSelect && captureTemplateBtn) {
+        captureTemplateSelect.addEventListener('change', updateCaptureTemplateState);
+        updateCaptureTemplateState();
+
+        captureTemplateBtn.addEventListener('click', function() {
+            const selected = captureTemplateSelect.value;
+            if (!selected) {
+                return;
+            }
+
+            const btn = this;
+            const body = selected === 'all' ? {} : {category: selected};
+            btn.classList.add('loading');
+            btn.disabled = true;
 
             fetch('{{ actionUrl('translation-manager/maintenance/scan-templates-action') }}', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
                     'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({})
+                body: JSON.stringify(body)
             })
             .then(response => response.json())
             .then(data => {
@@ -545,36 +567,46 @@
                     Craft.cp.displayNotice(data.message);
                     setTimeout(() => window.location.reload(), 1500);
                 } else {
-                    button.classList.remove('loading');
-                    button.disabled = false;
-                    Craft.cp.displayError(data.error || {{ 'Failed to scan templates'|t('translation-manager')|json_encode|raw }});
+                    btn.classList.remove('loading');
+                    updateCaptureTemplateState();
+                    Craft.cp.displayError(data.error || {{ 'Failed to capture template translations'|t('translation-manager')|json_encode|raw }});
                 }
             })
             .catch(error => {
-                button.classList.remove('loading');
-                button.disabled = false;
-                Craft.cp.displayError({{ 'Failed to scan templates: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
+                btn.classList.remove('loading');
+                updateCaptureTemplateState();
+                Craft.cp.displayError({{ 'Failed to capture template translations: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
             });
         });
     }
 
-    // Apply to both buttons
-    if (scanTemplatesBtn) {
-        handleTemplateScan(scanTemplatesBtn);
-    }
-    if (rescanTemplatesBtn) {
-        handleTemplateScan(rescanTemplatesBtn);
+    const captureProviderSelect = document.getElementById('captureFormProvider');
+    const captureProviderBtn = document.getElementById('capture-provider-btn');
+
+    function updateCaptureProviderState() {
+        if (!captureProviderSelect || !captureProviderBtn) {
+            return;
+        }
+        const hasSelection = captureProviderSelect.value !== '';
+        captureProviderBtn.disabled = !hasSelection;
+        captureProviderBtn.classList.toggle('disabled', !hasSelection);
     }
 
-    // Handle form-provider recapture buttons
-    document.querySelectorAll('[data-recapture-provider]').forEach((recaptureBtn) => {
-        recaptureBtn.addEventListener('click', function() {
+    if (captureProviderSelect && captureProviderBtn) {
+        captureProviderSelect.addEventListener('change', updateCaptureProviderState);
+        updateCaptureProviderState();
+
+        captureProviderBtn.addEventListener('click', function() {
+            const provider = captureProviderSelect.value;
+            if (!provider) {
+                return;
+            }
+
             const btn = this;
-            const provider = btn.getAttribute('data-recapture-provider');
             btn.classList.add('loading');
             btn.disabled = true;
 
-            fetch('{{ actionUrl('translation-manager/maintenance/recapture-provider') }}', {
+            fetch('{{ actionUrl('translation-manager/maintenance/capture-provider') }}', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
@@ -590,17 +622,19 @@
                 btn.disabled = false;
                 if (data.success) {
                     Craft.cp.displayNotice(data.message);
+                    setTimeout(() => window.location.reload(), 1500);
                 } else {
-                    Craft.cp.displayError(data.error || {{ 'Failed to recapture form translations'|t('translation-manager')|json_encode|raw }});
+                    updateCaptureProviderState();
+                    Craft.cp.displayError(data.error || {{ 'Failed to capture form translations'|t('translation-manager')|json_encode|raw }});
                 }
             })
             .catch(error => {
                 btn.classList.remove('loading');
-                btn.disabled = false;
-                Craft.cp.displayError({{ 'Failed to recapture form translations: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
+                updateCaptureProviderState();
+                Craft.cp.displayError({{ 'Failed to capture form translations: {error}'|t('translation-manager')|json_encode|raw }}.replace('{error}', error.message));
             });
         });
-    });
+    }
 
     // Handle clean unused button (original)
     const cleanUnusedBtn = document.getElementById('clean-unused-btn');
@@ -645,14 +679,14 @@
         });
     }
 
-    // Handle danger zone clear type selection
-    const clearTypeSelect = document.getElementById('clearType');
-    const clearDescription = document.getElementById('clearDescription');
-    const clearDescriptionText = document.getElementById('clearDescriptionText');
-    const clearNoItemsDescription = document.getElementById('clearNoItemsDescription');
-    const clearButton = document.getElementById('clearButton');
+    // Handle source deletion selection
+    const deleteTypeSelect = document.getElementById('deleteType');
+    const deleteDescription = document.getElementById('deleteDescription');
+    const deleteDescriptionText = document.getElementById('deleteDescriptionText');
+    const deleteNoItemsDescription = document.getElementById('deleteNoItemsDescription');
+    const deleteButton = document.getElementById('deleteButton');
 
-    if (clearTypeSelect) {
+    if (deleteTypeSelect) {
         const hasSite = {{ settings.enableSiteTranslations ? 'true' : 'false' }};
         const hasForms = {{ enabledFormProviders|length ? 'true' : 'false' }};
         const formTranslationsName = '{{ "Forms"|t('translation-manager')|e('js') }}';
@@ -705,56 +739,56 @@
         {% endfor %}
 
         const actions = {
-            all: 'translation-manager/settings/clear-all'
+            all: 'translation-manager/settings/delete-all'
         };
 
         {% for provider in enabledFormProviders %}
-        actions['provider:{{ provider.name|e('js') }}'] = 'translation-manager/settings/clear-provider';
+        actions['provider:{{ provider.name|e('js') }}'] = 'translation-manager/settings/delete-provider';
         {% endfor %}
 
         // Add dynamic actions for each category
         {% for category in settings.getEnabledCategories() %}
-        actions['category:{{ category }}'] = 'translation-manager/settings/clear-category';
+        actions['category:{{ category }}'] = 'translation-manager/settings/delete-category';
         {% endfor %}
 
-        clearTypeSelect.addEventListener('change', function() {
+        deleteTypeSelect.addEventListener('change', function() {
             const value = this.value;
             const selectedCount = counts[value] ?? 0;
-            if (clearNoItemsDescription) {
-                clearNoItemsDescription.style.display = 'none';
+            if (deleteNoItemsDescription) {
+                deleteNoItemsDescription.style.display = 'none';
             }
 
             if (value) {
                 if (selectedCount > 0) {
-                    clearDescription.style.display = 'block';
-                    clearDescriptionText.textContent = descriptions[value];
-                    clearButton.disabled = false;
-                    clearButton.classList.remove('disabled');
-                    clearButton.setAttribute('data-action', actions[value]);
-                    clearButton.setAttribute('data-confirm', confirmMessages[value]);
+                    deleteDescription.style.display = 'block';
+                    deleteDescriptionText.textContent = descriptions[value];
+                    deleteButton.disabled = false;
+                    deleteButton.classList.remove('disabled');
+                    deleteButton.setAttribute('data-action', actions[value]);
+                    deleteButton.setAttribute('data-confirm', confirmMessages[value]);
                 } else {
-                    clearDescription.style.display = 'none';
-                    clearButton.disabled = true;
-                    clearButton.classList.add('disabled');
-                    if (clearNoItemsDescription) {
-                        clearNoItemsDescription.style.display = 'block';
+                    deleteDescription.style.display = 'none';
+                    deleteButton.disabled = true;
+                    deleteButton.classList.add('disabled');
+                    if (deleteNoItemsDescription) {
+                        deleteNoItemsDescription.style.display = 'block';
                     }
                 }
             } else {
-                clearDescription.style.display = 'none';
-                clearButton.disabled = true;
-                clearButton.classList.add('disabled');
-                if (clearNoItemsDescription) {
-                    clearNoItemsDescription.style.display = 'none';
+                deleteDescription.style.display = 'none';
+                deleteButton.disabled = true;
+                deleteButton.classList.add('disabled');
+                if (deleteNoItemsDescription) {
+                    deleteNoItemsDescription.style.display = 'none';
                 }
             }
         });
 
-        // Handle clear button click
-        clearButton.addEventListener('click', function() {
+        // Handle delete button click
+        deleteButton.addEventListener('click', function() {
             const action = this.getAttribute('data-action');
             const confirmMessage = this.getAttribute('data-confirm');
-            const selectedValue = clearTypeSelect.value;
+            const selectedValue = deleteTypeSelect.value;
 
             if (action) {
                 {% if settings.backupEnabled %}
@@ -788,7 +822,7 @@
                 actionInput.value = action;
                 form.appendChild(actionInput);
 
-                // Add category input if this is a per-category clear
+                // Add category input if this is a per-category delete
                 if (selectedValue.startsWith('category:')) {
                     const categoryInput = document.createElement('input');
                     categoryInput.type = 'hidden';

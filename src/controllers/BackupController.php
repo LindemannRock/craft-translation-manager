@@ -435,10 +435,10 @@ class BackupController extends Controller
             ];
         }
 
-        if (str_starts_with($reason, 'before_clear')) {
+        if (str_starts_with($reason, 'before_delete')) {
             return [
-                'label' => Craft::t('translation-manager', 'Clear'),
-                'value' => 'clear',
+                'label' => Craft::t('translation-manager', 'Delete'),
+                'value' => 'delete',
             ];
         }
 

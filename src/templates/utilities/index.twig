@@ -4,7 +4,8 @@
 {% set canManageTranslations = currentUser.can('translationManager:manageTranslations') %}
 {% set canImportExport = currentUser.can('translationManager:importTranslations') or currentUser.can('translationManager:exportTranslations') %}
 {% set canBackups = currentUser.can('translationManager:manageBackups') %}
-{% set canMaintenance = currentUser.can('translationManager:maintenance') or currentUser.can('translationManager:cleanUnused') or currentUser.can('translationManager:scanTemplates') %}
+{% set canMaintenanceAction = craft.translationManager.canDeleteUnusedTranslations() or craft.translationManager.canCaptureAllSources() or craft.translationManager.canDeleteAllSources() or currentUser.can('translationManager:cleanMaintenanceArtifacts') or craft.translationManager.getSources()|filter(source => source.canCapture or source.canDelete)|length %}
+{% set canMaintenance = currentUser.can('translationManager:maintenance') and canMaintenanceAction %}
 {% set hasNavigation = canManageTranslations or canImportExport or canBackups or canMaintenance %}
 
 {# Calculate coverage colors #}

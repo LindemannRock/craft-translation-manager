@@ -191,7 +191,7 @@ class FormieIntegration extends BaseIntegration
     /**
      * @inheritdoc
      */
-    public function recaptureAll(): array
+    public function captureAll(): array
     {
         $processed = 0;
         $captured = 0;

@@ -275,66 +275,6 @@ class IntegrationService extends Component
     }
 
     /**
-     * Build the permission handle for generating one provider's files.
-     *
-     * @since 5.26.0
-     */
-    public function getGenerateProviderPermission(string $provider): string
-    {
-        return "translationManager:generateProvider:{$provider}";
-    }
-
-    /**
-     * Build the permission handle for recapturing one provider's source strings.
-     *
-     * @since 5.26.0
-     */
-    public function getRecaptureProviderPermission(string $provider): string
-    {
-        return "translationManager:recaptureProvider:{$provider}";
-    }
-
-    /**
-     * Build the permission handle for clearing one provider's translations.
-     *
-     * @since 5.26.0
-     */
-    public function getClearProviderPermission(string $provider): string
-    {
-        return "translationManager:clearProvider:{$provider}";
-    }
-
-    /**
-     * Check whether the current user can perform a provider-scoped action.
-     */
-    public function currentUserCanProviderAction(string $action, string $provider): bool
-    {
-        $permission = match ($action) {
-            'generate' => $this->getGenerateProviderPermission($provider),
-            'recapture' => $this->getRecaptureProviderPermission($provider),
-            'clear' => $this->getClearProviderPermission($provider),
-            default => null,
-        };
-
-        return $permission !== null && \Craft::$app->getUser()->checkPermission($permission);
-    }
-
-    /**
-     * Check whether the current user can perform a provider-scoped action for
-     * at least one forms integration.
-     */
-    public function currentUserCanAnyFormsProviderAction(string $action): bool
-    {
-        foreach ($this->getIntegrationsBySourceType('forms') as $integration) {
-            if ($this->currentUserCanProviderAction($action, $integration->getName())) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * Check if an integration is enabled in settings
      */
     public function isIntegrationEnabled(string $name): bool

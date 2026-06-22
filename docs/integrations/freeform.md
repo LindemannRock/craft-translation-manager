@@ -16,7 +16,7 @@ See [Integrations overview](overview.md) for the shared provider lifecycle, perm
 
 ## How it works
 
-Freeform strings are captured when forms are saved or deleted, and can be recaptured manually. They're stored under the `freeform` category, and Translation Manager can generate files such as `translations/ar/freeform.php`.
+Freeform strings are captured when forms are saved or deleted, and can be captured again manually. They're stored under the `freeform` category, and Translation Manager can generate files such as `translations/ar/freeform.php`.
 
 How they render depends on the selected **Runtime Translation Source**:
 
@@ -66,7 +66,7 @@ Freeform's render helpers and Translation Manager's runtime fallback cover the c
 
 > This section is for re-capturing or generating files from the command line; saving a form already captures its strings.
 
-If translations are missing after changing a form, save it again or recapture all Freeform strings:
+If translations are missing after changing a form, save it again or capture all Freeform strings again:
 
 ```bash title="PHP"
 php craft translation-manager/translations/capture-provider freeform
@@ -76,7 +76,7 @@ php craft translation-manager/translations/capture-provider freeform
 ddev craft translation-manager/translations/capture-provider freeform
 ```
 
-You can also run the Freeform scanner under **Translation Manager → Maintenance**. After capture, confirm the rows exist under category `freeform`, have the target language, and are marked `translated` before testing the frontend.
+You can also capture Freeform strings from the Control Panel: open **Translation Manager → Maintenance → Capture**, pick Freeform under **Provider to Capture**, and click **Capture Form Translations**. After capture, confirm the rows exist under category `freeform`, have the target language, and are marked `translated` before testing the frontend.
 
 Generate only Freeform translation files:
 

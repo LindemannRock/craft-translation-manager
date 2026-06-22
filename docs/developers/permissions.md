@@ -2,6 +2,8 @@
 
 Translation Manager registers granular permissions that can be assigned to user groups via **Settings → Users → User Groups → [Group Name] → Translation Manager**.
 
+Maintenance and provider actions are gated by **source-based permissions**: each translation source (the site category and every enabled form provider) gets its own capture / generate / delete / edit / approve handle, plus an "all sources" handle for each action.
+
 ## Permission Structure
 
 ### Translations
@@ -9,9 +11,12 @@ Translation Manager registers granular permissions that can be assigned to user 
 | Permission | Description |
 |------------|-------------|
 | **`translationManager:manageTranslations`** | Access the Translations section (view/manage) |
-| └─ `translationManager:editTranslations` | Modify and save translation values |
-| └─ `translationManager:approveTranslations` | Approve translated values |
-| └─ `translationManager:deleteTranslations` | Delete unused translations |
+| └─ `translationManager:editTranslations` | Parent — edit translation values |
+|     └─ `translationManager:editAllTranslations` | Edit translations for all sources |
+|     └─ `translationManager:editSource:{source}` | Edit one source's translations |
+| └─ `translationManager:approveTranslations` | Parent — approve translated values |
+|     └─ `translationManager:approveAllTranslations` | Approve translations for all sources |
+|     └─ `translationManager:approveSource:{source}` | Approve one source's translations |
 
 ### Import / Export
 
@@ -27,9 +32,8 @@ Translation Manager registers granular permissions that can be assigned to user 
 | Permission | Description |
 |------------|-------------|
 | **`translationManager:generateTranslations`** | Parent — access the Generate section |
-| └─ `translationManager:generateAllTranslations` | Generate PHP translation files for all types |
-| └─ `translationManager:generateProvider:{provider}` | Generate PHP translation files for a registered form provider |
-| └─ `translationManager:generateSiteTranslations` | Generate PHP translation files for site only |
+| └─ `translationManager:generateAllSources` | Generate PHP translation files for all sources |
+| └─ `translationManager:generateSource:{source}` | Generate PHP translation files for one source |
 
 ### Backups
 
@@ -46,18 +50,16 @@ Translation Manager registers granular permissions that can be assigned to user 
 | Permission | Description |
 |------------|-------------|
 | **`translationManager:maintenance`** | Parent — access the Maintenance section |
-| └─ `translationManager:cleanUnused` | Clean up unused translations |
-| └─ `translationManager:scanTemplates` | Run template scanner to identify unused translations |
-| └─ `translationManager:recaptureProvider:{provider}` | Recapture all translations for a registered form provider |
-
-### Clear Translations
-
-| Permission | Description |
-|------------|-------------|
-| **`translationManager:clearTranslations`** | Parent — access clear operations |
-| └─ `translationManager:clearProvider:{provider}` | Delete all translations for a registered form provider |
-| └─ `translationManager:clearSite` | Delete all site translations |
-| └─ `translationManager:clearAll` | Delete all translations |
+| └─ `translationManager:captureTranslations` | Parent — capture missing strings (the **Capture** tab) |
+|     └─ `translationManager:captureAllTranslations` | Capture translations for all sources |
+|     └─ `translationManager:captureTranslations:{source}` | Capture one source's translations |
+| └─ `translationManager:cleanMaintenanceArtifacts` | Clean artifacts — removed categories, ghost languages, and orphaned generated files (the **Cleanup** tab) |
+| └─ `translationManager:deleteUnusedTranslations` | Parent — delete unused translations (the **Cleanup** tab) |
+|     └─ `translationManager:deleteUnusedAllTranslations` | Delete unused translations for all sources |
+|     └─ `translationManager:deleteUnusedSource:{source}` | Delete one source's unused translations |
+| └─ `translationManager:deleteSourceTranslations` | Parent — delete translations in bulk (the **Danger** tab, destructive) |
+|     └─ `translationManager:deleteAllSourceTranslations` | Delete all translations (every source) |
+|     └─ `translationManager:deleteSourceTranslations:{source}` | Delete one source's translations |
 
 ### Logs
 
@@ -103,17 +105,19 @@ $this->requirePermission('translationManager:editTranslations');
 Craft's nested permissions are a UI convenience — the parent permission does not automatically grant child permissions at runtime.
 
 - **"Manage" permissions** (e.g., `manageTranslations`) are the access/view permission — they grant visibility of the section in the CP subnav
-- **Write permissions** (e.g., `editTranslations`, `deleteTranslations`) are nested under manage and control specific operations
+- **Write permissions** (e.g., `editTranslations`, `captureTranslations`, `deleteSourceTranslations`) are nested under manage and control specific operations
 
 To give a user read-only access to translations, grant only `manageTranslations` (without any nested write permissions). For full access, also grant the specific write permissions needed.
 
-## Provider Permission Handles
+For each source action there are two granularities: the **all-sources** handle (e.g. `captureAllTranslations`, `deleteAllSourceTranslations`) and the **per-source** handle (e.g. `captureTranslations:freeform`). Granting the all-sources handle covers every source; granting only a per-source handle limits the user to that one source.
 
-Provider permissions include the provider handle in the permission name. For the built-in providers, examples include:
+## Source Permission Handles
 
-| Provider | Generate | Recapture | Clear |
-|----------|----------|-----------|-------|
-| Formie | `translationManager:generateProvider:formie` | `translationManager:recaptureProvider:formie` | `translationManager:clearProvider:formie` |
-| Freeform | `translationManager:generateProvider:freeform` | `translationManager:recaptureProvider:freeform` | `translationManager:clearProvider:freeform` |
+Per-source permissions include the **source id** in the permission name. The source id is the translation category — `formie` and `freeform` for the built-in form providers, and your configured site translation category for site strings. For the built-in providers, examples include:
 
-The provider handle is stable and does not change when the provider's display name changes. For example, a Formie install renamed to "Forms" still uses `formie` in permission handles.
+| Source | Capture | Generate | Delete |
+|--------|---------|----------|--------|
+| Formie | `translationManager:captureTranslations:formie` | `translationManager:generateSource:formie` | `translationManager:deleteSourceTranslations:formie` |
+| Freeform | `translationManager:captureTranslations:freeform` | `translationManager:generateSource:freeform` | `translationManager:deleteSourceTranslations:freeform` |
+
+The source id is stable and does not change when the provider's display name changes. For example, a Formie install renamed to "Forms" still uses `formie` in permission handles.

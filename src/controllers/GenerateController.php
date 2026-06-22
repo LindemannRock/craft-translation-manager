@@ -17,6 +17,7 @@ use lindemannrock\base\helpers\PluginHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\records\GenerationStatusRecord;
 use lindemannrock\translationmanager\services\IntegrationService;
+use lindemannrock\translationmanager\services\SourceService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
@@ -36,10 +37,12 @@ class GenerateController extends Controller
     public function beforeAction($action): bool
     {
         $user = Craft::$app->getUser();
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
 
         switch ($action->id) {
             case 'files':
-                if (!$user->checkPermission('translationManager:generateAllTranslations')) {
+                if (!$user->checkPermission($sourceService->getAllPermission(SourceService::ACTION_GENERATE))) {
                     throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate translation files.'));
                 }
                 break;
@@ -51,29 +54,24 @@ class GenerateController extends Controller
                 $providerLabel = $integration !== null
                     ? PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()))
                     : $provider;
-                if ($integration === null || !$integrationService->currentUserCanProviderAction('generate', $provider)) {
+                if ($integration === null || !$sourceService->currentUserCan(SourceService::ACTION_GENERATE, $integration->getCategory())) {
                     throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate {name} translation files.', ['name' => $providerLabel]));
                 }
                 break;
             case 'site-files':
-                if (!$user->checkPermission('translationManager:generateSiteTranslations')) {
+                if (!$user->checkPermission($sourceService->getAllPermission(SourceService::ACTION_GENERATE))) {
                     throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate site translation files.'));
                 }
                 break;
             case 'category-files':
-                if (!$user->checkPermission('translationManager:generateSiteTranslations')) {
+                $category = (string)Craft::$app->getRequest()->getBodyParam('category', '');
+                if (!$sourceService->currentUserCan(SourceService::ACTION_GENERATE, $category)) {
                     throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate category translation files.'));
                 }
                 break;
             default:
-                /** @var IntegrationService $integrationService */
-                $integrationService = TranslationManager::getInstance()->get('integrations');
                 // Index page — any generate permission is sufficient
-                $hasGenerateAccess =
-                    $user->checkPermission('translationManager:generateTranslations') ||
-                    $user->checkPermission('translationManager:generateAllTranslations') ||
-                    $integrationService->currentUserCanAnyFormsProviderAction('generate') ||
-                    $user->checkPermission('translationManager:generateSiteTranslations');
+                $hasGenerateAccess = $sourceService->currentUserCanAny(SourceService::ACTION_GENERATE);
 
                 if (!$hasGenerateAccess) {
                     throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate translation files.'));

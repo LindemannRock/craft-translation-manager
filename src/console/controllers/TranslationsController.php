@@ -185,7 +185,7 @@ class TranslationsController extends Controller
         }
 
         try {
-            $result = $integration->recaptureAll();
+            $result = $integration->captureAll();
 
             $this->stdout("Processed {$result['processed']} form(s).\n", Console::FG_CYAN);
             $this->stdout("Captured {$result['captured']} translation row(s).\n", Console::FG_GREEN);

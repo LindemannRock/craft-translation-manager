@@ -30,21 +30,15 @@
             <div style="display: flex; align-items: flex-end; gap: 12px;">
                 <div class="grow">
                     {% set generateOptions = [{value: '', label: 'Select type'|t('translation-manager')}] %}
-                    {% if currentUser.can('translationManager:generateAllTranslations') %}
+                    {% if craft.translationManager.canGenerateAllSources() %}
                         {% set generateOptions = generateOptions|merge([{value: 'all', label: 'Generate All Files'|t('translation-manager')}]) %}
                     {% endif %}
-                    {% for provider in craft.translationManager.getEnabledFormProviders() %}
-                        {% if provider.available and provider.canGenerate %}
-                            {% set generateOptions = generateOptions|merge([{value: 'provider:' ~ provider.name, label: 'Generate {name} Files Only'|t('translation-manager', {name: provider.label})}]) %}
+                    {% for source in craft.translationManager.getSources() %}
+                        {% if source.canGenerate %}
+                            {% set sourceValue = source.providerName ? 'provider:' ~ source.providerName : 'category:' ~ source.category %}
+                            {% set generateOptions = generateOptions|merge([{value: sourceValue, label: 'Generate {name} Files Only'|t('translation-manager', {name: source.label})}]) %}
                         {% endif %}
                     {% endfor %}
-                    {% if settings.enableSiteTranslations and currentUser.can('translationManager:generateSiteTranslations') %}
-                        {# Show each enabled category as a separate option #}
-                        {% set enabledCategories = settings.getEnabledCategories() %}
-                        {% for category in enabledCategories %}
-                            {% set generateOptions = generateOptions|merge([{value: 'category:' ~ category, label: ('Generate ' ~ category|title ~ ' Files Only')|t('translation-manager')}]) %}
-                        {% endfor %}
-                    {% endif %}
                     {{ forms.selectField({
                         label: "Type to Generate"|t('translation-manager'),
                         id: 'generateType',

@@ -798,8 +798,8 @@ class BackupService extends Component
                 $this->logInfo('Restore: Skipping pre-restore backup (backups disabled)');
             }
 
-            // Clear existing translations
-            TranslationManager::getInstance()->translations->clearAllTranslations();
+            // Delete existing translations
+            TranslationManager::getInstance()->translations->deleteAllTranslations();
 
             $imported = 0;
             $errors = [];
@@ -944,8 +944,8 @@ class BackupService extends Component
                 $this->logInfo('Restore: Skipping pre-restore backup (backups disabled)');
             }
 
-            // Clear existing translations
-            TranslationManager::getInstance()->translations->clearAllTranslations();
+            // Delete existing translations
+            TranslationManager::getInstance()->translations->deleteAllTranslations();
 
             $imported = 0;
             $errors = [];
@@ -1258,7 +1258,7 @@ class BackupService extends Component
     {
         $reason = strtolower((string)$reason);
 
-        if (str_starts_with($reason, 'before_cleanup') || str_starts_with($reason, 'before_clear')) {
+        if (str_starts_with($reason, 'before_cleanup') || str_starts_with($reason, 'before_delete')) {
             return 'maintenance';
         }
 
@@ -1275,7 +1275,7 @@ class BackupService extends Component
      * Convert internal reason code to user-friendly display text.
      *
      * The default branch handles dynamic reason values (e.g. user
-     * category names from `before_clear_{$category}`) — those can't
+     * category names from `before_delete_{$category}`) — those can't
      * be statically translated, so we return a humanized English
      * fallback rather than wrapping in `Craft::t()` (which would
      * silently no-op since translation extraction tools can't see
@@ -1289,16 +1289,16 @@ class BackupService extends Component
             'before_php_import' => Craft::t('translation-manager', 'Before PHP Import'),
             'before_restore' => Craft::t('translation-manager', 'Before Restore'),
             'scheduled' => Craft::t('translation-manager', 'Scheduled'),
-            'before_clear_all' => Craft::t('translation-manager', 'Before Clear All'),
-            'before_clear_formie' => Craft::t('translation-manager', 'Before Clear Formie'),
-            'before_clear_site' => Craft::t('translation-manager', 'Before Clear Site'),
+            'before_delete_all' => Craft::t('translation-manager', 'Before Delete All'),
+            'before_delete_formie' => Craft::t('translation-manager', 'Before Delete Formie'),
+            'before_delete_site' => Craft::t('translation-manager', 'Before Delete Site'),
             'before_cleanup' => Craft::t('translation-manager', 'Before Cleanup'),
             'before_cleanup_all' => Craft::t('translation-manager', 'Before Cleanup All'),
             'before_cleanup_formie' => Craft::t('translation-manager', 'Before Cleanup Formie'),
             'before_cleanup_site' => Craft::t('translation-manager', 'Before Cleanup Site'),
             'before_cleanup_languages' => Craft::t('translation-manager', 'Before Cleanup Languages'),
             'before_cleanup_categories' => Craft::t('translation-manager', 'Before Cleanup Categories'),
-            'before_clear' => Craft::t('translation-manager', 'Before Clear'),
+            'before_delete' => Craft::t('translation-manager', 'Before Delete'),
             default => ucfirst(str_replace('_', ' ', $reason)),
         };
     }

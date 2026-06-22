@@ -82,4 +82,4 @@ Use the site selector at the top to switch which site's numbers you're looking a
 1. **Filter before you translate** — narrow to **Pending** for your language and work the queue down.
 2. **Use approval for handoffs** — Draft → Translated keeps unreviewed copy off the live site.
 3. **Watch coverage** — the Utilities panel is the fastest read on what's left.
-4. **Back up before big changes** — bulk cleanup and clears run from [Maintenance](../feature-tour/maintenance.md), which backs up first.
+4. **Back up before big changes** — bulk cleanup and deletes run from [Maintenance](../feature-tour/maintenance.md), which backs up first.

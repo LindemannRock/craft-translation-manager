@@ -81,7 +81,7 @@ ddev craft clear-caches/all
 ## Useful Commands
 
 ```bash title="PHP"
-# Recapture form provider translations
+# Capture form provider translations
 php craft translation-manager/translations/capture-provider formie
 php craft translation-manager/translations/capture-provider freeform
 
@@ -91,7 +91,7 @@ php craft translation-manager/translations/generate-provider freeform
 ```
 
 ```bash title="DDEV"
-# Recapture form provider translations
+# Capture form provider translations
 ddev craft translation-manager/translations/capture-provider formie
 ddev craft translation-manager/translations/capture-provider freeform
 

@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\variables;
 
 use lindemannrock\translationmanager\helpers\GeneratedFileCleanupHelper;
 use lindemannrock\translationmanager\services\IntegrationService;
+use lindemannrock\translationmanager\services\SourceService;
 use lindemannrock\translationmanager\TranslationManager;
 
 /**
@@ -217,22 +218,26 @@ class TranslationManagerVariable
     /**
      * Get form providers for CP dropdowns and labels.
      *
-     * @return array<int,array{name:string,label:string,category:string,contextPrefix:string,pluginHandle:string,available:bool,installed:bool,generatePermission:string,recapturePermission:string,clearPermission:string,canGenerate:bool,canRecapture:bool,canClear:bool}>
+     * @return array<int,array{name:string,sourceId:string,label:string,category:string,contextPrefix:string,pluginHandle:string,available:bool,installed:bool,generatePermission:string,capturePermission:string,deletePermission:string,canGenerate:bool,canCapture:bool,canDelete:bool}>
      */
     public function getFormProviders(): array
     {
         /** @var IntegrationService $integrationService */
         $integrationService = TranslationManager::getInstance()->get('integrations');
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
         $providers = [];
 
         foreach ($integrationService->getIntegrationsBySourceType('forms') as $integration) {
             $name = $integration->getName();
-            $generatePermission = $integrationService->getGenerateProviderPermission($name);
-            $recapturePermission = $integrationService->getRecaptureProviderPermission($name);
-            $clearPermission = $integrationService->getClearProviderPermission($name);
+            $sourceId = $integration->getCategory();
+            $generatePermission = $sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $sourceId);
+            $capturePermission = $sourceService->getSourcePermission(SourceService::ACTION_CAPTURE, $sourceId);
+            $deletePermission = $sourceService->getSourcePermission(SourceService::ACTION_DELETE, $sourceId);
 
             $providers[] = [
                 'name' => $name,
+                'sourceId' => $sourceId,
                 'label' => \lindemannrock\base\helpers\PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($name)),
                 'category' => $integration->getCategory(),
                 'contextPrefix' => $integration->getContextPrefix(),
@@ -240,11 +245,11 @@ class TranslationManagerVariable
                 'available' => $integration->isAvailable(),
                 'installed' => \lindemannrock\base\helpers\PluginHelper::isPluginInstalled($integration->getPluginHandle()),
                 'generatePermission' => $generatePermission,
-                'recapturePermission' => $recapturePermission,
-                'clearPermission' => $clearPermission,
-                'canGenerate' => \Craft::$app->getUser()->checkPermission($generatePermission),
-                'canRecapture' => \Craft::$app->getUser()->checkPermission($recapturePermission),
-                'canClear' => \Craft::$app->getUser()->checkPermission($clearPermission),
+                'capturePermission' => $capturePermission,
+                'deletePermission' => $deletePermission,
+                'canGenerate' => $sourceService->currentUserCan(SourceService::ACTION_GENERATE, $sourceId),
+                'canCapture' => $sourceService->currentUserCan(SourceService::ACTION_CAPTURE, $sourceId),
+                'canDelete' => $sourceService->currentUserCan(SourceService::ACTION_DELETE, $sourceId),
             ];
         }
 
@@ -252,7 +257,7 @@ class TranslationManagerVariable
     }
 
     /**
-     * @return array<int,array{name:string,label:string,category:string,contextPrefix:string,pluginHandle:string,available:bool,installed:bool,generatePermission:string,recapturePermission:string,clearPermission:string,canGenerate:bool,canRecapture:bool,canClear:bool}>
+     * @return array<int,array{name:string,sourceId:string,label:string,category:string,contextPrefix:string,pluginHandle:string,available:bool,installed:bool,generatePermission:string,capturePermission:string,deletePermission:string,canGenerate:bool,canCapture:bool,canDelete:bool}>
      */
     public function getEnabledFormProviders(): array
     {
@@ -276,6 +281,107 @@ class TranslationManagerVariable
         }
 
         return \lindemannrock\base\helpers\PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()));
+    }
+
+    /**
+     * Get ordered translation sources for CP controls.
+     *
+     * @return array<int,array{id:string,label:string,type:string,category:string,providerName:string|null,canGenerate:bool,canCapture:bool,canDelete:bool,canDeleteUnused:bool}>
+     * @since 5.30.0
+     */
+    public function getSources(): array
+    {
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+        $sources = [];
+
+        foreach ($sourceService->getAllSources() as $source) {
+            $sources[] = [
+                'id' => $source->id,
+                'label' => $source->label,
+                'type' => $source->type,
+                'category' => $source->category,
+                'providerName' => $source->providerName,
+                'canGenerate' => $sourceService->currentUserCan(SourceService::ACTION_GENERATE, $source->id),
+                'canCapture' => $sourceService->currentUserCan(SourceService::ACTION_CAPTURE, $source->id),
+                'canDelete' => $sourceService->currentUserCan(SourceService::ACTION_DELETE, $source->id),
+                'canDeleteUnused' => $sourceService->currentUserCan(SourceService::ACTION_DELETE_UNUSED, $source->id),
+            ];
+        }
+
+        return $sources;
+    }
+
+    public function canGenerateSource(string $sourceId): bool
+    {
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+
+        return $sourceService->currentUserCan(SourceService::ACTION_GENERATE, $sourceId);
+    }
+
+    public function canCaptureSource(string $sourceId): bool
+    {
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+
+        return $sourceService->currentUserCan(SourceService::ACTION_CAPTURE, $sourceId);
+    }
+
+    public function canDeleteSource(string $sourceId): bool
+    {
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+
+        return $sourceService->currentUserCan(SourceService::ACTION_DELETE, $sourceId);
+    }
+
+    public function canDeleteUnusedSource(string $sourceId): bool
+    {
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+
+        return $sourceService->currentUserCan(SourceService::ACTION_DELETE_UNUSED, $sourceId);
+    }
+
+    public function canGenerateAllSources(): bool
+    {
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+
+        return \Craft::$app->getUser()->checkPermission($sourceService->getAllPermission(SourceService::ACTION_GENERATE));
+    }
+
+    public function canCaptureAllSources(): bool
+    {
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+
+        return \Craft::$app->getUser()->checkPermission($sourceService->getAllPermission(SourceService::ACTION_CAPTURE));
+    }
+
+    public function canDeleteAllSources(): bool
+    {
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+
+        return \Craft::$app->getUser()->checkPermission($sourceService->getAllPermission(SourceService::ACTION_DELETE));
+    }
+
+    public function canDeleteAllUnusedTranslations(): bool
+    {
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+
+        return \Craft::$app->getUser()->checkPermission($sourceService->getAllPermission(SourceService::ACTION_DELETE_UNUSED));
+    }
+
+    public function canDeleteUnusedTranslations(): bool
+    {
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+
+        return $sourceService->currentUserCanAny(SourceService::ACTION_DELETE_UNUSED);
     }
 
     /**

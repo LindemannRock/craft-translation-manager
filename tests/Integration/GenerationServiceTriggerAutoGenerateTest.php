@@ -42,6 +42,25 @@ final class GenerationServiceTriggerAutoGenerateTest extends TestCase
         }
     }
 
+    public function testReturnsTrueAndCallsGenerateSourcesWhenSourcesAreProvided(): void
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $original = $settings->autoGenerate;
+        $settings->autoGenerate = true;
+
+        $spy = $this->makeSpy();
+
+        try {
+            $result = $spy->triggerAutoGenerate(['messages', 'email', 'messages']);
+
+            self::assertTrue($result, 'triggerAutoGenerate() should report true when the setting is on.');
+            self::assertSame(0, $spy->generateAllCalls, 'generateAll() should not run for source-scoped edits.');
+            self::assertSame([['messages', 'email', 'messages']], $spy->generateSourcesCalls);
+        } finally {
+            $settings->autoGenerate = $original;
+        }
+    }
+
     public function testReturnsFalseAndSkipsGenerateAllWhenSettingIsOff(): void
     {
         $settings = TranslationManager::getInstance()->getSettings();
@@ -69,10 +88,21 @@ final class GenerationServiceTriggerAutoGenerateTest extends TestCase
         return new class extends GenerationService {
             public int $generateAllCalls = 0;
 
+            /**
+             * @var list<array<int,string>>
+             */
+            public array $generateSourcesCalls = [];
+
             public function generateAll(): array
             {
                 $this->generateAllCalls++;
                 return ['success' => true, 'results' => []];
+            }
+
+            public function generateSources(array $sourceIds): array
+            {
+                $this->generateSourcesCalls[] = $sourceIds;
+                return [];
             }
         };
     }

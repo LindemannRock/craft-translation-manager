@@ -1,11 +1,16 @@
 {% import "_includes/forms" as forms %}
 
-{% if currentUser.can('translationManager:cleanUnused') %}
+{% set canUseMaintenanceCleanup = currentUser.can('translationManager:cleanMaintenanceArtifacts') %}
+{% set orderedSources = deletableUnusedSources ?? craft.translationManager.getSources()|filter(source => source.canDeleteUnused) %}
+{% set canDeleteUnusedTranslations = canDeleteAnyUnusedTranslations ?? (craft.translationManager.canDeleteAllUnusedTranslations() or orderedSources|length) %}
+
+{% if canUseMaintenanceCleanup or canDeleteUnusedTranslations %}
+{% if canDeleteUnusedTranslations %}
 <div class="field">
     <div class="heading">
-        <label>{{ "Clean Up Unused Translations"|t('translation-manager') }}</label>
+        <label>{{ "Delete Unused Translations"|t('translation-manager') }}</label>
         <div class="instructions">
-            <p>{{ "Remove translations that are no longer used in templates or forms"|t('translation-manager') }}</p>
+            <p>{{ "Delete translations that are no longer used in templates or forms."|t('translation-manager') }}</p>
         </div>
     </div>
     <div class="input">
@@ -24,17 +29,19 @@
             <div>
                 {% set unusedOptions = [
                     {value: '', label: 'Select type'|t('translation-manager')},
-                    {value: 'all', label: 'All Unused ({count})'|t('translation-manager', {count: totalUnused|number_format})}
                 ] %}
-                {% for provider in enabledFormProviders %}
-                    {% set unusedOptions = unusedOptions|merge([{value: 'provider:' ~ provider.name, label: 'Unused ' ~ provider.label ~ ' (' ~ ((unusedCounts.providers[provider.name] ?? 0)|number_format) ~ ')'}]) %}
-                {% endfor %}
-                {% set enabledCategories = settings.getEnabledCategories() %}
-                {% for category in enabledCategories %}
-                    {% set unusedOptions = unusedOptions|merge([{value: 'category:' ~ category, label: 'Unused ' ~ category|title ~ ' (' ~ ((unusedCounts[category] ?? 0)|number_format) ~ ')'}]) %}
+                {% if craft.translationManager.canDeleteAllUnusedTranslations() %}
+                    {% set unusedOptions = unusedOptions|merge([
+                        {value: 'all', label: 'All Unused ({count})'|t('translation-manager', {count: totalUnused|number_format})}
+                    ]) %}
+                {% endif %}
+                {% for source in orderedSources %}
+                    {% set sourceValue = source.providerName ? 'provider:' ~ source.providerName : 'category:' ~ source.category %}
+                    {% set count = source.providerName ? (unusedCounts.providers[source.providerName] ?? 0) : (unusedCounts[source.category] ?? 0) %}
+                    {% set unusedOptions = unusedOptions|merge([{value: sourceValue, label: 'Unused ' ~ source.label ~ ' (' ~ (count|number_format) ~ ')'}]) %}
                 {% endfor %}
                 {{ forms.selectField({
-                    label: "Type to Clean"|t('translation-manager'),
+                    label: "Unused Translations to Delete"|t('translation-manager'),
                     id: 'unusedType',
                     name: 'unusedType',
                     options: unusedOptions,
@@ -61,7 +68,7 @@
                 } %}
                 <div style="margin-top: 8px;">
                     <button type="button" class="btn secondary" id="clean-unused-enhanced-btn" disabled>
-                        {{ "Clean Up Unused"|t('translation-manager') }}
+                        {{ "Delete Unused Translations"|t('translation-manager') }}
                     </button>
                 </div>
             </div>
@@ -71,11 +78,15 @@
     </div>
 </div>
 
+{% if canUseMaintenanceCleanup %}
 <hr>
+{% endif %}
+{% endif %}
 
+{% if canUseMaintenanceCleanup %}
 <div class="field">
     <div class="heading">
-        <label>{{ "Clean Up Removed Categories"|t('translation-manager') }}</label>
+        <label>{{ "Clean Removed Categories"|t('translation-manager') }}</label>
         <div class="instructions">
             <p>{{ "Remove translations for categories that still exist in the database but are no longer enabled (for example removed plugin categories)."|t('translation-manager') }}</p>
         </div>
@@ -117,7 +128,7 @@
                 } %}
                 <div style="margin-top: 8px;">
                     <button type="button" class="btn secondary" id="clean-categories-btn" disabled>
-                        {{ "Clean Up Category"|t('translation-manager') }}
+                        {{ "Clean Category"|t('translation-manager') }}
                     </button>
                 </div>
             </div>
@@ -131,7 +142,7 @@
 
 <div class="field">
     <div class="heading">
-        <label>{{ "Clean Up Languages"|t('translation-manager') }}</label>
+        <label>{{ "Clean Languages"|t('translation-manager') }}</label>
         <div class="instructions">
             <p>{{ "Optionally remove mapped-source and ghost language rows (for example old en-US or test languages like de)."|t('translation-manager') }}</p>
         </div>
@@ -196,7 +207,7 @@
 
 <div class="field">
     <div class="heading">
-        <label>{{ "Clean Up Generated Files"|t('translation-manager') }}</label>
+        <label>{{ "Clean Generated Files"|t('translation-manager') }}</label>
         <div class="instructions">
             <p>{{ "Optionally remove generated PHP files whose language folder or category is no longer a current generation target."|t('translation-manager') }}</p>
         </div>
@@ -247,4 +258,5 @@
         {% endif %}
     </div>
 </div>
+{% endif %}
 {% endif %}

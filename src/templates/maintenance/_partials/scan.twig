@@ -1,49 +1,76 @@
-{% set canScanTemplates = currentUser.can('translationManager:scanTemplates') %}
-{% set canRecaptureForms = recapturableFormProviders|length %}
+{% import "_includes/forms" as forms %}
 
-{% if canScanTemplates %}
+{% set canScanTemplates = craft.translationManager.canCaptureAllSources() %}
+{% set capturableCategorySources = craft.translationManager.getSources()|filter(source => source.type == 'category' and source.canCapture) %}
+{% set canCaptureForms = capturableFormProviders|length %}
+
+{% if canScanTemplates or capturableCategorySources|length %}
 <div class="field">
     <div class="heading">
-        <label>{{ "Template Scanner"|t('translation-manager') }}</label>
+        <label>{{ "Template Capture"|t('translation-manager') }}</label>
         <div class="instructions">
-            <p>{{ "Scan all templates to identify translations that are no longer used and update their status"|t('translation-manager') }}</p>
+            <p>{{ "Capture template translations and mark unused template translations."|t('translation-manager') }}</p>
         </div>
     </div>
     <div class="input">
-        <div style="margin-bottom: 10px;">
-            <button type="button" class="btn secondary" id="rescan-templates-btn">
-                {{ "Scan Templates"|t('translation-manager') }}
+        {% set templateCaptureOptions = [{value: '', label: 'Select category'|t('translation-manager')}] %}
+        {% if canScanTemplates %}
+            {% set templateCaptureOptions = templateCaptureOptions|merge([{value: 'all', label: 'All Categories'|t('translation-manager')}]) %}
+        {% endif %}
+        {% for source in capturableCategorySources %}
+            {% set templateCaptureOptions = templateCaptureOptions|merge([{value: source.category, label: source.label}]) %}
+        {% endfor %}
+        <div style="margin-top: 15px;">
+            {{ forms.selectField({
+                label: "Category to Capture"|t('translation-manager'),
+                id: 'captureTemplateCategory',
+                name: 'captureTemplateCategory',
+                options: templateCaptureOptions,
+                value: ''
+            }) }}
+        </div>
+        <div style="margin-top: 8px;">
+            <button type="button" class="btn secondary disabled" id="capture-template-btn" disabled>
+                {{ "Capture Template Translations"|t('translation-manager') }}
             </button>
         </div>
-        <p class="light">{{ "Scans all .twig files to find unused translations and mark them for cleanup"|t('translation-manager') }}</p>
+        <p class="light">{{ "Scans .twig files to capture missing translations and mark unused translations for cleanup."|t('translation-manager') }}</p>
     </div>
 </div>
 {% endif %}
 
-{% if canScanTemplates and canRecaptureForms %}
+{% if (canScanTemplates or capturableCategorySources|length) and canCaptureForms %}
 <hr>
 {% endif %}
 
-{% if canRecaptureForms %}
-    {% for provider in recapturableFormProviders %}
-        <div class="field">
-            <div class="heading">
-                <label>{{ "{pluginName} Scanner"|t('translation-manager', {pluginName: provider.label}) }}</label>
-                <div class="instructions">
-                    <p>{{ "Rescan all forms to capture any missing translations"|t('translation-manager') }}</p>
-                </div>
-            </div>
-            <div class="input">
-                <div style="margin-bottom: 10px;">
-                    <button type="button" class="btn secondary" data-recapture-provider="{{ provider.name }}">
-                        {{ "Scan {pluginName} Translations"|t('translation-manager', {pluginName: provider.label}) }}
-                    </button>
-                </div>
-                <p class="light">{{ "Scans all forms to capture field labels, placeholders, and other translatable strings"|t('translation-manager') }}</p>
+{% if canCaptureForms %}
+    <div class="field">
+        <div class="heading">
+            <label>{{ "Form Capture"|t('translation-manager') }}</label>
+            <div class="instructions">
+                <p>{{ "Capture form translations from field labels, placeholders, and other translatable strings."|t('translation-manager') }}</p>
             </div>
         </div>
-        {% if not loop.last %}
-            <hr>
-        {% endif %}
-    {% endfor %}
+        <div class="input">
+            {% set formCaptureOptions = [{value: '', label: 'Select provider'|t('translation-manager')}] %}
+            {% for provider in capturableFormProviders %}
+                {% set formCaptureOptions = formCaptureOptions|merge([{value: provider.name, label: provider.label}]) %}
+            {% endfor %}
+            <div style="margin-top: 15px;">
+                {{ forms.selectField({
+                    label: "Provider to Capture"|t('translation-manager'),
+                    id: 'captureFormProvider',
+                    name: 'captureFormProvider',
+                    options: formCaptureOptions,
+                    value: ''
+                }) }}
+            </div>
+            <div style="margin-top: 8px;">
+                <button type="button" class="btn secondary disabled" id="capture-provider-btn" disabled>
+                    {{ "Capture Form Translations"|t('translation-manager') }}
+                </button>
+            </div>
+            <p class="light">{{ "Scans forms to capture field labels, placeholders, and other translatable strings."|t('translation-manager') }}</p>
+        </div>
+    </div>
 {% endif %}

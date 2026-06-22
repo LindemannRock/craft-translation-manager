@@ -29,7 +29,7 @@ Translation Manager gives you one place to translate every string your Craft sit
 - **Usage detection** — flags translations as unused when the form or field behind them is deleted
 - **Capture missing translations** — when enabled, adds strings at runtime when a `|t()` call hits text that isn't stored yet
 - **Approval workflow** — require sign-off so translations publish as Draft until an approver marks them Translated ([Managing translations](managing-translations.md#approval-workflow))
-- **Maintenance tools** — scan, cleanup, and danger-zone clears, each backed up first ([Maintenance](maintenance.md))
+- **Maintenance tools** — capture, cleanup, and bulk deletes, each backed up first ([Maintenance](maintenance.md))
 - **Statistics utility** — a Control Panel **Utilities** panel showing coverage %, the pending/unused work queue, and the Forms/Site split ([Managing translations](managing-translations.md#monitor-coverage))
 - **Locale mapping** — consolidate regional variants (en-US, en-GB) onto a base locale to cut duplication ([Configuration](../get-started/configuration.md#locale-mapping))
 - **Import / export** — CSV export with your current filters, CSV import with preview and malicious-content detection ([Import / export](import-export.md))
@@ -48,6 +48,6 @@ Translation Manager gives you one place to translate every string your Craft sit
 - [Multi-site support](multi-site.md) — manage one key across every site language
 - [Integrations](../integrations/overview.md) — the Formie and Freeform provider lifecycle
 - [Import / export](import-export.md) — CSV and PHP file operations
-- [Maintenance](maintenance.md) — scan, clean up, and clear translations safely
+- [Maintenance](maintenance.md) — capture, clean up, and delete translations safely
 - [Backup system](backups.md) — protect translations before destructive operations
 - [Security](security.md) — the built-in protections

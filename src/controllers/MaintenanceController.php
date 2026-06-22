@@ -20,6 +20,7 @@ use lindemannrock\translationmanager\helpers\GeneratedFileCleanupHelper;
 use lindemannrock\translationmanager\helpers\SiteLanguageHelper;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\services\IntegrationService;
+use lindemannrock\translationmanager\services\SourceService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\Response;
 
@@ -41,45 +42,67 @@ class MaintenanceController extends Controller
         $user = Craft::$app->getUser();
 
         switch ($action->id) {
-            case 'clean-unused':
             case 'clean-unused-type':
+                $this->requireMaintenancePermission();
+                $this->requireCleanUnusedTypePermission();
+                break;
+            case 'clean-unused':
+                $this->requireMaintenancePermission();
+                /** @var SourceService $sourceService */
+                $sourceService = TranslationManager::getInstance()->get('sources');
+                if (!Craft::$app->getUser()->checkPermission($sourceService->getAllPermission(SourceService::ACTION_DELETE_UNUSED))) {
+                    throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clean unused translations.'));
+                }
+                break;
             case 'clean-languages':
             case 'clean-categories':
             case 'clean-generated-file':
-                if (!$user->checkPermission('translationManager:cleanUnused')) {
+                $this->requireMaintenancePermission();
+                if (!$user->checkPermission('translationManager:cleanMaintenanceArtifacts')) {
                     throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clean unused translations.'));
                 }
                 break;
             case 'scan-templates-action':
-                if (!$user->checkPermission('translationManager:scanTemplates')) {
-                    throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to scan templates.'));
+                $this->requireMaintenancePermission();
+                /** @var SourceService $sourceService */
+                $sourceService = TranslationManager::getInstance()->get('sources');
+                $category = trim((string)Craft::$app->getRequest()->getBodyParam('category', ''));
+                $canScan = $category === ''
+                    ? $user->checkPermission($sourceService->getAllPermission(SourceService::ACTION_CAPTURE))
+                    : $sourceService->currentUserCan(SourceService::ACTION_CAPTURE, $category);
+                if (!$canScan) {
+                    throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to capture template translations.'));
                 }
                 break;
-            case 'recapture-provider':
+            case 'capture-provider':
+                $this->requireMaintenancePermission();
                 $provider = (string)Craft::$app->getRequest()->getBodyParam('provider', '');
                 /** @var IntegrationService $integrationService */
                 $integrationService = TranslationManager::getInstance()->get('integrations');
+                /** @var SourceService $sourceService */
+                $sourceService = TranslationManager::getInstance()->get('sources');
                 $integration = $integrationService->get($provider);
                 $providerLabel = $integration !== null
                     ? PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()))
                     : $provider;
-                if ($integration === null || !$integrationService->currentUserCanProviderAction('recapture', $provider)) {
-                    throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to recapture {name} translations.', ['name' => $providerLabel]));
+                if ($integration === null || !$sourceService->currentUserCan(SourceService::ACTION_CAPTURE, $integration->getCategory())) {
+                    throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to capture {name} translations.', ['name' => $providerLabel]));
                 }
                 break;
             default:
                 /** @var IntegrationService $integrationService */
                 $integrationService = TranslationManager::getInstance()->get('integrations');
+                /** @var SourceService $sourceService */
+                $sourceService = TranslationManager::getInstance()->get('sources');
                 // Index page - allow if user has ANY maintenance-related permission
                 $hasAccess =
-                    $user->checkPermission('translationManager:maintenance') ||
-                    $user->checkPermission('translationManager:cleanUnused') ||
-                    $user->checkPermission('translationManager:scanTemplates') ||
-                    $integrationService->currentUserCanAnyFormsProviderAction('recapture') ||
-                    $user->checkPermission('translationManager:clearTranslations') ||
-                    $integrationService->currentUserCanAnyFormsProviderAction('clear') ||
-                    $user->checkPermission('translationManager:clearSite') ||
-                    $user->checkPermission('translationManager:clearAll');
+                    $user->checkPermission('translationManager:maintenance') &&
+                    (
+                    $sourceService->currentUserCanAny(SourceService::ACTION_DELETE_UNUSED) ||
+                    $sourceService->currentUserCanAny(SourceService::ACTION_CAPTURE) ||
+                    $sourceService->currentUserCanAny(SourceService::ACTION_DELETE) ||
+                    $user->checkPermission('translationManager:cleanMaintenanceArtifacts')
+                    );
 
                 if (!$hasAccess) {
                     throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to access maintenance.'));
@@ -87,6 +110,46 @@ class MaintenanceController extends Controller
         }
 
         return parent::beforeAction($action);
+    }
+
+    private function requireMaintenancePermission(): void
+    {
+        if (!Craft::$app->getUser()->checkPermission('translationManager:maintenance')) {
+            throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to access maintenance.'));
+        }
+    }
+
+    private function requireCleanUnusedTypePermission(): void
+    {
+        $type = (string)Craft::$app->getRequest()->getBodyParam('type', '');
+        $sourceId = null;
+
+        if ($type === 'all') {
+            /** @var SourceService $sourceService */
+            $sourceService = TranslationManager::getInstance()->get('sources');
+            if (Craft::$app->getUser()->checkPermission($sourceService->getAllPermission(SourceService::ACTION_DELETE_UNUSED))) {
+                return;
+            }
+
+            throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clean unused translations.'));
+        }
+
+        if (str_starts_with($type, 'category:')) {
+            $sourceId = substr($type, 9);
+        } elseif (str_starts_with($type, 'provider:')) {
+            $provider = substr($type, 9);
+            /** @var IntegrationService $integrationService */
+            $integrationService = TranslationManager::getInstance()->get('integrations');
+            $sourceId = $integrationService->get($provider)?->getCategory();
+        } elseif ($type === 'formie') {
+            $sourceId = 'formie';
+        }
+
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+        if ($sourceId === null || !$sourceService->currentUserCan(SourceService::ACTION_DELETE_UNUSED, $sourceId)) {
+            throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clean unused translations.'));
+        }
     }
 
     /**
@@ -111,7 +174,9 @@ class MaintenanceController extends Controller
     public function actionCleanUnused(): Response
     {
         $this->requirePostRequest();
-        $this->requirePermission('translationManager:cleanUnused');
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+        $this->requirePermission($sourceService->getAllPermission(SourceService::ACTION_DELETE_UNUSED));
         
         $translationsService = TranslationManager::getInstance()->translations;
         
@@ -179,19 +244,19 @@ class MaintenanceController extends Controller
     }
 
     /**
-     * Recapture all translations for one form provider.
+     * Capture all translations for one form provider.
      *
      * @return Response
      */
-    public function actionRecaptureProvider(): Response
+    public function actionCaptureProvider(): Response
     {
         $this->requirePostRequest();
         $this->requireAcceptsJson();
 
-        return $this->recaptureProvider((string)Craft::$app->getRequest()->getRequiredBodyParam('provider'));
+        return $this->captureProvider((string)Craft::$app->getRequest()->getRequiredBodyParam('provider'));
     }
 
-    private function recaptureProvider(string $provider): Response
+    private function captureProvider(string $provider): Response
     {
         $this->requirePostRequest();
         $this->requireAcceptsJson();
@@ -217,12 +282,12 @@ class MaintenanceController extends Controller
                 ]);
             }
 
-            $result = $integration->recaptureAll();
+            $result = $integration->captureAll();
             $pluginName = PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()));
 
             return $this->asJson([
                 'success' => true,
-                'message' => Craft::t('translation-manager', 'Recaptured {name} translations from {count} form(s)', [
+                'message' => Craft::t('translation-manager', 'Captured {name} translations from {count} form(s)', [
                     'name' => $pluginName,
                     'count' => $result['processed'],
                 ]),
@@ -231,7 +296,7 @@ class MaintenanceController extends Controller
         } catch (\Exception $e) {
             return $this->asJson([
                 'success' => false,
-                'error' => Craft::t('translation-manager', 'Failed to recapture translations: {error}', ['error' => $e->getMessage()]),
+                'error' => Craft::t('translation-manager', 'Failed to capture translations: {error}', ['error' => $e->getMessage()]),
             ]);
         }
     }
@@ -246,7 +311,7 @@ class MaintenanceController extends Controller
     {
         $this->requirePostRequest();
         $this->requireAcceptsJson();
-        $this->requirePermission('translationManager:cleanUnused');
+        $this->requireCleanUnusedTypePermission();
 
         $request = Craft::$app->getRequest();
         $type = $request->getBodyParam('type');
@@ -360,7 +425,7 @@ class MaintenanceController extends Controller
     {
         $this->requirePostRequest();
         $this->requireAcceptsJson();
-        $this->requirePermission('translationManager:cleanUnused');
+        $this->requirePermission('translationManager:cleanMaintenanceArtifacts');
 
         $request = Craft::$app->getRequest();
         $languages = $request->getBodyParam('languages', []);
@@ -504,7 +569,7 @@ class MaintenanceController extends Controller
     {
         $this->requirePostRequest();
         $this->requireAcceptsJson();
-        $this->requirePermission('translationManager:cleanUnused');
+        $this->requirePermission('translationManager:cleanMaintenanceArtifacts');
 
         $request = Craft::$app->getRequest();
         $categories = $request->getBodyParam('categories', []);
@@ -590,10 +655,19 @@ class MaintenanceController extends Controller
     {
         $this->requirePostRequest();
         $this->requireAcceptsJson();
-        $this->requirePermission('translationManager:scanTemplates');
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+        $category = trim((string)Craft::$app->getRequest()->getBodyParam('category', ''));
+        if ($category === '') {
+            $this->requirePermission($sourceService->getAllPermission(SourceService::ACTION_CAPTURE));
+        } elseif (!$sourceService->currentUserCan(SourceService::ACTION_CAPTURE, $category)) {
+            throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to capture template translations.'));
+        }
         
         try {
-            $results = TranslationManager::getInstance()->translations->scanTemplatesForUnused();
+            $results = TranslationManager::getInstance()->translations->scanTemplatesForUnused(
+                $category === '' ? null : [$category],
+            );
             
             $message = Craft::t('translation-manager', 'Template scan complete: {files} files scanned, {unused} marked as unused', [
                 'files' => $results['scanned_files'],
@@ -614,7 +688,7 @@ class MaintenanceController extends Controller
         } catch (\Exception $e) {
             return $this->asJson([
                 'success' => false,
-                'error' => Craft::t('translation-manager', 'Failed to scan templates: {error}', ['error' => $e->getMessage()]),
+                'error' => Craft::t('translation-manager', 'Failed to capture template translations: {error}', ['error' => $e->getMessage()]),
             ]);
         }
     }
@@ -629,7 +703,7 @@ class MaintenanceController extends Controller
     {
         $this->requirePostRequest();
         $this->requireAcceptsJson();
-        $this->requirePermission('translationManager:cleanUnused');
+        $this->requirePermission('translationManager:cleanMaintenanceArtifacts');
 
         $path = trim((string)Craft::$app->getRequest()->getBodyParam('path', ''));
         if ($path === '') {

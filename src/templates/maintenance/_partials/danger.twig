@@ -1,54 +1,51 @@
 {% import "_includes/forms" as forms %}
 
-{% if currentUser.can('translationManager:clearTranslations') %}
-<h2 class="error">{{ "Danger Zone"|t('translation-manager') }}</h2>
+{% set orderedSources = craft.translationManager.getSources() %}
+{% if craft.translationManager.canDeleteAllSources() or orderedSources|filter(source => source.canDelete)|length %}
+<h2 class="error">{{ "Delete Translations"|t('translation-manager') }}</h2>
 
 {% set translationCounts = craft.translationManager.getTranslationCounts() %}
-{% set clearOptions = [{ value: '', label: 'Select an option'|t('translation-manager') }] %}
-{% if (enabledFormProviders|length or settings.enableSiteTranslations) and currentUser.can('translationManager:clearAll') %}
-    {% set clearOptions = clearOptions|merge([{ value: 'all', label: 'All (' ~ (translationCounts.total|number_format) ~ ')' }]) %}
+{% set deleteOptions = [{ value: '', label: 'Select a source'|t('translation-manager') }] %}
+{% if (enabledFormProviders|length or settings.enableSiteTranslations) and craft.translationManager.canDeleteAllSources() %}
+    {% set deleteOptions = deleteOptions|merge([{ value: 'all', label: 'All (' ~ (translationCounts.total|number_format) ~ ')' }]) %}
 {% endif %}
-{% for provider in enabledFormProviders %}
-    {% if provider.canClear %}
-        {% set clearOptions = clearOptions|merge([{ value: 'provider:' ~ provider.name, label: provider.label ~ ' Only (' ~ ((translationCounts.providers[provider.name] ?? 0)|number_format) ~ ')' }]) %}
+{% for source in orderedSources %}
+    {% if source.canDelete %}
+        {% set sourceValue = source.providerName ? 'provider:' ~ source.providerName : 'category:' ~ source.category %}
+        {% set count = source.providerName ? (translationCounts.providers[source.providerName] ?? 0) : (translationCounts[source.category] ?? 0) %}
+        {% set deleteOptions = deleteOptions|merge([{ value: sourceValue, label: source.label ~ ' Only (' ~ (count|number_format) ~ ')' }]) %}
     {% endif %}
 {% endfor %}
-{% if settings.enableSiteTranslations and currentUser.can('translationManager:clearSite') %}
-    {% set enabledCategories = settings.getEnabledCategories() %}
-    {% for category in enabledCategories %}
-        {% set clearOptions = clearOptions|merge([{ value: 'category:' ~ category, label: category|title ~ ' Only (' ~ ((translationCounts[category] ?? 0)|number_format) ~ ')' }]) %}
-    {% endfor %}
-{% endif %}
 
 {% set formiePluginName = craft.translationManager.getFormiePluginName() %}
-{% set hasClearOptions = clearOptions|length > 1 %}
+{% set hasDeleteOptions = deleteOptions|length > 1 %}
 
-{% if hasClearOptions %}
+{% if hasDeleteOptions %}
 {{ forms.selectField({
-    label: "Clear Translations"|t('translation-manager'),
-    instructions: "Select which translations to permanently delete from the database and remove corresponding translation files."|t('translation-manager'),
-    id: 'clearType',
-    name: 'clearType',
-    options: clearOptions,
+    label: "Source to Delete"|t('translation-manager'),
+    instructions: "Permanently delete translations for a source or all sources, including generated files."|t('translation-manager'),
+    id: 'deleteType',
+    name: 'deleteType',
+    options: deleteOptions,
     value: ''
 }) }}
 {% elseif not (enabledFormProviders|length or settings.enableSiteTranslations) %}
 <div class="field">
     <div class="heading">
-        <label>{{ "Clear Translations"|t('translation-manager') }}</label>
+        <label>{{ "Delete Translations"|t('translation-manager') }}</label>
     </div>
     <p class="light">{{ "No translation integrations are currently enabled. Enable {formiePluginName} Integration or Site Translations above to start capturing translations."|t('translation-manager', {formiePluginName: formiePluginName}) }}</p>
 </div>
 {% endif %}
 
-{% if hasClearOptions %}
+{% if hasDeleteOptions %}
 {% include 'lindemannrock-base/_components/info-box' with {
     message: '',
     type: settings.backupEnabled ? 'warning' : 'error',
     variant: 'colored',
     margin: 'top',
-    boxId: 'clearDescription',
-    messageId: 'clearDescriptionText',
+    boxId: 'deleteDescription',
+    messageId: 'deleteDescriptionText',
     hidden: true,
     allowHtml: false,
 } %}
@@ -57,14 +54,14 @@
     type: 'info',
     variant: 'subtle',
     margin: 'top',
-    boxId: 'clearNoItemsDescription',
+    boxId: 'deleteNoItemsDescription',
     hidden: true,
     allowHtml: false,
 } %}
 
 <div style="margin-top: 20px;">
-    <button type="button" id="clearButton" class="btn submit formaction error disabled" style="display: inline-block;" disabled data-redirect="{{ 'translation-manager/maintenance'|hash }}">
-        {{ "Clear Selected Translations"|t('translation-manager') }}
+    <button type="button" id="deleteButton" class="btn submit formaction error disabled" style="display: inline-block;" disabled data-redirect="{{ 'translation-manager/maintenance'|hash }}">
+        {{ "Delete Selected Source"|t('translation-manager') }}
     </button>
 </div>
 {% endif %}

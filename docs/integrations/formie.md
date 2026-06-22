@@ -87,7 +87,7 @@ php craft translation-manager/translations/capture-provider formie
 ddev craft translation-manager/translations/capture-provider formie
 ```
 
-You can also run the Formie scanner under **Translation Manager → Maintenance**. After capture, confirm the rows exist under category `formie`, have the target language, and are marked `translated` before testing the frontend.
+You can also capture Formie strings from the Control Panel: open **Translation Manager → Maintenance → Capture**, pick Formie under **Provider to Capture**, and click **Capture Form Translations**. After capture, confirm the rows exist under category `formie`, have the target language, and are marked `translated` before testing the frontend.
 
 Generate only Formie translation files:
 

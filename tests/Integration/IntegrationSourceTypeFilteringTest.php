@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\tests\Integration;
 
 use lindemannrock\translationmanager\integrations\BaseIntegration;
 use lindemannrock\translationmanager\services\IntegrationService;
+use lindemannrock\translationmanager\services\SourceService;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
 use lindemannrock\translationmanager\variables\TranslationManagerVariable;
@@ -81,22 +82,28 @@ final class IntegrationSourceTypeFilteringTest extends TestCase
         self::assertSame('freeform', $freeformIntegration->getContextPrefix());
         self::assertSame('freeform', $freeformIntegration->getCategory());
         self::assertSame('freeform', $integrationService->getCategoryForContext('freeform.contact.label'));
+
+        // Provider actions are gated by source-based permissions keyed on the
+        // integration's category (the source id), not legacy provider handles.
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+        $freeformCategory = $freeformIntegration->getCategory();
         self::assertSame(
-            'translationManager:generateProvider:freeform',
-            $integrationService->getGenerateProviderPermission('freeform'),
+            'translationManager:generateSource:freeform',
+            $sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $freeformCategory),
         );
         self::assertSame(
-            'translationManager:recaptureProvider:freeform',
-            $integrationService->getRecaptureProviderPermission('freeform'),
+            'translationManager:captureTranslations:freeform',
+            $sourceService->getSourcePermission(SourceService::ACTION_CAPTURE, $freeformCategory),
         );
         self::assertSame(
-            'translationManager:clearProvider:freeform',
-            $integrationService->getClearProviderPermission('freeform'),
+            'translationManager:deleteSourceTranslations:freeform',
+            $sourceService->getSourcePermission(SourceService::ACTION_DELETE, $freeformCategory),
         );
         self::assertNotSame(
-            $integrationService->getGenerateProviderPermission('formie'),
-            $integrationService->getGenerateProviderPermission('freeform'),
-            'Provider permission handles must stay provider-specific.',
+            $sourceService->getSourcePermission(SourceService::ACTION_GENERATE, 'formie'),
+            $sourceService->getSourcePermission(SourceService::ACTION_GENERATE, $freeformCategory),
+            'Source permission handles must stay source-specific.',
         );
 
         $providerSource = self::MARKER . 'freeform_provider_' . bin2hex(random_bytes(4));
@@ -123,7 +130,7 @@ final class IntegrationSourceTypeFilteringTest extends TestCase
         self::assertNotContains($providerSource, $siteSources);
     }
 
-    public function testProviderMaintenanceCountsAndClearUseIntegrationMetadata(): void
+    public function testProviderMaintenanceCountsAndDeleteUseIntegrationMetadata(): void
     {
         $this->requireLatinSourceLanguage();
         $this->requireAtLeastOneSite();
@@ -159,13 +166,13 @@ final class IntegrationSourceTypeFilteringTest extends TestCase
         self::assertArrayHasKey('providers', $counts);
         self::assertGreaterThanOrEqual(1, $counts['providers'][TestFormsProviderIntegration::NAME] ?? 0);
 
-        $deleted = $this->translations->clearProviderTranslations(TestFormsProviderIntegration::NAME);
+        $deleted = $this->translations->deleteProviderTranslations(TestFormsProviderIntegration::NAME);
         self::assertGreaterThanOrEqual(1, $deleted);
 
         self::assertSame([], $this->fetchRowsForSource($providerSource));
         self::assertNotEmpty(
             $this->fetchRowsForSource($siteSource),
-            'Provider clear must not delete site translation rows.',
+            'Provider delete must not delete site translation rows.',
         );
     }
 }

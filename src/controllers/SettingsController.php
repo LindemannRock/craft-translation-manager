@@ -19,6 +19,7 @@ use lindemannrock\translationmanager\helpers\FeatureGate;
 use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\translationmanager\records\GenerationStatusRecord;
 use lindemannrock\translationmanager\services\IntegrationService;
+use lindemannrock\translationmanager\services\SourceService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
@@ -47,26 +48,44 @@ class SettingsController extends Controller
                     throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to edit settings.'));
                 }
                 break;
-            case 'clear-provider':
+            case 'delete-provider':
+                $this->requireMaintenancePermission();
                 $provider = (string)Craft::$app->getRequest()->getBodyParam('provider', '');
                 /** @var IntegrationService $integrationService */
                 $integrationService = TranslationManager::getInstance()->get('integrations');
+                /** @var SourceService $sourceService */
+                $sourceService = TranslationManager::getInstance()->get('sources');
                 $integration = $integrationService->get($provider);
                 $providerLabel = $integration !== null
                     ? PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()))
                     : $provider;
-                if ($integration === null || !$integrationService->currentUserCanProviderAction('clear', $provider)) {
-                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clear {name} translations.', ['name' => $providerLabel]));
+                if ($integration === null || !$sourceService->currentUserCan(SourceService::ACTION_DELETE, $integration->getCategory())) {
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to delete {name} translations.', ['name' => $providerLabel]));
                 }
                 break;
-            case 'clear-site':
-                if (!$user->checkPermission('translationManager:clearSite')) {
-                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clear site translations.'));
+            case 'delete-site':
+                $this->requireMaintenancePermission();
+                /** @var SourceService $sourceService */
+                $sourceService = TranslationManager::getInstance()->get('sources');
+                if (!$user->checkPermission($sourceService->getAllPermission(SourceService::ACTION_DELETE))) {
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to delete site translations.'));
                 }
                 break;
-            case 'clear-all':
-                if (!$user->checkPermission('translationManager:clearAll')) {
-                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to clear all translations.'));
+            case 'delete-all':
+                $this->requireMaintenancePermission();
+                /** @var SourceService $sourceService */
+                $sourceService = TranslationManager::getInstance()->get('sources');
+                if (!$user->checkPermission($sourceService->getAllPermission(SourceService::ACTION_DELETE))) {
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to delete all translations.'));
+                }
+                break;
+            case 'delete-category':
+                $this->requireMaintenancePermission();
+                $category = (string)Craft::$app->getRequest()->getBodyParam('category', '');
+                /** @var SourceService $sourceService */
+                $sourceService = TranslationManager::getInstance()->get('sources');
+                if (!$sourceService->currentUserCan(SourceService::ACTION_DELETE, $category)) {
+                    throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to delete translations.'));
                 }
                 break;
             default:
@@ -77,6 +96,13 @@ class SettingsController extends Controller
         }
 
         return parent::beforeAction($action);
+    }
+
+    private function requireMaintenancePermission(): void
+    {
+        if (!Craft::$app->getUser()->checkPermission('translationManager:maintenance')) {
+            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to access maintenance.'));
+        }
     }
 
     /**
@@ -394,18 +420,18 @@ class SettingsController extends Controller
     }
     
     /**
-     * Clear translations for a specific form provider.
+     * Delete translations for a specific form provider.
      *
      * @return Response
      */
-    public function actionClearProvider(): Response
+    public function actionDeleteProvider(): Response
     {
         $this->requirePostRequest();
 
-        return $this->clearProvider((string)Craft::$app->getRequest()->getRequiredBodyParam('provider'));
+        return $this->deleteProvider((string)Craft::$app->getRequest()->getRequiredBodyParam('provider'));
     }
 
-    private function clearProvider(string $provider): Response
+    private function deleteProvider(string $provider): Response
     {
         $this->requirePostRequest();
 
@@ -420,29 +446,29 @@ class SettingsController extends Controller
 
         $pluginName = PluginHelper::getPluginName($integration->getPluginHandle(), ucfirst($integration->getName()));
 
-        $this->logInfo('User requested clear provider translations', ['provider' => $provider]);
+        $this->logInfo('User requested delete provider translations', ['provider' => $provider]);
 
         // Create backup if enabled
         $settings = TranslationManager::getInstance()->getSettings();
         if ($settings->backupEnabled) {
             try {
                 $backupService = TranslationManager::getInstance()->backup;
-                $backupPath = $backupService->createBackup("before_clear_{$provider}");
+                $backupPath = $backupService->createBackup("before_delete_{$provider}");
                 if ($backupPath) {
-                    $this->logInfo('Created backup before clearing provider translations', [
+                    $this->logInfo('Created backup before deleting provider translations', [
                         'provider' => $provider,
                         'backupPath' => $backupPath,
                     ]);
                 }
             } catch (\Exception $e) {
-                $this->logError('Failed to create backup before clearing provider translations', [
+                $this->logError('Failed to create backup before deleting provider translations', [
                     'provider' => $provider,
                     'error' => $e->getMessage(),
                 ]);
                 // Continue with the operation even if backup fails
             }
         }
-        $count = TranslationManager::getInstance()->translations->clearProviderTranslations($provider);
+        $count = TranslationManager::getInstance()->translations->deleteProviderTranslations($provider);
         
         $message = $count > 0
             ? Craft::t('translation-manager', '{count} {plugin} translations and corresponding files have been deleted.', ['count' => $count, 'plugin' => $pluginName])
@@ -454,31 +480,31 @@ class SettingsController extends Controller
     }
     
     /**
-     * Clear site translations
+     * Delete site translations.
      *
      * @return Response
      */
-    public function actionClearSite(): Response
+    public function actionDeleteSite(): Response
     {
         $this->requirePostRequest();
 
-        $this->logInfo("User requested clear site translations");
+        $this->logInfo("User requested delete site translations");
 
         // Create backup if enabled
         $settings = TranslationManager::getInstance()->getSettings();
         if ($settings->backupEnabled) {
             try {
                 $backupService = TranslationManager::getInstance()->backup;
-                $backupPath = $backupService->createBackup('before_clear');
+                $backupPath = $backupService->createBackup('before_delete_site');
                 if ($backupPath) {
-                    $this->logInfo("Created backup before clearing site translations", ['backupPath' => $backupPath]);
+                    $this->logInfo("Created backup before deleting site translations", ['backupPath' => $backupPath]);
                 }
             } catch (\Exception $e) {
-                $this->logError("Failed to create backup before clearing site translations", ['error' => $e->getMessage()]);
+                $this->logError("Failed to create backup before deleting site translations", ['error' => $e->getMessage()]);
                 // Continue with the operation even if backup fails
             }
         }
-        $count = TranslationManager::getInstance()->translations->clearSiteTranslations();
+        $count = TranslationManager::getInstance()->translations->deleteSiteTranslations();
         
         $message = $count > 0
             ? Craft::t('translation-manager', '{count} site translations and corresponding files have been deleted.', ['count' => $count])
@@ -490,31 +516,31 @@ class SettingsController extends Controller
     }
     
     /**
-     * Clear all translations
+     * Delete all translations.
      *
      * @return Response
      */
-    public function actionClearAll(): Response
+    public function actionDeleteAll(): Response
     {
         $this->requirePostRequest();
 
-        $this->logInfo("User requested clear all translations");
+        $this->logInfo("User requested delete all translations");
 
         // Create backup if enabled
         $settings = TranslationManager::getInstance()->getSettings();
         if ($settings->backupEnabled) {
             try {
                 $backupService = TranslationManager::getInstance()->backup;
-                $backupPath = $backupService->createBackup('before_clear');
+                $backupPath = $backupService->createBackup('before_delete_all');
                 if ($backupPath) {
-                    $this->logInfo("Created backup before clearing all translations", ['backupPath' => $backupPath]);
+                    $this->logInfo("Created backup before deleting all translations", ['backupPath' => $backupPath]);
                 }
             } catch (\Exception $e) {
-                $this->logError("Failed to create backup before clearing all translations", ['error' => $e->getMessage()]);
+                $this->logError("Failed to create backup before deleting all translations", ['error' => $e->getMessage()]);
                 // Continue with the operation even if backup fails
             }
         }
-        $count = TranslationManager::getInstance()->translations->clearAllTranslations();
+        $count = TranslationManager::getInstance()->translations->deleteAllTranslations();
         
         $message = $count > 0
             ? Craft::t('translation-manager', 'All {count} translations and corresponding files have been deleted.', ['count' => $count])
@@ -526,19 +552,19 @@ class SettingsController extends Controller
     }
 
     /**
-     * Clear translations for a specific category
+     * Delete translations for a specific category.
      *
      * @return Response
      * @since 5.0.0
      */
-    public function actionClearCategory(): Response
+    public function actionDeleteCategory(): Response
     {
         $this->requirePostRequest();
 
         $request = Craft::$app->getRequest();
         $category = $request->getRequiredBodyParam('category');
 
-        $this->logInfo("User requested clear category translations", ['category' => $category]);
+        $this->logInfo("User requested delete category translations", ['category' => $category]);
 
         // Validate category is enabled
         $settings = TranslationManager::getInstance()->getSettings();
@@ -553,17 +579,17 @@ class SettingsController extends Controller
         if ($settings->backupEnabled) {
             try {
                 $backupService = TranslationManager::getInstance()->backup;
-                $backupPath = $backupService->createBackup("before_clear_{$category}");
+                $backupPath = $backupService->createBackup("before_delete_{$category}");
                 if ($backupPath) {
-                    $this->logInfo("Created backup before clearing category translations", ['category' => $category, 'backupPath' => $backupPath]);
+                    $this->logInfo("Created backup before deleting category translations", ['category' => $category, 'backupPath' => $backupPath]);
                 }
             } catch (\Exception $e) {
-                $this->logError("Failed to create backup before clearing category translations", ['error' => $e->getMessage()]);
+                $this->logError("Failed to create backup before deleting category translations", ['error' => $e->getMessage()]);
                 // Continue with the operation even if backup fails
             }
         }
 
-        $count = TranslationManager::getInstance()->translations->clearCategoryTranslations($category);
+        $count = TranslationManager::getInstance()->translations->deleteCategoryTranslations($category);
 
         $message = $count > 0
             ? Craft::t('translation-manager', '{count} {category} translations and corresponding files have been deleted.', ['count' => $count, 'category' => $category])

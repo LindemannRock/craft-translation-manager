@@ -622,7 +622,7 @@ class TranslationsService extends Component
     /**
      * Scan all templates for translation usage and mark unused ones
      */
-    public function scanTemplatesForUnused(): array
+    public function scanTemplatesForUnused(?array $categories = null): array
     {
         $results = [
             'scanned_files' => 0,
@@ -636,7 +636,15 @@ class TranslationsService extends Component
         try {
             // Get the configured site translation categories
             $settings = TranslationManager::getInstance()->getSettings();
-            $categories = $settings->getEnabledCategories();
+            $enabledCategories = $settings->getEnabledCategories();
+            $categories = $categories === null
+                ? $enabledCategories
+                : array_values(array_intersect($enabledCategories, array_values(array_unique(array_filter($categories)))));
+
+            if ($categories === []) {
+                $results['errors'][] = 'No enabled categories selected.';
+                return $results;
+            }
 
             // Scan all .twig files in templates directory
             $templatePath = Craft::$app->getPath()->getSiteTemplatesPath();
@@ -1366,9 +1374,9 @@ class TranslationsService extends Component
     }
     
     /**
-     * Clear all translations for one integration provider.
+     * Delete all translations for one integration provider.
      */
-    public function clearProviderTranslations(string $provider): int
+    public function deleteProviderTranslations(string $provider): int
     {
         $integration = $this->getIntegrationService()->get($provider);
         if ($integration === null) {
@@ -1387,7 +1395,7 @@ class TranslationsService extends Component
             $this->deleteCategoryTranslationFiles($category);
         }
         
-        $this->logInfo('Cleared provider translations', [
+        $this->logInfo('Deleted provider translations', [
             'provider' => $provider,
             'category' => $category,
             'count' => $count,
@@ -1397,9 +1405,9 @@ class TranslationsService extends Component
     }
     
     /**
-     * Clear all site translations
+     * Delete all site translations.
      */
-    public function clearSiteTranslations(): int
+    public function deleteSiteTranslations(): int
     {
         $count = Db::delete(
             TranslationRecord::tableName(),
@@ -1411,15 +1419,15 @@ class TranslationsService extends Component
             $this->deleteSiteTranslationFiles();
         }
         
-        $this->logInfo("Cleared site translations", ['count' => $count]);
+        $this->logInfo("Deleted site translations", ['count' => $count]);
         
         return $count;
     }
     
     /**
-     * Clear all translations
+     * Delete all translations.
      */
-    public function clearAllTranslations(): int
+    public function deleteAllTranslations(): int
     {
         $count = Db::delete(TranslationRecord::tableName());
         
@@ -1431,17 +1439,17 @@ class TranslationsService extends Component
             $this->deleteSiteTranslationFiles();
         }
         
-        $this->logInfo("Cleared ALL translations", ['count' => $count]);
+        $this->logInfo("Deleted ALL translations", ['count' => $count]);
 
         return $count;
     }
 
     /**
-     * Clear translations for a specific category
+     * Delete translations for a specific category.
      *
      * @since 5.0.0
      */
-    public function clearCategoryTranslations(string $category): int
+    public function deleteCategoryTranslations(string $category): int
     {
         $count = Db::delete(TranslationRecord::tableName(), [
             'category' => $category,
@@ -1452,7 +1460,7 @@ class TranslationsService extends Component
             $this->deleteCategoryTranslationFiles($category);
         }
 
-        $this->logInfo("Cleared category translations", ['category' => $category, 'count' => $count]);
+        $this->logInfo("Deleted category translations", ['category' => $category, 'count' => $count]);
 
         return $count;
     }

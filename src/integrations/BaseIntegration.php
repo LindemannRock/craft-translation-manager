@@ -181,7 +181,7 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
     /**
      * @inheritdoc
      */
-    public function recaptureAll(): array
+    public function captureAll(): array
     {
         return ['processed' => 0, 'captured' => 0];
     }

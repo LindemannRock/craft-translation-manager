@@ -36,23 +36,55 @@ class GenerationService extends Component
     }
 
     /**
-     * Run generateAll() iff the autoGenerate setting is enabled.
+     * Run generation iff the autoGenerate setting is enabled.
      *
      * Single funnel for the "regenerate files automatically on save/import"
      * behavior. Callers don't gate themselves on the setting — they always
-     * call this method, and the gate decision lives in one place.
+     * call this method, and the gate decision lives in one place. Passing
+     * source IDs limits generation to the changed sources; omitting them keeps
+     * the legacy "regenerate everything" behavior for imports and broad jobs.
      *
+     * @param string[]|null $sourceIds
      * @return bool true if generation ran, false if the setting is off
      * @since 5.24.0
      */
-    public function triggerAutoGenerate(): bool
+    public function triggerAutoGenerate(?array $sourceIds = null): bool
     {
         if (!TranslationManager::getInstance()->getSettings()->autoGenerate) {
             return false;
         }
 
-        $this->generateAll();
+        if ($sourceIds === null) {
+            $this->generateAll();
+            return true;
+        }
+
+        $this->generateSources($sourceIds);
         return true;
+    }
+
+    /**
+     * @param string[] $sourceIds
+     * @return array<string,array<string,mixed>>
+     */
+    public function generateSources(array $sourceIds): array
+    {
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+
+        $results = [];
+        foreach (array_values(array_unique(array_filter($sourceIds))) as $sourceId) {
+            $source = $sourceService->getSourceById((string)$sourceId);
+            if ($source === null) {
+                continue;
+            }
+
+            $results[$source->id] = $source->providerName !== null
+                ? $this->generateProviderTranslations($source->providerName)
+                : $this->generateCategoryTranslations($source->category);
+        }
+
+        return $results;
     }
 
     /**

@@ -193,6 +193,14 @@
             overflow-y: auto;
         }
 
+        .translation-text[readonly],
+        .translation-text[disabled] {
+            background-color: #f3f7fc;
+            border-color: #dfe8f2;
+            color: #596673;
+            cursor: default;
+        }
+
         td[data-column='translationKey'] {
             white-space: pre-wrap;
             max-width: 260px;
@@ -248,7 +256,8 @@
     <td data-column="translationKey" class="lr-hideable-column">{{ item.translationKey|e }}</td>
 
     <td data-column="translation">
-        <textarea class="translation-text" placeholder="{{ 'Enter translation for {language}...'|t('translation-manager', {language: currentLanguage|upper}) }}">{{ item.translation|e }}</textarea>
+        {% set rowCanEdit = item.canEdit ?? false %}
+        <textarea class="translation-text" placeholder="{{ 'Enter translation for {language}...'|t('translation-manager', {language: currentLanguage|upper}) }}" data-can-approve="{{ item.canApprove ?? false ? 'true' : 'false' }}" data-can-delete-unused="{{ item.canDeleteUnused ?? false ? 'true' : 'false' }}" {{ not rowCanEdit ? 'readonly aria-readonly="true"' }}>{{ item.translation|e }}</textarea>
     </td>
 
     <td data-column="status" class="lr-hideable-column">
@@ -313,12 +322,12 @@
             countId: 'tm-bulk-status-count',
             items: [
                 canEdit ? {id: 'mark-draft-btn', label: 'Mark Draft'|t('translation-manager'), value: 'draft', colorSet: 'translationStatus'} : null,
-                (canApprove or (canEdit and not settings.requireApproval)) ? {id: 'mark-translated-btn', label: 'Mark Translated'|t('translation-manager'), value: 'translated', colorSet: 'translationStatus'} : null,
+                canApproveVisibleRows ? {id: 'mark-translated-btn', label: 'Mark Translated'|t('translation-manager'), value: 'translated', colorSet: 'translationStatus'} : null,
             ]|filter(v => v is not null),
         } only %}
     {% endif %}
 
-    {% if status == 'unused' and canDelete %}
+    {% if status == 'unused' and canDeleteVisibleRows %}
         {% include 'lindemannrock-base/_components/bulk-actions-menu' with {
             label: 'Actions'|t('translation-manager'),
             countId: 'tm-bulk-actions-count',
@@ -338,14 +347,15 @@
                     {% if canGenerateAll %}
                         <li><a href="#" id="generate-all-btn">{{ 'Generate All Files'|t('translation-manager') }}</a></li>
                     {% endif %}
-                    {% for provider in formProviders %}
-                        {% if provider.available and provider.canGenerate %}
-                            <li><a href="#" class="generate-provider-btn" data-provider="{{ provider.name }}">{{ 'Generate {name} Files Only'|t('translation-manager', {name: provider.label}) }}</a></li>
+                    {% for source in craft.translationManager.getSources() %}
+                        {% if source.canGenerate %}
+                            {% if source.providerName %}
+                                <li><a href="#" class="generate-provider-btn" data-provider="{{ source.providerName }}">{{ 'Generate {name} Files Only'|t('translation-manager', {name: source.label}) }}</a></li>
+                            {% else %}
+                                <li><a href="#" class="generate-category-btn" data-category="{{ source.category }}">{{ 'Generate {name} Files Only'|t('translation-manager', {name: source.label}) }}</a></li>
+                            {% endif %}
                         {% endif %}
                     {% endfor %}
-                    {% if settings.enableSiteTranslations and canGenerateSite %}
-                        <li><a href="#" id="generate-site-btn">{{ 'Generate {name} Files Only'|t('translation-manager', {name: settings.translationCategory|title}) }}</a></li>
-                    {% endif %}
                 </ul>
             </div>
         </form>
@@ -412,8 +422,55 @@
             return [];
         }
 
+        function filterIdsForStatus(ids, targetStatus) {
+            if (targetStatus === 'draft') {
+                return ids.filter(id => {
+                    const textarea = document.querySelector(`tr[data-id="${id}"] .translation-text`);
+                    return textarea && !textarea.readOnly;
+                });
+            }
+
+            return ids.filter(id => {
+                const textarea = document.querySelector(`tr[data-id="${id}"] .translation-text`);
+                if (!textarea || textarea.readOnly) {
+                    return false;
+                }
+
+                return !{{ settings.requireApproval|json_encode|raw }} || textarea.dataset.canApprove === 'true';
+            });
+        }
+
+        function filterIdsForDelete(ids) {
+            return ids.filter(id => {
+                const textarea = document.querySelector(`tr[data-id="${id}"] .translation-text`);
+                return textarea?.dataset.canDeleteUnused === 'true';
+            });
+        }
+
+        function setBulkButtonVisibility(buttonId, visible) {
+            const button = document.getElementById(buttonId);
+            const wrapper = button?.closest('form, .btngroup');
+            if (wrapper) {
+                wrapper.style.display = visible ? '' : 'none';
+            }
+        }
+
+        function setMenuItemVisibility(actionId, visible) {
+            const action = document.getElementById(actionId);
+            const item = action?.closest('li');
+            if (item) {
+                item.style.display = visible ? '' : 'none';
+            }
+        }
+
+        function updateSourceAwareBulkActions() {
+            const selectedIds = getSelectedIds();
+            setBulkButtonVisibility('lr-bulk-actions-btn', filterIdsForDelete(selectedIds).length > 0);
+            setMenuItemVisibility('mark-translated-btn', filterIdsForStatus(selectedIds, 'translated').length > 0);
+        }
+
         function bulkSetStatus(targetStatus, errorFallback) {
-            const ids = getSelectedIds();
+            const ids = filterIdsForStatus(getSelectedIds(), targetStatus);
             if (!ids.length) return;
 
             Craft.sendActionRequest('POST', 'translation-manager/translations/set-status', {
@@ -444,16 +501,16 @@
         });
         {% endif %}
 
-        {% if canApprove or (canEdit and not settings.requireApproval) %}
+        {% if canApproveVisibleRows %}
         document.getElementById('mark-translated-btn')?.addEventListener('click', function() {
             bulkSetStatus('translated', T.markTranslatedFailed);
         });
         {% endif %}
 
-        {% if status == 'unused' and canDelete %}
+        {% if status == 'unused' and canDeleteVisibleRows %}
         document.getElementById('delete-selected-btn')?.addEventListener('click', function(e) {
             e.preventDefault();
-            const ids = getSelectedIds();
+            const ids = filterIdsForDelete(getSelectedIds());
             if (!ids.length) return;
 
             const confirmTemplate = ids.length === 1 ? T.deleteConfirmSingular : T.deleteConfirmPlural;
@@ -483,6 +540,10 @@
 
             init() {
                 document.querySelectorAll('.translation-text').forEach(textarea => {
+                    if (textarea.readOnly || textarea.disabled) {
+                        return;
+                    }
+
                     const id = textarea.closest('tr').dataset.id;
                     this.originalValues.set(id, textarea.value.trim());
                 });
@@ -561,7 +622,7 @@
             tracker.savingInProgress.add(id);
             const row = document.querySelector(`tr[data-id="${id}"]`);
             const textarea = row?.querySelector('.translation-text');
-            if (!row || !textarea) {
+            if (!row || !textarea || textarea.readOnly || textarea.disabled) {
                 tracker.savingInProgress.delete(id);
                 return false;
             }
@@ -603,6 +664,10 @@
         }
 
         document.querySelectorAll('.translation-text').forEach(textarea => {
+            if (textarea.readOnly || textarea.disabled) {
+                return;
+            }
+
             const row = textarea.closest('tr');
             const id = row.dataset.id;
 
@@ -625,6 +690,25 @@
                 }
             });
         });
+
+        document.querySelectorAll('#lr-table-body tr.lr-data-row').forEach(row => {
+            const textarea = row.querySelector('.translation-text');
+            const checkbox = row.querySelector('.lr-checkbox-cell .checkbox');
+            const canEditRow = textarea && !textarea.readOnly;
+            const canDeleteUnusedRow = textarea?.dataset.canDeleteUnused === 'true';
+            const canSelect = canEditRow || ({{ (status == 'unused')|json_encode|raw }} && canDeleteUnusedRow);
+
+            if (!canSelect && checkbox) {
+                row.dataset.selectable = 'false';
+                checkbox.classList.add('disabled');
+                checkbox.removeAttribute('tabindex');
+                checkbox.setAttribute('aria-disabled', 'true');
+                checkbox.title = {{ 'User does not have permission to edit this translation.'|t('translation-manager')|json_encode|raw }};
+            }
+        });
+
+        document.addEventListener('lr:selectionChanged', updateSourceAwareBulkActions);
+        updateSourceAwareBulkActions();
 
         {% if canEdit %}
         document.getElementById('save-all-btn')?.addEventListener('click', async function() {
@@ -694,8 +778,9 @@
             } else if (type.startsWith('provider:')) {
                 endpoint = 'translation-manager/generate/provider-files';
                 data.provider = type.substring(9);
-            } else if (type === 'site') {
-                endpoint = 'translation-manager/generate/site-files';
+            } else if (type.startsWith('category:')) {
+                endpoint = 'translation-manager/generate/category-files';
+                data.category = type.substring(9);
             }
 
             Craft.sendActionRequest('POST', endpoint, {data}).then(function(response) {
@@ -722,9 +807,11 @@
             });
         });
 
-        document.getElementById('generate-site-btn')?.addEventListener('click', function(e) {
-            e.preventDefault();
-            generateTranslationFiles('site');
+        document.querySelectorAll('.generate-category-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                generateTranslationFiles('category:' + this.dataset.category);
+            });
         });
         {% endif %}
     </script>

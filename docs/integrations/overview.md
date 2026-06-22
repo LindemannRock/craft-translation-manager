@@ -52,8 +52,8 @@ ddev craft translation-manager/translations/generate-provider formie
 
 - **Settings → Integrations** — enable or disable each available provider.
 - **Generate** — generate all files, site files, a site category, or one provider's files.
-- **Maintenance** — recapture provider strings and clean unused provider rows.
-- **Danger zone** — clear a provider's rows when its translation data must be reset.
+- **Maintenance** — capture provider strings and clean unused provider rows.
+- **Danger** — delete a provider's rows when its translation data must be reset.
 - **Import/Export** — import or export provider rows through the CSV/XLSX/PHP workflows.
 
 Provider actions appear only when the provider plugin is installed, enabled in Craft, and enabled in Translation Manager settings.
@@ -68,11 +68,11 @@ For Freeform, native per-site form translations remain authoritative for values 
 
 ## Permission handles
 
-Provider permissions use the stable provider handle, even when the provider's display name is customized in its own settings.
+Provider actions are gated by source-based permissions keyed on the provider's category (its source id). The source id is stable even when the provider's display name is customized in its own settings.
 
-| Provider | Generate | Recapture | Clear |
-|----------|----------|-----------|-------|
-| Formie | `translationManager:generateProvider:formie` | `translationManager:recaptureProvider:formie` | `translationManager:clearProvider:formie` |
-| Freeform | `translationManager:generateProvider:freeform` | `translationManager:recaptureProvider:freeform` | `translationManager:clearProvider:freeform` |
+| Provider | Capture | Generate | Delete |
+|----------|---------|----------|--------|
+| Formie | `translationManager:captureTranslations:formie` | `translationManager:generateSource:formie` | `translationManager:deleteSourceTranslations:formie` |
+| Freeform | `translationManager:captureTranslations:freeform` | `translationManager:generateSource:freeform` | `translationManager:deleteSourceTranslations:freeform` |
 
-For example, if Formie is renamed to "Forms" in Formie's settings, Translation Manager may show that label in the interface, but the permission handle stays `formie`.
+For example, if Formie is renamed to "Forms" in Formie's settings, Translation Manager may show that label in the interface, but the permission handle stays `formie`. See [Permissions](../developers/permissions.md) for the full source-permission tree.

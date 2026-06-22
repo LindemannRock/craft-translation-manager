@@ -18,6 +18,7 @@ use lindemannrock\base\helpers\CpNavHelper;
 use lindemannrock\base\helpers\DateFormatHelper;
 use lindemannrock\translationmanager\helpers\FeatureGate;
 use lindemannrock\translationmanager\records\TranslationRecord;
+use lindemannrock\translationmanager\services\SourceService;
 use lindemannrock\translationmanager\TranslationManager;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
@@ -153,21 +154,36 @@ class TranslationsController extends Controller
 
         $translations = array_slice($allTranslations, $offset, $limit);
         $translations = $this->hydrateAuditFields($translations);
+        $translations = $this->hydrateSourcePermissions($translations);
 
         $stats = TranslationManager::getInstance()->translations->getStatistics();
 
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+
         // ---- Permission booleans (computed once, passed to template) -----
-        $canEdit = $user->checkPermission('translationManager:editTranslations');
-        $canApprove = $user->checkPermission('translationManager:approveTranslations');
-        $canDelete = $user->checkPermission('translationManager:deleteTranslations');
+        $canEdit = $sourceService->currentUserCanAny(SourceService::ACTION_EDIT);
+        $canApprove = $sourceService->currentUserCanAny(SourceService::ACTION_APPROVE);
+        $canApproveVisibleRows = false;
+        foreach ($translations as $translation) {
+            if (($translation['canEdit'] ?? false) && (!$settings->requireApproval || ($translation['canApprove'] ?? false))) {
+                $canApproveVisibleRows = true;
+                break;
+            }
+        }
+        $canDelete = $sourceService->currentUserCanAny(SourceService::ACTION_DELETE_UNUSED);
+        $canDeleteVisibleRows = false;
+        foreach ($translations as $translation) {
+            if (($translation['status'] ?? '') === 'unused' && ($translation['canDeleteUnused'] ?? false)) {
+                $canDeleteVisibleRows = true;
+                break;
+            }
+        }
         $canExport = $user->checkPermission('translationManager:exportTranslations');
-        $canGenerateAll = $user->checkPermission('translationManager:generateAllTranslations');
-        /** @var \lindemannrock\translationmanager\services\IntegrationService $integrationService */
-        $integrationService = TranslationManager::getInstance()->get('integrations');
-        $canGenerateProviders = $integrationService->currentUserCanAnyFormsProviderAction('generate');
-        $canGenerateSite = $user->checkPermission('translationManager:generateSiteTranslations');
-        $canGenerate = $user->checkPermission('translationManager:generateTranslations');
-        $hasAnyGeneratePermission = $canGenerate || $canGenerateAll || $canGenerateProviders || $canGenerateSite;
+        $canGenerateAll = $user->checkPermission($sourceService->getAllPermission(SourceService::ACTION_GENERATE));
+        $canGenerateProviders = $sourceService->currentUserCanAny(SourceService::ACTION_GENERATE);
+        $canGenerateSite = $sourceService->currentUserCanAny(SourceService::ACTION_GENERATE);
+        $hasAnyGeneratePermission = $canGenerateAll || $canGenerateProviders || $canGenerateSite;
 
         return $this->renderTemplate('translation-manager/translations/index', [
             'translations' => $translations,
@@ -193,7 +209,9 @@ class TranslationsController extends Controller
             // Pre-computed permission booleans — avoid currentUser.can() in Twig.
             'canEdit' => $canEdit,
             'canApprove' => $canApprove,
+            'canApproveVisibleRows' => $canApproveVisibleRows,
             'canDelete' => $canDelete,
+            'canDeleteVisibleRows' => $canDeleteVisibleRows,
             'canExport' => $canExport,
             'canGenerateAll' => $canGenerateAll,
             'canGenerateProviders' => $canGenerateProviders,
@@ -226,6 +244,32 @@ class TranslationsController extends Controller
             $translation['createdByEmail'] = $this->resolveUserEmail($translation['createdByUserId'] ?? null, $userEmailMap);
             $translation['reviewedByEmail'] = $this->resolveUserEmail($translation['reviewedByUserId'] ?? null, $userEmailMap);
             $translation['reviewedAtFormatted'] = $this->formatDateForDisplay($translation['reviewedAt'] ?? null);
+        }
+        unset($translation);
+
+        return $translations;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $translations
+     * @return array<int, array<string, mixed>>
+     */
+    private function hydrateSourcePermissions(array $translations): array
+    {
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+
+        foreach ($translations as &$translation) {
+            $source = $sourceService->getSourceForContextAndCategory(
+                (string)($translation['context'] ?? ''),
+                (string)($translation['category'] ?? ''),
+            );
+            $sourceId = $source?->id;
+
+            $translation['sourceId'] = $sourceId;
+            $translation['canEdit'] = $sourceId !== null && $sourceService->currentUserCan(SourceService::ACTION_EDIT, $sourceId);
+            $translation['canApprove'] = $sourceId !== null && $sourceService->currentUserCan(SourceService::ACTION_APPROVE, $sourceId);
+            $translation['canDeleteUnused'] = $sourceId !== null && $sourceService->currentUserCan(SourceService::ACTION_DELETE_UNUSED, $sourceId);
         }
         unset($translation);
 
@@ -294,11 +338,6 @@ class TranslationsController extends Controller
         $this->requirePostRequest();
         $this->requireAcceptsJson();
         
-        // Check permission
-        if (!Craft::$app->getUser()->checkPermission('translationManager:editTranslations')) {
-            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to edit translations.'));
-        }
-
         $request = Craft::$app->getRequest();
         $id = $request->getRequiredBodyParam('id');
         $translationText = $request->getBodyParam('translation', '');
@@ -310,6 +349,12 @@ class TranslationsController extends Controller
                 'success' => false,
                 'error' => Craft::t('translation-manager', 'Translation not found'),
             ]);
+        }
+
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+        if (!$sourceService->currentUserCanRecord(SourceService::ACTION_EDIT, $translation)) {
+            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to edit translations.'));
         }
 
         $translation->translation = $translationText;
@@ -325,7 +370,13 @@ class TranslationsController extends Controller
         }
         
         if (TranslationManager::getInstance()->translations->saveTranslation($translation)) {
-            TranslationManager::getInstance()->generate->triggerAutoGenerate();
+            if ($translation->status === 'translated') {
+                $source = $sourceService->getSourceForRecord($translation);
+                $sourceIds = $this->filterAutoGenerateSourceIds($source !== null ? [$source->id] : []);
+                if ($sourceIds !== []) {
+                    TranslationManager::getInstance()->generate->triggerAutoGenerate($sourceIds);
+                }
+            }
 
             return $this->asJson([
                 'success' => true,
@@ -350,15 +401,11 @@ class TranslationsController extends Controller
         $this->requirePostRequest();
         $this->requireAcceptsJson();
         
-        // Check permission
-        if (!Craft::$app->getUser()->checkPermission('translationManager:editTranslations')) {
-            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to edit translations.'));
-        }
-
         $request = Craft::$app->getRequest();
         $translations = $request->getRequiredBodyParam('translations');
         
         $saved = 0;
+        $savedSourceIds = [];
 
         // Pre-fetch every referenced row in a single SELECT, indexed by id.
         // Same shape as ExportController::actionSelected (audit 2.8) — replaces
@@ -374,6 +421,8 @@ class TranslationsController extends Controller
         $records = $validIds
             ? TranslationRecord::find()->where(['id' => $validIds])->indexBy('id')->all()
             : [];
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
 
         foreach ($translations as $data) {
             if (!isset($data['id']) || !is_numeric($data['id'])) {
@@ -382,6 +431,10 @@ class TranslationsController extends Controller
 
             $translation = $records[(int) $data['id']] ?? null;
             if (!$translation instanceof TranslationRecord) {
+                continue;
+            }
+
+            if (!$sourceService->currentUserCanRecord(SourceService::ACTION_EDIT, $translation)) {
                 continue;
             }
 
@@ -405,11 +458,18 @@ class TranslationsController extends Controller
             }
             if (TranslationManager::getInstance()->translations->saveTranslation($translation)) {
                 $saved++;
+                if ($translation->status === 'translated') {
+                    $source = $sourceService->getSourceForRecord($translation);
+                    if ($source !== null) {
+                        $savedSourceIds[] = $source->id;
+                    }
+                }
             }
         }
 
-        if ($saved > 0) {
-            TranslationManager::getInstance()->generate->triggerAutoGenerate();
+        $savedSourceIds = $this->filterAutoGenerateSourceIds($savedSourceIds);
+        if ($savedSourceIds !== []) {
+            TranslationManager::getInstance()->generate->triggerAutoGenerate($savedSourceIds);
         }
 
         return $this->asJson([
@@ -430,11 +490,6 @@ class TranslationsController extends Controller
         $this->requirePostRequest();
         $this->requireAcceptsJson();
         
-        // Check permission
-        if (!Craft::$app->getUser()->checkPermission('translationManager:deleteTranslations')) {
-            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to delete translations.'));
-        }
-
         $request = Craft::$app->getRequest();
         $ids = $request->getRequiredBodyParam('ids');
         
@@ -445,7 +500,26 @@ class TranslationsController extends Controller
             ]);
         }
 
-        $deleted = TranslationManager::getInstance()->translations->deleteTranslations($ids);
+        /** @var TranslationRecord[] $records */
+        $records = TranslationRecord::find()
+            ->where(['id' => array_filter(array_map('intval', $ids))])
+            ->andWhere(['status' => 'unused'])
+            ->all();
+
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+        $allowedIds = [];
+        foreach ($records as $record) {
+            if ($sourceService->currentUserCanRecord(SourceService::ACTION_DELETE_UNUSED, $record)) {
+                $allowedIds[] = (int)$record->id;
+            }
+        }
+
+        if ($allowedIds === []) {
+            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to delete translations.'));
+        }
+
+        $deleted = TranslationManager::getInstance()->translations->deleteTranslations($allowedIds);
 
         return $this->asJson([
             'success' => true,
@@ -463,10 +537,6 @@ class TranslationsController extends Controller
         $this->requirePostRequest();
         $this->requireAcceptsJson();
 
-        if (!Craft::$app->getUser()->checkPermission('translationManager:editTranslations')) {
-            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to edit translations.'));
-        }
-
         $request = Craft::$app->getRequest();
         $ids = $request->getRequiredBodyParam('ids');
         $targetStatus = (string) $request->getRequiredBodyParam('status');
@@ -479,16 +549,10 @@ class TranslationsController extends Controller
         }
 
         $settings = TranslationManager::getInstance()->getSettings();
-        if (
-            $targetStatus === 'translated'
-            && $settings->requireApproval
-            && !Craft::$app->getUser()->checkPermission('translationManager:approveTranslations')
-        ) {
-            throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to approve translations.'));
-        }
 
         $updated = 0;
         $skipped = 0;
+        $updatedSourceIds = [];
 
         // Batch-fetch all referenced records in one query (avoids an N+1 SELECT
         // per id; same pattern as actionSaveAll).
@@ -503,6 +567,8 @@ class TranslationsController extends Controller
         $records = $validIds === []
             ? []
             : TranslationRecord::find()->where(['id' => $validIds])->indexBy('id')->all();
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
 
         foreach ($ids as $id) {
             if (!is_numeric($id)) {
@@ -512,6 +578,20 @@ class TranslationsController extends Controller
 
             $translation = $records[(int) $id] ?? null;
             if (!$translation instanceof TranslationRecord) {
+                $skipped++;
+                continue;
+            }
+
+            if (!$sourceService->currentUserCanRecord(SourceService::ACTION_EDIT, $translation)) {
+                $skipped++;
+                continue;
+            }
+
+            if (
+                $targetStatus === 'translated'
+                && $settings->requireApproval
+                && !$sourceService->currentUserCanRecord(SourceService::ACTION_APPROVE, $translation)
+            ) {
                 $skipped++;
                 continue;
             }
@@ -536,6 +616,10 @@ class TranslationsController extends Controller
 
             if ($translation->save()) {
                 $updated++;
+                $source = $sourceService->getSourceForRecord($translation);
+                if ($source !== null) {
+                    $updatedSourceIds[] = $source->id;
+                }
             } else {
                 $skipped++;
             }
@@ -543,7 +627,10 @@ class TranslationsController extends Controller
 
         // Re-generate files when rows are marked translated (autoGenerate gated inside).
         if ($updated > 0 && $targetStatus === 'translated') {
-            TranslationManager::getInstance()->generate->triggerAutoGenerate();
+            $updatedSourceIds = $this->filterAutoGenerateSourceIds($updatedSourceIds);
+            if ($updatedSourceIds !== []) {
+                TranslationManager::getInstance()->generate->triggerAutoGenerate($updatedSourceIds);
+            }
         }
 
         return $this->asJson([
@@ -571,8 +658,25 @@ class TranslationsController extends Controller
             return 'translated';
         }
 
-        $canApprove = Craft::$app->getUser()->checkPermission('translationManager:approveTranslations');
-        return $canApprove ? 'translated' : 'draft';
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+
+        return $sourceService->currentUserCanRecord(SourceService::ACTION_APPROVE, $translation) ? 'translated' : 'draft';
+    }
+
+    /**
+     * @param string[] $sourceIds
+     * @return string[]
+     */
+    private function filterAutoGenerateSourceIds(array $sourceIds): array
+    {
+        /** @var SourceService $sourceService */
+        $sourceService = TranslationManager::getInstance()->get('sources');
+
+        return array_values(array_unique(array_filter(
+            $sourceIds,
+            static fn(string $sourceId): bool => $sourceService->currentUserCan(SourceService::ACTION_GENERATE, $sourceId),
+        )));
     }
 
     /**

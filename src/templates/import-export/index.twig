@@ -72,14 +72,9 @@
             }) }}
 
             {% set categoryOptions = [{value: '', label: 'All Categories'|t('translation-manager')}] %}
-            {% for provider in craft.translationManager.getEnabledFormProviders() %}
-                {% set categoryOptions = categoryOptions|merge([{value: provider.category, label: provider.label}]) %}
+            {% for source in craft.translationManager.getSources() %}
+                {% set categoryOptions = categoryOptions|merge([{value: source.category, label: source.label}]) %}
             {% endfor %}
-            {% if settings.enableSiteTranslations %}
-                {% for category in settings.getEnabledCategories() %}
-                    {% set categoryOptions = categoryOptions|merge([{value: category, label: category|title}]) %}
-                {% endfor %}
-            {% endif %}
             {{ forms.select({
                 id: 'exportCategory',
                 name: 'category',
@@ -454,32 +449,19 @@
             });
             languageSelect.innerHTML = languageHtml;
 
-            // Update category dropdown - include enabled categories + form providers + detected category
-            const enabledCategories = {{ settings.getEnabledCategories()|json_encode|raw }};
-            {% set formProviderCategories = [] %}
-            {% for provider in craft.translationManager.getEnabledFormProviders() %}
-                {% set formProviderCategories = formProviderCategories|merge([provider.category]) %}
-            {% endfor %}
-            const formProviderCategories = {{ formProviderCategories|json_encode|raw }};
-
-            // Build list of all available categories
-            let allCategories = [...enabledCategories];
-
-            formProviderCategories.forEach(cat => {
-                if (cat && !allCategories.includes(cat)) {
-                    allCategories.push(cat);
-                }
-            });
+            // Update category dropdown - include ordered sources + detected category
+            const sourceCategories = {{ craft.translationManager.getSources()|map(source => {value: source.category, label: source.label})|json_encode|raw }};
+            let allCategories = [...sourceCategories];
 
             // Add the detected category from filename if not already in list
-            if (category && !allCategories.includes(category)) {
-                allCategories.push(category);
+            if (category && !allCategories.some(item => item.value === category)) {
+                allCategories.push({value: category, label: category});
             }
 
             let categoryHtml = '';
-            allCategories.forEach(cat => {
-                const selected = cat === category ? 'selected' : '';
-                categoryHtml += `<option value="${cat}" ${selected}>${cat}</option>`;
+            allCategories.forEach(item => {
+                const selected = item.value === category ? 'selected' : '';
+                categoryHtml += `<option value="${item.value}" ${selected}>${item.label}</option>`;
             });
             categorySelect.innerHTML = categoryHtml;
 
