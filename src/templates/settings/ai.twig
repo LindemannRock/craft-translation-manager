@@ -88,7 +88,7 @@
 
                 {{ forms.selectField({
                     label: "OpenAI Model"|t('translation-manager'),
-                    instructions: "Select a recommended model or choose Custom. <a href=\"https://platform.openai.com/docs/models\" target=\"_blank\" rel=\"noopener\">OpenAI model docs</a>"|raw,
+                    instructions: "Select a recommended model or choose Custom. <a href=\"https://platform.openai.com/docs/models\" target=\"_blank\" rel=\"noopener\">OpenAI model docs</a>"|t('translation-manager')|raw,
                     id: 'openAiModel',
                     name: 'settings[openAiModel]',
                     value: openAiCurrentModel in openAiKnownModels ? openAiCurrentModel : '__custom__',
@@ -132,7 +132,7 @@
 
                 {{ forms.selectField({
                     label: "Gemini Model"|t('translation-manager'),
-                    instructions: "Select a recommended model or choose Custom. <a href=\"https://ai.google.dev/gemini-api/docs/models\" target=\"_blank\" rel=\"noopener\">Gemini model docs</a>"|raw,
+                    instructions: "Select a recommended model or choose Custom. <a href=\"https://ai.google.dev/gemini-api/docs/models\" target=\"_blank\" rel=\"noopener\">Gemini model docs</a>"|t('translation-manager')|raw,
                     id: 'geminiModel',
                     name: 'settings[geminiModel]',
                     value: geminiCurrentModel in geminiKnownModels ? geminiCurrentModel : '__custom__',
@@ -176,7 +176,7 @@
 
                 {{ forms.selectField({
                     label: "Anthropic Model"|t('translation-manager'),
-                    instructions: "Select a recommended model or choose Custom. <a href=\"https://docs.anthropic.com/en/docs/about-claude/models/overview\" target=\"_blank\" rel=\"noopener\">Anthropic model docs</a>"|raw,
+                    instructions: "Select a recommended model or choose Custom. <a href=\"https://docs.anthropic.com/en/docs/about-claude/models/overview\" target=\"_blank\" rel=\"noopener\">Anthropic model docs</a>"|t('translation-manager')|raw,
                     id: 'anthropicModel',
                     name: 'settings[anthropicModel]',
                     value: anthropicCurrentModel in anthropicKnownModels ? anthropicCurrentModel : '__custom__',
