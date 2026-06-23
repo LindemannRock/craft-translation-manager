@@ -1,5 +1,10 @@
 {% extends "_layouts/cp" %}
 {% set title = "Import History"|t('translation-manager') %}
+{% set canAccessBackups = currentUser.can('translationManager:manageBackups')
+    or currentUser.can('translationManager:createBackups')
+    or currentUser.can('translationManager:downloadBackups')
+    or currentUser.can('translationManager:restoreBackups')
+    or currentUser.can('translationManager:deleteBackups') %}
 
 {% set crumbs = [
     {
@@ -32,7 +37,9 @@
                     <th>{{ "Updated"|t('translation-manager') }}</th>
                     <th>{{ "Skipped"|t('translation-manager') }}</th>
                     <th>{{ "Status"|t('translation-manager') }}</th>
-                    <th>{{ "Backup"|t('translation-manager') }}</th>
+                    {% if canAccessBackups %}
+                        <th>{{ "Backup"|t('translation-manager') }}</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -77,15 +84,17 @@
                                 <span class="status live">{{ "Success"|t('translation-manager') }}</span>
                             {% endif %}
                         </td>
-                        <td>
-                            {% if import.backupPath %}
-                                <a href="{{ url('translation-manager/backups') }}" class="go">
-                                    <span class="status">{{ "View"|t('translation-manager') }}</span>
-                                </a>
-                            {% else %}
-                                <span class="light">—</span>
-                            {% endif %}
-                        </td>
+                        {% if canAccessBackups %}
+                            <td>
+                                {% if import.backupPath %}
+                                    <a href="{{ url('translation-manager/backups') }}" class="go">
+                                        <span class="status">{{ "View"|t('translation-manager') }}</span>
+                                    </a>
+                                {% else %}
+                                    <span class="light">—</span>
+                                {% endif %}
+                            </td>
+                        {% endif %}
                     </tr>
                     {% if import.hasErrors %}
                         {% set errorsMessage %}
@@ -97,7 +106,7 @@
                             </ul>
                         {% endset %}
                         <tr>
-                            <td colspan="8">
+                            <td colspan="{{ canAccessBackups ? 8 : 7 }}">
                                 {% include 'lindemannrock-base/_components/info-box' with {
                                     type: 'error',
                                     variant: 'colored',

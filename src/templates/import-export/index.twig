@@ -19,6 +19,11 @@
     or currentUser.can('translationManager:exportTranslations') %}
 {% set canShowHistory = currentUser.can('translationManager:manageImportExport') %}
 {% set canClearHistory = currentUser.can('translationManager:clearImportHistory') %}
+{% set canAccessBackups = currentUser.can('translationManager:manageBackups')
+    or currentUser.can('translationManager:createBackups')
+    or currentUser.can('translationManager:downloadBackups')
+    or currentUser.can('translationManager:restoreBackups')
+    or currentUser.can('translationManager:deleteBackups') %}
 
 {% set tabs = {} %}
 
@@ -51,6 +56,14 @@
 {% import "_includes/forms" as forms %}
 
 {% block content %}
+{% if not canImportExport and not canClearHistory %}
+    {% include 'lindemannrock-base/_components/info-box' with {
+        message: 'You can view this section, but no import or export actions are available for your account. Ask an administrator to grant Import Translations, Export Translations, or Clear import history.'|t('translation-manager'),
+        type: 'info',
+        margin: 'bottom',
+    } %}
+{% endif %}
+
 <div id="import-export">
     {% if currentUser.can('translationManager:exportTranslations') %}
     <h2>{{ "Export Translations"|t('translation-manager') }}</h2>
@@ -102,7 +115,9 @@
         </div>
     </form>
 
-    <hr>
+    {% if currentUser.can('translationManager:importTranslations') %}
+        <hr>
+    {% endif %}
     {% endif %}
 
     {% if currentUser.can('translationManager:importTranslations') %}
@@ -299,6 +314,7 @@
         sectionId: 'history',
         importHistory: importHistory,
         canClearHistory: canClearHistory,
+        canAccessBackups: canAccessBackups,
         clearButtonId: 'clear-logs-btn',
         emptyMessage: 'No imports found yet.'|t('translation-manager'),
     } only %}
@@ -320,17 +336,21 @@
         {% endblock %}
 
         {% block extraColumnsHead %}
-            <th scope="col" class="rightalign">{{ "Backup"|t('translation-manager') }}</th>
+            {% if canAccessBackups %}
+                <th scope="col" class="rightalign">{{ "Backup"|t('translation-manager') }}</th>
+            {% endif %}
         {% endblock %}
 
         {% block extraColumnsCell %}
-            <td class="rightalign">
-                {% if item.backupPath %}
-                    <a href="{{ url('translation-manager/backups') }}" class="go" title="{{ 'View backup'|t('translation-manager') }}">{{ "View"|t('translation-manager') }}</a>
-                {% else %}
-                    -
-                {% endif %}
-            </td>
+            {% if canAccessBackups %}
+                <td class="rightalign">
+                    {% if item.backupPath %}
+                        <a href="{{ url('translation-manager/backups') }}" class="go" title="{{ 'View backup'|t('translation-manager') }}">{{ "View"|t('translation-manager') }}</a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            {% endif %}
         {% endblock %}
     {% endembed %}
 {% endif %}

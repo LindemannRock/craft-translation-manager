@@ -606,6 +606,7 @@ return [
     // Import/Export
     'Export Translations' => 'تصدير الترجمات',
     'Download translations for backup or migration.' => 'تنزيل الترجمات للنسخ الاحتياطي أو الترحيل.',
+    'You can view this section, but no import or export actions are available for your account. Ask an administrator to grant Import Translations, Export Translations, or Clear import history.' => 'يمكنك عرض هذا القسم، لكن لا تتوفر أي إجراءات استيراد أو تصدير لحسابك. اطلب من مسؤول منح صلاحيات استيراد الترجمات أو تصدير الترجمات أو مسح سجل الاستيراد.',
     'All Languages' => 'جميع اللغات',
     'All Categories' => 'جميع الفئات',
     'All Statuses' => 'جميع الحالات',

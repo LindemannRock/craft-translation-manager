@@ -29,6 +29,8 @@ Translation Manager permissions are independent of Craft site permissions. Craft
 | └─ `translationManager:exportTranslations` | Export translations as CSV files |
 | └─ `translationManager:clearImportHistory` | Clear the import history log |
 
+`manageImportExport` lets a user view the section and import history without granting import or export actions. Backup links in import history are shown only when the user also has at least one backup permission.
+
 ### Generate Files
 
 | Permission | Description |

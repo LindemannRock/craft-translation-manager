@@ -606,6 +606,7 @@ return [
     // Import/Export
     'Export Translations' => 'Exportar traduções',
     'Download translations for backup or migration.' => 'Transfira as traduções para cópia de segurança ou migração.',
+    'You can view this section, but no import or export actions are available for your account. Ask an administrator to grant Import Translations, Export Translations, or Clear import history.' => 'Pode ver esta secção, mas não há ações de importação ou exportação disponíveis para a sua conta. Peça a um administrador para conceder Importar traduções, Exportar traduções ou Limpar histórico de importação.',
     'All Languages' => 'Todos os idiomas',
     'All Categories' => 'Todas as categorias',
     'All Statuses' => 'Todos os estados',

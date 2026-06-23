@@ -603,6 +603,7 @@ return [
     // Import/Export
     'Export Translations' => 'Export Translations',
     'Download translations for backup or migration.' => 'Download translations for backup or migration.',
+    'You can view this section, but no import or export actions are available for your account. Ask an administrator to grant Import Translations, Export Translations, or Clear import history.' => 'You can view this section, but no import or export actions are available for your account. Ask an administrator to grant Import Translations, Export Translations, or Clear import history.',
     'All Languages' => 'All Languages',
     'All Categories' => 'All Categories',
     'All Statuses' => 'All Statuses',

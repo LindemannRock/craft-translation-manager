@@ -606,6 +606,7 @@ return [
     // Import/Export
     'Export Translations' => 'Exportera översättningar',
     'Download translations for backup or migration.' => 'Ladda ner översättningar för säkerhetskopiering eller migrering.',
+    'You can view this section, but no import or export actions are available for your account. Ask an administrator to grant Import Translations, Export Translations, or Clear import history.' => 'Du kan visa det här avsnittet, men inga import- eller exportåtgärder är tillgängliga för ditt konto. Be en administratör att ge behörighet till Importera översättningar, Exportera översättningar eller Rensa importhistorik.',
     'All Languages' => 'Alla språk',
     'All Categories' => 'Alla kategorier',
     'All Statuses' => 'Alla statusar',

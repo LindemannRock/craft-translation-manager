@@ -606,6 +606,7 @@ return [
     // Import/Export
     'Export Translations' => 'Vertalingen exporteren',
     'Download translations for backup or migration.' => 'Vertalingen downloaden voor back-up of migratie.',
+    'You can view this section, but no import or export actions are available for your account. Ask an administrator to grant Import Translations, Export Translations, or Clear import history.' => 'U kunt deze sectie bekijken, maar er zijn geen import- of exportacties beschikbaar voor uw account. Vraag een beheerder om de rechten Vertalingen importeren, Vertalingen exporteren of Importgeschiedenis wissen toe te kennen.',
     'All Languages' => 'Alle talen',
     'All Categories' => 'Alle categorieën',
     'All Statuses' => 'Alle statussen',
