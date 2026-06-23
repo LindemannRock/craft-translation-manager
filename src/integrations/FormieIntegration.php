@@ -479,6 +479,12 @@ class FormieIntegration extends BaseIntegration
 
             // Address field with subfield labels
             case 'verbb\formie\fields\Address':
+                $nestedCaptured = $this->captureNestedSubFieldTranslations($form, $field);
+                if ($nestedCaptured !== []) {
+                    $captured = array_merge($captured, $nestedCaptured);
+                    break;
+                }
+
                 $subfields = [
                     'address1' => ['enabled' => $field->address1Enabled ?? false],
                     'address2' => ['enabled' => $field->address2Enabled ?? false],
@@ -530,6 +536,12 @@ class FormieIntegration extends BaseIntegration
 
             // Name field with subfield labels
             case 'verbb\formie\fields\Name':
+                $nestedCaptured = $this->captureNestedSubFieldTranslations($form, $field);
+                if ($nestedCaptured !== []) {
+                    $captured = array_merge($captured, $nestedCaptured);
+                    break;
+                }
+
                 $nameSubfields = [
                     'prefix' => $field->prefixEnabled ?? false,
                     'firstName' => true, // Always enabled
@@ -574,16 +586,7 @@ class FormieIntegration extends BaseIntegration
 
             // Table field with column headers
             case 'verbb\formie\fields\Table':
-                if (property_exists($field, 'columns') && is_array($field->columns)) {
-                    foreach ($field->columns as $col => $column) {
-                        if (isset($column['heading'])) {
-                            $captured[] = $this->createTranslation(
-                                $column['heading'],
-                                "formie.{$formHandle}.{$fieldHandle}.column.{$col}"
-                            );
-                        }
-                    }
-                }
+                $captured = array_merge($captured, $this->captureTableColumnTranslations($form, $field));
 
                 if (property_exists($field, 'addRowLabel') && $field->addRowLabel) {
                     $captured[] = $this->createTranslation(
@@ -612,6 +615,12 @@ class FormieIntegration extends BaseIntegration
 
             // Date field with subfield labels
             case 'verbb\formie\fields\Date':
+                $nestedCaptured = $this->captureNestedSubFieldTranslations($form, $field);
+                if ($nestedCaptured !== []) {
+                    $captured = array_merge($captured, $nestedCaptured);
+                    break;
+                }
+
                 $dateSubfields = [
                     'day' => $field->dayEnabled ?? false,
                     'month' => $field->monthEnabled ?? false,
@@ -864,6 +873,128 @@ class FormieIntegration extends BaseIntegration
     }
 
     /**
+     * Capture Formie table column headings and select option labels.
+     *
+     * @return array<int,mixed>
+     */
+    private function captureTableColumnTranslations($form, $field): array
+    {
+        if (!property_exists($field, 'columns') || !is_array($field->columns)) {
+            return [];
+        }
+
+        $captured = [];
+
+        foreach ($field->columns as $col => $column) {
+            if (!empty($column['heading'])) {
+                $captured[] = $this->createTranslation(
+                    $column['heading'],
+                    "formie.{$form->handle}.{$field->handle}.column.{$col}"
+                );
+            }
+
+            if (!empty($column['options']) && is_array($column['options'])) {
+                foreach ($column['options'] as $option) {
+                    if (isset($option['label']) && !empty($option['label'])) {
+                        $optionValue = $option['value'] ?? StringHelper::toKebabCase($option['label']);
+                        $captured[] = $this->createTranslation(
+                            $option['label'],
+                            "formie.{$form->handle}.{$field->handle}.column.{$col}.option.{$optionValue}"
+                        );
+                    }
+                }
+            }
+        }
+
+        return array_filter($captured);
+    }
+
+    /**
+     * Capture current Formie nested sub-field configuration for compound fields.
+     *
+     * Address, Date and multi-part Name fields moved their labels,
+     * placeholders and validation messages onto nested field instances. Keep
+     * the context shape identical to the legacy flat-property capture so
+     * existing managed translations continue to match.
+     *
+     * @return array<int,mixed>
+     */
+    private function captureNestedSubFieldTranslations($form, $field): array
+    {
+        $captured = [];
+
+        foreach ($this->getNestedSubFields($field) as $subField) {
+            $contextPrefix = "formie.{$form->handle}.{$field->handle}.{$subField->handle}";
+
+            if ($subField->label) {
+                $captured[] = $this->createTranslation(
+                    $subField->label,
+                    "{$contextPrefix}.label"
+                );
+            }
+
+            if ($subField->instructions) {
+                $captured[] = $this->createTranslation(
+                    $subField->instructions,
+                    "{$contextPrefix}.instructions"
+                );
+            }
+
+            if (property_exists($subField, 'placeholder') && $subField->placeholder) {
+                $captured[] = $this->createTranslation(
+                    $subField->placeholder,
+                    "{$contextPrefix}.placeholder"
+                );
+            }
+
+            if (property_exists($subField, 'errorMessage') && $subField->errorMessage) {
+                $captured[] = $this->createTranslation(
+                    $subField->errorMessage,
+                    "{$contextPrefix}.error"
+                );
+            }
+
+            if (property_exists($subField, 'options') && is_array($subField->options)) {
+                foreach ($subField->options as $option) {
+                    if (isset($option['label']) && !empty($option['label'])) {
+                        $optionValue = $option['value'] ?? StringHelper::toKebabCase($option['label']);
+                        $captured[] = $this->createTranslation(
+                            $option['label'],
+                            "{$contextPrefix}.option.{$optionValue}"
+                        );
+                    }
+                }
+            }
+        }
+
+        return array_filter($captured);
+    }
+
+    /**
+     * Return enabled nested Formie sub-fields for compound fields.
+     *
+     * @return array<int,mixed>
+     */
+    private function getNestedSubFields($field): array
+    {
+        if (!method_exists($field, 'getFields')) {
+            return [];
+        }
+
+        $subFields = [];
+
+        foreach ($field->getFields() as $subField) {
+            if (method_exists($subField, 'getIsDisabled') && $subField->getIsDisabled()) {
+                continue;
+            }
+
+            $subFields[] = $subField;
+        }
+
+        return $subFields;
+    }
+
+    /**
      * Capture default Formie translations (validation messages, error strings, etc.)
      *
      * @return array Captured translations
@@ -980,6 +1111,8 @@ class FormieIntegration extends BaseIntegration
             $activeTexts[$field->errorMessage] = true;
         }
 
+        $this->collectNestedSubFieldTexts($field, $activeTexts);
+
         // Field type-specific content
         $fieldClass = get_class($field);
 
@@ -1080,6 +1213,74 @@ class FormieIntegration extends BaseIntegration
                     $activeTexts[$field->uncheckedValue] = true;
                 }
                 break;
+
+            case 'verbb\formie\fields\Table':
+                $this->collectTableColumnTexts($field, $activeTexts);
+
+                if (property_exists($field, 'addRowLabel') && $field->addRowLabel) {
+                    $activeTexts[$field->addRowLabel] = true;
+                }
+                break;
+        }
+    }
+
+    /**
+     * Collect Formie table column headings and select option labels.
+     *
+     * @param array<string,true> $activeTexts
+     */
+    private function collectTableColumnTexts($field, array &$activeTexts): void
+    {
+        if (!property_exists($field, 'columns') || !is_array($field->columns)) {
+            return;
+        }
+
+        foreach ($field->columns as $column) {
+            if (!empty($column['heading'])) {
+                $activeTexts[$column['heading']] = true;
+            }
+
+            if (!empty($column['options']) && is_array($column['options'])) {
+                foreach ($column['options'] as $option) {
+                    if (isset($option['label']) && !empty($option['label'])) {
+                        $activeTexts[$option['label']] = true;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Collect active text from nested Formie sub-fields.
+     *
+     * @param array<string,true> $activeTexts
+     */
+    private function collectNestedSubFieldTexts($field, array &$activeTexts): void
+    {
+        foreach ($this->getNestedSubFields($field) as $subField) {
+            if ($subField->label) {
+                $activeTexts[$subField->label] = true;
+            }
+
+            if ($subField->instructions) {
+                $activeTexts[$subField->instructions] = true;
+            }
+
+            if (property_exists($subField, 'placeholder') && $subField->placeholder) {
+                $activeTexts[$subField->placeholder] = true;
+            }
+
+            if (property_exists($subField, 'errorMessage') && $subField->errorMessage) {
+                $activeTexts[$subField->errorMessage] = true;
+            }
+
+            if (property_exists($subField, 'options') && is_array($subField->options)) {
+                foreach ($subField->options as $option) {
+                    if (isset($option['label']) && !empty($option['label'])) {
+                        $activeTexts[$option['label']] = true;
+                    }
+                }
+            }
         }
     }
 
