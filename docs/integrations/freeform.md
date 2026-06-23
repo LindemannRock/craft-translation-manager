@@ -28,17 +28,23 @@ For split-runtime or edge hosting, use `hybrid` so translated rows are read from
 
 If Freeform has its own native per-site translation for a value, **Freeform's native translation wins**. When it doesn't, Translation Manager's `freeform` category provides the frontend value through generated files or the database runtime source.
 
+## Works with any Freeform edition
+
+Translation Manager translates Freeform form strings through Craft's standard translation system (`Craft::t('freeform', …)` / `translations/{language}/freeform.php`), so it works on **any** Freeform edition, including Express. It does not require — or use — Freeform's Pro **Site-Aware Forms** feature.
+
+How a form reaches each site depends on whether Site-Aware Forms is enabled in Freeform:
+
+- **Site-Aware Forms off** (Express, or any edition with the setting off) — Freeform does not restrict forms by site, so a form renders on **every** site automatically. Nothing to configure; Translation Manager supplies each site's strings by language.
+- **Site-Aware Forms on** (Freeform Pro) — forms are restricted to the sites you select. Enable the form for **every** site where it should render, or it won't appear there.
+
 ## Freeform Translatable vs Translation Manager
 
-You don't need to enable Freeform's native **Translatable** setting for Translation Manager generated files to work. The two are separate:
+When Site-Aware Forms (Pro) is enabled, each form also gains a per-site **Translatable** toggle. It is separate from Translation Manager:
 
-- Enable the form for every site where it should render.
 - Leave Freeform's native **Translatable** setting **disabled** when Translation Manager should own shared frontend form translations.
 - Enable Freeform's native **Translatable** setting **only** when you intentionally want per-site values managed inside Freeform — those values override Translation Manager values on the frontend.
 
-### Site-aware forms
-
-Freeform forms must be enabled for the site where they're rendered. If a form renders on one site but not another, check the Freeform form's site settings first.
+On editions without Site-Aware Forms there is no Translatable toggle, and Translation Manager owns the frontend strings by default.
 
 ## Captured content
 
@@ -102,8 +108,8 @@ Generating files is required for `php-files` mode. Keep it in place for `hybrid`
 
 ## Testing checklist
 
-1. Confirm the Freeform form is enabled for the current site.
-2. Decide whether Freeform native **Translatable** should be disabled or intentionally used for per-site values.
+1. If Site-Aware Forms (Pro) is enabled, confirm the form is enabled for the current site; without it, forms render on all sites automatically.
+2. If Site-Aware Forms (Pro) is enabled, decide whether Freeform native **Translatable** should stay disabled or be used for per-site values.
 3. Save the Freeform form after adding or changing fields, pages, options, or buttons.
 4. Confirm Translation Manager captured the expected rows in category `freeform`.
 5. Translate the rows for the target language and mark them translated.
@@ -115,8 +121,8 @@ Generating files is required for `php-files` mode. Keep it in place for `hybrid`
 
 If a Freeform string is captured but doesn't translate on the frontend:
 
-- Confirm the Freeform form is enabled for the current site.
+- If Site-Aware Forms (Pro) is enabled, confirm the form is enabled for the current site.
 - Confirm the Freeform integration is enabled in Translation Manager settings.
 - Regenerate Freeform files with `translation-manager/translations/generate-provider freeform`; in hybrid mode those files still provide fallback values.
-- Check whether Freeform's native **Translatable** setting has a per-site value overriding the generated value.
+- If Site-Aware Forms (Pro) is enabled, check whether Freeform's native **Translatable** setting has a per-site value overriding the generated value.
 - In custom templates, wrap raw labels/options/messages with `|t('freeform')`.
