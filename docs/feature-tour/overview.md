@@ -1,6 +1,9 @@
 # Features overview
 
-Translation Manager gives you one place to translate every string your Craft site shows — template text, form fields, and content from other plugins — across all of your sites. It can capture template strings as they're used, captures provider strings as forms are saved, lets your team translate everything in the Control Panel, and generates the production PHP files Craft loads at runtime.
+Translation Manager gives you one place to translate every string your Craft site shows — Formie and Freeform form content, template text, and strings from other plugins — across all of your sites. It can capture template strings as they're used, captures provider strings as forms are saved, lets your team translate everything in the Control Panel, and generates the production PHP files Craft loads at runtime.
+
+> [!NOTE]
+> Translation Manager localizes the **strings** your site shows — Formie and Freeform form fields, template text (`|t()`), Control Panel/UI labels, and other plugins' frontend strings. It is **not an entry/content translator**: your editorial content (entries, fields, sections) stays in Craft's native multi-site model, and this plugin handles everything around it.
 
 ## What you'll use it for
 
