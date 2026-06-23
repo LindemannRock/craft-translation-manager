@@ -35,11 +35,15 @@ Localize your Craft interface and Formie & Freeform forms across every language 
 
 ## Installation
 
-```bash title="Composer"
+### Composer
+
+```bash
 composer require lindemannrock/craft-translation-manager && php craft plugin/install translation-manager
 ```
 
-```bash title="DDEV"
+### DDEV
+
+```bash
 ddev composer require lindemannrock/craft-translation-manager && ddev craft plugin/install translation-manager
 ```
 
