@@ -1,5 +1,19 @@
 # Changelog
 
+## [5.32.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.31.0...v5.32.0) (2026-06-23)
+
+
+### Added
+
+* **import-export:** add backup access permissions and info messages ([c5d7481](https://github.com/LindemannRock/craft-translation-manager/commit/c5d74813870e9023c6ac2d04eef9b1d65441ecdf))
+* **translations:** implement bulk action visibility for translations ([ba073eb](https://github.com/LindemannRock/craft-translation-manager/commit/ba073eb88929b008787bd5b7d1b57cf68d313990))
+
+
+### Fixed
+
+* correct translation approval bulk action permissions ([6032c62](https://github.com/LindemannRock/craft-translation-manager/commit/6032c62433bbb07127e6d65845a9cf8a7e47744a))
+* **i18n:** correct Spanish and Italian translation for import/export actions ([b364be4](https://github.com/LindemannRock/craft-translation-manager/commit/b364be4a4febcfdb8126e83325303663af0ccfb6))
+
 ## [5.31.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.30.0...v5.31.0) - 2026-06-23
 
 
