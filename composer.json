@@ -1,6 +1,6 @@
 {
 	"name": "lindemannrock/craft-translation-manager",
-	"description": "Comprehensive translation management system for Craft CMS with Formie and Freeform integration",
+	"description": "Localize your Craft interface and Formie & Freeform forms across every language — from the Control Panel",
 	"type": "craft-plugin",
 	"version": "5.29.1",
 	"keywords": [

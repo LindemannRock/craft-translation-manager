@@ -8,7 +8,7 @@
 [![Logging Library](https://img.shields.io/badge/Logging%20Library-5.12.0+-green.svg)](https://github.com/LindemannRock/craft-logging-library)
 [![License](https://img.shields.io/packagist/l/lindemannrock/craft-translation-manager.svg)](LICENSE)
 
-Comprehensive translation management for Craft CMS 5 with Formie and Freeform integration.
+Localize your Craft interface and Formie & Freeform forms across every language — from the Control Panel.
 
 ## Features
 

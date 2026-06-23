@@ -2,7 +2,7 @@
 /**
  * Translation Manager plugin for Craft CMS 5.x
  *
- * Comprehensive translation management system for Formie forms and site content
+ * Localize your Craft interface and Formie & Freeform forms across every language — from the Control Panel
  *
  * @link      https://lindemannrock.com
  * @copyright Copyright (c) 2025-2026 LindemannRock
