@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+php <<'PHP'
+<?php
+
+require getcwd() . '/bootstrap.php';
+require CRAFT_VENDOR_PATH . '/craftcms/cms/bootstrap/console.php';
+
+use craft\base\Plugin;
+use lindemannrock\base\Base;
+use lindemannrock\logginglibrary\LoggingLibrary;
+use lindemannrock\translationmanager\models\Settings;
+use lindemannrock\translationmanager\records\TranslationRecord;
+use lindemannrock\translationmanager\services\SourceService;
+use lindemannrock\translationmanager\services\TranslationsService;
+use lindemannrock\translationmanager\TranslationManager;
+
+$plugins = Craft::$app->getPlugins();
+$plugin = $plugins->getPlugin('translation-manager');
+
+if (!$plugin instanceof TranslationManager) {
+    fwrite(STDERR, "translation-manager plugin instance was not loaded.\n");
+    exit(1);
+}
+
+$info = $plugins->getPluginInfo('translation-manager');
+if (($info['isInstalled'] ?? false) !== true || ($info['isEnabled'] ?? false) !== true) {
+    fwrite(STDERR, "translation-manager is not installed and enabled.\n");
+    exit(1);
+}
+
+$logging = $plugins->getPlugin('logging-library');
+if (!$logging instanceof LoggingLibrary) {
+    fwrite(STDERR, "logging-library dependency was not loaded.\n");
+    exit(1);
+}
+
+$loggingInfo = $plugins->getPluginInfo('logging-library');
+if (($loggingInfo['isInstalled'] ?? false) !== true || ($loggingInfo['isEnabled'] ?? false) !== true) {
+    fwrite(STDERR, "logging-library dependency is not installed and enabled.\n");
+    exit(1);
+}
+
+$base = Craft::$app->getModule('lindemannrock-base', false);
+if (!$base instanceof Base) {
+    fwrite(STDERR, "Base module dependency was not registered.\n");
+    exit(1);
+}
+
+$settings = $plugin->getSettings();
+if (!$settings instanceof Settings) {
+    fwrite(STDERR, "translation-manager settings did not load.\n");
+    exit(1);
+}
+
+if ($settings->getPrimaryCategory() !== 'messages') {
+    fwrite(STDERR, "Default primary translation category is not messages.\n");
+    exit(1);
+}
+
+/** @var SourceService $sourceService */
+$sourceService = $plugin->get('sources');
+$sources = $sourceService->getAllSources();
+
+if ($sources === [] || $sources[0]->id !== 'category:messages') {
+    fwrite(STDERR, "Default messages source was not registered.\n");
+    exit(1);
+}
+
+if ($sourceService->getSourcePermission(SourceService::ACTION_EDIT, 'category:messages') !== 'translationManager:editSource:category:messages') {
+    fwrite(STDERR, "Source permission helper returned an unexpected permission name.\n");
+    exit(1);
+}
+
+/** @var TranslationsService $translationsService */
+$translationsService = $plugin->get('translations');
+$text = 'Compatibility smoke text ' . bin2hex(random_bytes(4));
+$record = $translationsService->createOrUpdateTranslation($text, 'site.compat-smoke', 'messages');
+
+if (!$record instanceof TranslationRecord) {
+    fwrite(STDERR, "Translation capture did not return a record.\n");
+    exit(1);
+}
+
+if ($record->translationKey !== $text || $record->category !== 'messages') {
+    fwrite(STDERR, "Captured translation record has unexpected values.\n");
+    exit(1);
+}
+
+$record->translation = $text . ' translated';
+if (!$translationsService->saveTranslation($record)) {
+    fwrite(STDERR, "Saving captured translation failed.\n");
+    exit(1);
+}
+
+$saved = $translationsService->getTranslationById((int)$record->id);
+if (!$saved instanceof TranslationRecord || $saved->status !== 'translated') {
+    fwrite(STDERR, "Saved translation could not be reloaded as translated.\n");
+    exit(1);
+}
+
+$filtered = $translationsService->getTranslations([
+    'allSites' => true,
+    'search' => $text,
+    'category' => 'messages',
+]);
+
+if ($filtered === []) {
+    fwrite(STDERR, "Filtered translation lookup did not find the captured row.\n");
+    exit(1);
+}
+
+$source = $sourceService->getSourceForRecord($saved);
+if ($source === null || $source->id !== 'category:messages') {
+    fwrite(STDERR, "Captured record did not resolve back to the messages source.\n");
+    exit(1);
+}
+
+$deleted = $translationsService->deleteTranslations([(int)$record->id]);
+if ($deleted < 1) {
+    fwrite(STDERR, "Cleanup delete did not remove the captured translation.\n");
+    exit(1);
+}
+
+echo "Translation Manager smoke test passed.\n";
+PHP
