@@ -164,7 +164,10 @@ class TranslationsController extends Controller
         $canApprove = $sourceService->currentUserCanAny(SourceService::ACTION_APPROVE);
         $canApproveVisibleRows = false;
         foreach ($translations as $translation) {
-            if (($translation['canEdit'] ?? false) && (!$settings->requireApproval || ($translation['canApprove'] ?? false))) {
+            if (
+                ($settings->requireApproval && ($translation['canApprove'] ?? false))
+                || (!$settings->requireApproval && ($translation['canEdit'] ?? false))
+            ) {
                 $canApproveVisibleRows = true;
                 break;
             }
@@ -264,9 +267,21 @@ class TranslationsController extends Controller
             $sourceId = $source?->id;
 
             $translation['sourceId'] = $sourceId;
-            $translation['canEdit'] = $sourceId !== null && $sourceService->currentUserCan(SourceService::ACTION_EDIT, $sourceId);
-            $translation['canApprove'] = $sourceId !== null && $sourceService->currentUserCan(SourceService::ACTION_APPROVE, $sourceId);
-            $translation['canDeleteUnused'] = $sourceId !== null && $sourceService->currentUserCan(SourceService::ACTION_DELETE_UNUSED, $sourceId);
+            $translation['canEdit'] = $sourceService->currentUserCanContextAndCategory(
+                SourceService::ACTION_EDIT,
+                (string)($translation['context'] ?? ''),
+                (string)($translation['category'] ?? ''),
+            );
+            $translation['canApprove'] = $sourceService->currentUserCanContextAndCategory(
+                SourceService::ACTION_APPROVE,
+                (string)($translation['context'] ?? ''),
+                (string)($translation['category'] ?? ''),
+            );
+            $translation['canDeleteUnused'] = $sourceService->currentUserCanContextAndCategory(
+                SourceService::ACTION_DELETE_UNUSED,
+                (string)($translation['context'] ?? ''),
+                (string)($translation['category'] ?? ''),
+            );
         }
         unset($translation);
 
@@ -579,16 +594,10 @@ class TranslationsController extends Controller
                 continue;
             }
 
-            if (!$sourceService->currentUserCanRecord(SourceService::ACTION_EDIT, $translation)) {
-                $skipped++;
-                continue;
-            }
-
-            if (
-                $targetStatus === 'translated'
-                && $settings->requireApproval
-                && !$sourceService->currentUserCanRecord(SourceService::ACTION_APPROVE, $translation)
-            ) {
+            $requiredAction = $targetStatus === 'translated' && $settings->requireApproval
+                ? SourceService::ACTION_APPROVE
+                : SourceService::ACTION_EDIT;
+            if (!$sourceService->currentUserCanRecord($requiredAction, $translation)) {
                 $skipped++;
                 continue;
             }

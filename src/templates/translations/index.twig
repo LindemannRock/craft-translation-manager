@@ -171,7 +171,7 @@
         totalCount: totalCount,
         itemLabel: {singular: 'entry'|t('translation-manager'), plural: 'entries'|t('translation-manager')},
     },
-    checkboxes: canEdit or canDelete,
+    checkboxes: canEdit or canApprove or canDelete,
     rowActions: false,
 } %}
 
@@ -257,7 +257,7 @@
 
     <td data-column="translation">
         {% set rowCanEdit = item.canEdit ?? false %}
-        <textarea class="translation-text" placeholder="{{ 'Enter translation for {language}...'|t('translation-manager', {language: currentLanguage|upper}) }}" data-can-approve="{{ item.canApprove ?? false ? 'true' : 'false' }}" data-can-delete-unused="{{ item.canDeleteUnused ?? false ? 'true' : 'false' }}" {{ not rowCanEdit ? 'readonly aria-readonly="true"' }}>{{ item.translation|e }}</textarea>
+        <textarea class="translation-text" placeholder="{{ 'Enter translation for {language}...'|t('translation-manager', {language: currentLanguage|upper}) }}" data-can-approve="{{ (item.canApprove ?? false) ? 'true' : 'false' }}" data-can-delete-unused="{{ (item.canDeleteUnused ?? false) ? 'true' : 'false' }}" {{ not rowCanEdit ? 'readonly aria-readonly="true"' }}>{{ item.translation|e }}</textarea>
     </td>
 
     <td data-column="status" class="lr-hideable-column">
@@ -432,11 +432,15 @@
 
             return ids.filter(id => {
                 const textarea = document.querySelector(`tr[data-id="${id}"] .translation-text`);
-                if (!textarea || textarea.readOnly) {
+                if (!textarea || textarea.value.trim() === '') {
                     return false;
                 }
 
-                return !{{ settings.requireApproval|json_encode|raw }} || textarea.dataset.canApprove === 'true';
+                if ({{ settings.requireApproval|json_encode|raw }}) {
+                    return ['true', '1'].includes(textarea.dataset.canApprove);
+                }
+
+                return !textarea.readOnly;
             });
         }
 
@@ -455,18 +459,9 @@
             }
         }
 
-        function setMenuItemVisibility(actionId, visible) {
-            const action = document.getElementById(actionId);
-            const item = action?.closest('li');
-            if (item) {
-                item.style.display = visible ? '' : 'none';
-            }
-        }
-
         function updateSourceAwareBulkActions() {
             const selectedIds = getSelectedIds();
             setBulkButtonVisibility('lr-bulk-actions-btn', filterIdsForDelete(selectedIds).length > 0);
-            setMenuItemVisibility('mark-translated-btn', filterIdsForStatus(selectedIds, 'translated').length > 0);
         }
 
         function bulkSetStatus(targetStatus, errorFallback) {
@@ -695,8 +690,9 @@
             const textarea = row.querySelector('.translation-text');
             const checkbox = row.querySelector('.lr-checkbox-cell .checkbox');
             const canEditRow = textarea && !textarea.readOnly;
+            const canApproveRow = ['true', '1'].includes(textarea?.dataset.canApprove || '');
             const canDeleteUnusedRow = textarea?.dataset.canDeleteUnused === 'true';
-            const canSelect = canEditRow || ({{ (status == 'unused')|json_encode|raw }} && canDeleteUnusedRow);
+            const canSelect = canEditRow || canApproveRow || ({{ (status == 'unused')|json_encode|raw }} && canDeleteUnusedRow);
 
             if (!canSelect && checkbox) {
                 row.dataset.selectable = 'false';

@@ -295,6 +295,60 @@ final class SourcePermissionControllerGateTest extends TestCase
         }
     }
 
+    public function testResolveStatusForSaveHonorsApproveAllWhenSourceIsUnresolved(): void
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $originalRequireApproval = $settings->requireApproval;
+        $settings->requireApproval = true;
+
+        $record = new TranslationRecord();
+        $record->category = '__missing_category__';
+        $record->context = 'site';
+        $record->status = 'pending';
+
+        $controller = new TranslationsController('translations', TranslationManager::getInstance());
+        $method = new \ReflectionMethod($controller, 'resolveStatusForSave');
+        $sourceService = $this->sourceService();
+
+        try {
+            $this->installUser([$sourceService->getAllPermission(SourceService::ACTION_APPROVE)]);
+
+            self::assertSame('translated', $method->invoke($controller, $record, 'Approved text'));
+        } finally {
+            $settings->requireApproval = $originalRequireApproval;
+        }
+    }
+
+    public function testSetStatusTranslatedUsesApprovePermissionWithoutEditPermission(): void
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $originalRequireApproval = $settings->requireApproval;
+        $settings->requireApproval = true;
+
+        $category = $this->primaryCategory();
+        $record = $this->seedTranslationRecord($category);
+        $record->translation = 'Existing translated text';
+        self::assertTrue($record->save(), json_encode($record->getErrors()));
+        $sourceService = $this->sourceService();
+
+        try {
+            $this->installRequest([
+                'ids' => [$record->id],
+                'status' => 'translated',
+            ]);
+            $this->installUser([$sourceService->getAllPermission(SourceService::ACTION_APPROVE)]);
+
+            $response = (new PermissionGateTranslationsController('translations', TranslationManager::getInstance()))->actionSetStatus();
+
+            self::assertSame(200, $response->statusCode);
+            self::assertSame(1, $response->data['updated'] ?? null);
+            self::assertSame(0, $response->data['skipped'] ?? null);
+            self::assertSame('translated', TranslationRecord::findOne($record->id)?->status);
+        } finally {
+            $settings->requireApproval = $originalRequireApproval;
+        }
+    }
+
     public function testSaveDraftDoesNotTriggerAutoGenerate(): void
     {
         $settings = TranslationManager::getInstance()->getSettings();

@@ -208,7 +208,24 @@ class SourceService extends Component
 
     public function currentUserCanRecord(string $action, TranslationRecord $record): bool
     {
+        $user = \Craft::$app->getUser();
+        if ($user->checkPermission($this->getAllPermission($action))) {
+            return true;
+        }
+
         $source = $this->getSourceForRecord($record);
+
+        return $source !== null && $this->currentUserCan($action, $source->id);
+    }
+
+    public function currentUserCanContextAndCategory(string $action, string $context, string $category): bool
+    {
+        $user = \Craft::$app->getUser();
+        if ($user->checkPermission($this->getAllPermission($action))) {
+            return true;
+        }
+
+        $source = $this->getSourceForContextAndCategory($context, $category);
 
         return $source !== null && $this->currentUserCan($action, $source->id);
     }
