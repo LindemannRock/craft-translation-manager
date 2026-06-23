@@ -1,5 +1,27 @@
 # Changelog
 
+## [5.30.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.29.1...v5.30.0) - 2026-06-23
+
+
+### Added
+
+* add smoke test scripts for Craft compatibility checks ([a57ab08](https://github.com/LindemannRock/craft-translation-manager/commit/a57ab08aad80ec87dbaaae48e536ee448173bfc2))
+* capture required message for Freeform fields ([27e2cf7](https://github.com/LindemannRock/craft-translation-manager/commit/27e2cf70058b96c4631741600a214d8f3eb795c4))
+* enhance translation statistics with language support and coverage metrics ([ea68487](https://github.com/LindemannRock/craft-translation-manager/commit/ea684877c8e6668ae4356378bc0d15fc53b22998))
+* gate internal AI translation workflow ([1c6f99b](https://github.com/LindemannRock/craft-translation-manager/commit/1c6f99b96fbf028984c75844e59d79502ca94ce5))
+* **settings:** rename runtime translation source options to php-files and hybrid ([f095a39](https://github.com/LindemannRock/craft-translation-manager/commit/f095a3941de17bc52145894c3ef850406cc8dbd2))
+
+
+### Fixed
+
+* capture translations only from active Freeform forms ([51c451c](https://github.com/LindemannRock/craft-translation-manager/commit/51c451c0555ff19979fb746bf8342cfacaba6792))
+* gate generation debug output to dev mode ([1b12f82](https://github.com/LindemannRock/craft-translation-manager/commit/1b12f8294d1b59ae3f21411012bb04c01fc0f957))
+* guard generated translation file paths ([57f296d](https://github.com/LindemannRock/craft-translation-manager/commit/57f296dbc4113a69f273fbb62df362e68c90885a))
+* **i18n:** correct OpenAI, Gemini, and Anthropic model documentation strings ([2efc170](https://github.com/LindemannRock/craft-translation-manager/commit/2efc1706a6aea83882f3552ceea044e53ad56c35))
+* namespace translation source permission IDs ([40d6f71](https://github.com/LindemannRock/craft-translation-manager/commit/40d6f7137e2ad3b3821602391b17a45a7368248d))
+* replace clear gates with source-scoped delete permissions ([39e243f](https://github.com/LindemannRock/craft-translation-manager/commit/39e243f5c6dfbf4fdaa255c8851955daadd5fbfb))
+* **settings:** remove enableSuggestions setting ([6624537](https://github.com/LindemannRock/craft-translation-manager/commit/6624537c69e940229e2b8d49a41d64e13013051c))
+
 ## [5.29.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.29.0...v5.29.1) - 2026-06-20
 
 
