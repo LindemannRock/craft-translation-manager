@@ -173,7 +173,7 @@ class FreeformIntegration extends BaseIntegration
     {
         $activeTexts = [];
 
-        foreach ($this->getAllForms() as $form) {
+        foreach ($this->getActiveForms() as $form) {
             if ($this->isFormExcluded($form->getHandle(), $form->getName())) {
                 continue;
             }
@@ -200,7 +200,7 @@ class FreeformIntegration extends BaseIntegration
             return ['processed' => 0, 'captured' => 0];
         }
 
-        foreach ($this->getAllForms() as $form) {
+        foreach ($this->getActiveForms() as $form) {
             $captured += count($this->captureTranslations($form));
             $processed++;
         }
@@ -264,11 +264,18 @@ class FreeformIntegration extends BaseIntegration
     }
 
     /**
+     * Active (non-archived) Freeform forms.
+     *
+     * Freeform soft-deletes forms by setting `dateArchived` rather than removing
+     * the row, and its `forms->getAllForms()` returns archived forms too. We must
+     * use `getAllNonArchivedForms()` so deleted forms are not scanned/captured and
+     * their translations are reclaimed as unused on the next usage recheck.
+     *
      * @return Form[]
      */
-    private function getAllForms(): array
+    private function getActiveForms(): array
     {
-        return \Solspace\Freeform\Freeform::getInstance()->forms->getAllForms();
+        return \Solspace\Freeform\Freeform::getInstance()->forms->getAllNonArchivedForms();
     }
 
     /**
