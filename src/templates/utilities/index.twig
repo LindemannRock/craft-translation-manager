@@ -9,9 +9,9 @@
 {% set hasNavigation = canManageTranslations or canImportExport or canBackups or canMaintenance %}
 
 {# Calculate coverage colors #}
-{% set translatedPercentage = stats.total > 0 ? ((stats.translated / stats.total) * 100)|round : 100 %}
-{% set coverageColor = translatedPercentage == 100 ? lrPaletteColor('emerald').color : (translatedPercentage >= 90 ? lrPaletteColor('amber').color : (translatedPercentage >= 70 ? lrPaletteColor('sky').color : lrPaletteColor('red').color)) %}
-{% set coverageBadge = translatedPercentage == 100 ? 'Complete'|t('translation-manager') : (translatedPercentage >= 90 ? 'Good'|t('translation-manager') : (translatedPercentage >= 70 ? 'In Progress'|t('translation-manager') : 'Needs Attention'|t('translation-manager'))) %}
+{% set translatedPercentage = stats.total > 0 ? ((stats.translated / stats.total) * 100)|round : 0 %}
+{% set coverageColor = stats.total == 0 ? lrPaletteColor('gray').color : (translatedPercentage == 100 ? lrPaletteColor('emerald').color : (translatedPercentage >= 90 ? lrPaletteColor('amber').color : (translatedPercentage >= 70 ? lrPaletteColor('sky').color : lrPaletteColor('red').color))) %}
+{% set coverageBadge = stats.total == 0 ? 'No translations found.'|t('translation-manager') : (translatedPercentage == 100 ? 'Complete'|t('translation-manager') : (translatedPercentage >= 90 ? 'Good'|t('translation-manager') : (translatedPercentage >= 70 ? 'In Progress'|t('translation-manager') : 'Needs Attention'|t('translation-manager')))) %}
 
 {% set utilitiesConfig = {
     plugin: {
@@ -29,10 +29,10 @@
     {% if canManageTranslations %}
     <form method="get" style="margin: 0;">
         <div class="select">
-            <select name="siteId" onchange="this.form.submit()">
-                {% for site in allSites %}
-                    <option value="{{ site.id }}" {{ currentSiteId == site.id ? 'selected' : '' }}>
-                        {{ site.name }} ({{ site.language|upper }})
+            <select name="language" aria-label="{{ 'Select language'|t('translation-manager') }}" onchange="this.form.submit()">
+                {% for language in languages %}
+                    <option value="{{ language }}" {{ currentLanguage == language ? 'selected' : '' }}>
+                        {{ language|upper }}
                     </option>
                 {% endfor %}
             </select>
@@ -73,10 +73,10 @@
     {% include 'lindemannrock-base/_components/unified-card' with {
         title: 'Translation Types'|t('translation-manager'),
         color: lrPaletteColor('violet').color,
-        value: stats.formie + stats.site,
-        description: 'Total translation sources'|t('translation-manager'),
+        value: stats.forms + stats.site,
+        description: 'By Type'|t('translation-manager'),
         subBoxes: [
-            {value: stats.formie, label: craft.translationManager.getFormiePluginName()},
+            {value: stats.forms, label: 'Forms'|t('translation-manager')},
             {value: stats.site, label: 'Site'|t('translation-manager')},
         ],
     } only %}
@@ -87,7 +87,7 @@
     {% if hasNavigation %}
         {% set navButtons = [] %}
         {% if canManageTranslations %}
-            {% set navButtons = navButtons|merge([{type: 'link', label: 'Manage Translations'|t('translation-manager'), url: url('translation-manager', {language: stats.siteInfo.language ?? craft.app.sites.currentSite.language})}]) %}
+            {% set navButtons = navButtons|merge([{type: 'link', label: 'Manage Translations'|t('translation-manager'), url: url('translation-manager', {language: currentLanguage})}]) %}
         {% endif %}
         {% if canImportExport %}
             {% set navButtons = navButtons|merge([{type: 'link', label: 'Manage Import/Export'|t('translation-manager'), url: url('translation-manager/import-export')}]) %}
@@ -108,9 +108,9 @@
 {% endblock %}
 
 {% block additionalContent %}
-    {% if canManageTranslations and stats.siteInfo %}
+    {% if canManageTranslations %}
         {% include 'lindemannrock-base/_components/info-box' with {
-            message: '<strong>' ~ "Current Site:"|t('translation-manager') ~ '</strong> ' ~ stats.siteInfo.name ~ ' (' ~ stats.siteInfo.language|upper ~ ')',
+            message: '<strong>' ~ 'Language'|t('translation-manager') ~ ':</strong> ' ~ currentLanguage|upper,
         } %}
     {% endif %}
 {% endblock %}

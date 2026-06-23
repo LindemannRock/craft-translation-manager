@@ -1280,16 +1280,14 @@ class TranslationsService extends Component
     /**
      * Get translation statistics
      */
-    public function getStatistics(?int $siteId = null): array
+    public function getStatistics(?int $siteId = null, ?string $language = null): array
     {
         $settings = TranslationManager::getInstance()->getSettings();
-        $query = (new Query())
-            ->from(TranslationRecord::tableName());
-            
-        // Apply site filter if specified
-        if ($siteId) {
-            $query->andWhere(['siteId' => $siteId]);
-        }
+        $language = $language !== null && $language !== ''
+            ? $settings->mapLanguage($language)
+            : null;
+
+        $scope = $this->buildStatisticsScope($siteId, $language);
             
         // Don't apply integration filters for statistics - show all data
         // This gives a true picture of what's in the database
@@ -1298,7 +1296,7 @@ class TranslationsService extends Component
         $statusCounts = (new Query())
             ->select(['status', 'COUNT(*) as count'])
             ->from(TranslationRecord::tableName())
-            ->andWhere($siteId ? ['siteId' => $siteId] : [])
+            ->andWhere($scope)
             ->groupBy('status')
             ->createCommand()
             ->queryAll();
@@ -1318,22 +1316,22 @@ class TranslationsService extends Component
         
 
         // Get type counts with same site filter
-        $formsCount = (new Query())
+        $formsCount = (int) (new Query())
             ->from(TranslationRecord::tableName())
-            ->andWhere($siteId ? ['siteId' => $siteId] : [])
+            ->andWhere($scope)
             ->andWhere($this->buildSourceTypeContextCondition('forms') ?? '0=1')
             ->count();
         
         $siteQuery = (new Query())
             ->from(TranslationRecord::tableName())
-            ->andWhere($siteId ? ['siteId' => $siteId] : []);
+            ->andWhere($scope);
 
         $nonIntegrationCondition = $this->buildNonIntegrationContextCondition();
         if ($nonIntegrationCondition !== null) {
             $siteQuery->andWhere($nonIntegrationCondition);
         }
 
-        $siteCount = $siteQuery->count();
+        $siteCount = (int) $siteQuery->count();
 
         $stats = [
             'total' => $total,
@@ -1341,7 +1339,6 @@ class TranslationsService extends Component
             'draft' => $draft,
             'translated' => $translated,
             'unused' => $unused,
-            'formie' => $this->countTranslationsForContextPrefixes(['formie'], $siteId),
             'forms' => $formsCount,
             'site' => $siteCount,
         ];
@@ -1360,17 +1357,25 @@ class TranslationsService extends Component
     }
 
     /**
-     * Count translations for context prefixes.
+     * Build the row scope for statistics queries.
      *
-     * @param string[] $prefixes
+     * Language is the canonical model for translations. Site ID remains a
+     * legacy fallback for old callers that have not moved to language-based
+     * scoping yet.
+     *
+     * @return array<string, int|string>
      */
-    private function countTranslationsForContextPrefixes(array $prefixes, ?int $siteId = null): int
+    private function buildStatisticsScope(?int $siteId = null, ?string $language = null): array
     {
-        return (int) (new Query())
-            ->from(TranslationRecord::tableName())
-            ->andWhere($siteId ? ['siteId' => $siteId] : [])
-            ->andWhere($this->buildContextPrefixCondition($prefixes) ?? '0=1')
-            ->count();
+        if ($language !== null && $language !== '') {
+            return ['language' => $language];
+        }
+
+        if ($siteId) {
+            return ['siteId' => $siteId];
+        }
+
+        return [];
     }
     
     /**

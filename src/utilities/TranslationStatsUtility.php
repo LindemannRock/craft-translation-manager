@@ -52,16 +52,18 @@ class TranslationStatsUtility extends Utility
     {
         $plugin = TranslationManager::getInstance();
         $user = Craft::$app->getUser();
-        $allowedSites = $plugin->getAllowedSites();
+        $settings = $plugin->getSettings();
+        $languages = $plugin->getUniqueLanguages();
 
-        // Get site from URL parameter, fallback to current CP site
         $request = Craft::$app->getRequest();
-        $siteId = (int) $request->getParam('siteId', 0);
+        $language = (string) $request->getParam('language', '');
+        if ($language === '') {
+            $language = Craft::$app->getSites()->getCurrentSite()->language;
+        }
+        $language = $settings->mapLanguage($language);
 
-        $allowedSiteIds = array_map(fn($site) => (int) $site->id, $allowedSites);
-        if (!$siteId || !in_array($siteId, $allowedSiteIds, true)) {
-            $firstAllowedSite = reset($allowedSites);
-            $siteId = (int) ($firstAllowedSite?->id ?? Craft::$app->getSites()->getCurrentSite()->id);
+        if (!in_array($language, $languages, true)) {
+            $language = $languages[0] ?? $settings->mapLanguage(Craft::$app->getSites()->getCurrentSite()->language);
         }
 
         $stats = [
@@ -69,32 +71,21 @@ class TranslationStatsUtility extends Utility
             'translated' => 0,
             'pending' => 0,
             'unused' => 0,
-            'formie' => 0,
+            'forms' => 0,
             'site' => 0,
             'siteInfo' => null,
         ];
-        $allSiteStats = [];
 
         if ($user->getIdentity() && $user->checkPermission('translationManager:manageTranslations')) {
-            $stats = $plugin->translations->getStatistics($siteId);
-
-            foreach ($allowedSites as $site) {
-                $allSiteStats[$site->id] = $plugin->translations->getStatistics($site->id);
-                $allSiteStats[$site->id]['siteInfo'] = [
-                    'id' => $site->id,
-                    'name' => $site->name,
-                    'language' => $site->language,
-                ];
-            }
+            $stats = $plugin->translations->getStatistics(null, $language);
         }
 
         return Craft::$app->getView()->renderTemplate(
             'translation-manager/utilities/index',
             [
                 'stats' => $stats,
-                'currentSiteId' => $siteId,
-                'allSiteStats' => $allSiteStats,
-                'allSites' => $allowedSites,
+                'currentLanguage' => $language,
+                'languages' => $languages,
             ]
         );
     }
