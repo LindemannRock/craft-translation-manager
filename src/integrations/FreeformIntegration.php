@@ -28,6 +28,8 @@ use yii\base\Event;
  */
 class FreeformIntegration extends BaseIntegration
 {
+    private const DEFAULT_REQUIRED_MESSAGE = 'This field is required';
+
     /**
      * @inheritdoc
      */
@@ -328,7 +330,7 @@ class FreeformIntegration extends BaseIntegration
 
         $this->addEntry($entries, $this->readRawProperty($field, 'label'), "{$context}.label");
         $this->addEntry($entries, $this->readRawProperty($field, 'instructions'), "{$context}.instructions");
-        $this->addEntry($entries, $this->readRawProperty($field, 'requiredMessage'), "{$context}.required");
+        $this->addEntry($entries, $this->getRequiredMessage($field), "{$context}.required");
 
         foreach (['placeholder', 'content', 'message', 'addButtonLabel', 'addButtonMarkup', 'removeButtonLabel', 'removeButtonMarkup'] as $property) {
             $this->addEntry($entries, $this->readRawProperty($field, $property), "{$context}.{$property}");
@@ -453,6 +455,29 @@ class FreeformIntegration extends BaseIntegration
         } while ($class instanceof \ReflectionClass);
 
         return null;
+    }
+
+    private function getRequiredMessage(object $field): mixed
+    {
+        $message = $this->readRawProperty($field, 'requiredMessage');
+        if (is_scalar($message) && trim((string)$message) !== '') {
+            return $message;
+        }
+
+        if ($this->isFieldRequired($field)) {
+            return self::DEFAULT_REQUIRED_MESSAGE;
+        }
+
+        return $message;
+    }
+
+    private function isFieldRequired(object $field): bool
+    {
+        if (method_exists($field, 'isRequired')) {
+            return (bool)$field->isRequired();
+        }
+
+        return (bool)$this->readRawProperty($field, 'required');
     }
 
     private function contextSegment(string $value): string
