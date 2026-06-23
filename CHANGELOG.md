@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.31.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.30.0...v5.31.0) - 2026-06-23
+
+
+### Added
+
+* **formie:** capture translations for nested sub-fields and table columns ([2794494](https://github.com/LindemannRock/craft-translation-manager/commit/27944944c8d7c732e444fd5a5a23048aac1c9e54))
+
 ## [5.30.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.29.1...v5.30.0) - 2026-06-23
 
 
