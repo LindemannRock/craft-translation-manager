@@ -109,10 +109,8 @@
 
 {% block additionalContent %}
     {% if canManageTranslations and stats.siteInfo %}
-        <div style="margin-top: 24px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center;">
-            <span style="color: #6b7280; font-size: 13px;">
-                <strong>{{ "Current Site:"|t('translation-manager') }}</strong> {{ stats.siteInfo.name }} ({{ stats.siteInfo.language|upper }})
-            </span>
-        </div>
+        {% include 'lindemannrock-base/_components/info-box' with {
+            message: '<strong>' ~ "Current Site:"|t('translation-manager') ~ '</strong> ' ~ stats.siteInfo.name ~ ' (' ~ stats.siteInfo.language|upper ~ ')',
+        } %}
     {% endif %}
 {% endblock %}
