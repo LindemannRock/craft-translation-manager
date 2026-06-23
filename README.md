@@ -5,7 +5,7 @@
 [![Latest Version](https://img.shields.io/packagist/v/lindemannrock/craft-translation-manager.svg)](https://packagist.org/packages/lindemannrock/craft-translation-manager)
 [![Craft CMS](https://img.shields.io/badge/Craft%20CMS-5.10+-orange.svg)](https://craftcms.com/)
 [![PHP](https://img.shields.io/badge/PHP-8.2+-blue.svg)](https://php.net/)
-[![Logging Library](https://img.shields.io/badge/Logging%20Library-5.11.0+-green.svg)](https://github.com/LindemannRock/craft-logging-library)
+[![Logging Library](https://img.shields.io/badge/Logging%20Library-5.12.0+-green.svg)](https://github.com/LindemannRock/craft-logging-library)
 [![License](https://img.shields.io/packagist/l/lindemannrock/craft-translation-manager.svg)](LICENSE)
 
 Comprehensive translation management for Craft CMS 5 with Formie and Freeform integration.
@@ -31,7 +31,7 @@ Comprehensive translation management for Craft CMS 5 with Formie and Freeform in
 
 - Craft CMS 5.10+
 - PHP 8.2+
-- [Logging Library](https://github.com/LindemannRock/craft-logging-library) 5.11.0+ (installed automatically)
+- [Logging Library](https://github.com/LindemannRock/craft-logging-library) 5.12.0+ (installed automatically)
 
 ## Installation
 
