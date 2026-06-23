@@ -10,14 +10,6 @@
 
 Comprehensive translation management for Craft CMS 5 with Formie and Freeform integration.
 
-## License
-
-This is a commercial plugin licensed under the [Craft License](https://craftcms.github.io/license/). It will be available on the [Craft Plugin Store](https://plugins.craftcms.com) soon. See [LICENSE.md](LICENSE.md) for details.
-
-## ⚠️ Pre-Release
-
-This plugin is in active development and not yet available on the Craft Plugin Store. Features and APIs may change before the initial public release.
-
 ## Features
 
 - **Multi-Site Translations** — site-aware management for any language combination with locale variant support
@@ -29,7 +21,7 @@ This plugin is in active development and not yet available on the Craft Plugin S
 - **Import/Export** — CSV import with preview and validation, PHP file import/export
 - **GraphQL** — Read-only translation lookup and catalog queries for headless frontends
 - **Backup System** — scheduled backups with cloud storage (S3, Servd, Wasabi) and one-click restore
-- **Maintenance Tools** — template scanner, usage detection, granular cleanup
+- **Maintenance Tools** — template & form capture, usage detection, granular cleanup
 - **Statistics Utility** — Control Panel Utilities panel with per-site translation counts
 - **Security** — XSS protection, CSRF validation, path traversal prevention, CSV injection guards
 - **RTL Support** — full Arabic/Hebrew text editing with proper display
