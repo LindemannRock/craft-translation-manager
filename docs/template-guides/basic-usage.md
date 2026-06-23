@@ -43,7 +43,7 @@ What does and doesn't get captured:
 - **Skip patterns apply.** Anything matching a configured [skip pattern](../get-started/configuration.md#skip-patterns) is never captured.
 - **Captured once.** A string already in the database (or already seen earlier in the same request) isn't duplicated.
 
-Capture isn't limited to front-end requests — strings rendered in the Control Panel or a console command can be captured too, as long as they're in an enabled category and an allowed site language.
+Capture isn't limited to front-end requests — strings rendered in the Control Panel or a console command can be captured too, as long as they're in an enabled category and a configured or mapped language.
 
 ## More examples
 
@@ -76,4 +76,4 @@ In the Control Panel each translation shows a status:
 1. **Consistent category** — always use the same translation category for your site strings.
 2. **Meaningful keys** — use readable English text as the key.
 3. **Avoid Twig in keys** — text containing `{{`, `{%`, or `{#` is automatically excluded from capture.
-4. **Enabled categories only** — runtime capture stores only strings in your enabled categories and allowed site languages. It is not limited to front-end requests, so strings rendered in the Control Panel or console can also be captured.
+4. **Enabled categories only** — runtime capture stores only strings in your enabled categories and configured or mapped languages. It is not limited to front-end requests, so strings rendered in the Control Panel or console can also be captured.

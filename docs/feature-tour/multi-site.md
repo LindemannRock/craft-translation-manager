@@ -17,7 +17,7 @@ Run one Craft install across several sites and languages, and translate each str
 
 ![Language switcher in the Translation Manager breadcrumb](images/multi-site-language-switcher.webp)
 
-The switcher lists the languages in use across your sites, with regional variants consolidated to their base language (so a mapped `en-US` shows under `en`).
+The switcher lists the managed languages in use across your sites, with regional variants consolidated to their base language (so a mapped `en-US` shows under `en`). It is a language selector, not a Craft site-permission selector; Translation Manager permissions decide which sources a user can edit or approve inside that language.
 
 ## How it works
 

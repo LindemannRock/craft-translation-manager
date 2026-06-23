@@ -12,7 +12,7 @@ Localize your Craft interface and Formie & Freeform forms across every language 
 
 ## Features
 
-- **Multi-Site Translations** — site-aware management for any language combination with locale variant support
+- **Multi-Language Site Support** — manage one key across any site/language combination with locale variant support
 - **Multi-Category Support** — multiple translation categories (site, emails, errors) with separate file generation
 - **Formie and Freeform Integration** — automatic capture of form fields, options, labels, messages, and button text
 - **Smart Deduplication** — each unique text stored once, context updated automatically

@@ -2,7 +2,9 @@
 
 Translation Manager registers granular permissions that can be assigned to user groups via **Settings → Users → User Groups → [Group Name] → Translation Manager**.
 
-Maintenance and provider actions are gated by **source-based permissions**: each translation source (the site category and every enabled form provider) gets its own capture / generate / delete / edit / approve handle, plus an "all sources" handle for each action.
+Maintenance, provider, and translation-table actions are gated by **source-based permissions**: each translation source (a configured template category and every enabled form provider) gets its own capture / generate / delete / edit / approve handle, plus an "all sources" handle for each action.
+
+Translation Manager permissions are independent of Craft site permissions. Craft site access does not restrict rows in the translations table; use Translation Manager's source-specific permissions to decide who can edit, approve, generate, capture, or delete **Site** category strings and **Forms** provider strings. The language selector controls which language rows a user is working on, not which Craft sites they can edit.
 
 ## Permission Structure
 
@@ -109,7 +111,7 @@ Craft's nested permissions are a UI convenience — the parent permission does n
 
 To give a user read-only access to translations, grant only `manageTranslations` (without any nested write permissions). For full access, also grant the specific write permissions needed.
 
-For each source action there are two granularities: the **all-sources** handle (e.g. `captureAllTranslations`, `deleteAllSourceTranslations`) and the **per-source** handle (e.g. `captureTranslations:provider:freeform`). Granting the all-sources handle covers every source; granting only a per-source handle limits the user to that one source.
+For each source action there are two granularities: the **all-sources** handle (e.g. `captureAllTranslations`, `approveAllTranslations`, `deleteAllSourceTranslations`) and the **per-source** handle (e.g. `captureTranslations:provider:freeform`, `approveSource:provider:freeform`). Granting the all-sources handle covers every source; granting only a per-source handle limits the user to that one source.
 
 ## Source Permission Handles
 
@@ -118,10 +120,10 @@ Per-source permissions include the **source id** in the permission name. Source 
 - Configured categories use `category:{category}`, for example `category:messages`.
 - Form providers use `provider:{provider}`, for example `provider:formie`.
 
-| Source | Capture | Generate | Delete |
-|--------|---------|----------|--------|
-| Messages category | `translationManager:captureTranslations:category:messages` | `translationManager:generateSource:category:messages` | `translationManager:deleteSourceTranslations:category:messages` |
-| Formie | `translationManager:captureTranslations:provider:formie` | `translationManager:generateSource:provider:formie` | `translationManager:deleteSourceTranslations:provider:formie` |
-| Freeform | `translationManager:captureTranslations:provider:freeform` | `translationManager:generateSource:provider:freeform` | `translationManager:deleteSourceTranslations:provider:freeform` |
+| Source | Edit | Approve | Capture | Generate | Delete |
+|--------|------|---------|---------|----------|--------|
+| Messages category | `translationManager:editSource:category:messages` | `translationManager:approveSource:category:messages` | `translationManager:captureTranslations:category:messages` | `translationManager:generateSource:category:messages` | `translationManager:deleteSourceTranslations:category:messages` |
+| Formie | `translationManager:editSource:provider:formie` | `translationManager:approveSource:provider:formie` | `translationManager:captureTranslations:provider:formie` | `translationManager:generateSource:provider:formie` | `translationManager:deleteSourceTranslations:provider:formie` |
+| Freeform | `translationManager:editSource:provider:freeform` | `translationManager:approveSource:provider:freeform` | `translationManager:captureTranslations:provider:freeform` | `translationManager:generateSource:provider:freeform` | `translationManager:deleteSourceTranslations:provider:freeform` |
 
 The source id is stable and does not change when the provider's display name changes. For example, a Formie install renamed to "Forms" still uses `provider:formie` in permission handles.

@@ -1,6 +1,6 @@
 # Quickstart
 
-Capture your first translations and edit them in the Control Panel — no code beyond the `|t()` calls already in your templates. By the end of this guide you'll have runtime capture enabled, strings translated for a second site, and files ready to generate.
+Capture your first translations and edit them in the Control Panel — no code beyond the `|t()` calls already in your templates. By the end of this guide you'll have runtime capture enabled, strings translated for another language, and files ready to generate.
 
 ## 1. Install the plugin
 
@@ -10,7 +10,7 @@ See [Installation](installation.md) for the full Composer and DDEV options.
 
 Go to **Translation Manager → Settings → Translation Sources** and confirm **Enable Site Translations** is on. This captures the `|t()` calls in your templates as translatable strings.
 
-While you're here, check **Source Language** matches the language your `|t()` keys are written in (English by default). That language is treated as already translated, so you only translate *into* your other sites — set it correctly now, before you capture anything. See [Source Language](configuration.md#source-language).
+While you're here, check **Source Language** matches the language your `|t()` keys are written in (English by default). That language is treated as already translated, so you only translate *into* your other languages — set it correctly now, before you capture anything. See [Source Language](configuration.md#source-language).
 
 Then go to **Translation Manager → Settings → Auto-Capture** and enable **Capture Missing Translations**. If **Only in devMode** is enabled, do this on a devMode environment.
 

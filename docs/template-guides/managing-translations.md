@@ -14,7 +14,7 @@ Do the day-to-day translation work in **Translation Manager → Translations**: 
 ## Translate a string
 
 1. Go to **Translation Manager → Translations**.
-2. Narrow the list with the **filter** dropdown — by **Status** (All, Pending, Draft, Translated, Unused), **Type** (All, Forms, Site), or **Origin** (All Origins, Manual, Import, System) — or **search** by source text, translated text, or context.
+2. Narrow the list with the **filter** dropdown — by **Status** (All, Pending, Draft, Translated, Unused), **Type** (All, Forms, Site), or **Origin** (All Origins, Manual, Import, System) — or **search** by source text, translated text, or context. **Type** describes where the string belongs: **Forms** for Formie/Freeform provider strings, and **Site** for template/category strings such as `messages` or `shop`.
 3. Type the translation into the input field. Right-to-left languages display with the correct text direction automatically.
 4. Save with **Save All Changes**, the **Ctrl/Cmd + S** shortcut, or by turning on **Enable Auto-Save** in settings (with a configurable delay).
 
@@ -45,15 +45,15 @@ The **Created By**, **Reviewed By**, and **Reviewed At** columns track who last 
 
 For teams where one person translates and another signs off, turn on **Require Approval Before Publish** in **Settings → General**. Once it's on:
 
-- A translator **without** the *Approve Translations* permission saves to **Draft** instead of Translated — nothing goes live yet.
-- An **approver** (with *Approve Translations*) saves straight to **Translated**, and their name and the time are stamped into **Reviewed By** / **Reviewed At**.
+- A translator **without** the matching approve permission saves to **Draft** instead of Translated — nothing goes live yet.
+- An **approver** (with the all-source approve permission or the matching source-specific approve permission) saves straight to **Translated**, and their name and the time are stamped into **Reviewed By** / **Reviewed At**.
 
 To move several strings at once, select them and use the **Set status** bulk menu:
 
 - **Mark Draft** — send strings back for more work (available to anyone who can edit).
-- **Mark Translated** — publish them (only approvers see this when approval is required).
+- **Mark Translated** — publish them (available to users who can approve the selected source when approval is required).
 
-Leave **Require Approval Before Publish** off for a single-editor workflow where every save publishes immediately. The setting pairs with the *Approve Translations* permission — see [Permissions](../developers/permissions.md).
+Leave **Require Approval Before Publish** off for a single-editor workflow where every save publishes immediately. The setting pairs with Translation Manager's all-source and source-specific approve permissions — see [Permissions](../developers/permissions.md).
 
 ## Delete unused
 
@@ -73,7 +73,7 @@ Craft's **Utilities** section includes a Translation Manager panel that shows wh
 
 - **Translation Coverage** — the percentage translated, with a status badge (Needs Attention → In Progress → Good → Complete — or *No translations found* when there's nothing to count yet)
 - **Work Queue** — how many translations are still **Pending**, plus the **Unused** count
-- **Translation Types** — the split between **Forms** (Formie + Freeform) and **Site** strings
+- **Translation Types** — the split between **Forms** (Formie + Freeform provider strings) and **Site** strings (template/category strings)
 
 Use the **language selector** at the top to switch which language's numbers you're looking at — the same mapped languages as the translations list, so the counts line up with the rows there — and the quick links to jump straight into managing, importing, backing up, or maintenance.
 

@@ -19,7 +19,7 @@ Translation Manager gives you one place to translate every string your Craft sit
 
 ### Core
 
-- **Multi-site translation support** — site-aware management for any language combination ([Multi-site](multi-site.md))
+- **Multi-language site support** — manage one key across any site/language combination ([Multi-site](multi-site.md))
 - **Unified management** — every translation in one searchable, filterable list
 - **Smart deduplication** — each unique string is stored once, no matter how many forms reuse it
 - **Built-in form provider support** — automatic capture and generation for Formie and Freeform ([Integrations](../integrations/overview.md))
@@ -48,7 +48,7 @@ Translation Manager gives you one place to translate every string your Craft sit
 
 ## Explore the features
 
-- [Multi-site support](multi-site.md) — manage one key across every site language
+- [Multi-site support](multi-site.md) — manage one key across every language your sites use
 - [Integrations](../integrations/overview.md) — the Formie and Freeform provider lifecycle
 - [Import / export](import-export.md) — CSV and PHP file operations
 - [Maintenance](maintenance.md) — capture, clean up, and delete translations safely
