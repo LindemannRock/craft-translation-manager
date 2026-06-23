@@ -257,7 +257,8 @@
 
     <td data-column="translation">
         {% set rowCanEdit = item.canEdit ?? false %}
-        <textarea class="translation-text" placeholder="{{ 'Enter translation for {language}...'|t('translation-manager', {language: currentLanguage|upper}) }}" data-can-approve="{{ (item.canApprove ?? false) ? 'true' : 'false' }}" data-can-delete-unused="{{ (item.canDeleteUnused ?? false) ? 'true' : 'false' }}" {{ not rowCanEdit ? 'readonly aria-readonly="true"' }}>{{ item.translation|e }}</textarea>
+        {% set rowBulkActions = item.bulkActions ?? {} %}
+        <textarea class="translation-text" placeholder="{{ 'Enter translation for {language}...'|t('translation-manager', {language: currentLanguage|upper}) }}" data-bulk-mark-draft="{{ (rowBulkActions.markDraft ?? false) ? 'true' : 'false' }}" data-bulk-mark-translated="{{ (rowBulkActions.markTranslated ?? false) ? 'true' : 'false' }}" data-bulk-delete-unused="{{ (rowBulkActions.deleteUnused ?? false) ? 'true' : 'false' }}" {{ not rowCanEdit ? 'readonly aria-readonly="true"' }}>{{ item.translation|e }}</textarea>
     </td>
 
     <td data-column="status" class="lr-hideable-column">
@@ -423,31 +424,21 @@
         }
 
         function filterIdsForStatus(ids, targetStatus) {
-            if (targetStatus === 'draft') {
-                return ids.filter(id => {
-                    const textarea = document.querySelector(`tr[data-id="${id}"] .translation-text`);
-                    return textarea && !textarea.readOnly;
-                });
-            }
-
             return ids.filter(id => {
                 const textarea = document.querySelector(`tr[data-id="${id}"] .translation-text`);
                 if (!textarea || textarea.value.trim() === '') {
                     return false;
                 }
 
-                if ({{ settings.requireApproval|json_encode|raw }}) {
-                    return ['true', '1'].includes(textarea.dataset.canApprove);
-                }
-
-                return !textarea.readOnly;
+                const action = targetStatus === 'translated' ? 'bulkMarkTranslated' : 'bulkMarkDraft';
+                return ['true', '1'].includes(textarea.dataset[action] || '');
             });
         }
 
         function filterIdsForDelete(ids) {
             return ids.filter(id => {
                 const textarea = document.querySelector(`tr[data-id="${id}"] .translation-text`);
-                return textarea?.dataset.canDeleteUnused === 'true';
+                return textarea?.dataset.bulkDeleteUnused === 'true';
             });
         }
 
@@ -689,10 +680,8 @@
         document.querySelectorAll('#lr-table-body tr.lr-data-row').forEach(row => {
             const textarea = row.querySelector('.translation-text');
             const checkbox = row.querySelector('.lr-checkbox-cell .checkbox');
-            const canEditRow = textarea && !textarea.readOnly;
-            const canApproveRow = ['true', '1'].includes(textarea?.dataset.canApprove || '');
-            const canDeleteUnusedRow = textarea?.dataset.canDeleteUnused === 'true';
-            const canSelect = canEditRow || canApproveRow || ({{ (status == 'unused')|json_encode|raw }} && canDeleteUnusedRow);
+            const canSelect = ['bulkMarkDraft', 'bulkMarkTranslated', 'bulkDeleteUnused']
+                .some(action => ['true', '1'].includes(textarea?.dataset[action] || ''));
 
             if (!canSelect && checkbox) {
                 row.dataset.selectable = 'false';

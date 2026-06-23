@@ -162,24 +162,9 @@ class TranslationsController extends Controller
         // ---- Permission booleans (computed once, passed to template) -----
         $canEdit = $sourceService->currentUserCanAny(SourceService::ACTION_EDIT);
         $canApprove = $sourceService->currentUserCanAny(SourceService::ACTION_APPROVE);
-        $canApproveVisibleRows = false;
-        foreach ($translations as $translation) {
-            if (
-                ($settings->requireApproval && ($translation['canApprove'] ?? false))
-                || (!$settings->requireApproval && ($translation['canEdit'] ?? false))
-            ) {
-                $canApproveVisibleRows = true;
-                break;
-            }
-        }
+        $canApproveVisibleRows = $this->hasVisibleBulkAction($translations, 'markTranslated');
         $canDelete = $sourceService->currentUserCanAny(SourceService::ACTION_DELETE_UNUSED);
-        $canDeleteVisibleRows = false;
-        foreach ($translations as $translation) {
-            if (($translation['status'] ?? '') === 'unused' && ($translation['canDeleteUnused'] ?? false)) {
-                $canDeleteVisibleRows = true;
-                break;
-            }
-        }
+        $canDeleteVisibleRows = $this->hasVisibleBulkAction($translations, 'deleteUnused');
         $canExport = $user->checkPermission('translationManager:exportTranslations');
         $canGenerateAll = $user->checkPermission($sourceService->getAllPermission(SourceService::ACTION_GENERATE));
         $canGenerateProviders = $sourceService->currentUserCanAny(SourceService::ACTION_GENERATE);
@@ -258,6 +243,7 @@ class TranslationsController extends Controller
     {
         /** @var SourceService $sourceService */
         $sourceService = TranslationManager::getInstance()->get('sources');
+        $settings = TranslationManager::getInstance()->getSettings();
 
         foreach ($translations as &$translation) {
             $source = $sourceService->getSourceForContextAndCategory(
@@ -265,27 +251,54 @@ class TranslationsController extends Controller
                 (string)($translation['category'] ?? ''),
             );
             $sourceId = $source?->id;
-
-            $translation['sourceId'] = $sourceId;
-            $translation['canEdit'] = $sourceService->currentUserCanContextAndCategory(
+            $canEdit = $sourceService->currentUserCanContextAndCategory(
                 SourceService::ACTION_EDIT,
                 (string)($translation['context'] ?? ''),
                 (string)($translation['category'] ?? ''),
             );
-            $translation['canApprove'] = $sourceService->currentUserCanContextAndCategory(
+            $canApprove = $sourceService->currentUserCanContextAndCategory(
                 SourceService::ACTION_APPROVE,
                 (string)($translation['context'] ?? ''),
                 (string)($translation['category'] ?? ''),
             );
-            $translation['canDeleteUnused'] = $sourceService->currentUserCanContextAndCategory(
+            $canDeleteUnused = $sourceService->currentUserCanContextAndCategory(
                 SourceService::ACTION_DELETE_UNUSED,
                 (string)($translation['context'] ?? ''),
                 (string)($translation['category'] ?? ''),
             );
+            $status = (string)($translation['status'] ?? '');
+            $hasTranslation = trim((string)($translation['translation'] ?? '')) !== '';
+
+            $translation['sourceId'] = $sourceId;
+            $translation['canEdit'] = $canEdit;
+            $translation['canApprove'] = $canApprove;
+            $translation['canDeleteUnused'] = $canDeleteUnused;
+            $translation['bulkActions'] = [
+                'markDraft' => $canEdit && $status !== 'unused' && $status !== 'draft' && $hasTranslation,
+                'markTranslated' => ($settings->requireApproval ? $canApprove : $canEdit)
+                    && $status !== 'unused'
+                    && $status !== 'translated'
+                    && $hasTranslation,
+                'deleteUnused' => $canDeleteUnused && $status === 'unused',
+            ];
         }
         unset($translation);
 
         return $translations;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $translations
+     */
+    private function hasVisibleBulkAction(array $translations, string $action): bool
+    {
+        foreach ($translations as $translation) {
+            if (($translation['bulkActions'][$action] ?? false) === true) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

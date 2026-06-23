@@ -349,6 +349,126 @@ final class SourcePermissionControllerGateTest extends TestCase
         }
     }
 
+    public function testSetStatusDraftRejectsApproveOnlyPermission(): void
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $originalRequireApproval = $settings->requireApproval;
+        $settings->requireApproval = true;
+
+        $category = $this->primaryCategory();
+        $record = $this->seedTranslationRecord($category);
+        $record->translation = 'Existing translated text';
+        $record->status = 'translated';
+        self::assertTrue($record->save(), json_encode($record->getErrors()));
+        $sourceService = $this->sourceService();
+
+        try {
+            $this->installRequest([
+                'ids' => [$record->id],
+                'status' => 'draft',
+            ]);
+            $this->installUser([$sourceService->getAllPermission(SourceService::ACTION_APPROVE)]);
+
+            $response = (new PermissionGateTranslationsController('translations', TranslationManager::getInstance()))->actionSetStatus();
+
+            self::assertSame(200, $response->statusCode);
+            self::assertSame(0, $response->data['updated'] ?? null);
+            self::assertSame(1, $response->data['skipped'] ?? null);
+            self::assertSame('translated', TranslationRecord::findOne($record->id)?->status);
+        } finally {
+            $settings->requireApproval = $originalRequireApproval;
+        }
+    }
+
+    public function testSaveRejectsApproveOnlyPermission(): void
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $originalRequireApproval = $settings->requireApproval;
+        $settings->requireApproval = true;
+
+        $category = $this->primaryCategory();
+        $record = $this->seedTranslationRecord($category);
+        $sourceService = $this->sourceService();
+
+        try {
+            $this->installRequest([
+                'id' => $record->id,
+                'translation' => 'Changed text',
+            ]);
+            $this->installUser([$sourceService->getAllPermission(SourceService::ACTION_APPROVE)]);
+
+            $this->expectException(ForbiddenHttpException::class);
+            (new PermissionGateTranslationsController('translations', TranslationManager::getInstance()))->actionSave();
+        } finally {
+            $settings->requireApproval = $originalRequireApproval;
+        }
+    }
+
+    public function testSetStatusTranslatedRejectsApproveOnlyWhenApprovalIsDisabled(): void
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $originalRequireApproval = $settings->requireApproval;
+        $settings->requireApproval = false;
+
+        $category = $this->primaryCategory();
+        $record = $this->seedTranslationRecord($category);
+        $record->translation = 'Existing translated text';
+        self::assertTrue($record->save(), json_encode($record->getErrors()));
+        $sourceService = $this->sourceService();
+
+        try {
+            $this->installRequest([
+                'ids' => [$record->id],
+                'status' => 'translated',
+            ]);
+            $this->installUser([$sourceService->getAllPermission(SourceService::ACTION_APPROVE)]);
+
+            $response = (new PermissionGateTranslationsController('translations', TranslationManager::getInstance()))->actionSetStatus();
+
+            self::assertSame(200, $response->statusCode);
+            self::assertSame(0, $response->data['updated'] ?? null);
+            self::assertSame(1, $response->data['skipped'] ?? null);
+            self::assertSame('pending', TranslationRecord::findOne($record->id)?->status);
+        } finally {
+            $settings->requireApproval = $originalRequireApproval;
+        }
+    }
+
+    public function testSetStatusTranslatedRejectsWrongSourceApprovePermission(): void
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $originalRequireApproval = $settings->requireApproval;
+        $settings->requireApproval = true;
+
+        $category = $this->primaryCategory();
+        $record = $this->seedTranslationRecord($category);
+        $record->translation = 'Existing translated text';
+        self::assertTrue($record->save(), json_encode($record->getErrors()));
+        $sourceService = $this->sourceService();
+
+        try {
+            $this->installRequest([
+                'ids' => [$record->id],
+                'status' => 'translated',
+            ]);
+            $this->installUser([
+                $sourceService->getSourcePermission(
+                    SourceService::ACTION_APPROVE,
+                    $sourceService->providerSourceId(PermissionGateProviderIntegration::NAME),
+                ),
+            ]);
+
+            $response = (new PermissionGateTranslationsController('translations', TranslationManager::getInstance()))->actionSetStatus();
+
+            self::assertSame(200, $response->statusCode);
+            self::assertSame(0, $response->data['updated'] ?? null);
+            self::assertSame(1, $response->data['skipped'] ?? null);
+            self::assertSame('pending', TranslationRecord::findOne($record->id)?->status);
+        } finally {
+            $settings->requireApproval = $originalRequireApproval;
+        }
+    }
+
     public function testSaveDraftDoesNotTriggerAutoGenerate(): void
     {
         $settings = TranslationManager::getInstance()->getSettings();
