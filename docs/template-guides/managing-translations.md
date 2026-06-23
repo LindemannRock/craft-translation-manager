@@ -71,11 +71,11 @@ Craft's **Utilities** section includes a Translation Manager panel that shows wh
 
 ![The Translation Manager statistics utility](images/managing-translations-statistics.webp)
 
-- **Translation Coverage** — the percentage translated, with a status badge (Needs Attention → In Progress → Good → Complete)
+- **Translation Coverage** — the percentage translated, with a status badge (Needs Attention → In Progress → Good → Complete — or *No translations found* when there's nothing to count yet)
 - **Work Queue** — how many translations are still **Pending**, plus the **Unused** count
-- **Translation Types** — the split between form (Formie/Freeform) and **Site** strings
+- **Translation Types** — the split between **Forms** (Formie + Freeform) and **Site** strings
 
-Use the site selector at the top to switch which site's numbers you're looking at, and the quick links to jump straight into managing, importing, backing up, or maintenance.
+Use the **language selector** at the top to switch which language's numbers you're looking at — the same mapped languages as the translations list, so the counts line up with the rows there — and the quick links to jump straight into managing, importing, backing up, or maintenance.
 
 ## Tips
 

@@ -22,7 +22,7 @@ Open any page that uses `|t('messages')` in its templates. With auto-capture ena
 
 1. Go to **Translation Manager** in the Control Panel.
 2. You'll see the captured strings with a **Pending** status.
-3. Switch to a secondary site using the site selector.
+3. Switch to another language using the language switcher in the breadcrumb.
 4. Enter translations for the pending strings.
 5. Click **Save All Changes** (or press Ctrl/Cmd + S).
 

@@ -25,7 +25,7 @@ Your keys are written in the configured **Source Language** (English by default)
 ## How it works
 
 1. **Capture** — when **Capture Missing Translations** is enabled, a page rendering text in your category stores the string.
-2. **Store** — it's saved to the database, once per site.
+2. **Store** — it's saved to the database once per language (sites sharing a language share the row).
 3. **Translate** — you edit the translation in the Control Panel (see [Managing translations](managing-translations.md)).
 4. **Generate** — production PHP translation files are generated for each language; choose whether runtime reads those files directly or uses database rows with PHP fallback in [Runtime translation source](../get-started/configuration.md#runtime-translation-source).
 

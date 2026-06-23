@@ -13,13 +13,21 @@ Move translations in and out of Translation Manager in bulk. Export your strings
 
 Importing is a guided four-step flow — upload, map columns, preview, confirm — so you always see exactly what will change before it's written.
 
+![The Import/Export page in the Translation Manager Control Panel](images/import-export-main.webp)
+
 1. Go to **Translation Manager → Import/Export**.
 2. **Upload.** Choose your CSV file (max 5 MB). Pick a **CSV Delimiter** if needed — the default **Auto (detect)** handles most files, with **Comma (,)**, **Semicolon (;)**, **Tab**, and **Pipe (|)** available. When backups are enabled, leave **Create Backup Before Import** on. Click **Upload & Map Columns**.
 3. **Map CSV Columns.** Translation Manager matches your headers to its fields automatically, but you can adjust each one on the **Map CSV Columns** screen — every CSV column maps to a field via the **Maps to Field** dropdown, with a **Sample Data** preview alongside. **Translation Key (required)** is the only mapping you must set; **Translation**, **Language**, **Category**, **Context**, **Type**, **Site ID**, **Status**, and **Origin** are optional, and **-- Do not import --** skips a column. Click **Preview Import**.
 4. **Preview.** Review the **new**, **updated**, and **skipped** counts — and any rows flagged by malicious-content detection — before anything is written.
 5. **Confirm** the import, then check the results and [history](#import-history).
 
-![Import preview in the Translation Manager Control Panel](images/import-export-preview.webp)
+On the **Map CSV Columns** step, each column is matched to a field — adjust any that didn't auto-detect:
+
+![Mapping CSV columns to translation fields](images/import-export-map.webp)
+
+The **preview** then shows exactly what will change — new, updated, and skipped rows — before you confirm:
+
+![Import preview showing new, updated, and skipped rows](images/import-export-preview.webp)
 
 A backup is taken automatically before the import (when backups are enabled), so you can roll back if the result isn't what you expected.
 

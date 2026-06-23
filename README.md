@@ -22,7 +22,7 @@ Comprehensive translation management for Craft CMS 5 with Formie and Freeform in
 - **GraphQL** — Read-only translation lookup and catalog queries for headless frontends
 - **Backup System** — scheduled backups with cloud storage (S3, Servd, Wasabi) and one-click restore
 - **Maintenance Tools** — template & form capture, usage detection, granular cleanup
-- **Statistics Utility** — Control Panel Utilities panel with per-site translation counts
+- **Statistics Utility** — Control Panel Utilities panel showing translation coverage by language
 - **Security** — XSS protection, CSRF validation, path traversal prevention, CSV injection guards
 - **RTL Support** — full Arabic/Hebrew text editing with proper display
 - **Logging** — dedicated log files with CP viewer
