@@ -156,8 +156,6 @@ class TranslationsController extends Controller
         $translations = $this->hydrateAuditFields($translations);
         $translations = $this->hydrateSourcePermissions($translations);
 
-        $stats = TranslationManager::getInstance()->translations->getStatistics();
-
         /** @var SourceService $sourceService */
         $sourceService = TranslationManager::getInstance()->get('sources');
 
@@ -187,7 +185,6 @@ class TranslationsController extends Controller
 
         return $this->renderTemplate('translation-manager/translations/index', [
             'translations' => $translations,
-            'stats' => $stats,
             'totalCount' => $totalCount,
             'totalPages' => $totalPages,
             'page' => $page,

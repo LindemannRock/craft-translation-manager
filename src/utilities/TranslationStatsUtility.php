@@ -73,7 +73,6 @@ class TranslationStatsUtility extends Utility
             'unused' => 0,
             'forms' => 0,
             'site' => 0,
-            'siteInfo' => null,
         ];
 
         if ($user->getIdentity() && $user->checkPermission('translationManager:manageTranslations')) {
