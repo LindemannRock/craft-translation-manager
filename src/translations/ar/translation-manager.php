@@ -518,7 +518,7 @@ return [
     'Capture' => 'الالتقاط',
     'Cleanup' => 'تنظيف',
     'Danger' => 'خطر',
-    'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture, Cleanup, or Delete permissions for at least one translation source.' => 'يمكنك عرض هذا القسم، لكن لا تتوفر أي إجراءات صيانة لحسابك. اطلب من مسؤول منح صلاحيات الالتقاط أو التنظيف أو الحذف لمصدر ترجمة واحد على الأقل.',
+    'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture translations, Clean artifacts, or Delete unused translations for at least one translation source.' => 'يمكنك عرض هذا القسم، لكن لا تتوفر أي إجراءات صيانة لحسابك. اطلب من مسؤول منح صلاحيات التقاط الترجمات أو تنظيف البيانات المتبقية أو حذف الترجمات غير المستخدمة لمصدر ترجمة واحد على الأقل.',
     'A backup will be created automatically before deleting.' => 'سيتم إنشاء نسخة احتياطية تلقائياً قبل الحذف.',
     'Template Capture' => 'التقاط القوالب',
     'Capture template translations and mark unused template translations.' => 'التقاط ترجمات القوالب وتمييز ترجمات القوالب غير المستخدمة.',

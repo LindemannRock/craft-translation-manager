@@ -104,7 +104,7 @@
 {% block content %}
     {% if not hasMaintenanceActions %}
         {% include 'lindemannrock-base/_components/info-box' with {
-            message: 'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture, Cleanup, or Delete permissions for at least one translation source.'|t('translation-manager'),
+            message: 'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture translations, Clean artifacts, or Delete unused translations for at least one translation source.'|t('translation-manager'),
         } %}
     {% endif %}
 

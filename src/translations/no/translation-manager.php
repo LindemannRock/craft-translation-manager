@@ -518,7 +518,7 @@ return [
     'Capture' => 'Opptak',
     'Cleanup' => 'Opprydding',
     'Danger' => 'Fare',
-    'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture, Cleanup, or Delete permissions for at least one translation source.' => 'Du kan vise denne seksjonen, men ingen vedlikeholdshandlinger er tilgjengelige for kontoen din. Be en administrator om å gi tillatelser til Opptak, Opprydding eller Sletting for minst én oversettelseskilde.',
+    'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture translations, Clean artifacts, or Delete unused translations for at least one translation source.' => 'Du kan vise denne seksjonen, men ingen vedlikeholdshandlinger er tilgjengelige for kontoen din. Be en administrator om å gi tillatelser til Fang opp oversettelser, Rydd artefakter eller Slett ubrukte oversettelser for minst én oversettelseskilde.',
     'A backup will be created automatically before deleting.' => 'En sikkerhetskopi opprettes automatisk før sletting.',
     'Template Capture' => 'Malopptak',
     'Capture template translations and mark unused template translations.' => 'Fang opp maloversettelser og merk ubrukte maloversettelser.',

@@ -518,7 +518,7 @@ return [
     'Capture' => 'Vastleggen',
     'Cleanup' => 'Opruimen',
     'Danger' => 'Gevaar',
-    'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture, Cleanup, or Delete permissions for at least one translation source.' => 'U kunt deze sectie bekijken, maar er zijn geen onderhoudsacties beschikbaar voor uw account. Vraag een beheerder om rechten voor Vastleggen, Opruimen of Verwijderen toe te kennen voor ten minste één vertaalbron.',
+    'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture translations, Clean artifacts, or Delete unused translations for at least one translation source.' => 'U kunt deze sectie bekijken, maar er zijn geen onderhoudsacties beschikbaar voor uw account. Vraag een beheerder om rechten voor Vertalingen vastleggen, Artefacten opruimen of Ongebruikte vertalingen verwijderen toe te kennen voor ten minste één vertaalbron.',
     'A backup will be created automatically before deleting.' => 'Vóór het verwijderen wordt automatisch een back-up gemaakt.',
     'Template Capture' => 'Template-vastlegging',
     'Capture template translations and mark unused template translations.' => 'Templatevertalingen vastleggen en ongebruikte templatevertalingen markeren.',

@@ -518,7 +518,7 @@ return [
     'Capture' => 'Capturar',
     'Cleanup' => 'Limpieza',
     'Danger' => 'Peligro',
-    'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture, Cleanup, or Delete permissions for at least one translation source.' => 'Puede ver esta sección, pero no hay acciones de mantenimiento disponibles para su cuenta. Pida a un administrador que conceda permisos de Capturar, Limpiar o Eliminar para al menos un origen de traducción.',
+    'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture translations, Clean artifacts, or Delete unused translations for at least one translation source.' => 'Puede ver esta sección, pero no hay acciones de mantenimiento disponibles para su cuenta. Pida a un administrador que conceda los permisos Capturar traducciones, Limpiar artefactos o Eliminar traducciones no utilizadas para al menos un origen de traducción.',
     'A backup will be created automatically before deleting.' => 'Se creará una copia de seguridad automáticamente antes de eliminar.',
     'Template Capture' => 'Captura de plantillas',
     'Capture template translations and mark unused template translations.' => 'Capturar traducciones de plantillas y marcar traducciones de plantillas no utilizadas.',

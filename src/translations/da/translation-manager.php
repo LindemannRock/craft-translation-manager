@@ -518,7 +518,7 @@ return [
     'Capture' => 'Optag',
     'Cleanup' => 'Oprydning',
     'Danger' => 'Fare',
-    'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture, Cleanup, or Delete permissions for at least one translation source.' => 'Du kan se dette afsnit, men der er ingen vedligeholdelseshandlinger tilgængelige for din konto. Bed en administrator om at tildele tilladelser til Optag, Oprydning eller Slet for mindst én oversættelseskilde.',
+    'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture translations, Clean artifacts, or Delete unused translations for at least one translation source.' => 'Du kan se dette afsnit, men der er ingen vedligeholdelseshandlinger tilgængelige for din konto. Bed en administrator om at tildele tilladelser til Optag oversættelser, Ryd artefakter eller Slet ubrugte oversættelser for mindst én oversættelseskilde.',
     'A backup will be created automatically before deleting.' => 'Der oprettes automatisk en sikkerhedskopi inden sletning.',
     'Template Capture' => 'Skabelonoptagelse',
     'Capture template translations and mark unused template translations.' => 'Optag skabelonoversættelser og markér ubrugte skabelonoversættelser.',
