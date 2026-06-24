@@ -1,5 +1,22 @@
 # Changelog
 
+## [5.33.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.32.0...v5.33.0) - 2026-06-24
+
+
+### Added
+
+* capture nested subfield and table column entries in tests ([0101922](https://github.com/LindemannRock/craft-translation-manager/commit/01019226ec6e92b6b78913624576bb6973428dd2))
+* **cli:** add test provider compatibility script for formie and freeform ([5edf9d1](https://github.com/LindemannRock/craft-translation-manager/commit/5edf9d14de07213c837b9d22d8b09f7a69951d28))
+* enhance translation capture for multi-page Formie forms ([1982562](https://github.com/LindemannRock/craft-translation-manager/commit/198256266d314202e99043b65dd973ab7cc88cc1))
+* **formie:** switch to stable v3/v4 layout API for field retrieval ([868c96a](https://github.com/LindemannRock/craft-translation-manager/commit/868c96a943429ec695ccc5e05b02e82ecc47ae35))
+* **i18n:** correct translations across multiple locales ([92438c2](https://github.com/LindemannRock/craft-translation-manager/commit/92438c21016ed8989a3cfb5a383e941e40d4382e))
+* normalize context segments in Formie and Freeform integrations ([3c7fde8](https://github.com/LindemannRock/craft-translation-manager/commit/3c7fde8fb902315656c61686606dec1505597220))
+
+
+### Fixed
+
+* align parent permission section access ([19b95af](https://github.com/LindemannRock/craft-translation-manager/commit/19b95afa725eec6e81bf3dfa39734ec174260531))
+
 ## [5.32.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.31.0...v5.32.0) - 2026-06-23
 
 
