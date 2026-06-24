@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  scripts/test-provider-compat <formie|freeform> [provider-constraint] [craft-constraint] [plugin-version] [--php-version <version>]
+
+Examples:
+  scripts/test-provider-compat formie
+  scripts/test-provider-compat freeform
+  scripts/test-provider-compat formie '4.0.0-beta.8' '^5.10' dev-main
+
+What it does:
+  1. Creates a disposable Craft install through scripts/test-craft-compat.
+  2. Installs Translation Manager and its required dependencies.
+  3. Installs the selected provider plugin in that disposable project.
+  4. Runs Translation Manager's provider capture command as a smoke check.
+
+This is intentionally a smoke/matrix wrapper. It validates that the provider can
+co-exist with the selected Craft + Translation Manager versions and that the
+provider integration boots. It does not replace manual rendered-form QA.
+USAGE
+}
+
+if [[ $# -lt 1 || "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+PROVIDER="$1"
+shift
+
+CRAFT_CONSTRAINT="^5.10"
+PLUGIN_VERSION="dev-main"
+PHP_VERSION="8.3"
+
+case "$PROVIDER" in
+  formie)
+    PROVIDER_PACKAGE="verbb/formie"
+    PROVIDER_HANDLE="formie"
+    PROVIDER_CONSTRAINT="^3.0"
+    ;;
+  freeform)
+    PROVIDER_PACKAGE="solspace/craft-freeform"
+    PROVIDER_HANDLE="freeform"
+    PROVIDER_CONSTRAINT="^5.0"
+    ;;
+  *)
+    echo "Unknown provider: $PROVIDER" >&2
+    usage
+    exit 1
+    ;;
+esac
+
+if [[ $# -gt 0 && "${1:-}" != --* ]]; then
+  PROVIDER_CONSTRAINT="$1"
+  shift
+fi
+
+if [[ $# -gt 0 && "${1:-}" != --* ]]; then
+  CRAFT_CONSTRAINT="$1"
+  shift
+fi
+
+if [[ $# -gt 0 && "${1:-}" != --* ]]; then
+  PLUGIN_VERSION="$1"
+  shift
+fi
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --php-version)
+      if [[ -z "${2:-}" ]]; then
+        echo "--php-version requires a value, such as 8.3" >&2
+        exit 1
+      fi
+      PHP_VERSION="$2"
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage
+      exit 1
+      ;;
+  esac
+
+  shift
+done
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SMOKE_COMMAND="composer config --json repositories.local-plugin '{\"type\":\"path\",\"url\":\"vendor/lindemannrock/craft-translation-manager\",\"options\":{\"symlink\":false}}' && composer require ${PROVIDER_PACKAGE}:${PROVIDER_CONSTRAINT} --no-interaction --no-scripts --update-with-all-dependencies && php craft plugin/install ${PROVIDER_HANDLE} && php craft translation-manager/translations/capture-provider ${PROVIDER_HANDLE}"
+
+"$SCRIPT_DIR/test-craft-compat" "$CRAFT_CONSTRAINT" "$PLUGIN_VERSION" \
+  --install \
+  --php-version "$PHP_VERSION" \
+  --smoke-command "$SMOKE_COMMAND"
