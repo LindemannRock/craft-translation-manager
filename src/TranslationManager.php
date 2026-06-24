@@ -530,7 +530,7 @@ class TranslationManager extends Plugin
             'key' => 'generate',
             'label' => Craft::t('translation-manager', 'Generate'),
             'url' => 'translation-manager/generate',
-            'permissionsAny' => $generatePermissions,
+            'permissionsAny' => array_merge(['translationManager:generateTranslations'], $generatePermissions),
         ];
 
         $sections[] = [
@@ -557,7 +557,6 @@ class TranslationManager extends Plugin
             'label' => Craft::t('translation-manager', 'Maintenance'),
             'url' => 'translation-manager/maintenance',
             'permissionsAll' => ['translationManager:maintenance'],
-            'permissionsAny' => $maintenancePermissions,
         ];
 
         $sections[] = [

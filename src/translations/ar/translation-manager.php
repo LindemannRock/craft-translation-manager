@@ -483,6 +483,7 @@ return [
     'Generate All Files' => 'توليد جميع الملفات',
     'Type to Generate' => 'النوع المراد توليده',
     'Generate Files' => 'توليد الملفات',
+    'You can view this section, but no generate actions are available for your account. Ask an administrator to grant Generate all source files or a source-specific Generate permission.' => 'يمكنك عرض هذا القسم، لكن لا تتوفر أي إجراءات توليد لحسابك. اطلب من مسؤول منح صلاحية توليد جميع ملفات المصدر أو صلاحية توليد خاصة بمصدر محدد.',
 
     // Backups
     'Create Backup Now' => 'إنشاء نسخة احتياطية الآن',
@@ -517,6 +518,7 @@ return [
     'Capture' => 'الالتقاط',
     'Cleanup' => 'تنظيف',
     'Danger' => 'خطر',
+    'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture, Cleanup, or Delete permissions for at least one translation source.' => 'يمكنك عرض هذا القسم، لكن لا تتوفر أي إجراءات صيانة لحسابك. اطلب من مسؤول منح صلاحيات الالتقاط أو التنظيف أو الحذف لمصدر ترجمة واحد على الأقل.',
     'A backup will be created automatically before deleting.' => 'سيتم إنشاء نسخة احتياطية تلقائياً قبل الحذف.',
     'Template Capture' => 'التقاط القوالب',
     'Capture template translations and mark unused template translations.' => 'التقاط ترجمات القوالب وتمييز ترجمات القوالب غير المستخدمة.',

@@ -483,6 +483,7 @@ return [
     'Generate All Files' => 'Alle bestanden genereren',
     'Type to Generate' => 'Te genereren type',
     'Generate Files' => 'Bestanden genereren',
+    'You can view this section, but no generate actions are available for your account. Ask an administrator to grant Generate all source files or a source-specific Generate permission.' => 'U kunt deze sectie bekijken, maar er zijn geen generatieacties beschikbaar voor uw account. Vraag een beheerder om het recht Alle bronbestanden genereren of een bronspecifiek recht Genereren toe te kennen.',
 
     // Backups
     'Create Backup Now' => 'Nu back-up maken',
@@ -517,6 +518,7 @@ return [
     'Capture' => 'Vastleggen',
     'Cleanup' => 'Opruimen',
     'Danger' => 'Gevaar',
+    'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture, Cleanup, or Delete permissions for at least one translation source.' => 'U kunt deze sectie bekijken, maar er zijn geen onderhoudsacties beschikbaar voor uw account. Vraag een beheerder om rechten voor Vastleggen, Opruimen of Verwijderen toe te kennen voor ten minste één vertaalbron.',
     'A backup will be created automatically before deleting.' => 'Vóór het verwijderen wordt automatisch een back-up gemaakt.',
     'Template Capture' => 'Template-vastlegging',
     'Capture template translations and mark unused template translations.' => 'Templatevertalingen vastleggen en ongebruikte templatevertalingen markeren.',

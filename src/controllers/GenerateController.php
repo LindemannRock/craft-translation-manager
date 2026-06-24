@@ -70,8 +70,9 @@ class GenerateController extends Controller
                 }
                 break;
             default:
-                // Index page — any generate permission is sufficient
-                $hasGenerateAccess = $sourceService->currentUserCanAny(SourceService::ACTION_GENERATE);
+                // Index page — the parent permission opens the section; source permissions expose actions.
+                $hasGenerateAccess = $user->checkPermission('translationManager:generateTranslations')
+                    || $sourceService->currentUserCanAny(SourceService::ACTION_GENERATE);
 
                 if (!$hasGenerateAccess) {
                     throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to generate translation files.'));

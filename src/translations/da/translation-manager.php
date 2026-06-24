@@ -483,6 +483,7 @@ return [
     'Generate All Files' => 'Generer alle filer',
     'Type to Generate' => 'Type der skal genereres',
     'Generate Files' => 'Generer filer',
+    'You can view this section, but no generate actions are available for your account. Ask an administrator to grant Generate all source files or a source-specific Generate permission.' => 'Du kan se dette afsnit, men der er ingen genereringshandlinger tilgængelige for din konto. Bed en administrator om at tildele Generer alle kildefiler eller en kildespecifik Generer-tilladelse.',
 
     // Backups
     'Create Backup Now' => 'Opret sikkerhedskopi nu',
@@ -517,6 +518,7 @@ return [
     'Capture' => 'Optag',
     'Cleanup' => 'Oprydning',
     'Danger' => 'Fare',
+    'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture, Cleanup, or Delete permissions for at least one translation source.' => 'Du kan se dette afsnit, men der er ingen vedligeholdelseshandlinger tilgængelige for din konto. Bed en administrator om at tildele tilladelser til Optag, Oprydning eller Slet for mindst én oversættelseskilde.',
     'A backup will be created automatically before deleting.' => 'Der oprettes automatisk en sikkerhedskopi inden sletning.',
     'Template Capture' => 'Skabelonoptagelse',
     'Capture template translations and mark unused template translations.' => 'Optag skabelonoversættelser og markér ubrugte skabelonoversættelser.',

@@ -72,14 +72,16 @@ final class SourcePermissionControllerGateTest extends TestCase
         $this->runBeforeAction(new SettingsController('settings', TranslationManager::getInstance()), 'delete-category', 'actionDeleteCategory');
     }
 
-    public function testMaintenanceParentPermissionDoesNotGrantMaintenanceAccess(): void
+    public function testMaintenanceParentPermissionGrantsSectionAccessOnly(): void
     {
         $this->installRequest([]);
         $this->installUser(['translationManager:maintenance']);
 
+        self::assertTrue($this->runBeforeAction(new MaintenanceController('maintenance', TranslationManager::getInstance()), 'index', 'actionIndex'));
+
         $this->expectException(ForbiddenHttpException::class);
 
-        $this->runBeforeAction(new MaintenanceController('maintenance', TranslationManager::getInstance()), 'index', 'actionIndex');
+        $this->runBeforeAction(new MaintenanceController('maintenance', TranslationManager::getInstance()), 'clean-categories', 'actionCleanCategories');
     }
 
     public function testDeleteUnusedPermissionWithoutMaintenanceDoesNotGrantMaintenanceAccess(): void
@@ -130,14 +132,16 @@ final class SourcePermissionControllerGateTest extends TestCase
         self::assertTrue($this->runBeforeAction(new MaintenanceController('maintenance', TranslationManager::getInstance()), 'clean-categories', 'actionCleanCategories'));
     }
 
-    public function testGenerateParentPermissionDoesNotGrantGenerateAccess(): void
+    public function testGenerateParentPermissionGrantsSectionAccessOnly(): void
     {
         $this->installRequest([]);
         $this->installUser(['translationManager:generateTranslations']);
 
+        self::assertTrue($this->runBeforeAction(new GenerateController('generate', TranslationManager::getInstance()), 'index', 'actionIndex'));
+
         $this->expectException(ForbiddenHttpException::class);
 
-        $this->runBeforeAction(new GenerateController('generate', TranslationManager::getInstance()), 'index', 'actionIndex');
+        $this->runBeforeAction(new GenerateController('generate', TranslationManager::getInstance()), 'files', 'actionFiles');
     }
 
     public function testDeleteCategoryAllowsSourceOrAllPermission(): void

@@ -59,7 +59,8 @@
     }) %}
 {% endif %}
 
-{% set selectedTab = canScan ? 'scan' : (canCleanup ? 'cleanup' : 'danger') %}
+{% set hasMaintenanceActions = canScan or canCleanup or canDeleteTranslations %}
+{% set selectedTab = canScan ? 'scan' : (canCleanup ? 'cleanup' : (canDeleteTranslations ? 'danger' : '')) %}
 {% set hashTab = craft.app.request.getParam('tab') ?? craft.app.request.getSegment(4) %}
 {% if hashTab in tabs|keys %}
     {% set selectedTab = hashTab %}
@@ -101,6 +102,12 @@
 {% endif %}
 
 {% block content %}
+    {% if not hasMaintenanceActions %}
+        {% include 'lindemannrock-base/_components/info-box' with {
+            message: 'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture, Cleanup, or Delete permissions for at least one translation source.'|t('translation-manager'),
+        } %}
+    {% endif %}
+
     {% if canScan %}
         <div id="scan" class="{{ selectedTab != 'scan' ? 'hidden' }}">
             {% include 'translation-manager/maintenance/_partials/scan' %}

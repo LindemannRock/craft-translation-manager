@@ -483,6 +483,7 @@ return [
     'Generate All Files' => 'Alle Dateien generieren',
     'Type to Generate' => 'Zu generierender Typ',
     'Generate Files' => 'Dateien generieren',
+    'You can view this section, but no generate actions are available for your account. Ask an administrator to grant Generate all source files or a source-specific Generate permission.' => 'Sie können diesen Bereich anzeigen, aber für Ihr Konto sind keine Generierungsaktionen verfügbar. Bitten Sie einen Administrator, Ihnen die Berechtigung Alle Quelldateien generieren oder eine quellenspezifische Generieren-Berechtigung zu gewähren.',
 
     // Backups
     'Create Backup Now' => 'Jetzt Backup erstellen',
@@ -517,6 +518,7 @@ return [
     'Capture' => 'Erfassen',
     'Cleanup' => 'Bereinigung',
     'Danger' => 'Gefahr',
+    'You can view this section, but no maintenance actions are available for your account. Ask an administrator to grant Capture, Cleanup, or Delete permissions for at least one translation source.' => 'Sie können diesen Bereich anzeigen, aber für Ihr Konto sind keine Wartungsaktionen verfügbar. Bitten Sie einen Administrator, Ihnen Berechtigungen zum Erfassen, Bereinigen oder Löschen für mindestens eine Übersetzungsquelle zu gewähren.',
     'A backup will be created automatically before deleting.' => 'Vor dem Löschen wird automatisch ein Backup erstellt.',
     'Template Capture' => 'Template-Erfassung',
     'Capture template translations and mark unused template translations.' => 'Template-Übersetzungen erfassen und ungenutzte Template-Übersetzungen markieren.',

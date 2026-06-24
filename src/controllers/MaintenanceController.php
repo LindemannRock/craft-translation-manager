@@ -90,21 +90,8 @@ class MaintenanceController extends Controller
                 }
                 break;
             default:
-                /** @var IntegrationService $integrationService */
-                $integrationService = TranslationManager::getInstance()->get('integrations');
-                /** @var SourceService $sourceService */
-                $sourceService = TranslationManager::getInstance()->get('sources');
-                // Index page - allow if user has ANY maintenance-related permission
-                $hasAccess =
-                    $user->checkPermission('translationManager:maintenance') &&
-                    (
-                    $sourceService->currentUserCanAny(SourceService::ACTION_DELETE_UNUSED) ||
-                    $sourceService->currentUserCanAny(SourceService::ACTION_CAPTURE) ||
-                    $sourceService->currentUserCanAny(SourceService::ACTION_DELETE) ||
-                    $user->checkPermission('translationManager:cleanMaintenanceArtifacts')
-                    );
-
-                if (!$hasAccess) {
+                // Index page — the parent permission opens the section; child permissions expose actions.
+                if (!$user->checkPermission('translationManager:maintenance')) {
                     throw new \yii\web\ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to access maintenance.'));
                 }
         }

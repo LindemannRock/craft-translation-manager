@@ -15,45 +15,52 @@
 ] %}
 
 {% import "_includes/forms" as forms %}
+{% set generateOptions = [{value: '', label: 'Select type'|t('translation-manager')}] %}
+{% if craft.translationManager.canGenerateAllSources() %}
+    {% set generateOptions = generateOptions|merge([{value: 'all', label: 'Generate All Files'|t('translation-manager')}]) %}
+{% endif %}
+{% for source in craft.translationManager.getSources() %}
+    {% if source.canGenerate %}
+        {% set sourceValue = source.providerName ? 'provider:' ~ source.providerName : 'category:' ~ source.category %}
+        {% set generateOptions = generateOptions|merge([{value: sourceValue, label: 'Generate {name} Files Only'|t('translation-manager', {name: source.label})}]) %}
+    {% endif %}
+{% endfor %}
+{% set hasGenerateActions = generateOptions|length > 1 %}
 
 {% block content %}
     <h2>{{ "Generate Translation Files"|t('translation-manager') }}</h2>
 
-    <div class="field">
-        <div class="heading">
-            <label>{{ "Generate Translation Files"|t('translation-manager') }}</label>
-            <div class="instructions">
-                <p>{{ "Manually generate PHP translation files that Craft CMS uses for multi-language support"|t('translation-manager') }}</p>
-            </div>
-        </div>
-        <div class="input">
-            <div style="display: flex; align-items: flex-end; gap: 12px;">
-                <div class="grow">
-                    {% set generateOptions = [{value: '', label: 'Select type'|t('translation-manager')}] %}
-                    {% if craft.translationManager.canGenerateAllSources() %}
-                        {% set generateOptions = generateOptions|merge([{value: 'all', label: 'Generate All Files'|t('translation-manager')}]) %}
-                    {% endif %}
-                    {% for source in craft.translationManager.getSources() %}
-                        {% if source.canGenerate %}
-                            {% set sourceValue = source.providerName ? 'provider:' ~ source.providerName : 'category:' ~ source.category %}
-                            {% set generateOptions = generateOptions|merge([{value: sourceValue, label: 'Generate {name} Files Only'|t('translation-manager', {name: source.label})}]) %}
-                        {% endif %}
-                    {% endfor %}
-                    {{ forms.selectField({
-                        label: "Type to Generate"|t('translation-manager'),
-                        id: 'generateType',
-                        name: 'generateType',
-                        options: generateOptions,
-                        value: ''
-                    }) }}
+    {% if hasGenerateActions %}
+        <div class="field">
+            <div class="heading">
+                <label>{{ "Generate Translation Files"|t('translation-manager') }}</label>
+                <div class="instructions">
+                    <p>{{ "Manually generate PHP translation files that Craft CMS uses for multi-language support"|t('translation-manager') }}</p>
                 </div>
+            </div>
+            <div class="input">
+                <div style="display: flex; align-items: flex-end; gap: 12px;">
+                    <div class="grow">
+                        {{ forms.selectField({
+                            label: "Type to Generate"|t('translation-manager'),
+                            id: 'generateType',
+                            name: 'generateType',
+                            options: generateOptions,
+                            value: ''
+                        }) }}
+                    </div>
 
-                <button type="button" class="btn secondary" id="generate-btn" disabled>
-                    {{ "Generate Files"|t('translation-manager') }}
-                </button>
+                    <button type="button" class="btn secondary" id="generate-btn" disabled>
+                        {{ "Generate Files"|t('translation-manager') }}
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
+    {% else %}
+        {% include 'lindemannrock-base/_components/info-box' with {
+            message: 'You can view this section, but no generate actions are available for your account. Ask an administrator to grant Generate all source files or a source-specific Generate permission.'|t('translation-manager'),
+        } %}
+    {% endif %}
 
     {% set generationPath = settings.getGenerationPath() %}
     {% include 'lindemannrock-base/_components/info-box' with {
