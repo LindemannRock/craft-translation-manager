@@ -105,70 +105,10 @@ class FormieIntegration extends BaseIntegration
             return [];
         }
 
-        $captured = [];
+        $captured = $this->captureDefaultTranslations();
 
-        // Capture Formie default translations (validation messages, etc.)
-        $captured = array_merge($captured, $this->captureDefaultTranslations());
-
-        // Capture form title
-        if ($form->title) {
-            $captured[] = $this->createTranslation(
-                $form->title,
-                "formie.{$form->handle}.title"
-            );
-        }
-
-        // Capture page button labels
-        foreach ($form->getPages() as $page) {
-            $pageSettings = $page->getPageSettings();
-
-            // Submit button label
-            if ($pageSettings->submitButtonLabel ?? false) {
-                $captured[] = $this->createTranslation(
-                    $pageSettings->submitButtonLabel,
-                    "formie.{$form->handle}.button.submit"
-                );
-            }
-
-            // Back button label
-            if ($pageSettings->backButtonLabel ?? false) {
-                $captured[] = $this->createTranslation(
-                    $pageSettings->backButtonLabel,
-                    "formie.{$form->handle}.button.back"
-                );
-            }
-
-            // Save button label
-            if ($pageSettings->saveButtonLabel ?? false) {
-                $captured[] = $this->createTranslation(
-                    $pageSettings->saveButtonLabel,
-                    "formie.{$form->handle}.button.save"
-                );
-            }
-        }
-
-        // Capture form messages (convert TipTap JSON to clean HTML)
-        if ($form->settings->submitActionMessage ?? false) {
-            $message = $this->convertTipTapToHtml($form->settings->submitActionMessage);
-            $captured[] = $this->createTranslation(
-                $message,
-                "formie.{$form->handle}.message.submit"
-            );
-        }
-
-        if ($form->settings->errorMessage ?? false) {
-            $message = $this->convertTipTapToHtml($form->settings->errorMessage);
-            $captured[] = $this->createTranslation(
-                $message,
-                "formie.{$form->handle}.message.error"
-            );
-        }
-
-
-        // Capture all form fields
-        foreach ($form->getCustomFields() as $field) {
-            $fieldTranslations = $this->captureFieldTranslations($form, $field);
-            $captured = array_merge($captured, $fieldTranslations);
+        foreach ($this->collectTranslationEntries($form) as $entry) {
+            $captured[] = $this->createTranslation($entry['text'], $entry['context']);
         }
 
         return array_filter($captured); // Remove null entries
@@ -219,49 +159,12 @@ class FormieIntegration extends BaseIntegration
         $forms = \verbb\formie\Formie::getInstance()->getForms()->getAllForms();
 
         foreach ($forms as $form) {
-            if ($form->title) {
-                $activeTexts[$form->title] = true;
+            if ($this->isFormExcluded($form->handle, $form->title)) {
+                continue;
             }
 
-            foreach ($form->getPages() as $page) {
-                $pageSettings = $page->getPageSettings();
-
-                if ($pageSettings->submitButtonLabel ?? false) {
-                    $activeTexts[$pageSettings->submitButtonLabel] = true;
-                }
-                if ($pageSettings->backButtonLabel ?? false) {
-                    $activeTexts[$pageSettings->backButtonLabel] = true;
-                }
-                if ($pageSettings->saveButtonLabel ?? false) {
-                    $activeTexts[$pageSettings->saveButtonLabel] = true;
-                }
-            }
-
-            // IMPORTANT: read RAW properties — getters return translated content
-            if ($form->settings->submitActionMessage ?? false) {
-                $htmlMessage = $this->convertTipTapToHtml($form->settings->submitActionMessage);
-                if ($htmlMessage) {
-                    $activeTexts[$htmlMessage] = true;
-                    $plainMessage = $this->extractPlainTextFromFormie($htmlMessage);
-                    if ($plainMessage && $plainMessage !== $htmlMessage) {
-                        $activeTexts[$plainMessage] = true;
-                    }
-                }
-            }
-
-            if ($form->settings->errorMessage ?? false) {
-                $htmlMessage = $this->convertTipTapToHtml($form->settings->errorMessage);
-                if ($htmlMessage) {
-                    $activeTexts[$htmlMessage] = true;
-                    $plainMessage = $this->extractTextFromTipTap($htmlMessage);
-                    if ($plainMessage && $plainMessage !== $htmlMessage) {
-                        $activeTexts[$plainMessage] = true;
-                    }
-                }
-            }
-
-            foreach ($form->getCustomFields() as $field) {
-                $this->collectFieldTexts($field, $activeTexts);
+            foreach ($this->collectTranslationEntries($form) as $entry) {
+                $activeTexts[$entry['text']] = true;
             }
         }
 
@@ -363,73 +266,124 @@ class FormieIntegration extends BaseIntegration
     }
 
     /**
-     * Capture translations from a form field
+     * Collect source strings from a Formie form without mutating storage.
      *
-     * @param \verbb\formie\elements\Form $form
-     * @param mixed $field
-     * @return array Captured translations
+     * @return array<int,array{text:string,context:string}>
      */
-    private function captureFieldTranslations($form, $field): array
+    private function collectTranslationEntries(\verbb\formie\elements\Form $form): array
     {
-        $captured = [];
+        $entries = [];
         $formHandle = $form->handle;
-        $fieldHandle = $field->handle;
 
-        // Capture basic field properties
-        if ($field->label) {
-            $captured[] = $this->createTranslation(
-                $field->label,
-                "formie.{$formHandle}.{$fieldHandle}.label"
+        $this->addEntry($entries, $form->title, "formie.{$formHandle}.title");
+
+        foreach ($form->getPages() as $page) {
+            $pageSettings = $page->getPageSettings();
+
+            $this->addEntry($entries, $pageSettings->submitButtonLabel ?? null, "formie.{$formHandle}.button.submit");
+            $this->addEntry($entries, $pageSettings->backButtonLabel ?? null, "formie.{$formHandle}.button.back");
+            $this->addEntry($entries, $pageSettings->saveButtonLabel ?? null, "formie.{$formHandle}.button.save");
+        }
+
+        // IMPORTANT: read RAW settings — getters can return translated content.
+        if ($form->settings->submitActionMessage ?? false) {
+            $this->addEntry(
+                $entries,
+                $this->convertTipTapToHtml($form->settings->submitActionMessage),
+                "formie.{$formHandle}.message.submit"
             );
         }
 
-        if ($field->instructions) {
-            $captured[] = $this->createTranslation(
-                $field->instructions,
-                "formie.{$formHandle}.{$fieldHandle}.instructions"
+        if ($form->settings->errorMessage ?? false) {
+            $this->addEntry(
+                $entries,
+                $this->convertTipTapToHtml($form->settings->errorMessage),
+                "formie.{$formHandle}.message.error"
             );
         }
 
-        if (property_exists($field, 'placeholder') && $field->placeholder) {
-            $captured[] = $this->createTranslation(
-                $field->placeholder,
-                "formie.{$formHandle}.{$fieldHandle}.placeholder"
-            );
+        foreach ($form->getCustomFields() as $field) {
+            try {
+                array_push($entries, ...$this->collectFieldEntries($formHandle, $field));
+            } catch (\Throwable $e) {
+                $this->logInfo('Unable to collect Formie field translations', [
+                    'form' => $formHandle,
+                    'field' => $field->handle ?? null,
+                    'class' => get_debug_type($field),
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
-        if (property_exists($field, 'errorMessage') && $field->errorMessage) {
-            $captured[] = $this->createTranslation(
-                $field->errorMessage,
-                "formie.{$formHandle}.{$fieldHandle}.error"
-            );
-        }
-
-        // Handle field type-specific translations
-        $fieldTypeTranslations = $this->captureFieldTypeSpecificTranslations($form, $field);
-        $captured = array_merge($captured, $fieldTypeTranslations);
-
-        return array_filter($captured);
+        return $entries;
     }
 
     /**
-     * Capture field type-specific translations
-     *
-     * @param \verbb\formie\elements\Form $form
-     * @param mixed $field
-     * @return array Captured translations
+     * @return array<int,array{text:string,context:string}>
      */
-    private function captureFieldTypeSpecificTranslations($form, $field): array
+    private function collectFieldEntries(string $formHandle, $field): array
     {
-        $captured = [];
-        $fieldClass = get_class($field);
-        $formHandle = $form->handle;
+        $entries = [];
         $fieldHandle = $field->handle;
+        $context = "formie.{$formHandle}.{$fieldHandle}";
 
-        // Log field processing at debug level for debugging
+        $this->addEntry($entries, property_exists($field, 'label') ? $field->label : null, "{$context}.label");
+        $this->addEntry($entries, property_exists($field, 'instructions') ? $field->instructions : null, "{$context}.instructions");
+        $this->addEntry($entries, property_exists($field, 'placeholder') ? $field->placeholder : null, "{$context}.placeholder");
+        $this->addEntry($entries, property_exists($field, 'errorMessage') ? $field->errorMessage : null, "{$context}.error");
+
+        array_push($entries, ...$this->collectFieldTypeSpecificEntries($formHandle, $field));
+
+        return $entries;
+    }
+
+    /**
+     * @param array<int,array{text:string,context:string}> $entries
+     */
+    private function addEntry(array &$entries, mixed $text, string $context): void
+    {
+        if (!is_scalar($text)) {
+            return;
+        }
+
+        $text = trim((string)$text);
+        if ($text === '') {
+            return;
+        }
+
+        $entries[] = [
+            'text' => $text,
+            'context' => $context,
+        ];
+    }
+
+    /**
+     * @return array<int,array{text:string,context:string}>
+     */
+    private function collectFieldTypeSpecificEntries(string $formHandle, $field): array
+    {
+        $entries = [];
+        $fieldClass = get_class($field);
+        $fieldHandle = $field->handle;
+        $context = "formie.{$formHandle}.{$fieldHandle}";
+        // Formie's Date field can throw while building nested sub-fields when
+        // fixed date limits are still strings during the form-save response.
+        // The legacy property path below captures Date sub-field labels without
+        // invoking Formie's Date sub-field builder.
+        $nestedFieldEntries = $fieldClass === 'verbb\formie\fields\Date' ? [] : $this->collectNestedSubFieldEntries($formHandle, $field);
+        $tableColumnEntries = $this->collectTableColumnEntries($formHandle, $field);
+
         $this->logDebug("Processing Formie field: {$fieldClass} ({$fieldHandle})");
 
+        if ($nestedFieldEntries !== []) {
+            array_push($entries, ...$nestedFieldEntries);
+        }
+
+        if ($tableColumnEntries !== []) {
+            array_push($entries, ...$tableColumnEntries);
+        }
+
         switch ($fieldClass) {
-            // Fields with options
             case 'verbb\formie\fields\Dropdown':
             case 'verbb\formie\fields\Radio':
             case 'verbb\formie\fields\Checkboxes':
@@ -439,535 +393,259 @@ class FormieIntegration extends BaseIntegration
             case 'verbb\formie\fields\Tags':
             case 'verbb\formie\fields\Users':
             case 'verbb\formie\fields\Variants':
-                if (property_exists($field, 'options') && is_array($field->options)) {
-                    foreach ($field->options as $option) {
-                        if (isset($option['label']) && !empty($option['label'])) {
-                            $optionValue = $option['value'] ?? StringHelper::toKebabCase($option['label']);
-                            $captured[] = $this->createTranslation(
-                                $option['label'],
-                                "formie.{$formHandle}.{$fieldHandle}.option.{$optionValue}"
-                            );
-                        }
-                    }
-                }
+                $this->collectOptionEntries($entries, "{$context}.option", property_exists($field, 'options') ? $field->options : null);
                 break;
 
             case 'verbb\formie\fields\Agree':
-                // Use getDescriptionHtml() method to get the converted HTML
-                if (method_exists($field, 'getDescriptionHtml')) {
-                    $descriptionHtml = $field->getDescriptionHtml();
-                    if (!empty($descriptionHtml)) {
-                        $captured[] = $this->createTranslation(
-                            (string)$descriptionHtml,
-                            "formie.{$formHandle}.{$fieldHandle}.description"
-                        );
-                    }
-                }
-                if (property_exists($field, 'checkedValue') && $field->checkedValue) {
-                    $captured[] = $this->createTranslation(
-                        $field->checkedValue,
-                        "formie.{$formHandle}.{$fieldHandle}.checkedValue"
-                    );
-                }
-                if (property_exists($field, 'uncheckedValue') && $field->uncheckedValue) {
-                    $captured[] = $this->createTranslation(
-                        $field->uncheckedValue,
-                        "formie.{$formHandle}.{$fieldHandle}.uncheckedValue"
-                    );
-                }
+                $this->addEntry(
+                    $entries,
+                    method_exists($field, 'getDescriptionHtml') ? (string)$field->getDescriptionHtml() : null,
+                    "{$context}.description"
+                );
+                $this->addEntry($entries, property_exists($field, 'checkedValue') ? $field->checkedValue : null, "{$context}.checkedValue");
+                $this->addEntry($entries, property_exists($field, 'uncheckedValue') ? $field->uncheckedValue : null, "{$context}.uncheckedValue");
                 break;
 
-            // Address field with subfield labels
             case 'verbb\formie\fields\Address':
-                $nestedCaptured = $this->captureNestedSubFieldTranslations($form, $field);
-                if ($nestedCaptured !== []) {
-                    $captured = array_merge($captured, $nestedCaptured);
+            case 'verbb\formie\fields\Name':
+            case 'verbb\formie\fields\Date':
+                if ($nestedFieldEntries !== []) {
                     break;
                 }
 
-                $subfields = [
-                    'address1' => ['enabled' => $field->address1Enabled ?? false],
-                    'address2' => ['enabled' => $field->address2Enabled ?? false],
-                    'address3' => ['enabled' => $field->address3Enabled ?? false],
-                    'city' => ['enabled' => $field->cityEnabled ?? false],
-                    'state' => ['enabled' => $field->stateEnabled ?? false],
-                    'zip' => ['enabled' => $field->zipEnabled ?? false],
-                    'country' => ['enabled' => $field->countryEnabled ?? false],
-                ];
-
-                foreach ($subfields as $subfield => $config) {
-                    if ($config['enabled']) {
-                        $labelProp = $subfield . 'Label';
-                        if (property_exists($field, $labelProp) && $field->$labelProp) {
-                            $captured[] = $this->createTranslation(
-                                $field->$labelProp,
-                                "formie.{$formHandle}.{$fieldHandle}.{$subfield}.label"
-                            );
-                        }
-
-                        $placeholderProp = $subfield . 'Placeholder';
-                        if (property_exists($field, $placeholderProp) && $field->$placeholderProp) {
-                            $captured[] = $this->createTranslation(
-                                $field->$placeholderProp,
-                                "formie.{$formHandle}.{$fieldHandle}.{$subfield}.placeholder"
-                            );
-                        }
-                    }
-                }
+                array_push($entries, ...$this->collectLegacyCompoundFieldEntries($formHandle, $field));
                 break;
 
             case 'verbb\formie\fields\Html':
-                if (property_exists($field, 'htmlContent') && $field->htmlContent) {
-                    $captured[] = $this->createTranslation(
-                        $field->htmlContent,
-                        "formie.{$formHandle}.{$fieldHandle}.content"
-                    );
-                }
+                $this->addEntry($entries, property_exists($field, 'htmlContent') ? $field->htmlContent : null, "{$context}.content");
                 break;
 
             case 'verbb\formie\fields\Heading':
-                if (property_exists($field, 'headingText') && $field->headingText) {
-                    $captured[] = $this->createTranslation(
-                        $field->headingText,
-                        "formie.{$formHandle}.{$fieldHandle}.text"
-                    );
-                }
+                $this->addEntry($entries, property_exists($field, 'headingText') ? $field->headingText : null, "{$context}.text");
                 break;
 
-            // Name field with subfield labels
-            case 'verbb\formie\fields\Name':
-                $nestedCaptured = $this->captureNestedSubFieldTranslations($form, $field);
-                if ($nestedCaptured !== []) {
-                    $captured = array_merge($captured, $nestedCaptured);
-                    break;
-                }
-
-                $nameSubfields = [
-                    'prefix' => $field->prefixEnabled ?? false,
-                    'firstName' => true, // Always enabled
-                    'middleName' => $field->middleNameEnabled ?? false,
-                    'lastName' => $field->lastNameEnabled ?? false,
-                ];
-
-                foreach ($nameSubfields as $subfield => $enabled) {
-                    if ($enabled) {
-                        $labelProp = $subfield . 'Label';
-                        if (property_exists($field, $labelProp) && $field->$labelProp) {
-                            $captured[] = $this->createTranslation(
-                                $field->$labelProp,
-                                "formie.{$formHandle}.{$fieldHandle}.{$subfield}.label"
-                            );
-                        }
-
-                        $placeholderProp = $subfield . 'Placeholder';
-                        if (property_exists($field, $placeholderProp) && $field->$placeholderProp) {
-                            $captured[] = $this->createTranslation(
-                                $field->$placeholderProp,
-                                "formie.{$formHandle}.{$fieldHandle}.{$subfield}.placeholder"
-                            );
-                        }
-                    }
-                }
-                break;
-
-            // Recipients field with custom options
             case 'verbb\formie\fields\Recipients':
                 if (property_exists($field, 'sources') && is_array($field->sources)) {
                     foreach ($field->sources as $source) {
-                        if (is_array($source) && isset($source['label'])) {
-                            $captured[] = $this->createTranslation(
-                                $source['label'],
-                                "formie.{$formHandle}.{$fieldHandle}.recipient"
-                            );
-                        }
+                        $this->addEntry($entries, is_array($source) ? ($source['label'] ?? null) : null, "{$context}.recipient");
                     }
                 }
                 break;
 
-            // Table field with column headers
             case 'verbb\formie\fields\Table':
-                $captured = array_merge($captured, $this->captureTableColumnTranslations($form, $field));
-
-                if (property_exists($field, 'addRowLabel') && $field->addRowLabel) {
-                    $captured[] = $this->createTranslation(
-                        $field->addRowLabel,
-                        "formie.{$formHandle}.{$fieldHandle}.addRowLabel"
-                    );
-                }
+                $this->addEntry($entries, property_exists($field, 'addRowLabel') ? $field->addRowLabel : null, "{$context}.addRowLabel");
                 break;
 
-            // Repeater field
             case 'verbb\formie\fields\Repeater':
-                if (property_exists($field, 'addLabel') && $field->addLabel) {
-                    $captured[] = $this->createTranslation(
-                        $field->addLabel,
-                        "formie.{$formHandle}.{$fieldHandle}.addLabel"
-                    );
-                }
-
-                if (property_exists($field, 'removeLabel') && $field->removeLabel) {
-                    $captured[] = $this->createTranslation(
-                        $field->removeLabel,
-                        "formie.{$formHandle}.{$fieldHandle}.removeLabel"
-                    );
-                }
+                $this->addEntry($entries, property_exists($field, 'addLabel') ? $field->addLabel : null, "{$context}.addLabel");
+                $this->addEntry($entries, property_exists($field, 'removeLabel') ? $field->removeLabel : null, "{$context}.removeLabel");
                 break;
 
-            // Date field with subfield labels
-            case 'verbb\formie\fields\Date':
-                $nestedCaptured = $this->captureNestedSubFieldTranslations($form, $field);
-                if ($nestedCaptured !== []) {
-                    $captured = array_merge($captured, $nestedCaptured);
-                    break;
-                }
-
-                $dateSubfields = [
-                    'day' => $field->dayEnabled ?? false,
-                    'month' => $field->monthEnabled ?? false,
-                    'year' => $field->yearEnabled ?? false,
-                    'hour' => $field->hourEnabled ?? false,
-                    'minute' => $field->minuteEnabled ?? false,
-                    'second' => $field->secondEnabled ?? false,
-                    'ampm' => $field->ampmEnabled ?? false,
-                ];
-
-                foreach ($dateSubfields as $subfield => $enabled) {
-                    if ($enabled) {
-                        $labelProp = $subfield . 'Label';
-                        if (property_exists($field, $labelProp) && $field->$labelProp) {
-                            $captured[] = $this->createTranslation(
-                                $field->$labelProp,
-                                "formie.{$formHandle}.{$fieldHandle}.{$subfield}.label"
-                            );
-                        }
-
-                        $placeholderProp = $subfield . 'Placeholder';
-                        if (property_exists($field, $placeholderProp) && $field->$placeholderProp) {
-                            $captured[] = $this->createTranslation(
-                                $field->$placeholderProp,
-                                "formie.{$formHandle}.{$fieldHandle}.{$subfield}.placeholder"
-                            );
-                        }
-                    }
-                }
-                break;
-
-            // Custom Paragraph field
             case 'lindemannrock\formieparagraphfield\fields\Paragraph':
-                if (property_exists($field, 'paragraphContent') && $field->paragraphContent) {
-                    $captured[] = $this->createTranslation(
-                        $field->paragraphContent,
-                        "formie.{$formHandle}.{$fieldHandle}.content"
-                    );
-                }
+                $this->addEntry($entries, property_exists($field, 'paragraphContent') ? $field->paragraphContent : null, "{$context}.content");
                 break;
 
-            // Custom Rating field
             case 'lindemannrock\formieratingfield\fields\Rating':
-                // Capture endpoint labels if enabled
                 if (property_exists($field, 'showEndpointLabels') && $field->showEndpointLabels) {
-                    if (property_exists($field, 'startLabel') && $field->startLabel) {
-                        $captured[] = $this->createTranslation(
-                            $field->startLabel,
-                            "formie.{$formHandle}.{$fieldHandle}.startLabel"
-                        );
-                    }
-
-                    if (property_exists($field, 'endLabel') && $field->endLabel) {
-                        $captured[] = $this->createTranslation(
-                            $field->endLabel,
-                            "formie.{$formHandle}.{$fieldHandle}.endLabel"
-                        );
-                    }
+                    $this->addEntry($entries, property_exists($field, 'startLabel') ? $field->startLabel : null, "{$context}.startLabel");
+                    $this->addEntry($entries, property_exists($field, 'endLabel') ? $field->endLabel : null, "{$context}.endLabel");
                 }
 
-                // Capture custom labels for rating values if they exist
-                // customLabels is an array of objects: [{"value": "", "label": "Text"}, ...]
                 if (property_exists($field, 'customLabels') && is_array($field->customLabels)) {
                     foreach ($field->customLabels as $index => $labelData) {
-                        if (is_array($labelData) && !empty($labelData['label'])) {
-                            // Use the 'value' property if available and not empty, otherwise use index
-                            $keyValue = !empty($labelData['value']) ? $labelData['value'] : $index;
-                            $captured[] = $this->createTranslation(
-                                $labelData['label'],
-                                "formie.{$formHandle}.{$fieldHandle}.customLabel.{$keyValue}"
-                            );
+                        if (!is_array($labelData)) {
+                            continue;
                         }
+
+                        $keyValue = !empty($labelData['value']) ? $labelData['value'] : $index;
+                        $this->addEntry($entries, $labelData['label'] ?? null, "{$context}.customLabel.{$keyValue}");
                     }
                 }
 
-                // Capture Google Review integration messages if enabled
                 if (property_exists($field, 'enableGoogleReview') && $field->enableGoogleReview) {
-                    // Capture message high (custom or default)
-                    $messageHigh = $field->googleReviewMessageHigh ?: 'Thank you for the excellent rating! We would love if you could share your experience with others.';
-                    $captured[] = $this->createTranslation(
-                        $messageHigh,
-                        "formie.{$formHandle}.{$fieldHandle}.googleReview.messageHigh"
-                    );
-
-                    // Capture message medium (custom or default)
-                    $messageMedium = $field->googleReviewMessageMedium ?: 'Thank you for your feedback!';
-                    $captured[] = $this->createTranslation(
-                        $messageMedium,
-                        "formie.{$formHandle}.{$fieldHandle}.googleReview.messageMedium"
-                    );
-
-                    // Capture message low (custom or default)
-                    $messageLow = $field->googleReviewMessageLow ?: 'Thank you for your feedback. We will use it to improve our service.';
-                    $captured[] = $this->createTranslation(
-                        $messageLow,
-                        "formie.{$formHandle}.{$fieldHandle}.googleReview.messageLow"
-                    );
-
-                    // Capture button label (custom or default)
-                    $buttonLabel = $field->googleReviewButtonLabel ?: 'Review on Google';
-                    $captured[] = $this->createTranslation(
-                        $buttonLabel,
-                        "formie.{$formHandle}.{$fieldHandle}.googleReview.buttonLabel"
-                    );
+                    $this->addEntry($entries, $field->googleReviewMessageHigh ?: 'Thank you for the excellent rating! We would love if you could share your experience with others.', "{$context}.googleReview.messageHigh");
+                    $this->addEntry($entries, $field->googleReviewMessageMedium ?: 'Thank you for your feedback!', "{$context}.googleReview.messageMedium");
+                    $this->addEntry($entries, $field->googleReviewMessageLow ?: 'Thank you for your feedback. We will use it to improve our service.', "{$context}.googleReview.messageLow");
+                    $this->addEntry($entries, $field->googleReviewButtonLabel ?: 'Review on Google', "{$context}.googleReview.buttonLabel");
                 }
                 break;
 
-            // Section field
             case 'verbb\formie\fields\Section':
-                if (property_exists($field, 'sectionText') && $field->sectionText) {
-                    $captured[] = $this->createTranslation(
-                        $field->sectionText,
-                        "formie.{$formHandle}.{$fieldHandle}.text"
-                    );
-                }
+                $this->addEntry($entries, property_exists($field, 'sectionText') ? $field->sectionText : null, "{$context}.text");
                 break;
 
-            // Summary field
             case 'verbb\formie\fields\Summary':
-                if (property_exists($field, 'summaryText') && $field->summaryText) {
-                    $captured[] = $this->createTranslation(
-                        $field->summaryText,
-                        "formie.{$formHandle}.{$fieldHandle}.text"
-                    );
-                }
+                $this->addEntry($entries, property_exists($field, 'summaryText') ? $field->summaryText : null, "{$context}.text");
                 break;
 
-            // File Upload field
             case 'verbb\formie\fields\FileUpload':
-                if (property_exists($field, 'uploadLocationText') && $field->uploadLocationText) {
-                    $captured[] = $this->createTranslation(
-                        $field->uploadLocationText,
-                        "formie.{$formHandle}.{$fieldHandle}.uploadText"
-                    );
-                }
+                $this->addEntry($entries, property_exists($field, 'uploadLocationText') ? $field->uploadLocationText : null, "{$context}.uploadText");
                 if (property_exists($field, 'allowedKinds') && is_array($field->allowedKinds)) {
                     foreach ($field->allowedKinds as $kind) {
-                        if (!empty($kind)) {
-                            $captured[] = $this->createTranslation(
-                                $kind,
-                                "formie.{$formHandle}.{$fieldHandle}.allowedKind.{$kind}"
-                            );
-                        }
+                        $this->addEntry($entries, $kind, "{$context}.allowedKind.{$kind}");
                     }
                 }
                 break;
 
-            // Payment field
             case 'verbb\formie\fields\Payment':
-                if (property_exists($field, 'currency') && $field->currency) {
-                    $captured[] = $this->createTranslation(
-                        $field->currency,
-                        "formie.{$formHandle}.{$fieldHandle}.currency"
-                    );
-                }
-                if (property_exists($field, 'paymentMethodLabel') && $field->paymentMethodLabel) {
-                    $captured[] = $this->createTranslation(
-                        $field->paymentMethodLabel,
-                        "formie.{$formHandle}.{$fieldHandle}.methodLabel"
-                    );
-                }
+                $this->addEntry($entries, property_exists($field, 'currency') ? $field->currency : null, "{$context}.currency");
+                $this->addEntry($entries, property_exists($field, 'paymentMethodLabel') ? $field->paymentMethodLabel : null, "{$context}.methodLabel");
                 break;
 
-            // Phone field
             case 'verbb\formie\fields\Phone':
-                if (property_exists($field, 'countryLabel') && $field->countryLabel) {
-                    $captured[] = $this->createTranslation(
-                        $field->countryLabel,
-                        "formie.{$formHandle}.{$fieldHandle}.countryLabel"
-                    );
-                }
-                if (property_exists($field, 'numberLabel') && $field->numberLabel) {
-                    $captured[] = $this->createTranslation(
-                        $field->numberLabel,
-                        "formie.{$formHandle}.{$fieldHandle}.numberLabel"
-                    );
-                }
+                $this->addEntry($entries, property_exists($field, 'countryLabel') ? $field->countryLabel : null, "{$context}.countryLabel");
+                $this->addEntry($entries, property_exists($field, 'numberLabel') ? $field->numberLabel : null, "{$context}.numberLabel");
                 break;
 
-            // Password field
             case 'verbb\formie\fields\Password':
-                if (property_exists($field, 'confirmationLabel') && $field->confirmationLabel) {
-                    $captured[] = $this->createTranslation(
-                        $field->confirmationLabel,
-                        "formie.{$formHandle}.{$fieldHandle}.confirmationLabel"
-                    );
-                }
+                $this->addEntry($entries, property_exists($field, 'confirmationLabel') ? $field->confirmationLabel : null, "{$context}.confirmationLabel");
                 break;
 
-            // Number field
             case 'verbb\formie\fields\Number':
-                if (property_exists($field, 'minLabel') && $field->minLabel) {
-                    $captured[] = $this->createTranslation(
-                        $field->minLabel,
-                        "formie.{$formHandle}.{$fieldHandle}.minLabel"
-                    );
-                }
-                if (property_exists($field, 'maxLabel') && $field->maxLabel) {
-                    $captured[] = $this->createTranslation(
-                        $field->maxLabel,
-                        "formie.{$formHandle}.{$fieldHandle}.maxLabel"
-                    );
-                }
-                if (property_exists($field, 'unitText') && $field->unitText) {
-                    $captured[] = $this->createTranslation(
-                        $field->unitText,
-                        "formie.{$formHandle}.{$fieldHandle}.unitText"
-                    );
-                }
+                $this->addEntry($entries, property_exists($field, 'minLabel') ? $field->minLabel : null, "{$context}.minLabel");
+                $this->addEntry($entries, property_exists($field, 'maxLabel') ? $field->maxLabel : null, "{$context}.maxLabel");
+                $this->addEntry($entries, property_exists($field, 'unitText') ? $field->unitText : null, "{$context}.unitText");
                 break;
 
-            // Signature field
             case 'verbb\formie\fields\Signature':
-                if (property_exists($field, 'clearLabel') && $field->clearLabel) {
-                    $captured[] = $this->createTranslation(
-                        $field->clearLabel,
-                        "formie.{$formHandle}.{$fieldHandle}.clearLabel"
-                    );
-                }
-                if (property_exists($field, 'submitLabel') && $field->submitLabel) {
-                    $captured[] = $this->createTranslation(
-                        $field->submitLabel,
-                        "formie.{$formHandle}.{$fieldHandle}.submitLabel"
-                    );
-                }
+                $this->addEntry($entries, property_exists($field, 'clearLabel') ? $field->clearLabel : null, "{$context}.clearLabel");
+                $this->addEntry($entries, property_exists($field, 'submitLabel') ? $field->submitLabel : null, "{$context}.submitLabel");
                 break;
 
-            // Calculations field
             case 'verbb\formie\fields\Calculations':
-                if (property_exists($field, 'calculationLabel') && $field->calculationLabel) {
-                    $captured[] = $this->createTranslation(
-                        $field->calculationLabel,
-                        "formie.{$formHandle}.{$fieldHandle}.calculationLabel"
-                    );
-                }
+                $this->addEntry($entries, property_exists($field, 'calculationLabel') ? $field->calculationLabel : null, "{$context}.calculationLabel");
                 break;
 
-            // Group field - process nested fields
             case 'verbb\formie\fields\Group':
                 if (method_exists($field, 'getCustomFields')) {
                     foreach ($field->getCustomFields() as $nestedField) {
-                        $nestedTranslations = $this->captureFieldTranslations($form, $nestedField);
-                        $captured = array_merge($captured, $nestedTranslations);
+                        array_push($entries, ...$this->collectFieldEntries($formHandle, $nestedField));
                     }
                 }
                 break;
         }
 
-        return array_filter($captured);
+        return $entries;
     }
 
     /**
-     * Capture Formie table column headings and select option labels.
-     *
-     * @return array<int,mixed>
+     * @param array<int,array{text:string,context:string}> $entries
      */
-    private function captureTableColumnTranslations($form, $field): array
+    private function collectOptionEntries(array &$entries, string $context, mixed $options): void
+    {
+        if (!is_array($options)) {
+            return;
+        }
+
+        foreach ($options as $index => $option) {
+            if (!is_array($option)) {
+                continue;
+            }
+
+            $label = $option['label'] ?? null;
+            $optionValue = $option['value'] ?? (is_scalar($label) ? StringHelper::toKebabCase((string)$label) : $index);
+            $this->addEntry($entries, $label, "{$context}.{$optionValue}");
+        }
+    }
+
+    /**
+     * @return array<int,array{text:string,context:string}>
+     */
+    private function collectLegacyCompoundFieldEntries(string $formHandle, $field): array
+    {
+        $entries = [];
+        $fieldHandle = $field->handle;
+
+        $subfields = match (get_class($field)) {
+            'verbb\formie\fields\Address' => [
+                'address1' => $field->address1Enabled ?? false,
+                'address2' => $field->address2Enabled ?? false,
+                'address3' => $field->address3Enabled ?? false,
+                'city' => $field->cityEnabled ?? false,
+                'state' => $field->stateEnabled ?? false,
+                'zip' => $field->zipEnabled ?? false,
+                'country' => $field->countryEnabled ?? false,
+            ],
+            'verbb\formie\fields\Name' => [
+                'prefix' => $field->prefixEnabled ?? false,
+                'firstName' => true,
+                'middleName' => $field->middleNameEnabled ?? false,
+                'lastName' => $field->lastNameEnabled ?? false,
+            ],
+            'verbb\formie\fields\Date' => [
+                'day' => $field->dayEnabled ?? false,
+                'month' => $field->monthEnabled ?? false,
+                'year' => $field->yearEnabled ?? false,
+                'hour' => $field->hourEnabled ?? false,
+                'minute' => $field->minuteEnabled ?? false,
+                'second' => $field->secondEnabled ?? false,
+                'ampm' => $field->ampmEnabled ?? false,
+            ],
+            default => [],
+        };
+
+        foreach ($subfields as $subfield => $enabled) {
+            if (!$enabled) {
+                continue;
+            }
+
+            $labelProp = $subfield . 'Label';
+            $placeholderProp = $subfield . 'Placeholder';
+            $contextPrefix = "formie.{$formHandle}.{$fieldHandle}.{$subfield}";
+
+            $this->addEntry($entries, property_exists($field, $labelProp) ? $field->$labelProp : null, "{$contextPrefix}.label");
+            $this->addEntry($entries, property_exists($field, $placeholderProp) ? $field->$placeholderProp : null, "{$contextPrefix}.placeholder");
+        }
+
+        return $entries;
+    }
+
+    /**
+     * @return array<int,array{text:string,context:string}>
+     */
+    private function collectTableColumnEntries(string $formHandle, $field): array
     {
         if (!property_exists($field, 'columns') || !is_array($field->columns)) {
             return [];
         }
 
-        $captured = [];
+        $entries = [];
 
         foreach ($field->columns as $col => $column) {
-            if (!empty($column['heading'])) {
-                $captured[] = $this->createTranslation(
-                    $column['heading'],
-                    "formie.{$form->handle}.{$field->handle}.column.{$col}"
-                );
+            if (is_object($column)) {
+                $column = get_object_vars($column);
+            }
+            if (!is_array($column)) {
+                continue;
             }
 
-            if (!empty($column['options']) && is_array($column['options'])) {
-                foreach ($column['options'] as $option) {
-                    if (isset($option['label']) && !empty($option['label'])) {
-                        $optionValue = $option['value'] ?? StringHelper::toKebabCase($option['label']);
-                        $captured[] = $this->createTranslation(
-                            $option['label'],
-                            "formie.{$form->handle}.{$field->handle}.column.{$col}.option.{$optionValue}"
-                        );
-                    }
-                }
-            }
+            $contextPrefix = "formie.{$formHandle}.{$field->handle}.column.{$col}";
+
+            $this->addEntry($entries, $column['heading'] ?? null, $contextPrefix);
+            $this->collectOptionEntries($entries, "{$contextPrefix}.option", $column['options'] ?? null);
         }
 
-        return array_filter($captured);
+        return $entries;
     }
 
     /**
-     * Capture current Formie nested sub-field configuration for compound fields.
-     *
-     * Address, Date and multi-part Name fields moved their labels,
-     * placeholders and validation messages onto nested field instances. Keep
-     * the context shape identical to the legacy flat-property capture so
-     * existing managed translations continue to match.
-     *
-     * @return array<int,mixed>
+     * @return array<int,array{text:string,context:string}>
      */
-    private function captureNestedSubFieldTranslations($form, $field): array
+    private function collectNestedSubFieldEntries(string $formHandle, $field): array
     {
-        $captured = [];
+        $entries = [];
 
         foreach ($this->getNestedSubFields($field) as $subField) {
-            $contextPrefix = "formie.{$form->handle}.{$field->handle}.{$subField->handle}";
+            $contextPrefix = "formie.{$formHandle}.{$field->handle}.{$subField->handle}";
 
-            if ($subField->label) {
-                $captured[] = $this->createTranslation(
-                    $subField->label,
-                    "{$contextPrefix}.label"
-                );
-            }
-
-            if ($subField->instructions) {
-                $captured[] = $this->createTranslation(
-                    $subField->instructions,
-                    "{$contextPrefix}.instructions"
-                );
-            }
-
-            if (property_exists($subField, 'placeholder') && $subField->placeholder) {
-                $captured[] = $this->createTranslation(
-                    $subField->placeholder,
-                    "{$contextPrefix}.placeholder"
-                );
-            }
-
-            if (property_exists($subField, 'errorMessage') && $subField->errorMessage) {
-                $captured[] = $this->createTranslation(
-                    $subField->errorMessage,
-                    "{$contextPrefix}.error"
-                );
-            }
-
-            if (property_exists($subField, 'options') && is_array($subField->options)) {
-                foreach ($subField->options as $option) {
-                    if (isset($option['label']) && !empty($option['label'])) {
-                        $optionValue = $option['value'] ?? StringHelper::toKebabCase($option['label']);
-                        $captured[] = $this->createTranslation(
-                            $option['label'],
-                            "{$contextPrefix}.option.{$optionValue}"
-                        );
-                    }
-                }
-            }
+            $this->addEntry($entries, $subField->label, "{$contextPrefix}.label");
+            $this->addEntry($entries, $subField->instructions, "{$contextPrefix}.instructions");
+            $this->addEntry($entries, property_exists($subField, 'placeholder') ? $subField->placeholder : null, "{$contextPrefix}.placeholder");
+            $this->addEntry($entries, property_exists($subField, 'errorMessage') ? $subField->errorMessage : null, "{$contextPrefix}.error");
+            $this->collectOptionEntries($entries, "{$contextPrefix}.option", property_exists($subField, 'options') ? $subField->options : null);
         }
 
-        return array_filter($captured);
+        return $entries;
     }
 
     /**
@@ -983,7 +661,19 @@ class FormieIntegration extends BaseIntegration
 
         $subFields = [];
 
-        foreach ($field->getFields() as $subField) {
+        try {
+            $fields = $field->getFields();
+        } catch (\Throwable $e) {
+            $this->logInfo('Unable to inspect Formie nested sub-fields', [
+                'field' => $field->handle ?? null,
+                'class' => get_debug_type($field),
+                'error' => $e->getMessage(),
+            ]);
+
+            return [];
+        }
+
+        foreach ($fields as $subField) {
             if (method_exists($subField, 'getIsDisabled') && $subField->getIsDisabled()) {
                 continue;
             }
@@ -1064,227 +754,6 @@ class FormieIntegration extends BaseIntegration
     }
 
     /**
-     * Extract plain text from HTML or TipTap JSON format.
-     */
-    private function extractPlainTextFromFormie($content): string
-    {
-        if (empty($content)) {
-            return '';
-        }
-
-        // Try TipTap JSON first
-        $jsonText = $this->extractTextFromTipTap($content);
-        if ($jsonText !== $content) {
-            return $jsonText;
-        }
-
-        // If not JSON, try HTML stripping with paragraph preservation
-        if (is_string($content) && (strpos($content, '<') !== false)) {
-            $content = preg_replace('/<\/p>\s*<p[^>]*>/i', "\n\n", $content);
-            return trim(strip_tags($content));
-        }
-
-        return $content;
-    }
-
-    /**
-     * Recursively collect field texts including nested fields in groups.
-     *
-     * @param array<string,true> $activeTexts
-     */
-    private function collectFieldTexts($field, array &$activeTexts): void
-    {
-        // Basic field properties
-        if ($field->label) {
-            $activeTexts[$field->label] = true;
-        }
-
-        if ($field->instructions) {
-            $activeTexts[$field->instructions] = true;
-        }
-
-        if (property_exists($field, 'placeholder') && $field->placeholder) {
-            $activeTexts[$field->placeholder] = true;
-        }
-
-        if (property_exists($field, 'errorMessage') && $field->errorMessage) {
-            $activeTexts[$field->errorMessage] = true;
-        }
-
-        $this->collectNestedSubFieldTexts($field, $activeTexts);
-
-        // Field type-specific content
-        $fieldClass = get_class($field);
-
-        switch ($fieldClass) {
-            case 'verbb\formie\fields\Group':
-                // Recursively process nested fields in groups
-                if (method_exists($field, 'getCustomFields')) {
-                    foreach ($field->getCustomFields() as $nestedField) {
-                        $this->collectFieldTexts($nestedField, $activeTexts);
-                    }
-                }
-                break;
-
-            case 'verbb\formie\fields\Html':
-                if (property_exists($field, 'htmlContent') && $field->htmlContent) {
-                    $activeTexts[$field->htmlContent] = true;
-                }
-                break;
-
-            case 'verbb\formie\fields\Heading':
-                if (property_exists($field, 'headingText') && $field->headingText) {
-                    $activeTexts[$field->headingText] = true;
-                }
-                break;
-
-            case 'lindemannrock\formieparagraphfield\fields\Paragraph':
-                if (property_exists($field, 'paragraphContent') && $field->paragraphContent) {
-                    $activeTexts[$field->paragraphContent] = true;
-                }
-                break;
-
-            case 'lindemannrock\formieratingfield\fields\Rating':
-                if (property_exists($field, 'showEndpointLabels') && $field->showEndpointLabels) {
-                    if (property_exists($field, 'startLabel') && $field->startLabel) {
-                        $activeTexts[$field->startLabel] = true;
-                    }
-                    if (property_exists($field, 'endLabel') && $field->endLabel) {
-                        $activeTexts[$field->endLabel] = true;
-                    }
-                }
-
-                // customLabels is an array of objects: [{"value": "", "label": "Text"}, ...]
-                if (property_exists($field, 'customLabels') && is_array($field->customLabels)) {
-                    foreach ($field->customLabels as $labelData) {
-                        if (is_array($labelData) && !empty($labelData['label'])) {
-                            $activeTexts[$labelData['label']] = true;
-                        }
-                    }
-                }
-
-                // Google Review integration messages
-                if (property_exists($field, 'enableGoogleReview') && $field->enableGoogleReview) {
-                    // Add message high (custom or default)
-                    $messageHigh = $field->googleReviewMessageHigh ?: 'Thank you for the excellent rating! We would love if you could share your experience with others.';
-                    $activeTexts[$messageHigh] = true;
-
-                    // Add message medium (custom or default)
-                    $messageMedium = $field->googleReviewMessageMedium ?: 'Thank you for your feedback!';
-                    $activeTexts[$messageMedium] = true;
-
-                    // Add message low (custom or default)
-                    $messageLow = $field->googleReviewMessageLow ?: 'Thank you for your feedback. We will use it to improve our service.';
-                    $activeTexts[$messageLow] = true;
-
-                    // Add button label (custom or default)
-                    $buttonLabel = $field->googleReviewButtonLabel ?: 'Review on Google';
-                    $activeTexts[$buttonLabel] = true;
-                }
-                break;
-
-            case 'verbb\formie\fields\Dropdown':
-            case 'verbb\formie\fields\Radio':
-            case 'verbb\formie\fields\Checkboxes':
-                if (property_exists($field, 'options') && is_array($field->options)) {
-                    foreach ($field->options as $option) {
-                        if (isset($option['label']) && !empty($option['label'])) {
-                            $activeTexts[$option['label']] = true;
-                        }
-                    }
-                }
-                break;
-
-            case 'verbb\formie\fields\Agree':
-                // Use getDescriptionHtml() method to get the actual HTML that Formie uses
-                if (method_exists($field, 'getDescriptionHtml')) {
-                    $descriptionHtml = $field->getDescriptionHtml();
-                    if (!empty($descriptionHtml)) {
-                        $activeTexts[(string)$descriptionHtml] = true;
-                    }
-                }
-
-                // Agree field checked/unchecked values
-                if (property_exists($field, 'checkedValue') && $field->checkedValue) {
-                    $activeTexts[$field->checkedValue] = true;
-                }
-
-                if (property_exists($field, 'uncheckedValue') && $field->uncheckedValue) {
-                    $activeTexts[$field->uncheckedValue] = true;
-                }
-                break;
-
-            case 'verbb\formie\fields\Table':
-                $this->collectTableColumnTexts($field, $activeTexts);
-
-                if (property_exists($field, 'addRowLabel') && $field->addRowLabel) {
-                    $activeTexts[$field->addRowLabel] = true;
-                }
-                break;
-        }
-    }
-
-    /**
-     * Collect Formie table column headings and select option labels.
-     *
-     * @param array<string,true> $activeTexts
-     */
-    private function collectTableColumnTexts($field, array &$activeTexts): void
-    {
-        if (!property_exists($field, 'columns') || !is_array($field->columns)) {
-            return;
-        }
-
-        foreach ($field->columns as $column) {
-            if (!empty($column['heading'])) {
-                $activeTexts[$column['heading']] = true;
-            }
-
-            if (!empty($column['options']) && is_array($column['options'])) {
-                foreach ($column['options'] as $option) {
-                    if (isset($option['label']) && !empty($option['label'])) {
-                        $activeTexts[$option['label']] = true;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Collect active text from nested Formie sub-fields.
-     *
-     * @param array<string,true> $activeTexts
-     */
-    private function collectNestedSubFieldTexts($field, array &$activeTexts): void
-    {
-        foreach ($this->getNestedSubFields($field) as $subField) {
-            if ($subField->label) {
-                $activeTexts[$subField->label] = true;
-            }
-
-            if ($subField->instructions) {
-                $activeTexts[$subField->instructions] = true;
-            }
-
-            if (property_exists($subField, 'placeholder') && $subField->placeholder) {
-                $activeTexts[$subField->placeholder] = true;
-            }
-
-            if (property_exists($subField, 'errorMessage') && $subField->errorMessage) {
-                $activeTexts[$subField->errorMessage] = true;
-            }
-
-            if (property_exists($subField, 'options') && is_array($subField->options)) {
-                foreach ($subField->options as $option) {
-                    if (isset($option['label']) && !empty($option['label'])) {
-                        $activeTexts[$option['label']] = true;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * Convert TipTap JSON to clean HTML
      */
     private function convertTipTapToHtml($content): string
@@ -1345,44 +814,5 @@ class FormieIntegration extends BaseIntegration
         }
 
         return implode('', $htmlParts);
-    }
-
-    /**
-     * Extract text from TipTap/ProseMirror JSON format.
-     */
-    private function extractTextFromTipTap($jsonString): string
-    {
-        if (empty($jsonString)) {
-            return '';
-        }
-
-        // If it's already plain text, return it
-        if (!is_string($jsonString) || $jsonString[0] !== '[') {
-            return $jsonString;
-        }
-
-        try {
-            $data = json_decode($jsonString, true);
-            if (!is_array($data)) {
-                return $jsonString;
-            }
-
-            $textParts = [];
-
-            // Iterate through all blocks
-            foreach ($data as $block) {
-                if (isset($block['content']) && is_array($block['content'])) {
-                    foreach ($block['content'] as $textNode) {
-                        if (isset($textNode['type']) && $textNode['type'] === 'text' && isset($textNode['text'])) {
-                            $textParts[] = $textNode['text'];
-                        }
-                    }
-                }
-            }
-
-            return implode(' ', $textParts);
-        } catch (\Exception) {
-            return $jsonString;
-        }
     }
 }

@@ -20,11 +20,8 @@ final class FormieIntegrationNestedSubFieldTest extends TestCase
 {
     public function testNestedSubFieldStringsAreCapturedWithStableCompoundContexts(): void
     {
-        $this->requireLatinSourceLanguage();
-
         $integration = new FormieIntegration();
-        $method = new \ReflectionMethod($integration, 'captureNestedSubFieldTranslations');
-        $form = new FormieNestedSubFieldFormStub('contact');
+        $method = new \ReflectionMethod($integration, 'collectNestedSubFieldEntries');
         $field = new FormieNestedSubFieldParentStub('name', [
             new FormieNestedSubFieldStub(
                 handle: 'firstName',
@@ -35,30 +32,30 @@ final class FormieIntegrationNestedSubFieldTest extends TestCase
             ),
         ]);
 
-        $method->invoke($integration, $form, $field);
+        $entries = $method->invoke($integration, 'contact', $field);
 
-        self::assertSame(
-            'formie.contact.name.firstName.label',
-            $this->fetchRowsForSource(self::MARKER . 'formie_subfield_first_label')[0]['context'] ?? null,
-        );
-        self::assertSame(
-            'formie.contact.name.firstName.instructions',
-            $this->fetchRowsForSource(self::MARKER . 'formie_subfield_first_instructions')[0]['context'] ?? null,
-        );
-        self::assertSame(
-            'formie.contact.name.firstName.placeholder',
-            $this->fetchRowsForSource(self::MARKER . 'formie_subfield_first_placeholder')[0]['context'] ?? null,
-        );
-        self::assertSame(
-            'formie.contact.name.firstName.error',
-            $this->fetchRowsForSource(self::MARKER . 'formie_subfield_first_error')[0]['context'] ?? null,
-        );
+        self::assertContains([
+            'text' => self::MARKER . 'formie_subfield_first_label',
+            'context' => 'formie.contact.name.firstName.label',
+        ], $entries);
+        self::assertContains([
+            'text' => self::MARKER . 'formie_subfield_first_instructions',
+            'context' => 'formie.contact.name.firstName.instructions',
+        ], $entries);
+        self::assertContains([
+            'text' => self::MARKER . 'formie_subfield_first_placeholder',
+            'context' => 'formie.contact.name.firstName.placeholder',
+        ], $entries);
+        self::assertContains([
+            'text' => self::MARKER . 'formie_subfield_first_error',
+            'context' => 'formie.contact.name.firstName.error',
+        ], $entries);
     }
 
-    public function testNestedSubFieldStringsAreCollectedAsActiveTexts(): void
+    public function testNestedSubFieldStringsAreIncludedInSharedFieldEntries(): void
     {
         $integration = new FormieIntegration();
-        $method = new \ReflectionMethod($integration, 'collectFieldTexts');
+        $method = new \ReflectionMethod($integration, 'collectFieldEntries');
         $field = new FormieNestedSubFieldParentStub('name', [
             new FormieNestedSubFieldStub(
                 handle: 'firstName',
@@ -68,21 +65,14 @@ final class FormieIntegrationNestedSubFieldTest extends TestCase
                 errorMessage: self::MARKER . 'formie_subfield_active_error',
             ),
         ]);
-        $activeTexts = [];
 
-        $method->invokeArgs($integration, [$field, &$activeTexts]);
+        $entries = $method->invoke($integration, 'contact', $field);
+        $activeTexts = array_fill_keys(array_column($entries, 'text'), true);
 
         self::assertArrayHasKey(self::MARKER . 'formie_subfield_active_label', $activeTexts);
         self::assertArrayHasKey(self::MARKER . 'formie_subfield_active_instructions', $activeTexts);
         self::assertArrayHasKey(self::MARKER . 'formie_subfield_active_placeholder', $activeTexts);
         self::assertArrayHasKey(self::MARKER . 'formie_subfield_active_error', $activeTexts);
-    }
-}
-
-final class FormieNestedSubFieldFormStub
-{
-    public function __construct(public string $handle)
-    {
     }
 }
 

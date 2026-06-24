@@ -20,11 +20,8 @@ final class FormieIntegrationTableColumnTest extends TestCase
 {
     public function testTableSelectOptionLabelsAreCaptured(): void
     {
-        $this->requireLatinSourceLanguage();
-
         $integration = new FormieIntegration();
-        $method = new \ReflectionMethod($integration, 'captureTableColumnTranslations');
-        $form = new FormieTableColumnFormStub('contact');
+        $method = new \ReflectionMethod($integration, 'collectTableColumnEntries');
         $field = new FormieTableColumnFieldStub('schedule', [
             'slot' => [
                 'heading' => self::MARKER . 'formie_table_slot_heading',
@@ -37,22 +34,22 @@ final class FormieIntegrationTableColumnTest extends TestCase
             ],
         ]);
 
-        $method->invoke($integration, $form, $field);
+        $entries = $method->invoke($integration, 'contact', $field);
 
-        self::assertSame(
-            'formie.contact.schedule.column.slot',
-            $this->fetchRowsForSource(self::MARKER . 'formie_table_slot_heading')[0]['context'] ?? null,
-        );
-        self::assertSame(
-            'formie.contact.schedule.column.slot.option.morning',
-            $this->fetchRowsForSource(self::MARKER . 'formie_table_morning_option')[0]['context'] ?? null,
-        );
+        self::assertContains([
+            'text' => self::MARKER . 'formie_table_slot_heading',
+            'context' => 'formie.contact.schedule.column.slot',
+        ], $entries);
+        self::assertContains([
+            'text' => self::MARKER . 'formie_table_morning_option',
+            'context' => 'formie.contact.schedule.column.slot.option.morning',
+        ], $entries);
     }
 
-    public function testTableSelectOptionLabelsAreCollectedAsActiveTexts(): void
+    public function testTableSelectOptionLabelsAreIncludedInSharedFieldEntries(): void
     {
         $integration = new FormieIntegration();
-        $method = new \ReflectionMethod($integration, 'collectTableColumnTexts');
+        $method = new \ReflectionMethod($integration, 'collectFieldEntries');
         $field = new FormieTableColumnFieldStub('schedule', [
             'slot' => [
                 'heading' => self::MARKER . 'formie_table_active_heading',
@@ -64,19 +61,12 @@ final class FormieIntegrationTableColumnTest extends TestCase
                 ],
             ],
         ]);
-        $activeTexts = [];
 
-        $method->invokeArgs($integration, [$field, &$activeTexts]);
+        $entries = $method->invoke($integration, 'contact', $field);
+        $activeTexts = array_fill_keys(array_column($entries, 'text'), true);
 
         self::assertArrayHasKey(self::MARKER . 'formie_table_active_heading', $activeTexts);
         self::assertArrayHasKey(self::MARKER . 'formie_table_active_option', $activeTexts);
-    }
-}
-
-final class FormieTableColumnFormStub
-{
-    public function __construct(public string $handle)
-    {
     }
 }
 
