@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\integrations;
 
 use craft\base\Component;
 use craft\helpers\Db;
+use craft\helpers\StringHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\interfaces\TranslationIntegrationInterface;
 use lindemannrock\translationmanager\TranslationManager;
@@ -231,6 +232,16 @@ abstract class BaseIntegration extends Component implements TranslationIntegrati
         ]);
 
         return $this->getTranslationsService()->createOrUpdateTranslation($text, $context);
+    }
+
+    /**
+     * Normalize a dynamic value before using it as a dotted context segment.
+     */
+    protected function normalizeContextSegment(string $value): string
+    {
+        $normalized = StringHelper::toKebabCase($value);
+
+        return $normalized !== '' ? $normalized : substr(md5($value), 0, 8);
     }
 
     /**

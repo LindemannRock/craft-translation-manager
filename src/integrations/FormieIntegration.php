@@ -10,7 +10,6 @@
 
 namespace lindemannrock\translationmanager\integrations;
 
-use craft\helpers\StringHelper;
 use lindemannrock\base\helpers\PluginHelper;
 use yii\base\Event;
 
@@ -781,16 +780,6 @@ class FormieIntegration extends BaseIntegration
         $usedKeys[$cleanKey] = true;
 
         return $cleanKey;
-    }
-
-    /**
-     * Normalize a dynamic value before using it as a dotted context segment.
-     */
-    private function normalizeContextSegment(string $value): string
-    {
-        $normalized = StringHelper::toKebabCase($value);
-
-        return $normalized !== '' ? $normalized : substr(md5($value), 0, 8);
     }
 
     /**

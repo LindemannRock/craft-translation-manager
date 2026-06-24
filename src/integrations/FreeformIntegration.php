@@ -298,7 +298,7 @@ class FreeformIntegration extends BaseIntegration
         $this->addEntry($entries, $behavior->processingText ?? '', "freeform.{$formHandle}.message.processing");
 
         foreach ($form->getLayout()->getPages() as $page) {
-            $pageUid = $this->contextSegment($page->getUid() ?: 'page-' . $page->getIndex());
+            $pageUid = $this->normalizeContextSegment($page->getUid() ?: 'page-' . $page->getIndex());
             $this->addEntry($entries, $this->readRawProperty($page, 'label'), "freeform.{$formHandle}.page.{$pageUid}.label");
 
             $buttons = $page->getButtons();
@@ -325,7 +325,7 @@ class FreeformIntegration extends BaseIntegration
      */
     private function collectFieldEntries(array &$entries, string $formHandle, object $field): void
     {
-        $fieldHandle = $this->contextSegment((string) ($field->getHandle() ?: $field->getUid() ?: 'field'));
+        $fieldHandle = $this->normalizeContextSegment((string) ($field->getHandle() ?: $field->getUid() ?: 'field'));
         $context = "freeform.{$formHandle}.{$fieldHandle}";
 
         $this->addEntry($entries, $this->readRawProperty($field, 'label'), "{$context}.label");
@@ -367,7 +367,7 @@ class FreeformIntegration extends BaseIntegration
                 continue;
             }
 
-            $key = $this->contextSegment((string)($option['value'] ?? $index));
+            $key = $this->normalizeContextSegment((string)($option['value'] ?? $index));
             $this->addEntry($entries, $option['label'] ?? null, "{$context}.option.{$key}");
         }
     }
@@ -400,7 +400,7 @@ class FreeformIntegration extends BaseIntegration
                 continue;
             }
 
-            $key = $this->contextSegment((string)($column['uid'] ?? $column['handle'] ?? $index));
+            $key = $this->normalizeContextSegment((string)($column['uid'] ?? $column['handle'] ?? $index));
             $this->addEntry($entries, $column['label'] ?? $column['heading'] ?? null, "{$context}.column.{$key}.label");
 
             if (!empty($column['options']) && is_array($column['options'])) {
@@ -412,7 +412,7 @@ class FreeformIntegration extends BaseIntegration
                         continue;
                     }
 
-                    $optionKey = $this->contextSegment((string)($option['value'] ?? $optionIndex));
+                    $optionKey = $this->normalizeContextSegment((string)($option['value'] ?? $optionIndex));
                     $this->addEntry($entries, $option['label'] ?? null, "{$context}.column.{$key}.option.{$optionKey}");
                 }
             }
@@ -478,14 +478,5 @@ class FreeformIntegration extends BaseIntegration
         }
 
         return (bool)$this->readRawProperty($field, 'required');
-    }
-
-    private function contextSegment(string $value): string
-    {
-        $originalValue = $value;
-        $value = preg_replace('/[^a-zA-Z0-9_-]+/', '-', $value) ?: '';
-        $value = trim($value, '-_');
-
-        return $value !== '' ? $value : substr(md5($originalValue), 0, 8);
     }
 }

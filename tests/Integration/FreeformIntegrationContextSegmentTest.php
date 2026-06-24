@@ -18,10 +18,19 @@ use lindemannrock\translationmanager\tests\TestCase;
  */
 final class FreeformIntegrationContextSegmentTest extends TestCase
 {
-    public function testContextSegmentHashesOriginalValueWhenSanitizedValueIsEmpty(): void
+    public function testNormalizeContextSegmentConvertsValuesToLowerKebabCase(): void
     {
         $integration = new FreeformIntegration();
-        $method = new \ReflectionMethod($integration, 'contextSegment');
+        $method = new \ReflectionMethod($integration, 'normalizeContextSegment');
+
+        self::assertSame('another-one', $method->invoke($integration, 'Another-One'));
+        self::assertSame('support-request', $method->invoke($integration, 'Support Request'));
+    }
+
+    public function testNormalizeContextSegmentHashesOriginalValueWhenSanitizedValueIsEmpty(): void
+    {
+        $integration = new FreeformIntegration();
+        $method = new \ReflectionMethod($integration, 'normalizeContextSegment');
 
         self::assertSame(substr(md5('***'), 0, 8), $method->invoke($integration, '***'));
         self::assertSame(substr(md5('###'), 0, 8), $method->invoke($integration, '###'));

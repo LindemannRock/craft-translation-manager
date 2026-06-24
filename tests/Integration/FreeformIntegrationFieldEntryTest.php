@@ -53,7 +53,7 @@ final class FreeformIntegrationFieldEntryTest extends TestCase
                 'options' => [
                     [
                         'label' => self::MARKER . 'freeform_support_option',
-                        'value' => 'support request',
+                        'value' => 'Support Request',
                     ],
                 ],
             ]),
@@ -76,7 +76,7 @@ final class FreeformIntegrationFieldEntryTest extends TestCase
             tableLayout: new FreeformArrayConfigurationStub([
                 'columns' => [
                     [
-                        'uid' => 'time slot',
+                        'uid' => 'Time Slot',
                         'label' => self::MARKER . 'freeform_table_time_label',
                         'options' => [
                             [
