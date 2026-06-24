@@ -33,6 +33,8 @@ Localize your Craft interface and Formie & Freeform forms across every language 
 - PHP 8.2+
 - [Logging Library](https://github.com/LindemannRock/craft-logging-library) 5.12.0+ (installed automatically)
 
+Optional form integrations are verified with Formie 3.1.14+ and Freeform 5.15.6.1+ for Craft 5.
+
 ## Installation
 
 ### Composer

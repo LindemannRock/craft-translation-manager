@@ -12,6 +12,8 @@ Translate your [Formie](https://verbb.io/craft-plugins/formie/features) forms wi
 
 Enable Formie integration under **Translation Manager → Settings → Integrations** → **Enable Formie Integration**. Once it's on, saving a form captures its translatable strings into the `formie` category.
 
+The Craft 5 integration is verified with Formie 3.1.14+.
+
 See [Integrations overview](overview.md) for the shared provider lifecycle, permissions, generation, maintenance, and import/export behavior.
 
 ## How it works

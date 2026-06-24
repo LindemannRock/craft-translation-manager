@@ -12,6 +12,8 @@ Manage your [Freeform](https://plugins.craftcms.com/freeform) form translations 
 
 Enable Freeform integration under **Translation Manager → Settings → Integrations** → **Enable Freeform Integration**. The Freeform section appears only when the Freeform plugin is installed and enabled.
 
+The Craft 5 integration is verified with Freeform 5.15.6.1+.
+
 See [Integrations overview](overview.md) for the shared provider lifecycle, permissions, generation, maintenance, and import/export behavior.
 
 ## How it works
