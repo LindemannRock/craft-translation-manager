@@ -277,12 +277,16 @@ class FormieIntegration extends BaseIntegration
 
         $this->addEntry($entries, $form->title, "formie.{$formHandle}.title");
 
-        foreach ($form->getPages() as $page) {
-            $pageSettings = $page->getPageSettings();
+        $pages = $form->getPages();
+        $hasMultiplePages = count($pages) > 1;
 
-            $this->addEntry($entries, $pageSettings->submitButtonLabel ?? null, "formie.{$formHandle}.button.submit");
-            $this->addEntry($entries, $pageSettings->backButtonLabel ?? null, "formie.{$formHandle}.button.back");
-            $this->addEntry($entries, $pageSettings->saveButtonLabel ?? null, "formie.{$formHandle}.button.save");
+        foreach ($pages as $index => $page) {
+            $pageSettings = $page->getPageSettings();
+            $buttonContext = $this->buildPageButtonContext($formHandle, $index, $hasMultiplePages);
+
+            $this->addEntry($entries, $pageSettings->submitButtonLabel ?? null, "{$buttonContext}.submit");
+            $this->addEntry($entries, $pageSettings->backButtonLabel ?? null, "{$buttonContext}.back");
+            $this->addEntry($entries, $pageSettings->saveButtonLabel ?? null, "{$buttonContext}.save");
         }
 
         // IMPORTANT: read RAW settings — getters can return translated content.
@@ -543,7 +547,8 @@ class FormieIntegration extends BaseIntegration
             }
 
             $label = $option['label'] ?? null;
-            $optionValue = $option['value'] ?? (is_scalar($label) ? StringHelper::toKebabCase((string)$label) : $index);
+            $optionValue = $option['value'] ?? (is_scalar($label) ? (string)$label : (string)$index);
+            $optionValue = $this->normalizeContextSegment((string)$optionValue);
             $this->addEntry($entries, $label, "{$context}.{$optionValue}");
         }
     }
@@ -704,17 +709,15 @@ class FormieIntegration extends BaseIntegration
             // Get the default translation strings
             // Returns array like: ['{attribute} cannot be blank.' => 'Translated text']
             $defaultStrings = $renderingService->getFrontEndJsTranslations();
+            $usedDefaultKeys = [];
 
             // Create translations for each default string
             foreach ($defaultStrings as $originalText => $translatedText) {
                 if (!empty($originalText)) {
-                    // Generate a clean key from the original English text
-                    $cleanKey = $this->generateCleanKey($originalText);
-
                     // Always use the original English text as the source
                     $captured[] = $this->createTranslation(
                         $originalText,
-                        "formie.defaults.{$cleanKey}"
+                        'formie.defaults.' . $this->buildDefaultContextKey($originalText, $usedDefaultKeys)
                     );
                 }
             }
@@ -751,6 +754,43 @@ class FormieIntegration extends BaseIntegration
         }
 
         return $clean;
+    }
+
+    /**
+     * Build the page button context while preserving the legacy single-page key.
+     */
+    private function buildPageButtonContext(string $formHandle, int $pageIndex, bool $hasMultiplePages): string
+    {
+        return $hasMultiplePages
+            ? "formie.{$formHandle}.page.{$pageIndex}.button"
+            : "formie.{$formHandle}.button";
+    }
+
+    /**
+     * Build a unique default translation context key for a capture batch.
+     *
+     * @param array<string,true> $usedKeys
+     */
+    private function buildDefaultContextKey(string $text, array &$usedKeys): string
+    {
+        $cleanKey = $this->generateCleanKey($text);
+        if (isset($usedKeys[$cleanKey])) {
+            $cleanKey .= '-' . substr(md5($text), 0, 8);
+        }
+
+        $usedKeys[$cleanKey] = true;
+
+        return $cleanKey;
+    }
+
+    /**
+     * Normalize a dynamic value before using it as a dotted context segment.
+     */
+    private function normalizeContextSegment(string $value): string
+    {
+        $normalized = StringHelper::toKebabCase($value);
+
+        return $normalized !== '' ? $normalized : substr(md5($value), 0, 8);
     }
 
     /**
