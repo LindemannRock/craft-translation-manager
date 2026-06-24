@@ -305,7 +305,7 @@ class FormieIntegration extends BaseIntegration
             );
         }
 
-        foreach ($form->getCustomFields() as $field) {
+        foreach ($this->getFormFields($form) as $field) {
             try {
                 array_push($entries, ...$this->collectFieldEntries($formHandle, $field));
             } catch (\Throwable $e) {
@@ -319,6 +319,27 @@ class FormieIntegration extends BaseIntegration
         }
 
         return $entries;
+    }
+
+    /**
+     * Return Formie fields using the stable v3/v4 layout API.
+     *
+     * Formie 4 removed Form::getCustomFields(), while Form::getFields() exists
+     * in both Formie 3 and 4.
+     *
+     * @return array<int,mixed>
+     */
+    private function getFormFields(object $form): array
+    {
+        if (method_exists($form, 'getFields')) {
+            return $form->getFields();
+        }
+
+        if (method_exists($form, 'getCustomFields')) {
+            return $form->getCustomFields();
+        }
+
+        return [];
     }
 
     /**
@@ -520,10 +541,8 @@ class FormieIntegration extends BaseIntegration
                 break;
 
             case 'verbb\formie\fields\Group':
-                if (method_exists($field, 'getCustomFields')) {
-                    foreach ($field->getCustomFields() as $nestedField) {
-                        array_push($entries, ...$this->collectFieldEntries($formHandle, $nestedField));
-                    }
+                foreach ($this->getNestedSubFields($field) as $nestedField) {
+                    array_push($entries, ...$this->collectFieldEntries($formHandle, $nestedField));
                 }
                 break;
         }

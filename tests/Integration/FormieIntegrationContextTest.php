@@ -67,4 +67,76 @@ final class FormieIntegrationContextTest extends TestCase
         self::assertSame('another-one', $method->invoke($integration, 'Another One'));
         self::assertSame('anothr-test', $method->invoke($integration, 'Anothr Test'));
     }
+
+    public function testFormFieldsPreferStableGetFieldsApi(): void
+    {
+        $integration = new FormieIntegration();
+        $method = new \ReflectionMethod($integration, 'getFormFields');
+        $field = new FormieContextFieldStub('stable');
+
+        self::assertSame([$field], $method->invoke($integration, new FormieContextGetFieldsFormStub([$field])));
+    }
+
+    public function testFormFieldsFallBackToLegacyGetCustomFieldsApi(): void
+    {
+        $integration = new FormieIntegration();
+        $method = new \ReflectionMethod($integration, 'getFormFields');
+        $field = new FormieContextFieldStub('legacy');
+
+        self::assertSame([$field], $method->invoke($integration, new FormieContextGetCustomFieldsFormStub([$field])));
+    }
+}
+
+final class FormieContextFieldStub
+{
+    public function __construct(
+        public string $handle,
+    ) {
+    }
+}
+
+final class FormieContextGetFieldsFormStub
+{
+    /**
+     * @param array<int,FormieContextFieldStub> $fields
+     */
+    public function __construct(
+        private array $fields,
+    ) {
+    }
+
+    /**
+     * @return array<int,FormieContextFieldStub>
+     */
+    public function getFields(): array
+    {
+        return $this->fields;
+    }
+
+    /**
+     * @return array<int,FormieContextFieldStub>
+     */
+    public function getCustomFields(): array
+    {
+        return [new FormieContextFieldStub('legacy-should-not-be-used')];
+    }
+}
+
+final class FormieContextGetCustomFieldsFormStub
+{
+    /**
+     * @param array<int,FormieContextFieldStub> $fields
+     */
+    public function __construct(
+        private array $fields,
+    ) {
+    }
+
+    /**
+     * @return array<int,FormieContextFieldStub>
+     */
+    public function getCustomFields(): array
+    {
+        return $this->fields;
+    }
 }
