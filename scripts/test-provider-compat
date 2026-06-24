@@ -39,12 +39,12 @@ case "$PROVIDER" in
   formie)
     PROVIDER_PACKAGE="verbb/formie"
     PROVIDER_HANDLE="formie"
-    PROVIDER_CONSTRAINT="^3.0"
+    PROVIDER_CONSTRAINT="^3.1.14"
     ;;
   freeform)
     PROVIDER_PACKAGE="solspace/craft-freeform"
     PROVIDER_HANDLE="freeform"
-    PROVIDER_CONSTRAINT="^5.0"
+    PROVIDER_CONSTRAINT="^5.15.6.1"
     ;;
   *)
     echo "Unknown provider: $PROVIDER" >&2
