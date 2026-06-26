@@ -53,11 +53,19 @@
     },
 ]) %}
 
+{% set statusFilterLabels = {
+    all: 'All'|t('translation-manager'),
+    pending: 'Pending'|t('translation-manager'),
+    draft: 'Draft'|t('translation-manager'),
+    translated: 'Translated'|t('translation-manager'),
+    unused: 'Unused'|t('translation-manager'),
+} %}
+
 {% set groupedFilter = {
     type: 'status',
     param: 'status',
     current: status,
-    label: status == 'all' ? 'All'|t('translation-manager') : (status == 'draft' ? 'Draft'|t('translation-manager') : (status == 'unused' ? 'Unused'|t('translation-manager') : status|capitalize)),
+    label: statusFilterLabels[status] ?? status|capitalize,
     groups: [
         {
             param: 'status',
