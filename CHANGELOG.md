@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.33.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.33.0...v5.33.1) - 2026-06-28
+
+
+### Fixed
+
+* **i18n:** translate status filter label for pending and translated ([ce7df77](https://github.com/LindemannRock/craft-translation-manager/commit/ce7df77a18721fadfe924ed641531e3374ebb7fc))
+
 ## [5.33.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.32.0...v5.33.0) - 2026-06-24
 
 
