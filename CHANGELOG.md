@@ -1,6 +1,6 @@
 # Changelog
 
-## [5.33.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.33.0...v5.33.1) (2026-06-28)
+## [5.33.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.33.0...v5.33.1) - 2026-06-28
 
 
 ### Fixed
