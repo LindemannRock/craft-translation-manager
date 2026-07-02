@@ -163,7 +163,10 @@ class ImportController extends Controller
             return $this->redirect('translation-manager/import/map');
         } catch (\Exception $e) {
             $this->logError('Failed to parse CSV', ['error' => $e->getMessage()]);
-            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Failed to parse CSV: {error}', ['error' => $e->getMessage()]));
+            $error = Craft::$app->getConfig()->getGeneral()->devMode
+                ? $e->getMessage()
+                : Craft::t('translation-manager', 'An unexpected error occurred.');
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Failed to parse CSV: {error}', ['error' => $error]));
             return $this->redirect('translation-manager/import-export');
         }
     }

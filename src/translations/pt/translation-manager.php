@@ -163,6 +163,7 @@ return [
     'No existing translations match the current skip patterns. Checked {siteCount} site translations against {patternCount} patterns: {patterns}' => 'Nenhuma tradução existente corresponde aos padrões de exclusão atuais. Foram verificadas {siteCount} traduções do site em relação a {patternCount} padrões: {patterns}',
     'Error applying skip patterns: {error}' => 'Erro ao aplicar padrões de exclusão: {error}',
     'Please select a CSV file to upload.' => 'Selecione um ficheiro CSV para carregar.',
+    'An unexpected error occurred.' => 'Ocorreu um erro inesperado.',
     'Failed to parse CSV: {error}' => 'Falha ao analisar o CSV: {error}',
     'No import data found. Please upload a CSV file.' => 'Nenhum dado de importação encontrado. Carregue um ficheiro CSV.',
     'No preview data found. Please map columns first.' => 'Nenhum dado de pré-visualização encontrado. Mapeie as colunas primeiro.',

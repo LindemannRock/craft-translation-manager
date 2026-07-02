@@ -160,6 +160,7 @@ return [
     'No existing translations match the current skip patterns. Checked {siteCount} site translations against {patternCount} patterns: {patterns}' => 'No existing translations match the current skip patterns. Checked {siteCount} site translations against {patternCount} patterns: {patterns}',
     'Error applying skip patterns: {error}' => 'Error applying skip patterns: {error}',
     'Please select a CSV file to upload.' => 'Please select a CSV file to upload.',
+    'An unexpected error occurred.' => 'An unexpected error occurred.',
     'Failed to parse CSV: {error}' => 'Failed to parse CSV: {error}',
     'No import data found. Please upload a CSV file.' => 'No import data found. Please upload a CSV file.',
     'No preview data found. Please map columns first.' => 'No preview data found. Please map columns first.',

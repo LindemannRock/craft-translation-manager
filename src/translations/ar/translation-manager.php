@@ -163,6 +163,7 @@ return [
     'No existing translations match the current skip patterns. Checked {siteCount} site translations against {patternCount} patterns: {patterns}' => 'لا توجد ترجمات حالية تطابق أنماط الاستبعاد الحالية. تم فحص {siteCount} ترجمات للموقع مقابل {patternCount} أنماط: {patterns}',
     'Error applying skip patterns: {error}' => 'خطأ في تطبيق أنماط الاستبعاد: {error}',
     'Please select a CSV file to upload.' => 'يرجى اختيار ملف CSV للرفع.',
+    'An unexpected error occurred.' => 'حدث خطأ غير متوقع.',
     'Failed to parse CSV: {error}' => 'فشل تحليل CSV: {error}',
     'No import data found. Please upload a CSV file.' => 'لم يتم العثور على بيانات استيراد. يرجى رفع ملف CSV.',
     'No preview data found. Please map columns first.' => 'لم يتم العثور على بيانات معاينة. يرجى تعيين الأعمدة أولاً.',

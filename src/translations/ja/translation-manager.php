@@ -163,6 +163,7 @@ return [
     'No existing translations match the current skip patterns. Checked {siteCount} site translations against {patternCount} patterns: {patterns}' => '現在のスキップパターンに一致する既存の翻訳はありません。{siteCount} 件のサイト翻訳を {patternCount} 件のパターンと照合しました: {patterns}',
     'Error applying skip patterns: {error}' => 'スキップパターン適用中にエラーが発生しました: {error}',
     'Please select a CSV file to upload.' => 'アップロードする CSV ファイルを選択してください。',
+    'An unexpected error occurred.' => '予期しないエラーが発生しました。',
     'Failed to parse CSV: {error}' => 'CSV の解析に失敗しました: {error}',
     'No import data found. Please upload a CSV file.' => 'インポートデータが見つかりません。CSV ファイルをアップロードしてください。',
     'No preview data found. Please map columns first.' => 'プレビューデータが見つかりません。先に列をマッピングしてください。',

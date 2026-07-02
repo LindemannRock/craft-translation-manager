@@ -163,6 +163,7 @@ return [
     'No existing translations match the current skip patterns. Checked {siteCount} site translations against {patternCount} patterns: {patterns}' => 'Inga befintliga översättningar matchar de aktuella hoppa-över-mönstren. Kontrollerade {siteCount} webbplatsöversättningar mot {patternCount} mönster: {patterns}',
     'Error applying skip patterns: {error}' => 'Fel vid tillämpning av hoppa-över-mönster: {error}',
     'Please select a CSV file to upload.' => 'Välj en CSV-fil att ladda upp.',
+    'An unexpected error occurred.' => 'Ett oväntat fel uppstod.',
     'Failed to parse CSV: {error}' => 'Det gick inte att tolka CSV: {error}',
     'No import data found. Please upload a CSV file.' => 'Inga importdata hittades. Ladda upp en CSV-fil.',
     'No preview data found. Please map columns first.' => 'Inga förhandsgranskningsdata hittades. Mappa kolumnerna först.',

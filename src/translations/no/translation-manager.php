@@ -163,6 +163,7 @@ return [
     'No existing translations match the current skip patterns. Checked {siteCount} site translations against {patternCount} patterns: {patterns}' => 'Ingen eksisterende oversettelser samsvarer med de gjeldende hoppmønstrene. Kontrollerte {siteCount} nettstedsoversettelser mot {patternCount} mønstre: {patterns}',
     'Error applying skip patterns: {error}' => 'Feil ved bruk av hoppmønstre: {error}',
     'Please select a CSV file to upload.' => 'Velg en CSV-fil å laste opp.',
+    'An unexpected error occurred.' => 'Det oppstod en uventet feil.',
     'Failed to parse CSV: {error}' => 'Feil ved parsing av CSV: {error}',
     'No import data found. Please upload a CSV file.' => 'Ingen importdata funnet. Last opp en CSV-fil.',
     'No preview data found. Please map columns first.' => 'Ingen forhåndsvisningsdata funnet. Tilordne kolonner først.',
