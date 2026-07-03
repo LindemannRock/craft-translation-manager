@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.33.2](https://github.com/LindemannRock/craft-translation-manager/compare/v5.33.1...v5.33.2) (2026-07-03)
+
+
+### Fixed
+
+* **i18n:** escape backup and generation paths in info boxes ([1d24b26](https://github.com/LindemannRock/craft-translation-manager/commit/1d24b26967d3699c03a6a410f4a9aeb5e51f5fe7))
+* **import-export:** handle CSV parse errors with user-friendly messages ([92a4185](https://github.com/LindemannRock/craft-translation-manager/commit/92a418513047178b17a3c7c83c446033c6113318))
+
 ## [5.33.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.33.0...v5.33.1) - 2026-06-28
 
 
