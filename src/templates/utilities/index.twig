@@ -107,10 +107,12 @@
     {% endif %}
 {% endblock %}
 
-{% block additionalContent %}
+{% block beforeQuickActions %}
     {% if canManageTranslations %}
         {% include 'lindemannrock-base/_components/info-box' with {
             message: '<strong>' ~ 'Language'|t('translation-manager') ~ ':</strong> ' ~ currentLanguage|upper,
+            margin: 'both',
         } %}
+        <br>
     {% endif %}
 {% endblock %}
