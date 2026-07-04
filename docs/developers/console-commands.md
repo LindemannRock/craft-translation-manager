@@ -8,11 +8,19 @@ Use the plugin help command when you need to discover available commands or conf
 
 ```bash title="PHP"
 php craft translation-manager/help
-php craft translation-manager/help maintenance/clean-by-type
 ```
 
 ```bash title="DDEV"
 ddev craft translation-manager/help
+```
+
+Clean by type help:
+
+```bash title="PHP"
+php craft translation-manager/help maintenance/clean-by-type
+```
+
+```bash title="DDEV"
 ddev craft translation-manager/help maintenance/clean-by-type
 ```
 
@@ -32,13 +40,23 @@ ddev craft help translation-manager/maintenance/clean-by-type
 
 Capture all translations from an existing form provider and store them in the database.
 
+Formie:
+
 ```bash title="PHP"
 php craft translation-manager/translations/capture-provider formie
-php craft translation-manager/translations/capture-provider freeform
 ```
 
 ```bash title="DDEV"
 ddev craft translation-manager/translations/capture-provider formie
+```
+
+Freeform:
+
+```bash title="PHP"
+php craft translation-manager/translations/capture-provider freeform
+```
+
+```bash title="DDEV"
 ddev craft translation-manager/translations/capture-provider freeform
 ```
 
@@ -84,13 +102,23 @@ status table so deploy-hook, CLI, and Control Panel runs can be compared.
 
 Generate PHP translation files for one form provider.
 
+Formie:
+
 ```bash title="PHP"
 php craft translation-manager/translations/generate-provider formie
-php craft translation-manager/translations/generate-provider freeform
 ```
 
 ```bash title="DDEV"
 ddev craft translation-manager/translations/generate-provider formie
+```
+
+Freeform:
+
+```bash title="PHP"
+php craft translation-manager/translations/generate-provider freeform
+```
+
+```bash title="DDEV"
 ddev craft translation-manager/translations/generate-provider freeform
 ```
 
@@ -130,17 +158,53 @@ Run with **no scope** to print a dry-run summary of what could be imported (per-
 | `--language` | Only import files in this language directory (e.g. `ar`) |
 | `--category` | Only import files for this category (e.g. `formie`) |
 
+Dry-run summary:
+
 ```bash title="PHP"
-php craft translation-manager/translations/import                  # dry-run summary, imports nothing
-php craft translation-manager/translations/import --all            # import everything
-php craft translation-manager/translations/import --language=ar
-php craft translation-manager/translations/import --category=formie
-php craft translation-manager/translations/import --language=ar --category=formie
+php craft translation-manager/translations/import
 ```
 
 ```bash title="DDEV"
 ddev craft translation-manager/translations/import
+```
+
+Import everything:
+
+```bash title="PHP"
+php craft translation-manager/translations/import --all
+```
+
+```bash title="DDEV"
 ddev craft translation-manager/translations/import --all
+```
+
+Import one language:
+
+```bash title="PHP"
+php craft translation-manager/translations/import --language=ar
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/translations/import --language=ar
+```
+
+Import one category:
+
+```bash title="PHP"
+php craft translation-manager/translations/import --category=formie
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/translations/import --category=formie
+```
+
+Import one language and category:
+
+```bash title="PHP"
+php craft translation-manager/translations/import --language=ar --category=formie
+```
+
+```bash title="DDEV"
 ddev craft translation-manager/translations/import --language=ar --category=formie
 ```
 
@@ -191,17 +255,43 @@ Clean unused translations by type. The `--type` option is required. Use `--provi
 | `--type` | `all`, `site`, `forms` | Type of translations to clean |
 | `--provider` | `formie`, `freeform` | Optional forms provider filter; only valid with `--type=forms` |
 
+Clean all unused translations:
+
 ```bash title="PHP"
 php craft translation-manager/maintenance/clean-by-type --type=all
-php craft translation-manager/maintenance/clean-by-type --type=forms
-php craft translation-manager/maintenance/clean-by-type --type=forms --provider=formie
-php craft translation-manager/maintenance/clean-by-type --type=forms --provider=freeform
 ```
 
 ```bash title="DDEV"
 ddev craft translation-manager/maintenance/clean-by-type --type=all
+```
+
+Clean all unused form translations:
+
+```bash title="PHP"
+php craft translation-manager/maintenance/clean-by-type --type=forms
+```
+
+```bash title="DDEV"
 ddev craft translation-manager/maintenance/clean-by-type --type=forms
+```
+
+Clean unused Formie translations:
+
+```bash title="PHP"
+php craft translation-manager/maintenance/clean-by-type --type=forms --provider=formie
+```
+
+```bash title="DDEV"
 ddev craft translation-manager/maintenance/clean-by-type --type=forms --provider=formie
+```
+
+Clean unused Freeform translations:
+
+```bash title="PHP"
+php craft translation-manager/maintenance/clean-by-type --type=forms --provider=freeform
+```
+
+```bash title="DDEV"
 ddev craft translation-manager/maintenance/clean-by-type --type=forms --provider=freeform
 ```
 

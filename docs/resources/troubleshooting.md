@@ -18,14 +18,25 @@ Solutions to common issues and debugging tips.
 
 ## Translations Not Being Captured
 
-**Form providers**: Save the form after adding fields, or run:
+**Form providers**: Save the form after adding fields, or run the matching provider command.
+
+Formie:
+
 ```bash title="PHP"
 php craft translation-manager/translations/capture-provider formie
-php craft translation-manager/translations/capture-provider freeform
 ```
 
 ```bash title="DDEV"
 ddev craft translation-manager/translations/capture-provider formie
+```
+
+Freeform:
+
+```bash title="PHP"
+php craft translation-manager/translations/capture-provider freeform
+```
+
+```bash title="DDEV"
 ddev craft translation-manager/translations/capture-provider freeform
 ```
 
@@ -80,23 +91,43 @@ ddev craft clear-caches/all
 
 ## Useful Commands
 
-```bash title="PHP"
-# Capture form provider translations
-php craft translation-manager/translations/capture-provider formie
-php craft translation-manager/translations/capture-provider freeform
+Capture Formie translations:
 
-# Regenerate form provider translation files
+```bash title="PHP"
+php craft translation-manager/translations/capture-provider formie
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/translations/capture-provider formie
+```
+
+Capture Freeform translations:
+
+```bash title="PHP"
+php craft translation-manager/translations/capture-provider freeform
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/translations/capture-provider freeform
+```
+
+Regenerate Formie translation files:
+
+```bash title="PHP"
 php craft translation-manager/translations/generate-provider formie
+```
+
+```bash title="DDEV"
+ddev craft translation-manager/translations/generate-provider formie
+```
+
+Regenerate Freeform translation files:
+
+```bash title="PHP"
 php craft translation-manager/translations/generate-provider freeform
 ```
 
 ```bash title="DDEV"
-# Capture form provider translations
-ddev craft translation-manager/translations/capture-provider formie
-ddev craft translation-manager/translations/capture-provider freeform
-
-# Regenerate form provider translation files
-ddev craft translation-manager/translations/generate-provider formie
 ddev craft translation-manager/translations/generate-provider freeform
 ```
 

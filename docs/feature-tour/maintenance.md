@@ -75,15 +75,33 @@ Per-category deletion only accepts a category that's currently enabled, so you c
 
 Maintenance also runs from the console — handy for scheduled cleanups or CI:
 
+Scan templates:
+
 ```bash title="PHP"
 php craft translation-manager/maintenance/scan-templates
-php craft translation-manager/maintenance/clean-unused
-php craft translation-manager/maintenance/clean-by-type --type=site
 ```
 
 ```bash title="DDEV"
 ddev craft translation-manager/maintenance/scan-templates
+```
+
+Clean all unused translations:
+
+```bash title="PHP"
+php craft translation-manager/maintenance/clean-unused
+```
+
+```bash title="DDEV"
 ddev craft translation-manager/maintenance/clean-unused
+```
+
+Clean unused site translations:
+
+```bash title="PHP"
+php craft translation-manager/maintenance/clean-by-type --type=site
+```
+
+```bash title="DDEV"
 ddev craft translation-manager/maintenance/clean-by-type --type=site
 ```
 
