@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.33.3](https://github.com/LindemannRock/craft-translation-manager/compare/v5.33.2...v5.33.3) (2026-07-05)
+
+
+### Fixed
+
+* use beforeQuickActions  for the language info box instead of additionalContent ([baf6ec9](https://github.com/LindemannRock/craft-translation-manager/commit/baf6ec90e591b1989dee0696a2a5d602ee4e10aa))
+
 ## [5.33.2](https://github.com/LindemannRock/craft-translation-manager/compare/v5.33.1...v5.33.2) - 2026-07-03
 
 
