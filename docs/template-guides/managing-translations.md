@@ -9,7 +9,7 @@ Do the day-to-day translation work in **Translation Manager → Translations**: 
 - Running an approval step so drafts are signed off before they publish
 - Keeping an eye on coverage and the work still in the queue
 
-![The Translations list in the Translation Manager Control Panel](images/managing-translations-list.webp)
+![The Translations list in the Translation Manager Control Panel](../images/managing-translations-list.webp)
 
 ## Translate a string
 
@@ -69,7 +69,7 @@ For larger sweeps — cleaning a whole category, language, or provider at once �
 
 Craft's **Utilities** section includes a Translation Manager panel that shows where you stand at a glance:
 
-![The Translation Manager statistics utility](images/managing-translations-statistics.webp)
+![The Translation Manager statistics utility](../images/managing-translations-statistics.webp)
 
 - **Translation Coverage** — the percentage translated, with a status badge (Needs Attention → In Progress → Good → Complete — or *No translations found* when there's nothing to count yet)
 - **Work Queue** — how many translations are still **Pending**, plus the **Unused** count

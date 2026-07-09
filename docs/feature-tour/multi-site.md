@@ -15,7 +15,7 @@ Run one Craft install across several sites and languages, and translate each str
 2. Use the **language switcher** in the breadcrumb (**Select language**) to pick the language you want to work on.
 3. Translate the strings for that language, then switch to the next — your filters and search term carry over, and the editor flips to RTL automatically for right-to-left languages.
 
-![Language switcher in the Translation Manager breadcrumb](images/multi-site-language-switcher.webp)
+![Language switcher in the Translation Manager breadcrumb](../images/multi-site-language-switcher.webp)
 
 The switcher lists the managed languages in use across your sites, with regional variants consolidated to their base language (so a mapped `en-US` shows under `en`). It is a language selector, not a Craft site-permission selector; Translation Manager permissions decide which sources a user can edit or approve inside that language.
 

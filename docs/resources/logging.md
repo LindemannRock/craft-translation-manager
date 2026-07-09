@@ -76,7 +76,7 @@ Logs are written as structured JSON with context data alongside each message, so
 
 The **Translation Manager → Logs** screen reads, filters, and downloads these log files without leaving the Control Panel.
 
-![Translation Manager log viewer in the Control Panel](images/logging-log-viewer.webp)
+![Translation Manager log viewer in the Control Panel](../images/logging-log-viewer.webp)
 
 From there you can:
 

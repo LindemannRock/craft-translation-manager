@@ -9,7 +9,7 @@ Templates change, forms get deleted, categories get turned off — and the trans
 - Capturing form provider strings after you edit forms outside the plugin
 - Deleting a category, a site, a provider, or everything — with a backup taken first
 
-![Maintenance tools in the Translation Manager Control Panel](images/maintenance-tools.webp)
+![Maintenance tools in the Translation Manager Control Panel](../images/maintenance-tools.webp)
 
 The page is split into three tabs — **Capture**, **Cleanup**, and **Danger** — and each tab only appears if you have the matching permission. A backup is created automatically before any destructive action when [backups](backups.md) are enabled, so most of this is recoverable.
 

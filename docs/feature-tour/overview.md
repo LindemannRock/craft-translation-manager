@@ -13,7 +13,7 @@ Translation Manager gives you one place to translate every string your Craft sit
 - Importing existing translations (CSV or PHP files) when onboarding a project, and exporting them for translators
 - Keeping a safety net — backups before every destructive operation — so cleanup and imports are never one-way
 
-![Translation Manager translations list in the Control Panel](images/overview-translations-list.webp)
+![Translation Manager translations list in the Control Panel](../images/overview-translations-list.webp)
 
 ## What's in the box
 

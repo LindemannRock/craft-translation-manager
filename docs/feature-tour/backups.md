@@ -16,7 +16,7 @@ Translation Manager protects your translations before anything destructive happe
 2. Click **Create Backup Now** — the backup is captured with the current timestamp and a reason.
 3. To roll back, find a backup in the list, click the gear icon → **Restore**, and confirm. A fresh safety backup is taken before the restore runs, so the restore itself is reversible.
 
-![Backups list in the Translation Manager Control Panel](images/backups-list.webp)
+![Backups list in the Translation Manager Control Panel](../images/backups-list.webp)
 
 The list shows each backup's **date**, **type** (which folder it lives in), **reason**, **translation count**, and **size**.
 

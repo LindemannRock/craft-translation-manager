@@ -13,7 +13,7 @@ Move translations in and out of Translation Manager in bulk. Export your strings
 
 Importing is a guided four-step flow — upload, map columns, preview, confirm — so you always see exactly what will change before it's written.
 
-![The Import/Export page in the Translation Manager Control Panel](images/import-export-main.webp)
+![The Import/Export page in the Translation Manager Control Panel](../images/import-export-main.webp)
 
 1. Go to **Translation Manager → Import/Export**.
 2. **Upload.** Choose your CSV file (max 5 MB). Pick a **CSV Delimiter** if needed — the default **Auto (detect)** handles most files, with **Comma (,)**, **Semicolon (;)**, **Tab**, and **Pipe (|)** available. When backups are enabled, leave **Create Backup Before Import** on. Click **Upload & Map Columns**.
@@ -23,11 +23,11 @@ Importing is a guided four-step flow — upload, map columns, preview, confirm �
 
 On the **Map CSV Columns** step, each column is matched to a field — adjust any that didn't auto-detect:
 
-![Mapping CSV columns to translation fields](images/import-export-map.webp)
+![Mapping CSV columns to translation fields](../images/import-export-map.webp)
 
 The **preview** then shows exactly what will change — new, updated, and skipped rows — before you confirm:
 
-![Import preview showing new, updated, and skipped rows](images/import-export-preview.webp)
+![Import preview showing new, updated, and skipped rows](../images/import-export-preview.webp)
 
 A backup is taken automatically before the import (when backups are enabled), so you can roll back if the result isn't what you expected.
 

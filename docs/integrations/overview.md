@@ -17,7 +17,7 @@ Translate your Formie and Freeform forms from the same Control Panel you use for
 
 Provider categories are separate from site translation categories such as `messages` or `site`. Site categories are configured under **Translation Sources**; provider categories are controlled by their integration toggles under **Settings → Integrations**.
 
-![Integration toggles under Translation Manager settings](images/integrations-settings.webp)
+![Integration toggles under Translation Manager settings](../images/integrations-settings.webp)
 
 ## Provider lifecycle
 
