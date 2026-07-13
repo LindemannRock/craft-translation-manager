@@ -51,7 +51,7 @@ Dropdown, Radio, Checkboxes, Categories, Entries, Products, Tags, Users — capt
 - **Address** — all enabled subfield labels and placeholders (Address Line 1/2/3, City, State, ZIP, Country)
 - **Name** — Prefix, First, Middle, Last
 - **Date** — Day, Month, Year, Hour, Minute, Second, AM/PM labels
-- **Table** — column headers, "Add Row" button text
+- **Table** — column headings, each column's dropdown option labels, "Add Row" button text
 - **Repeater** — Add/Remove button labels
 - **Agree** — description text, checked/unchecked values
 - **Recipients** — recipient option labels
@@ -73,7 +73,12 @@ Translation contexts follow these patterns:
 | Field labels | `formie.{formHandle}.{fieldHandle}.label` |
 | Field options | `formie.{formHandle}.{fieldHandle}.option.{value}` |
 | Subfield labels | `formie.{formHandle}.{fieldHandle}.{subfield}.label` |
+| Table column headings | `formie.{formHandle}.{fieldHandle}.column.{index}` |
+| Table column options | `formie.{formHandle}.{fieldHandle}.column.{index}.option.{value}` |
 | Button text | `formie.{formHandle}.button.{type}` |
+| Button text (multi-page forms) | `formie.{formHandle}.page.{index}.button.{type}` |
+
+Forms with more than one page namespace their buttons by page, so a multi-page form's submit, back, and save buttons use the `page.{index}.button` form (the page index starts at `0`). Single-page forms keep the shorter `button.{type}` key. You only need these exact keys when hand-editing a CSV import — day-to-day capture fills them in for you.
 
 ## Capture and generate
 

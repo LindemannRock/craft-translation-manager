@@ -63,6 +63,30 @@ If provider strings are captured but still render in the source language, regene
 - The plugin uses client-side validation to avoid Cloudflare blocks
 - For large files, split into smaller batches
 
+## CSV Import Fails With "An Unexpected Error Occurred"
+
+When a CSV upload can't be parsed, production sites show a single generic flash message — **Failed to parse CSV: An unexpected error occurred.** — without the specific reason. (With `devMode` on, the real parser message is shown instead.)
+
+The exact cause is always written to the log, so check it first:
+
+```bash title="PHP"
+tail -n 50 storage/logs/translation-manager-*.log | grep "Failed to parse CSV"
+```
+
+```bash title="DDEV"
+ddev exec "tail -n 50 storage/logs/translation-manager-*.log | grep 'Failed to parse CSV'"
+```
+
+Common causes:
+
+- The file isn't a real CSV/TXT (wrong extension or MIME type)
+- The file is larger than the 5 MB upload limit
+- The file has more rows than the allowed maximum
+- The file is empty or has no readable header row
+- The delimiter doesn't match the file — set **CSV Delimiter** explicitly on upload instead of leaving it on **Auto (detect)**
+
+Fix the underlying file (or pick the correct delimiter) and re-upload.
+
 ## Settings Cannot Be Saved
 
 This is normal in production - settings are stored in database, not project config.
