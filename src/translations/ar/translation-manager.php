@@ -741,10 +741,6 @@ return [
     'In Progress' => 'قيد التنفيذ',
     'Needs Attention' => 'يحتاج إلى انتباه',
 
-    // Base partials
-    'Found {count, number} {count, plural, =1{error} other{errors}}' => 'تم العثور على {count, number} {count, plural, =1{خطأ} other{أخطاء}}',
-    'error' => 'خطأ',
-
     // Config overrides
     'This is being overridden by the <code>aiProvider</code> setting in <code>config/translation-manager.php</code>.' => 'يتم تجاوز هذا الإعداد بواسطة <code>aiProvider</code> في <code>config/translation-manager.php</code>.',
     'This is being overridden by the <code>anthropicApiKey</code> setting in <code>config/translation-manager.php</code>.' => 'يتم تجاوز هذا الإعداد بواسطة <code>anthropicApiKey</code> في <code>config/translation-manager.php</code>.',

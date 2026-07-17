@@ -741,10 +741,6 @@ return [
     'In Progress' => 'In Bearbeitung',
     'Needs Attention' => 'Handlungsbedarf',
 
-    // Base partials
-    'Found {count, number} {count, plural, =1{error} other{errors}}' => '{count, number} {count, plural, =1{Fehler} other{Fehler}} gefunden',
-    'error' => 'Fehler',
-
     // Config overrides
     'This is being overridden by the <code>aiProvider</code> setting in <code>config/translation-manager.php</code>.' => 'Wird durch die Einstellung <code>aiProvider</code> in <code>config/translation-manager.php</code> überschrieben.',
     'This is being overridden by the <code>anthropicApiKey</code> setting in <code>config/translation-manager.php</code>.' => 'Wird durch die Einstellung <code>anthropicApiKey</code> in <code>config/translation-manager.php</code> überschrieben.',
