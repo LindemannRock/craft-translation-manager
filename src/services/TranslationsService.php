@@ -15,6 +15,7 @@ use craft\base\Component;
 use craft\db\Query;
 use craft\helpers\Db;
 use craft\helpers\StringHelper;
+use lindemannrock\base\helpers\DbHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\helpers\SiteLanguageHelper;
 use lindemannrock\translationmanager\helpers\TemplateHelper;
@@ -227,9 +228,9 @@ class TranslationsService extends Component
                 
                 $query->andWhere([
                     'or',
-                    ['like', 'translationKey', $searchPattern, false],
-                    ['like', 'translation', $searchPattern, false],
-                    ['like', 'context', $searchPattern, false],
+                    ['like', 'LOWER([[translationKey]])', mb_strtolower($searchPattern), false],
+                    ['like', 'LOWER([[translation]])', mb_strtolower($searchPattern), false],
+                    ['like', 'LOWER([[context]])', mb_strtolower($searchPattern), false],
                 ]);
                 
                 // Debug: Log the SQL query
@@ -251,7 +252,16 @@ class TranslationsService extends Component
         $dir = $criteria['dir'] ?? 'asc';
 
         if (isset($sortMap[$sort])) {
-            $query->orderBy([$sortMap[$sort] => $dir === 'desc' ? SORT_DESC : SORT_ASC]);
+            if ($sortMap[$sort] === 'translation') {
+                // Nullable column (pending rows): NULLs pinned last on both
+                // engines, both directions — MySQL and PostgreSQL default NULL
+                // ordering are opposites.
+                $query->orderBy(new \yii\db\Expression(
+                    DbHelper::orderByNullsLast('translation', $dir === 'desc' ? 'DESC' : 'ASC')
+                ));
+            } else {
+                $query->orderBy([$sortMap[$sort] => $dir === 'desc' ? SORT_DESC : SORT_ASC]);
+            }
         }
 
         // Get all translations. Integration rows maintain their "unused"
