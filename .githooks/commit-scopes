@@ -14,6 +14,7 @@ elements
 gql
 helpers
 i18n
+import-export
 integrations
 jobs
 migrations
