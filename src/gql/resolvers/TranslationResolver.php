@@ -77,10 +77,10 @@ class TranslationResolver extends Resolver
                 $searchPattern = '%' . strtr($searchTerm, ['%' => '\%', '_' => '\_', '\\' => '\\\\']) . '%';
                 $query->andWhere([
                     'or',
-                    ['like', 'translationKey', $searchPattern, false],
-                    ['like', 'source', $searchPattern, false],
-                    ['like', 'translation', $searchPattern, false],
-                    ['like', 'context', $searchPattern, false],
+                    ['like', 'LOWER([[translationKey]])', mb_strtolower($searchPattern), false],
+                    ['like', 'LOWER([[source]])', mb_strtolower($searchPattern), false],
+                    ['like', 'LOWER([[translation]])', mb_strtolower($searchPattern), false],
+                    ['like', 'LOWER([[context]])', mb_strtolower($searchPattern), false],
                 ]);
             }
         }
