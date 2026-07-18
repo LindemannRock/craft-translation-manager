@@ -1,5 +1,21 @@
 # Changelog
 
+## [5.34.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.33.3...v5.34.0) (2026-07-18)
+
+
+### Added
+
+* **tests:** add PostgresDialectSafetyTest for SQL dialect safety ([02b4a76](https://github.com/LindemannRock/craft-translation-manager/commit/02b4a761d989763dfd118cd017b0bf30abe1ae83))
+
+
+### Fixed
+
+* **gql:** normalize translation search to be case-insensitive ([ce63325](https://github.com/LindemannRock/craft-translation-manager/commit/ce63325aaf5ae8586c310590c8eb5065b78435d5))
+* normalize translation search to be case-insensitive ([b2aba0e](https://github.com/LindemannRock/craft-translation-manager/commit/b2aba0e89d1fb81718b3bc54d858c5b4d75ad559))
+* require PostgreSQL-compatible shared dependencies ([98879dc](https://github.com/LindemannRock/craft-translation-manager/commit/98879dc525ca8d71ef4ece373f70a3f0cc9f664d))
+* **settings:** remove unused translation category from error summary ([f6d6b8c](https://github.com/LindemannRock/craft-translation-manager/commit/f6d6b8cbf1e8f9115cdc8f951237432240f4bcb1))
+* **settings:** validate category length to prevent database errors ([3babac1](https://github.com/LindemannRock/craft-translation-manager/commit/3babac1409c94f66b8cf4d54ce17c205abbc33d9))
+
 ## [5.33.3](https://github.com/LindemannRock/craft-translation-manager/compare/v5.33.2...v5.33.3) - 2026-07-05
 
 
