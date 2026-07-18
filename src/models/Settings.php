@@ -532,6 +532,14 @@ class Settings extends Model
                 continue;
             }
 
+            // The category column is VARCHAR(50); the capture path batch-inserts
+            // without AR validation, so an over-length key would silently
+            // truncate on MySQL and hard-fail the whole batch on PostgreSQL.
+            if (strlen($key) > 50) {
+                $this->addError($attribute, "Category \"{$key}\" must be 50 characters or fewer.");
+                continue;
+            }
+
             // Check for reserved categories
             if (in_array(strtolower($key), self::RESERVED_CATEGORIES)) {
                 $this->addError($attribute, "Cannot use reserved category \"{$key}\". Reserved categories: site, app, yii, craft.");
