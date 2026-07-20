@@ -123,29 +123,6 @@ The level of detail depends on your configured `logLevel`.
 - Queue operations
 - Per-string processing context
 
-## Developer usage
-
-Most sites only need the configuration and CP viewer above. Custom modules or integrations can write to the same Translation Manager log when they need related diagnostics:
-
-```php
-use lindemannrock\translationmanager\TranslationManager;
-
-TranslationManager::getInstance()->logError('Operation failed', [
-    'context' => 'backup',
-    'error' => $e->getMessage(),
-]);
-
-TranslationManager::getInstance()->logInfo('Translations exported', [
-    'count' => $count,
-    'type' => 'site',
-]);
-
-TranslationManager::getInstance()->logDebug('Processing translation', [
-    'key' => $key,
-    'site' => $siteId,
-]);
-```
-
 ## Permissions
 
 | Action | Permission |
