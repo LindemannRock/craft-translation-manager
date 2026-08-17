@@ -315,9 +315,10 @@ class SettingsController extends Controller
         // Load current settings from database
         $settings = Settings::loadFromDatabase();
 
-        // Capture old backup settings before applying new values (for schedule change detection)
-        $oldBackupEnabled = $settings->backupEnabled;
-        $oldBackupSchedule = $settings->backupSchedule;
+        // Capture the effective queue policy before applying posted values.
+        $oldEffectiveBackupSettings = clone $settings;
+        PluginHelper::applyConfigOverridesToSettings($oldEffectiveBackupSettings, 'translation-manager');
+        $oldBackupState = $plugin->scheduledBackups->getEffectiveState($oldEffectiveBackupSettings);
         $oldGenerationPath = $settings->getGenerationPath();
 
         // Get only the posted settings (fields from the current page)
@@ -355,19 +356,12 @@ class SettingsController extends Controller
             $shouldRegenerateGeneratedFiles = in_array('generationPath', $attributesToValidate, true)
                 && $oldGenerationPath !== $settings->getGenerationPath();
 
-            // Detect backup schedule changes and update queue jobs
-            if ($oldBackupEnabled !== $settings->backupEnabled ||
-                $oldBackupSchedule !== $settings->backupSchedule
-            ) {
-                // Reset cached settings before queueing so job init/description
-                // reads the persisted schedule and date-format settings.
-                $plugin->setSettings([]);
-                $settings = Settings::loadFromDatabase();
-                $plugin->handleBackupScheduleChange($settings, $oldBackupEnabled, $oldBackupSchedule);
-            } else {
-                // Reset cached settings so next request loads fresh from DB
-                $plugin->setSettings([]);
-            }
+            // Reload the persisted effective state (including config overrides)
+            // before deciding whether the recurring family must change.
+            $plugin->setSettings([]);
+            $settings = Settings::loadFromDatabase();
+            PluginHelper::applyConfigOverridesToSettings($settings, 'translation-manager');
+            $plugin->scheduledBackups->replaceIfChanged($settings, $oldBackupState);
 
             if ($shouldRegenerateGeneratedFiles) {
                 $plugin->setSettings([]);

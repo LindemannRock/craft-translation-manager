@@ -29,10 +29,7 @@ use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 use lindemannrock\base\helpers\ColorHelper;
 use lindemannrock\base\helpers\CpNavHelper;
-use lindemannrock\base\helpers\DateFormatHelper;
 use lindemannrock\base\helpers\PluginHelper;
-use lindemannrock\base\helpers\RecurringQueueHelper;
-use lindemannrock\base\helpers\ScheduleHelper;
 use lindemannrock\logginglibrary\LoggingLibrary;
 
 use lindemannrock\logginglibrary\traits\LoggingTrait;
@@ -43,7 +40,6 @@ use lindemannrock\translationmanager\i18n\HybridLocaleMappingMessageSource;
 use lindemannrock\translationmanager\i18n\LocaleMappingDbMessageSource;
 use lindemannrock\translationmanager\i18n\LocaleMappingPhpMessageSource;
 use lindemannrock\translationmanager\i18n\MergedLocaleMappingPhpMessageSource;
-use lindemannrock\translationmanager\jobs\CreateBackupJob;
 use lindemannrock\translationmanager\listeners\MissingTranslationListener;
 use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\translationmanager\services\AiTranslationService;
@@ -51,6 +47,7 @@ use lindemannrock\translationmanager\services\BackupService;
 use lindemannrock\translationmanager\services\GenerationService;
 use lindemannrock\translationmanager\services\GenerationStatusService;
 use lindemannrock\translationmanager\services\IntegrationService;
+use lindemannrock\translationmanager\services\ScheduledBackupScheduler;
 use lindemannrock\translationmanager\services\SourceService;
 use lindemannrock\translationmanager\services\TranslationsService;
 use lindemannrock\translationmanager\utilities\TranslationStatsUtility;
@@ -72,6 +69,7 @@ use yii\i18n\MessageSource;
  * @property-read GenerationService $generate
  * @property-read GenerationStatusService $generationStatus
  * @property-read BackupService $backup
+ * @property-read ScheduledBackupScheduler $scheduledBackups
  * @property-read SourceService $sources
  * @property-read Settings $settings
  * @method Settings getSettings()
@@ -123,6 +121,7 @@ class TranslationManager extends Plugin
                 'generate' => GenerationService::class,
                 'generationStatus' => GenerationStatusService::class,
                 'backup' => BackupService::class,
+                'scheduledBackups' => ScheduledBackupScheduler::class,
                 'integrations' => IntegrationService::class,
                 'sources' => SourceService::class,
             ],
@@ -187,6 +186,7 @@ class TranslationManager extends Plugin
             'generate' => GenerationService::class,
             'generationStatus' => GenerationStatusService::class,
             'backup' => BackupService::class,
+            'scheduledBackups' => ScheduledBackupScheduler::class,
             'integrations' => IntegrationService::class,
             'sources' => SourceService::class,
         ]);
@@ -1017,45 +1017,7 @@ class TranslationManager extends Plugin
      */
     private function scheduleBackupJob(): void
     {
-        $this->queueBackupJob($this->getSettings());
-    }
-
-    /**
-     * Queue the next scheduled backup row for the provided settings.
-     */
-    private function queueBackupJob(Settings $settings): void
-    {
-        $schedule = $settings->getEffectiveBackupSchedule();
-
-        if (!$settings->backupEnabled || $schedule === 'disabled') {
-            return;
-        }
-
-        $nextRun = ScheduleHelper::calculateNext($schedule);
-        $delay = ScheduleHelper::calculateDelaySeconds($schedule);
-
-        if ($nextRun === null || $delay <= 0) {
-            return;
-        }
-
-        $nextRunTime = DateFormatHelper::formatCompactDatetimeFromSettings(
-            $nextRun,
-            $settings,
-            null,
-            false,
-            pluginHandle: 'translation-manager',
-        );
-
-        RecurringQueueHelper::ensurePending(
-            pluginToken: 'translationmanager',
-            jobClass: CreateBackupJob::class,
-            delay: $delay,
-            jobFactory: fn() => new CreateBackupJob([
-                'reason' => 'scheduled',
-                'reschedule' => true,
-                'nextRunTime' => $nextRunTime,
-            ]),
-        );
+        $this->scheduledBackups->synchronize($this->getSettings());
     }
 
     /**
@@ -1063,43 +1025,19 @@ class TranslationManager extends Plugin
      */
     public function handleBackupScheduleChange(Settings $settings, ?bool $oldBackupEnabled = null, ?string $oldBackupSchedule = null): void
     {
-        $schedule = $settings->getEffectiveBackupSchedule();
-
-        if (
-            $oldBackupEnabled !== null &&
-            $oldBackupSchedule !== null &&
-            $oldBackupEnabled === $settings->backupEnabled &&
-            $this->normalizeBackupSchedule($oldBackupSchedule) === $schedule
-        ) {
+        PluginHelper::applyConfigOverridesToSettings($settings, 'translation-manager');
+        if ($oldBackupEnabled === null || $oldBackupSchedule === null) {
+            $this->scheduledBackups->replace($settings);
             return;
         }
 
-        $this->cancelScheduledBackupJobs();
-
-        if (!$settings->backupEnabled || $schedule === 'disabled') {
-            $this->logInfo('Backup scheduling disabled');
-            return;
-        }
-
-        $this->queueBackupJob($settings);
-    }
-
-    /**
-     * Cancel any existing scheduled backup jobs
-     */
-    private function cancelScheduledBackupJobs(): void
-    {
-        RecurringQueueHelper::deletePending('translationmanager', CreateBackupJob::class);
-    }
-
-    /**
-     * Normalize backup schedule values.
-     */
-    private function normalizeBackupSchedule(string $schedule): string
-    {
-        $settings = new Settings();
-        $settings->backupSchedule = $schedule;
-
-        return $settings->getEffectiveBackupSchedule();
+        $previousSettings = new Settings();
+        $previousSettings->backupEnabled = $oldBackupEnabled;
+        $previousSettings->backupSchedule = $oldBackupSchedule;
+        PluginHelper::applyConfigOverridesToSettings($previousSettings, 'translation-manager');
+        $this->scheduledBackups->replaceIfChanged(
+            $settings,
+            $this->scheduledBackups->getEffectiveState($previousSettings),
+        );
     }
 }

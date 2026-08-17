@@ -12,9 +12,6 @@ namespace lindemannrock\translationmanager\jobs;
 
 use Craft;
 use craft\queue\BaseJob;
-use DateTime;
-use lindemannrock\base\helpers\DateFormatHelper;
-use lindemannrock\base\helpers\ScheduleHelper;
 use lindemannrock\base\traits\QueueTtrTrait;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\TranslationManager;
@@ -41,6 +38,12 @@ class CreateBackupJob extends BaseJob implements RetryableJobInterface
     public bool $reschedule = false;
 
     /**
+     * @var string Stable recurring queue owner
+     * @since 5.35.0
+     */
+    public string $recurringOwner = '';
+
+    /**
      * @var string|null Next run time display string
      */
     public ?string $nextRunTime = null;
@@ -53,8 +56,8 @@ class CreateBackupJob extends BaseJob implements RetryableJobInterface
         parent::init();
         $this->setLoggingHandle(TranslationManager::$plugin->id);
 
-        if ($this->reschedule && !$this->nextRunTime) {
-            $this->nextRunTime = $this->formatNextRunTime($this->calculateNextRun());
+        if ($this->isRecurringScheduledBackup() && !$this->nextRunTime && TranslationManager::$plugin !== null) {
+            $this->nextRunTime = TranslationManager::$plugin->scheduledBackups->getNextRunTime();
         }
     }
 
@@ -86,6 +89,16 @@ class CreateBackupJob extends BaseJob implements RetryableJobInterface
      */
     public function execute($queue): void
     {
+        if ($this->isRecurringScheduledBackup()) {
+            TranslationManager::$plugin->scheduledBackups->runOccurrence(fn() => $this->createBackup());
+            return;
+        }
+
+        $this->createBackup();
+    }
+
+    private function createBackup(): void
+    {
         $backupService = TranslationManager::getInstance()->backup;
         
         // Create the backup
@@ -104,79 +117,13 @@ class CreateBackupJob extends BaseJob implements RetryableJobInterface
                     $this->logInfo('Cleaned old backups', ['deleted' => $deleted]);
                 }
             }
-            
-            // Reschedule if needed
-            if ($this->reschedule) {
-                $this->scheduleNextBackup();
-            }
         } else {
             throw new \Exception(Craft::t('translation-manager', 'Failed to create scheduled backup'));
         }
     }
-    
-    /**
-     * Schedule the next backup based on settings
-     */
-    private function scheduleNextBackup(): void
+
+    private function isRecurringScheduledBackup(): bool
     {
-        $settings = TranslationManager::getInstance()->getSettings();
-
-        if (!$settings->backupEnabled || $settings->getEffectiveBackupSchedule() === 'disabled') {
-            return;
-        }
-
-        $nextRun = $this->calculateNextRun();
-        $delay = $this->calculateNextRunDelay($settings->getEffectiveBackupSchedule());
-
-        if ($nextRun !== null && $delay > 0) {
-            $job = new self([
-                'reason' => 'scheduled',
-                'reschedule' => true,
-                'nextRunTime' => $this->formatNextRunTime($nextRun),
-            ]);
-
-            Craft::$app->getQueue()->delay($delay)->push($job);
-
-            $this->logInfo('Next backup scheduled', [
-                'delay_seconds' => $delay,
-                'next_run' => $job->nextRunTime,
-            ]);
-        }
-    }
-
-    /**
-     * Calculate the delay in seconds for the next backup
-     */
-    private function calculateNextRunDelay(string $schedule): int
-    {
-        return ScheduleHelper::calculateDelaySeconds($schedule);
-    }
-
-    /**
-     * Calculate the next scheduled backup run.
-     */
-    private function calculateNextRun(): ?DateTime
-    {
-        $settings = TranslationManager::getInstance()->getSettings();
-
-        return ScheduleHelper::calculateNext($settings->getEffectiveBackupSchedule());
-    }
-
-    /**
-     * Format the next run for the serialized queue description.
-     */
-    private function formatNextRunTime(?DateTime $nextRun): ?string
-    {
-        if ($nextRun === null) {
-            return null;
-        }
-
-        return DateFormatHelper::formatCompactDatetimeFromSettings(
-            $nextRun,
-            TranslationManager::getInstance()->getSettings(),
-            null,
-            false,
-            pluginHandle: 'translation-manager',
-        );
+        return $this->reason === 'scheduled' && $this->reschedule;
     }
 }

@@ -53,6 +53,8 @@ return [
 | `weekly` | Weekly |
 | `monthly` | Monthly |
 
+Scheduled backups normally run through Craft's queue. Translation Manager keeps one delayed scheduled-backup chain for the next run and creates its successor only after a successful backup. On queue transports with a bounded delay, the plugin relays the wait through intermediate queue handoffs; those handoffs do not create backups. Local and other non-SQS queue transports retain the complete native delay. Run a queue worker with `queue/listen` or a cron-driven `queue/run` so scheduled backups fire on time.
+
 Craft stores a scheduled backup's queue description when the row is queued, so date/time format changes apply to newly queued rows; existing delayed rows keep their old label until they run or are requeued. Queue labels stay compact: numeric months render numerically, while short and long month settings both render as short month names.
 
 ## Console commands
@@ -77,7 +79,7 @@ php craft translation-manager/backup/create --reason="Before update"
 ddev craft translation-manager/backup/create --reason="Before update"
 ```
 
-Run a scheduled backup manually or from cron:
+Check and run a due scheduled backup directly. This command remains available for manual checks and direct-cron setups; normal automatic scheduling uses Craft's queue:
 
 ```bash title="PHP"
 php craft translation-manager/backup/scheduled
