@@ -348,24 +348,32 @@ final class ScheduledBackupQueueTest extends TestCase
         Craft::$app->set('mutex', $mutex);
         $this->settings()->backupEnabled = true;
         $this->settings()->backupSchedule = 'daily';
-        $logOffset = count(Craft::getLogger()->messages);
+        $logger = Craft::getLogger();
+        $originalFlushInterval = $logger->flushInterval;
+        $logger->flushInterval = PHP_INT_MAX;
+        $logOffset = count($logger->messages);
 
         try {
-            $this->scheduledBackups->synchronize($this->settings());
+            try {
+                $this->scheduledBackups->synchronize($this->settings());
+            } finally {
+                Craft::$app->set('mutex', $originalMutex);
+            }
+
+            self::assertSame($before, $this->queueMetadata());
+            self::assertSame([$legacyId], $this->legacyRowIds());
+            self::assertSame((string)$ownerId, (string)$this->onlyOwnerRow()['id']);
+            self::assertSame([ScheduledBackupScheduler::LIFECYCLE_MUTEX], $mutex->acquisitions);
+            self::assertSame([0], $mutex->timeouts);
+            self::assertSame([], $mutex->releases);
+            $this->assertWarningLoggedSince(
+                $logOffset,
+                'Scheduled-backup bootstrap reconciliation deferred because the lifecycle lock is busy.',
+            );
         } finally {
+            $logger->flushInterval = $originalFlushInterval;
             Craft::$app->set('mutex', $originalMutex);
         }
-
-        self::assertSame($before, $this->queueMetadata());
-        self::assertSame([$legacyId], $this->legacyRowIds());
-        self::assertSame((string)$ownerId, (string)$this->onlyOwnerRow()['id']);
-        self::assertSame([ScheduledBackupScheduler::LIFECYCLE_MUTEX], $mutex->acquisitions);
-        self::assertSame([0], $mutex->timeouts);
-        self::assertSame([], $mutex->releases);
-        $this->assertWarningLoggedSince(
-            $logOffset,
-            'Scheduled-backup bootstrap reconciliation deferred because the lifecycle lock is busy.',
-        );
 
         $this->scheduledBackups->synchronize($this->settings());
 
@@ -861,12 +869,29 @@ final class ScheduledBackupQueueTest extends TestCase
             $this->recurringJob('failure')->execute(Craft::$app->getQueue());
             self::fail('Expected backup creation failure to propagate.');
         } catch (\Exception $exception) {
-            self::assertSame('Failed to create scheduled backup', $exception->getMessage());
+            self::assertSame('Injected scheduled backup failure.', $exception->getMessage());
         }
 
         self::assertSame(1, $backup->createCalls);
         self::assertSame(0, $backup->cleanupCalls);
         self::assertSame(0, $this->countOwnerRows());
+    }
+
+    public function testEmptyStateNoOpQueuesSuccessorWithoutRetentionCleanup(): void
+    {
+        $backup = new RecordingBackupService();
+        $backup->empty = true;
+        $this->replacePluginComponent('backup', $backup);
+        $this->settings()->backupEnabled = true;
+        $this->settings()->backupSchedule = 'daily';
+        $this->settings()->backupRetentionDays = 30;
+
+        $this->recurringJob('empty')->execute(Craft::$app->getQueue());
+
+        self::assertSame(1, $backup->createCalls);
+        self::assertSame(['scheduled'], $backup->reasons);
+        self::assertSame(0, $backup->cleanupCalls);
+        self::assertSame(1, $this->countOwnerRows());
     }
 
     public function testSettingsReplacementPropagatesLifecycleAndPortableLockContention(): void
@@ -1203,6 +1228,7 @@ final class RecordingBackupService extends BackupService
     public int $createCalls = 0;
     public int $cleanupCalls = 0;
     public bool $succeed = true;
+    public bool $empty = false;
     /** @var list<string> */
     public array $reasons = [];
     /** @var list<string> */
@@ -1216,7 +1242,15 @@ final class RecordingBackupService extends BackupService
         $this->reasons[] = $reason ?? 'import';
         $this->events[] = 'create';
 
-        return $this->succeed ? '/tmp/translation-manager-owned-test-backup' : null;
+        if (!$this->succeed) {
+            throw new \RuntimeException('Injected scheduled backup failure.');
+        }
+
+        if ($this->empty) {
+            return null;
+        }
+
+        return '/tmp/translation-manager-owned-test-backup';
     }
 
     public function cleanupOldBackups(): int

@@ -561,9 +561,16 @@ class TranslationsController extends Controller
 
         // Mirror the CP import: back up first when backups-on-import is enabled.
         if ($settings->backupEnabled && $settings->backupOnImport) {
-            $backupPath = TranslationManager::getInstance()->backup->createBackup('before_php_import');
-            if ($backupPath) {
-                $this->stdout("Created backup: " . basename($backupPath) . "\n", Console::FG_GREY);
+            try {
+                $backupPath = TranslationManager::getInstance()->backup->createBackup('before_php_import');
+                if ($backupPath !== null) {
+                    $this->stdout("Created backup: " . basename($backupPath) . "\n", Console::FG_GREY);
+                } else {
+                    $this->stdout("No current translations required a safety backup.\n", Console::FG_GREY);
+                }
+            } catch (\Throwable $e) {
+                $this->stderr("Backup failed; import aborted: {$e->getMessage()}\n", Console::FG_RED);
+                return ExitCode::UNSPECIFIED_ERROR;
             }
         }
 

@@ -104,7 +104,7 @@ class CreateBackupJob extends BaseJob implements RetryableJobInterface
         // Create the backup
         $backupPath = $backupService->createBackup($this->reason);
         
-        if ($backupPath) {
+        if ($backupPath !== null) {
             $this->logInfo('Scheduled backup created successfully', [
                 'filename' => basename($backupPath),
             ]);
@@ -117,9 +117,10 @@ class CreateBackupJob extends BaseJob implements RetryableJobInterface
                     $this->logInfo('Cleaned old backups', ['deleted' => $deleted]);
                 }
             }
-        } else {
-            throw new \Exception(Craft::t('translation-manager', 'Failed to create scheduled backup'));
+            return;
         }
+
+        $this->logInfo('Scheduled backup completed as an empty-state no-op');
     }
 
     private function isRecurringScheduledBackup(): bool

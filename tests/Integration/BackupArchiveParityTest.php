@@ -17,7 +17,6 @@ use craft\models\FsListing;
 use craft\web\Request;
 use craft\web\Response;
 use Generator;
-use lindemannrock\base\helpers\SafeSegmentHelper;
 use lindemannrock\translationmanager\controllers\BackupController;
 use lindemannrock\translationmanager\tests\Support\BackupManifestTestCase;
 use lindemannrock\translationmanager\TranslationManager;
@@ -236,13 +235,12 @@ final class BackupArchiveParityTest extends BackupManifestTestCase
         $response->expects(self::once())->method('sendFile')->willReturnSelf();
         Craft::$app->set('response', $response);
 
-        $downloadFilename = 'translation-backup-' . SafeSegmentHelper::filenamePart($this->backupName, 'backup') . '.zip';
-        $zipPath = Craft::$app->getPath()->getTempPath() . '/' . $downloadFilename;
-        self::assertFileDoesNotExist($zipPath);
-        $this->trackTempPath($zipPath);
-
-        $result = (new BackupController('backup', TranslationManager::getInstance()))->actionDownload();
+        $controller = new ArchiveParityBackupController('backup', TranslationManager::getInstance(), $this->localRoot);
+        $result = $controller->actionDownload();
         self::assertSame($response, $result);
+        $zipPath = $controller->ownedPath;
+        self::assertIsString($zipPath);
+        $this->trackTempPath($zipPath);
         self::assertFileExists($zipPath);
 
         $zip = new ZipArchive();
@@ -263,6 +261,27 @@ final class BackupArchiveParityTest extends BackupManifestTestCase
         self::assertTrue(unlink($zipPath));
 
         return $files;
+    }
+}
+
+/** Exposes the unique owned archive path for archive-content assertions. */
+final class ArchiveParityBackupController extends BackupController
+{
+    public ?string $ownedPath = null;
+
+    public function __construct(string $id, \yii\base\Module $module, private readonly string $archiveRoot, array $config = [])
+    {
+        parent::__construct($id, $module, $config);
+    }
+
+    protected function createOwnedBackupZipPath(): string
+    {
+        $path = tempnam($this->archiveRoot, 'archive-parity-');
+        if (!is_string($path)) {
+            throw new RuntimeException('Unable to allocate archive parity ZIP.');
+        }
+        $this->ownedPath = $path;
+        return $path;
     }
 }
 

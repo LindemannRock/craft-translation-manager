@@ -185,7 +185,6 @@ return [
     'Translation not found' => 'Översättning hittades inte',
     'PHP import is only available in devMode.' => 'PHP-import är endast tillgänglig i devMode.',
     'User does not have permission to import translations.' => 'Användaren har inte behörighet att importera översättningar.',
-    'Failed to create scheduled backup' => 'Det gick inte att skapa schemalagd säkerhetskopia',
     'User does not have permission to create backups.' => 'Användaren har inte behörighet att skapa säkerhetskopior.',
     'User does not have permission to restore backups.' => 'Användaren har inte behörighet att återställa säkerhetskopior.',
     'User does not have permission to delete backups.' => 'Användaren har inte behörighet att ta bort säkerhetskopior.',

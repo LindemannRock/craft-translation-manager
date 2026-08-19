@@ -1,6 +1,6 @@
 # Backup system
 
-Translation Manager protects your translations before anything destructive happens. Every import, cleanup, clear, and restore creates a backup first — and you can create your own restore points any time — so a bad import or an over-eager cleanup is always recoverable.
+Translation Manager protects your translations before destructive operations that promise a safety backup. When backups are enabled, restores, maintenance cleanup, translation deletion, and imports whose backup option is enabled must finish their safety backup before changing translations. If that backup fails, the requested operation stops without deleting, replacing, importing, or regenerating translations. When there are no current translations, the empty backup is a successful no-op and the operation may continue. Disabling backups keeps the deliberate no-backup behavior.
 
 ## What you'll use it for
 
@@ -13,12 +13,14 @@ Translation Manager protects your translations before anything destructive happe
 ## Create and restore a backup in the Control Panel
 
 1. Go to **Translation Manager → Backups**.
-2. Click **Create Backup Now** — the backup is captured with the current timestamp and a reason.
-3. To roll back, find a backup in the list, click the gear icon → **Restore**, and confirm. A fresh safety backup is taken before the restore runs, so the restore itself is reversible.
+2. Click **Create Backup Now** — the backup is captured with a readable timestamp, a unique suffix, and a reason. The suffix prevents simultaneous requests from choosing the same completed-backup name.
+3. To roll back, find a backup in the list, click the gear icon → **Restore**, and confirm. The target and checksum are validated first. If current translations exist and backups are enabled, a fresh safety backup must then complete before the restore replaces anything.
 
 ![Backups list in the Translation Manager Control Panel](../images/backups-list.webp)
 
 The list shows each backup's **date**, **type** (which folder it lives in), **reason**, **translation count**, **size**, and actual storage location. The size is the total of every stored file in that backup, including generated files under `php-files/` and any other nested backup content.
+
+Backup creation writes and validates a request-owned staging snapshot before promoting it to the completed name. Staging and incomplete snapshots are not shown in the list, included in retention, or accepted by download, restore, and delete actions. Existing timestamp-only backup names remain supported.
 
 ## Backup types
 
@@ -53,7 +55,7 @@ return [
 | `weekly` | Weekly |
 | `monthly` | Monthly |
 
-Scheduled backups normally run through Craft's queue. Translation Manager keeps one delayed scheduled-backup chain for the next run and creates its successor only after a successful backup. On queue transports with a bounded delay, the plugin relays the wait through intermediate queue handoffs; those handoffs do not create backups. Local and other non-SQS queue transports retain the complete native delay. Run a queue worker with `queue/listen` or a cron-driven `queue/run` so scheduled backups fire on time.
+Scheduled backups normally run through Craft's queue. Translation Manager keeps one delayed scheduled-backup chain for the next run and creates its successor after a completed backup or a successful empty-state no-op. An operational backup failure is reported as a failed job and does not masquerade as success. On queue transports with a bounded delay, the plugin relays the wait through intermediate queue handoffs; those handoffs do not create backups. Local and other non-SQS queue transports retain the complete native delay. Run a queue worker with `queue/listen` or a cron-driven `queue/run` so scheduled backups fire on time.
 
 Craft stores a scheduled backup's queue description when the row is queued, so date/time format changes apply to newly queued rows; existing delayed rows keep their old label until they run or are requeued. Queue labels stay compact: numeric months render numerically, while short and long month settings both render as short month names.
 
@@ -101,9 +103,9 @@ ddev craft translation-manager/backup/list
 
 ## Restoring, downloading, and integrity
 
-Restore replaces all current translations with the backup's version. It requires an intact backup folder with `metadata.json` and a valid SHA-256 checksum — backups with missing metadata, missing checksum data, or modified translation JSON are rejected *before* anything is replaced.
+Restore replaces all current translations with the backup's version. It requires an intact backup folder with `metadata.json` and a valid SHA-256 checksum — backups with missing metadata, missing checksum data, or modified translation JSON are rejected before a safety backup is attempted or anything is replaced. If a required safety backup then fails, restore stops before deleting current translations.
 
-Click the gear icon → **Download** to get a ZIP containing the complete stored backup content: metadata, the translation JSON files that are present, generated PHP files under `php-files/`, and any other files stored beneath that backup. Local and volume-backed downloads use the same relative paths and contain the same logical files when their stored content is identical; storage prefixes and configured volume subpaths never appear inside the ZIP.
+Click the gear icon → **Download** to get a ZIP containing the complete stored backup content: metadata, the translation JSON files that are present, generated PHP files under `php-files/`, and any other files stored beneath that backup. Local and volume-backed downloads use the same relative paths and contain the same logical files when their stored content is identical; storage prefixes and configured volume subpaths never appear inside the ZIP. Each request owns a separate temporary ZIP, which is removed after the response and also on interruption, so simultaneous downloads cannot overwrite or clean up one another.
 
 Downloaded ZIPs are portable: to use one on another install without an upload flow, extract it and place its files into the expected backup folder structure under that install's configured backup storage. Restore continues to read the JSON/checksum data and regenerate PHP files; it does not install the saved PHP files directly.
 

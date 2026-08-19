@@ -254,6 +254,14 @@ Do not clear the UID to make an operation use local storage unless you are inten
 
 For a volume with a configured subpath, current backups are under `{configured volume subpath}/translation-manager/backups`. Translation Manager can also manage older backups at the exact underlying filesystem-root prefix `translation-manager/backups`. It does not scan arbitrary paths or move historical objects automatically. If the same backup name exists in both places, the canonical subpath-backed object wins; deleting it leaves the historical duplicate in place.
 
+## A Restore, Import, Cleanup, or Delete Stops Before Making Changes
+
+When backups are enabled, destructive operations that promise a safety backup stop if that backup cannot be completed and validated. This is intentional: Translation Manager does not continue with translation deletion, replacement, import, cleanup, category/provider deletion, or regeneration after a required safety backup failure.
+
+Check the Translation Manager log for the creation error, then verify the effective backup path or configured volume, its subpath, provider credentials, permissions, and available space. Retry the original action only after manual backup creation succeeds. Do not clear a configured volume UID merely to trigger local fallback; configured volume storage remains authoritative and fails closed.
+
+If there are no current translations, backup creation reports a successful no-op and does not block the operation. If backups are deliberately disabled, the operation keeps its existing no-backup behavior. Imports also continue to respect **Create Backup Before Import**, `backupOnImport`, and the per-import checkbox.
+
 ## A Downloaded Backup Is Missing Files or Its Size Looks Too Small
 
 If a downloaded volume backup is missing generated PHP files, or the size in the Backups list covers only the JSON files, refresh the list and download the backup again with the current Translation Manager version. Existing backup folders do not need conversion.

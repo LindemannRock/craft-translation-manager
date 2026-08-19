@@ -74,7 +74,7 @@ class BackupController extends Controller
             $backupService = TranslationManager::getInstance()->backup;
             $backupPath = $backupService->createBackup($reason);
             
-            if ($backupPath) {
+            if ($backupPath !== null) {
                 $this->stdout("✓ Backup created successfully\n", Console::FG_GREEN);
                 $this->stdout("  Path: " . basename($backupPath) . "\n");
                 
@@ -90,10 +90,10 @@ class BackupController extends Controller
                 }
                 
                 return ExitCode::OK;
-            } else {
-                $this->stderr("✗ Failed to create backup\n", Console::FG_RED);
-                return ExitCode::UNSPECIFIED_ERROR;
             }
+
+            $this->stdout("No translations to back up; no backup was needed.\n", Console::FG_YELLOW);
+            return ExitCode::OK;
         } catch (\Exception $e) {
             $this->stderr("✗ Error: " . $e->getMessage() . "\n", Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;

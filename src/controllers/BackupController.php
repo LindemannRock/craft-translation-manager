@@ -16,7 +16,9 @@ use craft\web\Controller;
 use lindemannrock\base\helpers\DateFormatHelper;
 use lindemannrock\base\helpers\SafeSegmentHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
+use lindemannrock\translationmanager\services\BackupService;
 use lindemannrock\translationmanager\TranslationManager;
+use Throwable;
 use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -200,7 +202,7 @@ class BackupController extends Controller
 
             $backupResult = TranslationManager::getInstance()->backup->createBackup($reason);
             
-            if ($backupResult) {
+            if ($backupResult !== null) {
                 return $this->asJson([
                     'success' => true,
                     'message' => Craft::t('translation-manager', 'Backup created successfully'),
@@ -208,19 +210,10 @@ class BackupController extends Controller
                 ]);
             }
             
-            // Check if failure was due to no translations
-            $translations = TranslationManager::getInstance()->translations->getTranslations();
-            if (empty($translations)) {
-                return $this->asJson([
-                    'success' => false,
-                    'error' => Craft::t('translation-manager', 'No translations to backup. Add some translations first.'),
-                    'isEmpty' => true,
-                ]);
-            }
-            
             return $this->asJson([
-                'success' => false,
-                'error' => Craft::t('translation-manager', 'Failed to create backup'),
+                'success' => true,
+                'message' => Craft::t('translation-manager', 'No translations to backup. Add some translations first.'),
+                'isEmpty' => true,
             ]);
         } catch (\Exception $e) {
             $this->logError('Backup creation failed', ['error' => $e->getMessage()]);
@@ -243,7 +236,7 @@ class BackupController extends Controller
         
         $backupName = Craft::$app->getRequest()->getRequiredBodyParam('backup');
         
-        if (!preg_match('/^([\w]+\/)?(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})$/', $backupName)) {
+        if (!TranslationManager::getInstance()->backup->isValidBackupName($backupName)) {
             return $this->asJson([
                 'success' => false,
                 'error' => Craft::t('translation-manager', 'Invalid backup name format'),
@@ -268,7 +261,7 @@ class BackupController extends Controller
         
         $backupName = Craft::$app->getRequest()->getRequiredBodyParam('backup');
 
-        if (!preg_match('/^([\w]+\/)?(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})$/', $backupName)) {
+        if (!TranslationManager::getInstance()->backup->isValidBackupName($backupName)) {
             $this->logWarning("Invalid backup name format attempted", ['backup' => $backupName]);
             return $this->asJson([
                 'success' => false,
@@ -303,50 +296,135 @@ class BackupController extends Controller
     {
         $backupName = Craft::$app->getRequest()->getRequiredParam('backup');
 
-        if (!preg_match('/^([\w]+\/)?(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})$/', $backupName)) {
+        $backupService = TranslationManager::getInstance()->backup;
+        if (!$backupService->isValidBackupName($backupName)) {
             throw new NotFoundHttpException(Craft::t('translation-manager', 'Invalid backup name'));
         }
 
         $this->logInfo("User requested backup download", ['backup' => $backupName]);
 
-        $backupService = TranslationManager::getInstance()->backup;
-        $files = $backupService->getDownloadFiles($backupName);
-        if ($files === []) {
-            throw new NotFoundHttpException(Craft::t('translation-manager', 'Backup not found'));
-        }
-
         $downloadFilename = 'translation-backup-' . SafeSegmentHelper::filenamePart($backupName, 'backup') . '.zip';
-        $zipPath = Craft::$app->getPath()->getTempPath() . '/' . $downloadFilename;
+        return $this->prepareOwnedBackupDownload($backupService, $backupName, $downloadFilename);
+    }
 
-        // Create zip archive
-        $zip = new \ZipArchive();
-        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
-            throw new \Exception('Cannot create zip file');
+    /** Allocate one request-owned temporary ZIP beneath Craft's temporary directory. */
+    protected function createOwnedBackupZipPath(): string
+    {
+        $path = tempnam(Craft::$app->getPath()->getTempPath(), 'translation-backup-');
+        if (!is_string($path)) {
+            throw new \RuntimeException('Unable to allocate an owned backup ZIP path.');
         }
 
-        foreach ($files as $filename => $content) {
-            if (!$zip->addFromString($filename, $content)) {
-                throw new \Exception('Cannot add backup file to zip archive');
-            }
-        }
+        return $path;
+    }
 
-        if (!$zip->close()) {
-            throw new \Exception('Cannot finalize zip file');
-        }
+    protected function createBackupZip(): \ZipArchive
+    {
+        return new \ZipArchive();
+    }
 
-        // Send the file
-        $response = Craft::$app->getResponse();
-        $response->sendFile($zipPath, $downloadFilename, [
+    protected function openBackupZip(\ZipArchive $zip, string $path): bool
+    {
+        return $zip->open($path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true;
+    }
+
+    protected function addBackupZipMember(\ZipArchive $zip, string $name, string $contents): bool
+    {
+        return $zip->addFromString($name, $contents);
+    }
+
+    protected function closeBackupZip(\ZipArchive $zip): bool
+    {
+        return $zip->close();
+    }
+
+    /** @return array<string, string> */
+    protected function readBackupDownloadManifest(BackupService $backupService, string $backupName): array
+    {
+        return $backupService->getDownloadFiles($backupName);
+    }
+
+    protected function prepareBackupDownloadResponse(string $path, string $filename): Response
+    {
+        return Craft::$app->getResponse()->sendFile($path, $filename, [
             'mimeType' => 'application/zip',
             'inline' => false,
         ]);
+    }
 
-        // Clean up temp file after sending
-        register_shutdown_function(function() use ($zipPath) {
-            @unlink($zipPath);
+    /** @param callable(): void $cleanup */
+    protected function registerBackupDownloadShutdown(callable $cleanup): void
+    {
+        register_shutdown_function($cleanup);
+    }
+
+    /** @param callable(): void $cleanup */
+    protected function registerBackupResponseCleanup(Response $response, callable $cleanup): void
+    {
+        $response->on(Response::EVENT_AFTER_SEND, static function() use ($cleanup): void {
+            $cleanup();
         });
+    }
 
-        return $response;
+    protected function removeOwnedBackupZip(string $path): void
+    {
+        if (is_file($path) && !unlink($path)) {
+            $this->logError('Failed to remove owned backup ZIP', ['path' => $path]);
+        }
+    }
+
+    protected function prepareOwnedBackupDownload(
+        BackupService $backupService,
+        string $backupName,
+        string $downloadFilename,
+    ): Response {
+        $zipPath = $this->createOwnedBackupZipPath();
+        $cleanup = fn() => $this->removeOwnedBackupZip($zipPath);
+        $zip = null;
+        $zipOpen = false;
+
+        try {
+            $this->registerBackupDownloadShutdown($cleanup);
+
+            $files = $this->readBackupDownloadManifest($backupService, $backupName);
+            if ($files === []) {
+                throw new NotFoundHttpException(Craft::t('translation-manager', 'Backup not found'));
+            }
+
+            $zip = $this->createBackupZip();
+            if (!$this->openBackupZip($zip, $zipPath)) {
+                throw new \RuntimeException('Cannot create zip file');
+            }
+            $zipOpen = true;
+
+            foreach ($files as $filename => $content) {
+                if (!$this->addBackupZipMember($zip, $filename, $content)) {
+                    throw new \RuntimeException("Cannot add backup file to zip archive: {$filename}");
+                }
+            }
+
+            if (!$this->closeBackupZip($zip)) {
+                throw new \RuntimeException('Cannot finalize zip file');
+            }
+            $zipOpen = false;
+
+            $response = $this->prepareBackupDownloadResponse($zipPath, $downloadFilename);
+            $this->registerBackupResponseCleanup($response, $cleanup);
+
+            return $response;
+        } catch (Throwable $e) {
+            if ($zipOpen && $zip instanceof \ZipArchive) {
+                try {
+                    $this->closeBackupZip($zip);
+                } catch (Throwable $closeError) {
+                    $this->logError('Failed to close backup ZIP after download failure', [
+                        'error' => $closeError->getMessage(),
+                    ]);
+                }
+            }
+            $cleanup();
+            throw $e;
+        }
     }
 
     /**

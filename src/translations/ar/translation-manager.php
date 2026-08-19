@@ -185,7 +185,6 @@ return [
     'Translation not found' => 'الترجمة غير موجودة',
     'PHP import is only available in devMode.' => 'استيراد PHP متاح فقط في devMode.',
     'User does not have permission to import translations.' => 'ليس لدى المستخدم صلاحية لاستيراد الترجمات.',
-    'Failed to create scheduled backup' => 'فشل إنشاء النسخة الاحتياطية المجدولة',
     'User does not have permission to create backups.' => 'ليس لدى المستخدم صلاحية لإنشاء النسخ الاحتياطية.',
     'User does not have permission to restore backups.' => 'ليس لدى المستخدم صلاحية لاستعادة النسخ الاحتياطية.',
     'User does not have permission to delete backups.' => 'ليس لدى المستخدم صلاحية لحذف النسخ الاحتياطية.',

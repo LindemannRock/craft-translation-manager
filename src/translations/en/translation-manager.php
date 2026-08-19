@@ -182,7 +182,6 @@ return [
     'Translation not found' => 'Translation not found',
     'PHP import is only available in devMode.' => 'PHP import is only available in devMode.',
     'User does not have permission to import translations.' => 'User does not have permission to import translations.',
-    'Failed to create scheduled backup' => 'Failed to create scheduled backup',
     'User does not have permission to create backups.' => 'User does not have permission to create backups.',
     'User does not have permission to restore backups.' => 'User does not have permission to restore backups.',
     'User does not have permission to delete backups.' => 'User does not have permission to delete backups.',

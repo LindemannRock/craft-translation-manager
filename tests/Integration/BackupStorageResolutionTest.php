@@ -241,14 +241,18 @@ final class BackupStorageResolutionTest extends TestCase
         $response->expects(self::once())->method('sendFile')->willReturnSelf();
         Craft::$app->set('response', $response);
 
-        $zipPath = Craft::$app->getPath()->getTempPath() . '/translation-backup-manual-2026-08-19_12-00-00.zip';
-        $this->trackTempPath($zipPath);
-
-        $result = (new BackupController('backup', TranslationManager::getInstance()))->actionDownload();
+        $archiveRoot = $this->createTrackedTempDirectory('translation-download-authority-');
+        $controller = new StorageAuthorityBackupController(
+            'backup',
+            TranslationManager::getInstance(),
+            $archiveRoot,
+        );
+        $result = $controller->actionDownload();
 
         self::assertSame($response, $result);
         self::assertSame([$name], $service->requestedBackups);
-        self::assertFileExists($zipPath);
+        self::assertIsString($controller->ownedPath);
+        self::assertFileExists($controller->ownedPath);
     }
 
     private function assertUnavailableWithoutLocalFallback(string $uid, ?Volume $volume): void
@@ -335,5 +339,26 @@ final class DownloadAuthorityBackupService extends BackupService
     {
         $this->requestedBackups[] = $backupName;
         return ['metadata.json' => '{"source":"service"}'];
+    }
+}
+
+/** Exposes the request-owned archive used by the controller authority test. */
+final class StorageAuthorityBackupController extends BackupController
+{
+    public ?string $ownedPath = null;
+
+    public function __construct(string $id, \yii\base\Module $module, private readonly string $archiveRoot, array $config = [])
+    {
+        parent::__construct($id, $module, $config);
+    }
+
+    protected function createOwnedBackupZipPath(): string
+    {
+        $path = tempnam($this->archiveRoot, 'storage-authority-');
+        if (!is_string($path)) {
+            throw new \RuntimeException('Unable to allocate storage authority ZIP.');
+        }
+        $this->ownedPath = $path;
+        return $path;
     }
 }

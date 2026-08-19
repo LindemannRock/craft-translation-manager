@@ -185,7 +185,6 @@ return [
     'Translation not found' => '翻訳が見つかりませんでした',
     'PHP import is only available in devMode.' => 'PHP インポートは devMode でのみ利用できます。',
     'User does not have permission to import translations.' => 'ユーザーに翻訳をインポートする権限がありません。',
-    'Failed to create scheduled backup' => 'スケジュールされたバックアップの作成に失敗しました',
     'User does not have permission to create backups.' => 'ユーザーにバックアップを作成する権限がありません。',
     'User does not have permission to restore backups.' => 'ユーザーにバックアップを復元する権限がありません。',
     'User does not have permission to delete backups.' => 'ユーザーにバックアップを削除する権限がありません。',

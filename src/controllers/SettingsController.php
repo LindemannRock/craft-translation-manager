@@ -454,23 +454,10 @@ class SettingsController extends Controller
 
         // Create backup if enabled
         $settings = TranslationManager::getInstance()->getSettings();
-        if ($settings->backupEnabled) {
-            try {
-                $backupService = TranslationManager::getInstance()->backup;
-                $backupPath = $backupService->createBackup("before_delete_{$provider}");
-                if ($backupPath) {
-                    $this->logInfo('Created backup before deleting provider translations', [
-                        'provider' => $provider,
-                        'backupPath' => $backupPath,
-                    ]);
-                }
-            } catch (\Exception $e) {
-                $this->logError('Failed to create backup before deleting provider translations', [
-                    'provider' => $provider,
-                    'error' => $e->getMessage(),
-                ]);
-                // Continue with the operation even if backup fails
-            }
+        if ($settings->backupEnabled && !$this->createRequiredSafetyBackup("before_delete_{$provider}", [
+            'provider' => $provider,
+        ])) {
+            return $this->redirectToPostedUrl();
         }
         $count = TranslationManager::getInstance()->translations->deleteProviderTranslations($provider);
         
@@ -496,17 +483,8 @@ class SettingsController extends Controller
 
         // Create backup if enabled
         $settings = TranslationManager::getInstance()->getSettings();
-        if ($settings->backupEnabled) {
-            try {
-                $backupService = TranslationManager::getInstance()->backup;
-                $backupPath = $backupService->createBackup('before_delete_site');
-                if ($backupPath) {
-                    $this->logInfo("Created backup before deleting site translations", ['backupPath' => $backupPath]);
-                }
-            } catch (\Exception $e) {
-                $this->logError("Failed to create backup before deleting site translations", ['error' => $e->getMessage()]);
-                // Continue with the operation even if backup fails
-            }
+        if ($settings->backupEnabled && !$this->createRequiredSafetyBackup('before_delete_site')) {
+            return $this->redirectToPostedUrl();
         }
         $count = TranslationManager::getInstance()->translations->deleteSiteTranslations();
         
@@ -532,17 +510,8 @@ class SettingsController extends Controller
 
         // Create backup if enabled
         $settings = TranslationManager::getInstance()->getSettings();
-        if ($settings->backupEnabled) {
-            try {
-                $backupService = TranslationManager::getInstance()->backup;
-                $backupPath = $backupService->createBackup('before_delete_all');
-                if ($backupPath) {
-                    $this->logInfo("Created backup before deleting all translations", ['backupPath' => $backupPath]);
-                }
-            } catch (\Exception $e) {
-                $this->logError("Failed to create backup before deleting all translations", ['error' => $e->getMessage()]);
-                // Continue with the operation even if backup fails
-            }
+        if ($settings->backupEnabled && !$this->createRequiredSafetyBackup('before_delete_all')) {
+            return $this->redirectToPostedUrl();
         }
         $count = TranslationManager::getInstance()->translations->deleteAllTranslations();
         
@@ -580,17 +549,10 @@ class SettingsController extends Controller
         }
 
         // Create backup if enabled
-        if ($settings->backupEnabled) {
-            try {
-                $backupService = TranslationManager::getInstance()->backup;
-                $backupPath = $backupService->createBackup("before_delete_{$category}");
-                if ($backupPath) {
-                    $this->logInfo("Created backup before deleting category translations", ['category' => $category, 'backupPath' => $backupPath]);
-                }
-            } catch (\Exception $e) {
-                $this->logError("Failed to create backup before deleting category translations", ['error' => $e->getMessage()]);
-                // Continue with the operation even if backup fails
-            }
+        if ($settings->backupEnabled && !$this->createRequiredSafetyBackup("before_delete_{$category}", [
+            'category' => $category,
+        ])) {
+            return $this->redirectToPostedUrl();
         }
 
         $count = TranslationManager::getInstance()->translations->deleteCategoryTranslations($category);
@@ -602,6 +564,35 @@ class SettingsController extends Controller
         Craft::$app->getSession()->setNotice($message);
 
         return $this->redirectToPostedUrl();
+    }
+
+    /**
+     * Create a required safety backup and present an actionable failure without
+     * allowing the destructive action to continue.
+     *
+     * @param array<string, mixed> $context
+     */
+    private function createRequiredSafetyBackup(string $reason, array $context = []): bool
+    {
+        try {
+            $backupPath = TranslationManager::getInstance()->backup->createBackup($reason);
+            if ($backupPath !== null) {
+                $this->logInfo('Created required safety backup', $context + [
+                    'reason' => $reason,
+                    'backupPath' => $backupPath,
+                ]);
+            }
+            return true;
+        } catch (\Throwable $e) {
+            $this->logError('Required safety backup failed; destructive action aborted', $context + [
+                'reason' => $reason,
+                'error' => $e->getMessage(),
+            ]);
+            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Failed to create backup: {error}', [
+                'error' => $e->getMessage(),
+            ]));
+            return false;
+        }
     }
 
     /**

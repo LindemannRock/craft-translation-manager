@@ -76,23 +76,17 @@ class BackupService extends Component
      * Create a backup of all translations
      *
      * @param string|null $reason Optional reason for the backup (e.g., "before_import", "manual", "scheduled")
-     * @return string|null The backup directory path on success, null on failure
+     * @return string|null The completed backup directory path, or null when there are no translations to back up
+     * @throws \Throwable when backup creation cannot complete safely
      */
     public function createBackup(?string $reason = null): ?string
     {
         $reasonText = $this->getDisplayReason($reason ?? 'manual');
-        $useVolume = $this->isUsingVolumeStorage();
-        $storageType = $useVolume ? 'volume' : 'local';
-        $this->logInfo("Creating backup", [
-            'reason' => $reasonText,
-            'storageType' => $storageType,
-        ]);
 
         try {
             $subfolder = $this->getFolderForReason($reason);
 
-            // Create timestamp-based directory name
-            $timestamp = DateTimeHelper::currentTimeStamp();
+            $timestamp = $this->createBackupTimestamp();
             $date = date('Y-m-d_H-i-s', $timestamp);
 
             // Get ALL translations for backup (including unused, pending, translated, approved)
@@ -102,10 +96,20 @@ class BackupService extends Component
                 'type' => 'all', // Include both formie and site translations
             ]);
 
-            if (empty($translations) && $reason !== 'Before Restore') {
+            if (empty($translations)) {
                 $this->logInfo('No translations to backup - skipping backup creation');
                 return null;
             }
+
+            $useVolume = $this->isUsingVolumeStorage();
+            $storageType = $useVolume ? 'volume' : 'local';
+            $this->logInfo("Creating backup", [
+                'reason' => $reasonText,
+                'storageType' => $storageType,
+            ]);
+
+            $backupId = $this->createBackupEntropy();
+            $backupName = $date . '_' . $backupId;
 
             // Create metadata
             $metadata = [
@@ -119,6 +123,7 @@ class BackupService extends Component
                 'siteEnabled' => TranslationManager::getInstance()->getSettings()->enableSiteTranslations,
                 'craftVersion' => Craft::$app->getVersion(),
                 'pluginVersion' => TranslationManager::getInstance()->getVersion(),
+                'backupId' => $backupId,
             ];
 
             // Group translations by type
@@ -135,88 +140,97 @@ class BackupService extends Component
 
             // Use volume storage if configured
             if ($useVolume) {
-                return $this->_createVolumeBackup($subfolder . '/' . $date, $metadata, $formieTranslations, $siteTranslations, $this->getVolume());
+                return $this->createVolumeBackup($subfolder . '/' . $backupName, $metadata, $formieTranslations, $siteTranslations, $this->getVolume());
             } else {
-                return $this->_createLocalBackup($subfolder . '/' . $date, $metadata, $formieTranslations, $siteTranslations);
+                return $this->createLocalBackup($subfolder . '/' . $backupName, $metadata, $formieTranslations, $siteTranslations);
             }
         } catch (UserException $e) {
             throw $e;
         } catch (Throwable $e) {
             $this->logError('Failed to create backup', ['error' => $e->getMessage()]);
-            return null;
+            throw new \RuntimeException('Failed to create translation backup: ' . $e->getMessage(), previous: $e);
         }
     }
 
     /**
-     * Create backup using volume storage
+     * Return the timestamp used by one creation attempt.
      */
-    private function _createVolumeBackup(
+    protected function createBackupTimestamp(): int
+    {
+        return DateTimeHelper::currentTimeStamp();
+    }
+
+    /**
+     * Return a collision-resistant identifier owned by one creation attempt.
+     */
+    protected function createBackupEntropy(): string
+    {
+        return bin2hex(random_bytes(16));
+    }
+
+    /**
+     * Create a backup using canonical Craft volume storage.
+     */
+    private function createVolumeBackup(
         string $backupDir,
         array $metadata,
         array $formieTranslations,
         array $siteTranslations,
         Volume $volume,
     ): string {
-        $fullPath = self::VOLUME_BACKUP_ROOT . '/' . $backupDir;
+        $finalPath = self::VOLUME_BACKUP_ROOT . '/' . $backupDir;
+        $parentPath = dirname($finalPath);
+        $stagingPath = $parentPath . '/.' . basename($finalPath) . '.staging-' . $this->createBackupEntropy();
+        $backupId = (string)$metadata['backupId'];
+        $finalOwned = false;
 
         try {
-            // Ensure directory hierarchy exists using Craft FS API
-            $parts = explode('/', $fullPath);
-            $currentPath = '';
-            foreach ($parts as $part) {
-                if ($part) {
-                    $currentPath = $currentPath ? $currentPath . '/' . $part : $part;
-                    if (!$volume->directoryExists($currentPath)) {
-                        $volume->createDirectory($currentPath);
-                    }
-                }
+            $this->ensureVolumeDirectory($volume, $parentPath);
+            if ($volume->directoryExists($finalPath)) {
+                throw new \RuntimeException("A completed backup already exists at {$finalPath}.");
+            }
+            if ($volume->directoryExists($stagingPath)) {
+                throw new \RuntimeException("The owned backup staging path already exists: {$stagingPath}.");
             }
 
-            // Encode JSON content first
-            $formieContent = !empty($formieTranslations)
-                ? Json::encode($formieTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-                : '';
-            $siteContent = !empty($siteTranslations)
-                ? Json::encode($siteTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-                : '';
-
-            // Calculate checksum for integrity verification
-            $checksum = hash('sha256', $formieContent . $siteContent);
-            $metadata['checksum'] = $checksum;
-            $metadata['checksumAlgorithm'] = 'sha256';
-
-            $this->logInfo('Backup checksum calculated', [
-                'checksum' => substr($checksum, 0, 16) . '...',
-                'formieSize' => strlen($formieContent),
-                'siteSize' => strlen($siteContent),
-            ]);
-
-            // Write metadata file
-            $volume->write($fullPath . '/metadata.json', Json::encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-
-            // Save Formie translations
-            if (!empty($formieTranslations)) {
-                $volume->write($fullPath . '/formie-translations.json', $formieContent);
+            $volume->createDirectory($stagingPath);
+            if (!$volume->directoryExists($stagingPath)) {
+                throw new \RuntimeException("Unable to create the owned backup staging directory: {$stagingPath}.");
             }
 
-            // Save site translations
-            if (!empty($siteTranslations)) {
-                $volume->write($fullPath . '/site-translations.json', $siteContent);
+            $files = $this->buildBackupFiles($metadata, $formieTranslations, $siteTranslations);
+            foreach ($files as $relativePath => $content) {
+                $directory = dirname($stagingPath . '/' . $relativePath);
+                $this->ensureVolumeDirectory($volume, $directory);
+                $this->writeVolumeBackupFile($volume, $stagingPath . '/' . $relativePath, $content);
             }
 
-            // Also backup the generated PHP files if they exist
-            $this->backupGeneratedFilesToVolume($fullPath, $volume);
+            $this->validateVolumeBackupSnapshot($volume, $stagingPath, $files);
+
+            if ($volume->directoryExists($finalPath)) {
+                throw new \RuntimeException("A completed backup appeared before promotion at {$finalPath}.");
+            }
+            $this->promoteVolumeBackupDirectory($volume, $stagingPath, basename($finalPath));
+            if ($volume->directoryExists($stagingPath) || !$volume->directoryExists($finalPath)) {
+                throw new \RuntimeException("Backup promotion did not complete at {$finalPath}.");
+            }
+            $finalOwned = true;
+            $this->validateVolumeBackupSnapshot($volume, $finalPath, $files);
 
             $formieCount = count($formieTranslations);
             $siteCount = count($siteTranslations);
             $this->logInfo("Backup created in volume", [
-                'path' => $fullPath,
+                'path' => $finalPath,
                 'formieCount' => $formieCount,
                 'siteCount' => $siteCount,
             ]);
 
-            return $fullPath;
+            return $finalPath;
         } catch (Throwable $e) {
+            $this->removeOwnedVolumeDirectory($volume, $stagingPath);
+            if ($finalOwned || $this->volumeDirectoryBelongsToAttempt($volume, $finalPath, $backupId)) {
+                $this->removeOwnedVolumeDirectory($volume, $finalPath);
+            }
             $this->logError('Failed to create volume backup', ['error' => $e->getMessage()]);
             $this->throwStorageUnavailable('create', $e);
         }
@@ -225,128 +239,323 @@ class BackupService extends Component
     /**
      * Create backup using local storage
      */
-    private function _createLocalBackup(string $backupDir, array $metadata, array $formieTranslations, array $siteTranslations): string
+    private function createLocalBackup(string $backupDir, array $metadata, array $formieTranslations, array $siteTranslations): string
     {
-        $basePath = TranslationManager::getInstance()->getSettings()->getBackupPath();
-        $fullPath = $basePath . '/' . $backupDir;
+        $basePath = rtrim(TranslationManager::getInstance()->getSettings()->getBackupPath(), '/');
+        $finalPath = $basePath . '/' . $backupDir;
+        $parentPath = dirname($finalPath);
+        $stagingPath = $parentPath . '/.' . basename($finalPath) . '.staging-' . $this->createBackupEntropy();
+        $backupId = (string)$metadata['backupId'];
+        $finalOwned = false;
 
         try {
-            // Ensure directory exists
-            FileHelper::createDirectory($fullPath);
-
-            // Encode JSON content first
-            $formieContent = !empty($formieTranslations)
-                ? Json::encode($formieTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-                : '';
-            $siteContent = !empty($siteTranslations)
-                ? Json::encode($siteTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-                : '';
-
-            // Calculate checksum for integrity verification
-            $checksum = hash('sha256', $formieContent . $siteContent);
-            $metadata['checksum'] = $checksum;
-            $metadata['checksumAlgorithm'] = 'sha256';
-
-            $this->logInfo('Backup checksum calculated', [
-                'checksum' => substr($checksum, 0, 16) . '...',
-                'formieSize' => strlen($formieContent),
-                'siteSize' => strlen($siteContent),
-            ]);
-
-            // Write metadata file
-            FileHelper::writeToFile($fullPath . '/metadata.json', Json::encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-
-            // Save Formie translations
-            if (!empty($formieTranslations)) {
-                FileHelper::writeToFile($fullPath . '/formie-translations.json', $formieContent);
+            $this->createLocalBackupDirectory($parentPath);
+            if (!is_dir($parentPath)) {
+                throw new \RuntimeException("Unable to create the backup parent directory: {$parentPath}.");
+            }
+            if (is_dir($finalPath)) {
+                throw new \RuntimeException("A completed backup already exists at {$finalPath}.");
+            }
+            if (file_exists($stagingPath)) {
+                throw new \RuntimeException("The owned backup staging path already exists: {$stagingPath}.");
             }
 
-            // Save site translations
-            if (!empty($siteTranslations)) {
-                FileHelper::writeToFile($fullPath . '/site-translations.json', $siteContent);
+            $this->createLocalBackupDirectory($stagingPath);
+            if (!is_dir($stagingPath)) {
+                throw new \RuntimeException("Unable to create the owned backup staging directory: {$stagingPath}.");
             }
 
-            // Also backup the generated PHP files if they exist
-            $this->backupGeneratedFiles($fullPath);
+            $files = $this->buildBackupFiles($metadata, $formieTranslations, $siteTranslations);
+            foreach ($files as $relativePath => $content) {
+                $directory = dirname($stagingPath . '/' . $relativePath);
+                $this->createLocalBackupDirectory($directory);
+                if (!is_dir($directory)) {
+                    throw new \RuntimeException("Unable to create the backup directory: {$directory}.");
+                }
+                $this->writeLocalBackupFile($stagingPath . '/' . $relativePath, $content);
+            }
+
+            $this->validateLocalBackupSnapshot($stagingPath, $files);
+
+            if (file_exists($finalPath)) {
+                throw new \RuntimeException("A completed backup appeared before promotion at {$finalPath}.");
+            }
+            $this->promoteLocalBackupDirectory($stagingPath, $finalPath);
+            if (file_exists($stagingPath) || !is_dir($finalPath)) {
+                throw new \RuntimeException("Backup promotion did not complete at {$finalPath}.");
+            }
+            $finalOwned = true;
+            $this->validateLocalBackupSnapshot($finalPath, $files);
 
             $formieCount = count($formieTranslations);
             $siteCount = count($siteTranslations);
             $this->logInfo("Backup created locally", [
-                'path' => $fullPath,
+                'path' => $finalPath,
                 'formieCount' => $formieCount,
                 'siteCount' => $siteCount,
             ]);
 
-            return $fullPath;
-        } catch (\Exception $e) {
+            return $finalPath;
+        } catch (Throwable $e) {
+            $this->removeOwnedLocalDirectory($stagingPath);
+            if ($finalOwned || $this->localDirectoryBelongsToAttempt($finalPath, $backupId)) {
+                $this->removeOwnedLocalDirectory($finalPath);
+            }
             $this->logError('Failed to create local backup', ['error' => $e->getMessage()]);
-            throw new \Exception('Failed to create backup. Please ensure the backup path is writable: ' . $basePath);
+            throw new \RuntimeException(
+                'Failed to create backup in ' . $basePath . ': ' . $e->getMessage(),
+                previous: $e,
+            );
         }
     }
 
     /**
-     * Backup generated PHP translation files
+     * Build the complete expected file set before publishing a backup.
+     *
+     * @return array<string, string>
      */
-    private function backupGeneratedFiles(string $backupDir): void
+    private function buildBackupFiles(array $metadata, array $formieTranslations, array $siteTranslations): array
+    {
+        $formieContent = $formieTranslations !== []
+            ? Json::encode($formieTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+            : '';
+        $siteContent = $siteTranslations !== []
+            ? Json::encode($siteTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+            : '';
+        $checksum = hash('sha256', $formieContent . $siteContent);
+        $metadata['checksum'] = $checksum;
+        $metadata['checksumAlgorithm'] = 'sha256';
+
+        $this->logInfo('Backup checksum calculated', [
+            'checksum' => substr($checksum, 0, 16) . '...',
+            'formieSize' => strlen($formieContent),
+            'siteSize' => strlen($siteContent),
+        ]);
+
+        $files = [
+            'metadata.json' => Json::encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+        ];
+        if ($formieTranslations !== []) {
+            $files['formie-translations.json'] = $formieContent;
+        }
+        if ($siteTranslations !== []) {
+            $files['site-translations.json'] = $siteContent;
+        }
+
+        foreach ($this->collectGeneratedBackupFiles() as $relativePath => $content) {
+            $files[$relativePath] = $content;
+        }
+
+        ksort($files, SORT_STRING);
+        return $files;
+    }
+
+    /** @return array<string, string> */
+    private function collectGeneratedBackupFiles(): array
     {
         $settings = TranslationManager::getInstance()->getSettings();
-        $generationPath = $settings->getGenerationPath();
+        $generationPath = rtrim($settings->getGenerationPath(), '/');
 
-        // Get all site languages for backup
         $sites = TranslationManager::getInstance()->getAllowedSites();
         $filesToBackup = [];
 
         foreach ($sites as $site) {
             $language = $site->language;
-            $filesToBackup[] = $language . '/formie.php';
-            $filesToBackup[] = $language . '/' . $settings->translationCategory . '.php';
+            $filesToBackup[$language . '/formie.php'] = true;
+            $filesToBackup[$language . '/' . $settings->translationCategory . '.php'] = true;
         }
 
-        $phpDir = $backupDir . '/php-files';
-        FileHelper::createDirectory($phpDir);
-
-        foreach ($filesToBackup as $file) {
+        $files = [];
+        foreach (array_keys($filesToBackup) as $file) {
             $sourcePath = $generationPath . '/' . $file;
             if (file_exists($sourcePath)) {
-                $destPath = $phpDir . '/' . str_replace('/', '_', $file);
-                copy($sourcePath, $destPath);
+                $content = $this->readGeneratedBackupFile($sourcePath);
+                $files['php-files/' . str_replace('/', '_', $file)] = $content;
                 $this->logInfo("Backed up PHP file", ['file' => $file]);
+            }
+        }
+
+        ksort($files, SORT_STRING);
+        return $files;
+    }
+
+    protected function readGeneratedBackupFile(string $path): string
+    {
+        $content = file_get_contents($path);
+        if (!is_string($content)) {
+            throw new \RuntimeException("Unable to read generated translation file: {$path}.");
+        }
+
+        return $content;
+    }
+
+    protected function createLocalBackupDirectory(string $path): void
+    {
+        FileHelper::createDirectory($path);
+    }
+
+    protected function writeLocalBackupFile(string $path, string $content): void
+    {
+        $written = file_put_contents($path, $content, LOCK_EX);
+        if (!is_int($written) || $written !== strlen($content)) {
+            throw new \RuntimeException("Unable to write the complete backup file: {$path}.");
+        }
+    }
+
+    protected function promoteLocalBackupDirectory(string $stagingPath, string $finalPath): void
+    {
+        if (!rename($stagingPath, $finalPath)) {
+            throw new \RuntimeException("Unable to promote the completed backup to {$finalPath}.");
+        }
+    }
+
+    protected function writeVolumeBackupFile(Volume $volume, string $path, string $content): void
+    {
+        $volume->write($path, $content);
+    }
+
+    protected function promoteVolumeBackupDirectory(Volume $volume, string $stagingPath, string $finalName): void
+    {
+        $volume->renameDirectory($stagingPath, $finalName);
+    }
+
+    /** @param array<string, string> $expectedFiles */
+    protected function validateLocalBackupSnapshot(string $root, array $expectedFiles): void
+    {
+        foreach ($expectedFiles as $relativePath => $expectedContent) {
+            $content = file_get_contents($root . '/' . $relativePath);
+            if (!is_string($content) || !hash_equals(hash('sha256', $expectedContent), hash('sha256', $content))) {
+                throw new \RuntimeException("Backup validation failed for {$relativePath}.");
+            }
+        }
+
+        $this->validateBackupMetadata($expectedFiles);
+        $manifest = $this->buildBackupManifest($root);
+        if (array_keys($manifest) !== array_keys($expectedFiles)) {
+            throw new \RuntimeException('Backup validation found an incomplete or unexpected local manifest.');
+        }
+    }
+
+    /** @param array<string, string> $expectedFiles */
+    protected function validateVolumeBackupSnapshot(Volume $volume, string $root, array $expectedFiles): void
+    {
+        foreach ($expectedFiles as $relativePath => $expectedContent) {
+            $path = $root . '/' . $relativePath;
+            if (!$volume->fileExists($path)) {
+                throw new \RuntimeException("Backup validation could not find {$relativePath}.");
+            }
+            $content = $volume->read($path);
+            if (!hash_equals(hash('sha256', $expectedContent), hash('sha256', $content))) {
+                throw new \RuntimeException("Backup validation failed for {$relativePath}.");
+            }
+        }
+
+        $this->validateBackupMetadata($expectedFiles);
+        $manifest = $this->buildBackupManifest($root, $volume);
+        if (array_keys($manifest) !== array_keys($expectedFiles)) {
+            throw new \RuntimeException('Backup validation found an incomplete or unexpected volume manifest.');
+        }
+    }
+
+    /** @param array<string, string> $files */
+    private function validateBackupMetadata(array $files): void
+    {
+        $metadata = Json::decode($files['metadata.json'] ?? '');
+        if (!is_array($metadata)
+            || !isset($metadata['backupId'], $metadata['timestamp'], $metadata['reason'], $metadata['translationCount'], $metadata['checksum'])
+            || $metadata['checksumAlgorithm'] !== 'sha256'
+            || !is_string($metadata['checksum'])
+            || strlen($metadata['checksum']) !== 64) {
+            throw new \RuntimeException('Backup metadata is incomplete.');
+        }
+
+        $formieContent = $files['formie-translations.json'] ?? '';
+        $siteContent = $files['site-translations.json'] ?? '';
+        if (!hash_equals($metadata['checksum'], hash('sha256', $formieContent . $siteContent))) {
+            throw new \RuntimeException('Backup checksum validation failed before publication.');
+        }
+
+        $translationCount = 0;
+        foreach (['formie-translations.json', 'site-translations.json'] as $path) {
+            if (!isset($files[$path])) {
+                continue;
+            }
+            $translations = Json::decode($files[$path]);
+            if (!is_array($translations)) {
+                throw new \RuntimeException("Backup JSON content is invalid: {$path}.");
+            }
+            $translationCount += count($translations);
+        }
+        if ($translationCount !== (int)$metadata['translationCount'] || $translationCount === 0) {
+            throw new \RuntimeException('Backup translation metadata does not match its JSON content.');
+        }
+    }
+
+    private function ensureVolumeDirectory(Volume $volume, string $path): void
+    {
+        $parts = explode('/', trim($path, '/'));
+        $currentPath = '';
+        foreach ($parts as $part) {
+            $currentPath = $currentPath === '' ? $part : $currentPath . '/' . $part;
+            if (!$volume->directoryExists($currentPath)) {
+                $volume->createDirectory($currentPath);
+                if (!$volume->directoryExists($currentPath)) {
+                    throw new \RuntimeException("Unable to create the backup directory: {$currentPath}.");
+                }
             }
         }
     }
 
-    /**
-     * Backup generated PHP files to volume storage
-     */
-    private function backupGeneratedFilesToVolume(string $backupPath, BaseFsInterface $storage): void
+    private function localDirectoryBelongsToAttempt(string $path, string $backupId): bool
     {
-        $settings = TranslationManager::getInstance()->getSettings();
-        $generationPath = $settings->getGenerationPath();
+        $metadata = @file_get_contents($path . '/metadata.json');
+        return is_string($metadata) && $this->metadataBelongsToAttempt($metadata, $backupId);
+    }
 
-        // Get all site languages for backup
-        $sites = TranslationManager::getInstance()->getAllowedSites();
-        $filesToBackup = [];
-
-        foreach ($sites as $site) {
-            $language = $site->language;
-            $filesToBackup[] = $language . '/formie.php';
-            $filesToBackup[] = $language . '/' . $settings->translationCategory . '.php';
+    private function volumeDirectoryBelongsToAttempt(Volume $volume, string $path, string $backupId): bool
+    {
+        try {
+            $metadataPath = $path . '/metadata.json';
+            return $volume->directoryExists($path)
+                && $volume->fileExists($metadataPath)
+                && $this->metadataBelongsToAttempt($volume->read($metadataPath), $backupId);
+        } catch (Throwable $cleanupCheckError) {
+            $this->logError('Unable to verify ownership of a partial volume backup', [
+                'path' => $path,
+                'error' => $cleanupCheckError->getMessage(),
+            ]);
+            return false;
         }
+    }
 
-        // Create php-files directory in volume
-        $phpDir = $backupPath . '/php-files';
-        if (!$storage->directoryExists($phpDir)) {
-            $storage->createDirectory($phpDir);
+    private function metadataBelongsToAttempt(string $content, string $backupId): bool
+    {
+        try {
+            $metadata = Json::decode($content);
+            return is_array($metadata) && ($metadata['backupId'] ?? null) === $backupId;
+        } catch (Throwable) {
+            return false;
         }
+    }
 
-        foreach ($filesToBackup as $file) {
-            $sourcePath = $generationPath . '/' . $file;
-            if (file_exists($sourcePath)) {
-                $destPath = $phpDir . '/' . str_replace('/', '_', $file);
-                $content = file_get_contents($sourcePath);
-                $storage->write($destPath, $content);
-                $this->logInfo("Backed up PHP file", ['file' => $file]);
+    private function removeOwnedLocalDirectory(string $path): void
+    {
+        if (is_dir($path)) {
+            FileHelper::removeDirectory($path);
+        }
+    }
+
+    private function removeOwnedVolumeDirectory(Volume $volume, string $path): void
+    {
+        try {
+            if ($volume->directoryExists($path)) {
+                $volume->deleteDirectory($path);
             }
+        } catch (Throwable $cleanupError) {
+            $this->logError('Unable to remove an owned partial volume backup', [
+                'path' => $path,
+                'error' => $cleanupError->getMessage(),
+            ]);
         }
     }
 
@@ -496,7 +705,15 @@ class BackupService extends Component
         return 'Volume: ' . (string)$volume->name . '/' . $path;
     }
 
-    private function isValidBackupName(string $backupName): bool
+    /**
+     * Return whether a backup reference is a supported completed-backup name.
+     *
+     * Both legacy timestamp-only names and collision-resistant names are valid.
+     * Staging names are deliberately excluded.
+     *
+     * @since 5.36.0
+     */
+    public function isValidBackupName(string $backupName): bool
     {
         $folder = null;
         $timestamp = $backupName;
@@ -507,7 +724,7 @@ class BackupService extends Component
             }
         }
 
-        return preg_match('/^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$/', $timestamp) === 1;
+        return preg_match('/^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(?:_[a-f0-9]{32})?$/', $timestamp) === 1;
     }
 
     private function throwStorageUnavailable(string $operation, Throwable $e, ?string $volumeUid = null): never
@@ -677,7 +894,7 @@ class BackupService extends Component
         foreach ($rootDirs as $dir) {
             $dirName = basename($dir);
             // Skip if it's one of our new subfolders
-            if (in_array($dirName, self::BACKUP_FOLDERS, true)) {
+            if (in_array($dirName, self::BACKUP_FOLDERS, true) || !$this->isValidBackupName($dirName)) {
                 continue;
             }
 
@@ -713,12 +930,17 @@ class BackupService extends Component
             ]);
 
             foreach ($dirs as $dir) {
+                $backupName = $subfolder . '/' . basename($dir);
+                if (!$this->isValidBackupName($backupName)) {
+                    continue;
+                }
+
                 $metadataFile = $dir . '/metadata.json';
                 if (file_exists($metadataFile)) {
                     try {
                         $metadata = Json::decode(file_get_contents($metadataFile));
                         $metadata['path'] = $dir;
-                        $metadata['name'] = $subfolder . '/' . basename($dir);
+                        $metadata['name'] = $backupName;
                         $metadata['size'] = $this->calculateBackupManifestSize($this->buildBackupManifest($dir));
                         $metadata['folder'] = $subfolder;
                         $metadata['storageLocation'] = $backupPath;
@@ -748,11 +970,18 @@ class BackupService extends Component
     /**
      * Restore from a backup
      *
-     * @param string $backupName The backup directory name (e.g., "2024-01-05_14-30-00")
+     * @param string $backupName The backup reference (e.g., "manual/2024-01-05_14-30-00_<unique-id>")
      * @return array Result with success status and message
      */
     public function restoreBackup(string $backupName): array
     {
+        if (!$this->isValidBackupName($backupName)) {
+            return [
+                'success' => false,
+                'message' => 'Invalid backup name',
+            ];
+        }
+
         $useVolume = $this->isUsingVolumeStorage();
         $storageType = $useVolume ? 'volume' : 'local';
         $this->logInfo("Starting backup restore", [
@@ -852,8 +1081,8 @@ class BackupService extends Component
             if ($settings->backupEnabled) {
                 $this->logInfo('Restore: Creating pre-restore backup');
                 $preRestoreBackup = $this->createBackup('before_restore');
-                if (!$preRestoreBackup) {
-                    $this->logWarning('Failed to create pre-restore backup, continuing with restore');
+                if ($preRestoreBackup === null) {
+                    $this->logInfo('Restore: Current translation state is empty; no safety backup was needed');
                 } else {
                     $this->logInfo("Restore: Pre-restore backup created", ['path' => $preRestoreBackup]);
                 }
@@ -998,8 +1227,8 @@ class BackupService extends Component
             if ($settings->backupEnabled) {
                 $this->logInfo('Restore: Creating pre-restore backup');
                 $preRestoreBackup = $this->createBackup('before_restore');
-                if (!$preRestoreBackup) {
-                    $this->logWarning('Failed to create pre-restore backup, continuing with restore');
+                if ($preRestoreBackup === null) {
+                    $this->logInfo('Restore: Current translation state is empty; no safety backup was needed');
                 } else {
                     $this->logInfo("Restore: Pre-restore backup created", ['path' => $preRestoreBackup]);
                 }
@@ -1127,6 +1356,10 @@ class BackupService extends Component
      */
     public function deleteBackup(string $backupName): bool
     {
+        if (!$this->isValidBackupName($backupName)) {
+            return false;
+        }
+
         if ($this->isUsingVolumeStorage()) {
             return $this->_deleteVolumeBackup($backupName);
         } else {

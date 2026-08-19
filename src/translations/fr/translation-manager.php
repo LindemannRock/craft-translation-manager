@@ -185,7 +185,6 @@ return [
     'Translation not found' => 'Traduction introuvable',
     'PHP import is only available in devMode.' => 'L\'import PHP n\'est disponible qu\'en devMode.',
     'User does not have permission to import translations.' => 'L\'utilisateur n\'a pas la permission d\'importer des traductions.',
-    'Failed to create scheduled backup' => 'Échec de la création de la sauvegarde planifiée',
     'User does not have permission to create backups.' => 'L\'utilisateur n\'a pas la permission de créer des sauvegardes.',
     'User does not have permission to restore backups.' => 'L\'utilisateur n\'a pas la permission de restaurer des sauvegardes.',
     'User does not have permission to delete backups.' => 'L\'utilisateur n\'a pas la permission de supprimer des sauvegardes.',

@@ -297,6 +297,9 @@ final class BackupVolumeSubpathTest extends TestCase
         $filesystem->method('deleteDirectory')->willReturnCallback(
             static fn(string $path) => $delegate->deleteDirectory($path),
         );
+        $filesystem->method('renameDirectory')->willReturnCallback(
+            static fn(string $path, string $newName) => $delegate->renameDirectory($path, $newName),
+        );
         $filesystem->method('write')->willReturnCallback(
             static fn(string $path, string $contents, array $config = []) => $delegate->write($path, $contents, $config),
         );

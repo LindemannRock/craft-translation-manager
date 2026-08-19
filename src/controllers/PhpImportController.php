@@ -130,6 +130,25 @@ class PhpImportController extends Controller
             ]);
         }
 
+        $createBackup = (bool)$request->getBodyParam('createBackup', true);
+        $backupPath = null;
+        // Create backup before import if enabled
+        if ($settings->backupEnabled && $settings->backupOnImport && $createBackup) {
+            try {
+                $backupPath = TranslationManager::getInstance()->backup->createBackup('before_php_import');
+            } catch (\Throwable $e) {
+                $this->logError('Required PHP import safety backup failed; import aborted', [
+                    'error' => $e->getMessage(),
+                ]);
+                return $this->asJson([
+                    'success' => false,
+                    'error' => Craft::t('translation-manager', 'Import failed: {error}', [
+                        'error' => $e->getMessage(),
+                    ]),
+                ]);
+            }
+        }
+
         if (($categoryStatus['requiresRegistration'] ?? false) && !$translationsService->registerImportCategory($category)) {
             return $this->asJson([
                 'success' => false,
@@ -137,13 +156,6 @@ class PhpImportController extends Controller
                     'category' => $category,
                 ]),
             ]);
-        }
-
-        $createBackup = (bool)$request->getBodyParam('createBackup', true);
-        $backupPath = null;
-        // Create backup before import if enabled
-        if ($settings->backupEnabled && $settings->backupOnImport && $createBackup) {
-            $backupPath = TranslationManager::getInstance()->backup->createBackup('before_php_import');
         }
 
         $result = $translationsService->importPhpEntries(

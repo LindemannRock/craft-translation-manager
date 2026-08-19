@@ -185,7 +185,6 @@ return [
     'Translation not found' => 'Oversettelsen ble ikke funnet',
     'PHP import is only available in devMode.' => 'PHP-import er bare tilgjengelig i devMode.',
     'User does not have permission to import translations.' => 'Brukeren har ikke tillatelse til å importere oversettelser.',
-    'Failed to create scheduled backup' => 'Kunne ikke opprette planlagt sikkerhetskopi',
     'User does not have permission to create backups.' => 'Brukeren har ikke tillatelse til å opprette sikkerhetskopier.',
     'User does not have permission to restore backups.' => 'Brukeren har ikke tillatelse til å gjenopprette sikkerhetskopier.',
     'User does not have permission to delete backups.' => 'Brukeren har ikke tillatelse til å slette sikkerhetskopier.',

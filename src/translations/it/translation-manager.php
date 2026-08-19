@@ -185,7 +185,6 @@ return [
     'Translation not found' => 'Traduzione non trovata',
     'PHP import is only available in devMode.' => 'L’importazione PHP è disponibile solo in devMode.',
     'User does not have permission to import translations.' => 'L’utente non dispone dell’autorizzazione per importare traduzioni.',
-    'Failed to create scheduled backup' => 'Impossibile creare il backup programmato',
     'User does not have permission to create backups.' => 'L’utente non dispone dell’autorizzazione per creare backup.',
     'User does not have permission to restore backups.' => 'L’utente non dispone dell’autorizzazione per ripristinare backup.',
     'User does not have permission to delete backups.' => 'L’utente non dispone dell’autorizzazione per eliminare backup.',

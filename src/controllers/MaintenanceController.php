@@ -169,15 +169,10 @@ class MaintenanceController extends Controller
             // Create backup if enabled
             $settings = TranslationManager::getInstance()->getSettings();
             if ($settings->backupEnabled) {
-                try {
-                    $backupService = TranslationManager::getInstance()->backup;
-                    $backupPath = $backupService->createBackup('before_cleanup');
-                    if ($backupPath) {
-                        $this->logInfo("Created backup before cleaning unused translations", ['backupPath' => $backupPath]);
-                    }
-                } catch (\Exception $e) {
-                    $this->logError("Failed to create backup before cleaning unused translations", ['error' => $e->getMessage()]);
-                    // Continue with the operation even if backup fails
+                $backupService = TranslationManager::getInstance()->backup;
+                $backupPath = $backupService->createBackup('before_cleanup');
+                if ($backupPath !== null) {
+                    $this->logInfo("Created backup before cleaning unused translations", ['backupPath' => $backupPath]);
                 }
             }
             
@@ -373,16 +368,12 @@ class MaintenanceController extends Controller
             // Create backup if enabled
             $settings = TranslationManager::getInstance()->getSettings();
             if ($settings->backupEnabled) {
-                try {
-                    $backupService = TranslationManager::getInstance()->backup;
-                    $backupPath = $backupService->createBackup("before_cleanup_{$displayType}");
-                    $this->logInfo("Created backup before cleaning unused translations", [
-                        'type' => $displayType,
-                        'backupPath' => $backupPath,
-                    ]);
-                } catch (\Exception $e) {
-                    $this->logError("Failed to create backup", ['error' => $e->getMessage()]);
-                }
+                $backupService = TranslationManager::getInstance()->backup;
+                $backupPath = $backupService->createBackup("before_cleanup_{$displayType}");
+                $this->logInfo("Created backup before cleaning unused translations", [
+                    'type' => $displayType,
+                    'backupPath' => $backupPath,
+                ]);
             }
 
             $deleted = TranslationManager::getInstance()->translations->deleteTranslations(
@@ -466,12 +457,7 @@ class MaintenanceController extends Controller
         try {
             $settings = TranslationManager::getInstance()->getSettings();
             if ($settings->backupEnabled) {
-                try {
-                    $backupService = TranslationManager::getInstance()->backup;
-                    $backupService->createBackup('before_cleanup_languages');
-                } catch (\Exception $e) {
-                    $this->logError("Failed to create backup before language cleanup", ['error' => $e->getMessage()]);
-                }
+                TranslationManager::getInstance()->backup->createBackup('before_cleanup_languages');
             }
 
             $rows = (new \craft\db\Query())
@@ -585,12 +571,7 @@ class MaintenanceController extends Controller
         try {
             $settings = TranslationManager::getInstance()->getSettings();
             if ($settings->backupEnabled) {
-                try {
-                    $backupService = TranslationManager::getInstance()->backup;
-                    $backupService->createBackup('before_cleanup_categories');
-                } catch (\Exception $e) {
-                    $this->logError("Failed to create backup before category cleanup", ['error' => $e->getMessage()]);
-                }
+                TranslationManager::getInstance()->backup->createBackup('before_cleanup_categories');
             }
 
             $rows = (new \craft\db\Query())
