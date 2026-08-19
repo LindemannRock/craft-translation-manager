@@ -16,6 +16,10 @@ Solutions to common issues and debugging tips.
 - For production, ensure queue runner is active
 - If a deployment or multiple web processes create duplicate pending backup rows, Translation Manager collapses the duplicate pending rows during bootstrap and keeps one row for the next scheduled run
 
+A scheduled backup may still hold its lifecycle lock when another web or Control Panel request loads Translation Manager. Ordinary bootstrap does not wait for that lock: it logs a warning, leaves the scheduled-backup queue rows untouched, and lets the request continue. A later request retries reconciliation automatically.
+
+This transient warning alone does not mean the backup failed, and you should not edit queue rows manually. If the warning repeats, check that your queue workers are finishing jobs normally.
+
 ## Translations Not Being Captured
 
 **Form providers**: Save the form after adding fields, or run the matching provider command.
