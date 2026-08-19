@@ -210,11 +210,11 @@ class BackupService extends Component
             if ($volume->directoryExists($finalPath)) {
                 throw new \RuntimeException("A completed backup appeared before promotion at {$finalPath}.");
             }
+            $finalOwned = true;
             $this->promoteVolumeBackupDirectory($volume, $stagingPath, basename($finalPath));
             if ($volume->directoryExists($stagingPath) || !$volume->directoryExists($finalPath)) {
                 throw new \RuntimeException("Backup promotion did not complete at {$finalPath}.");
             }
-            $finalOwned = true;
             $this->validateVolumeBackupSnapshot($volume, $finalPath, $files);
 
             $formieCount = count($formieTranslations);
@@ -711,7 +711,7 @@ class BackupService extends Component
      * Both legacy timestamp-only names and collision-resistant names are valid.
      * Staging names are deliberately excluded.
      *
-     * @since 5.36.0
+     * @since 5.35.0
      */
     public function isValidBackupName(string $backupName): bool
     {

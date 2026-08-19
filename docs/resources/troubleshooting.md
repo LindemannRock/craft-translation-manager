@@ -256,7 +256,7 @@ For a volume with a configured subpath, current backups are under `{configured v
 
 ## A Restore, Import, Cleanup, or Delete Stops Before Making Changes
 
-When backups are enabled, destructive operations that promise a safety backup stop if that backup cannot be completed and validated. This is intentional: Translation Manager does not continue with translation deletion, replacement, import, cleanup, category/provider deletion, or regeneration after a required safety backup failure.
+When backups are enabled, destructive operations that promise a safety backup stop if that backup cannot be completed and validated. This includes restores, maintenance cleanup, provider deletion, site-translation deletion, category deletion, **Delete All** from Settings, and imports whose backup option is enabled. Translation Manager does not continue with their deletion, replacement, import, cleanup, or regeneration after a required safety backup failure. Deleting selected unused rows from the Translations screen does not promise or create a safety backup.
 
 Check the Translation Manager log for the creation error, then verify the effective backup path or configured volume, its subpath, provider credentials, permissions, and available space. Retry the original action only after manual backup creation succeeds. Do not clear a configured volume UID merely to trigger local fallback; configured volume storage remains authoritative and fails closed.
 

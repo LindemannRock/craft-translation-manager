@@ -1,6 +1,6 @@
 # Backup system
 
-Translation Manager protects your translations before destructive operations that promise a safety backup. When backups are enabled, restores, maintenance cleanup, translation deletion, and imports whose backup option is enabled must finish their safety backup before changing translations. If that backup fails, the requested operation stops without deleting, replacing, importing, or regenerating translations. When there are no current translations, the empty backup is a successful no-op and the operation may continue. Disabling backups keeps the deliberate no-backup behavior.
+Translation Manager protects your translations before destructive operations that promise a safety backup. When backups are enabled, restores, maintenance cleanup, provider deletion, site-translation deletion, category deletion, **Delete All** from Settings, and imports whose backup option is enabled must finish their safety backup before changing translations. If that backup fails, the requested operation stops without deleting, replacing, importing, or regenerating translations. This guard applies only to operations that promise a safety backup; deleting selected unused rows from the Translations screen does not create one. When there are no current translations, the empty backup is a successful no-op and the operation may continue. Disabling backups keeps the deliberate no-backup behavior.
 
 ## What you'll use it for
 

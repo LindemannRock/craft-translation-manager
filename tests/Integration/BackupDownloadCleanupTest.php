@@ -21,7 +21,7 @@ use yii\web\Response;
 /**
  * Pins request-owned ZIP allocation and exact response/interruption cleanup.
  *
- * @since 5.36.0
+ * @since 5.35.0
  */
 final class BackupDownloadCleanupTest extends TestCase
 {

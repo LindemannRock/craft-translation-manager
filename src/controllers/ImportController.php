@@ -14,6 +14,7 @@ use Craft;
 use craft\helpers\Db;
 use craft\helpers\StringHelper;
 use craft\web\Controller;
+use craft\web\Session;
 use craft\web\UploadedFile;
 use lindemannrock\base\helpers\CsvImportHelper;
 use lindemannrock\base\helpers\DateFormatHelper;
@@ -295,23 +296,24 @@ class ImportController extends Controller
             throw new ForbiddenHttpException(Craft::t('translation-manager', 'User does not have permission to import translations.'));
         }
         
-        $importData = Craft::$app->getSession()->get('translation-import');
-        $previewData = Craft::$app->getSession()->get('translation-preview');
+        $session = $this->getImportSession();
+        $importData = $session->get('translation-import');
+        $previewData = $session->get('translation-preview');
 
         if (!$importData || !isset($importData['allRows'])) {
-            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Import session expired. Please upload the file again.'));
+            $session->setError(Craft::t('translation-manager', 'Import session expired. Please upload the file again.'));
             return $this->redirect('translation-manager/import-export');
         }
 
         if (!$previewData) {
-            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'No preview data found. Please preview your import first.'));
+            $session->setError(Craft::t('translation-manager', 'No preview data found. Please preview your import first.'));
             return $this->redirect('translation-manager/import-export');
         }
 
         $translations = array_merge($previewData['toImport'] ?? [], $previewData['toUpdate'] ?? []);
         $pluginName = TranslationManager::$plugin->getSettings()->getPluralLowerDisplayName();
         if (empty($translations)) {
-            Craft::$app->getSession()->setNotice(Craft::t('translation-manager', 'No valid {pluginName} found to import.', [
+            $session->setNotice(Craft::t('translation-manager', 'No valid {pluginName} found to import.', [
                 'pluginName' => $pluginName,
             ]));
             return $this->redirect('translation-manager/import-export');
@@ -350,8 +352,8 @@ class ImportController extends Controller
                 'filename' => $importData['filename'] ?? null,
             ]);
 
-            Craft::$app->getSession()->remove('translation-import');
-            Craft::$app->getSession()->remove('translation-preview');
+            $session->remove('translation-import');
+            $session->remove('translation-preview');
 
             $message = Craft::t('translation-manager', 'Successfully imported {imported} {pluginName}.', [
                 'imported' => $results['imported'],
@@ -368,7 +370,7 @@ class ImportController extends Controller
                 ]);
             }
 
-            Craft::$app->getSession()->setNotice($message);
+            $session->setNotice($message);
             return $this->redirect('translation-manager/import-export');
         } catch (\Exception $e) {
             $this->logError('CSV import failed', [
@@ -376,11 +378,19 @@ class ImportController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            Craft::$app->getSession()->setError(Craft::t('translation-manager', 'Import failed: {error}', [
+            $session->setError(Craft::t('translation-manager', 'Import failed: {error}', [
                 'error' => $e->getMessage(),
             ]));
             return $this->redirect('translation-manager/import-export');
         }
+    }
+
+    /**
+     * Return the session used by the final CSV import action.
+     */
+    protected function getImportSession(): Session
+    {
+        return Craft::$app->getSession();
     }
 
     /**

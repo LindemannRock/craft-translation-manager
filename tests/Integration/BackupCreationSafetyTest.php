@@ -26,7 +26,7 @@ use yii\base\UserException;
 /**
  * Pins atomic, collision-resistant backup creation and owned failure cleanup.
  *
- * @since 5.36.0
+ * @since 5.35.0
  */
 final class BackupCreationSafetyTest extends BackupManifestTestCase
 {
@@ -211,6 +211,53 @@ final class BackupCreationSafetyTest extends BackupManifestTestCase
         }
     }
 
+    public function testRemotePartialPromotionRemovesExactOwnedPathsOnly(): void
+    {
+        [$root, $delegate] = $this->localFilesystem('creation-partial-promotion-');
+        $operations = [];
+        $filesystem = $this->remoteLikeFilesystem(
+            $delegate,
+            static function(string $operation, string $path) use (&$operations): void {
+                $operations[] = [$operation, $path];
+            },
+        );
+        $this->installVolume($filesystem);
+        $this->snapshotTranslations->rows = [$this->translationRow('partial promotion')];
+
+        $service = new CreationFailureBackupService();
+        $service->fixedTimestamp = 1_755_604_800;
+        $service->entropy = [str_repeat('c', 32), str_repeat('d', 32)];
+        $service->failAfterPartialVolumePromotion = true;
+        $this->replacePluginComponent('backup', $service);
+
+        $finalName = date('Y-m-d_H-i-s', $service->fixedTimestamp) . '_' . str_repeat('c', 32);
+        $canonicalParent = $root . '/' . self::SUBPATH . '/' . self::VOLUME_ROOT . '/manual';
+        $finalPath = $canonicalParent . '/' . $finalName;
+        $stagingPath = $canonicalParent . '/.' . $finalName . '.staging-' . str_repeat('d', 32);
+        $unrelated = $canonicalParent . '/unrelated-owner/owner.txt';
+        FileHelper::createDirectory(dirname($unrelated));
+        self::assertNotFalse(file_put_contents($unrelated, 'preserve exactly'));
+        $unrelatedHash = hash_file('sha256', $unrelated);
+
+        try {
+            $service->createBackup('manual');
+            self::fail('Expected partial volume promotion failure.');
+        } catch (UserException $exception) {
+            self::assertStringContainsString('configured backup volume cannot currently be used', $exception->getMessage());
+        }
+
+        self::assertSame(self::VOLUME_ROOT . '/manual/' . $finalName . '/site-translations.json', $service->partialPromotionPath);
+        self::assertDirectoryDoesNotExist($stagingPath);
+        self::assertDirectoryDoesNotExist($finalPath);
+        self::assertFileExists($unrelated);
+        self::assertSame($unrelatedHash, hash_file('sha256', $unrelated));
+        self::assertDirectoryDoesNotExist($root . '/' . self::VOLUME_ROOT);
+        self::assertSame([], array_values(array_filter(
+            $operations,
+            static fn(array $operation): bool => str_starts_with(ltrim($operation[1], '/'), self::VOLUME_ROOT . '/'),
+        )));
+    }
+
     public function testLegacyNamesRemainListableDownloadableRestorableAndDeletable(): void
     {
         $name = 'manual/2026-08-19_12-00-00';
@@ -326,6 +373,8 @@ final class CreationFailureBackupService extends BackupService
     public bool $failVolumeWrite = false;
     public bool $failVolumeValidation = false;
     public bool $failVolumePromotion = false;
+    public bool $failAfterPartialVolumePromotion = false;
+    public ?string $partialPromotionPath = null;
     public int $failLocalValidationCall = 0;
     public int $failVolumeValidationCall = 0;
     private int $localValidationCalls = 0;
@@ -396,6 +445,16 @@ final class CreationFailureBackupService extends BackupService
 
     protected function promoteVolumeBackupDirectory(Volume $volume, string $stagingPath, string $finalName): void
     {
+        if ($this->failAfterPartialVolumePromotion) {
+            $finalPath = dirname($stagingPath) . '/' . $finalName;
+            $volume->createDirectory($finalPath);
+            $this->partialPromotionPath = $finalPath . '/site-translations.json';
+            $volume->write($this->partialPromotionPath, '[{"partial":true}]');
+            if (!$volume->fileExists($this->partialPromotionPath)) {
+                throw new RuntimeException('Injected partial volume promotion did not create its fixture.');
+            }
+            throw new RuntimeException('Injected partial volume promotion failure.');
+        }
         if ($this->failVolumePromotion) {
             throw new RuntimeException('Injected volume promotion failure.');
         }
