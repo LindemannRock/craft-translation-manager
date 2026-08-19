@@ -494,6 +494,7 @@ return [
     'Creating Backup...' => 'Oppretter sikkerhetskopi...',
     'Backup created successfully' => 'Sikkerhetskopi opprettet',
     'Failed to create backup' => 'Oppretting av sikkerhetskopi mislyktes',
+    'The configured backup volume cannot currently be used. Backup operations are unavailable until the volume is restored or the effective setting is changed.' => 'Det konfigurerte volumet for sikkerhetskopier kan ikke brukes for øyeblikket. Sikkerhetskopiering er ikke tilgjengelig før volumet er gjenopprettet eller den gjeldende konfigurasjonen er endret.',
     'Are you sure you want to restore this backup? This will replace all current translations. A backup of the current state will be created before restoring.' => 'Er du sikker på at du vil gjenopprette denne sikkerhetskopien? Dette erstatter alle gjeldende oversettelser. En sikkerhetskopi av gjeldende tilstand opprettes før gjenoppretting.',
     'Starting restore operation...' => 'Starter gjenopprettingsoperasjon...',
     'Backup restored successfully' => 'Sikkerhetskopi gjenopprettet',

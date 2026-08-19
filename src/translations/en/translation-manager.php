@@ -491,6 +491,7 @@ return [
     'Creating Backup...' => 'Creating Backup...',
     'Backup created successfully' => 'Backup created successfully',
     'Failed to create backup' => 'Failed to create backup',
+    'The configured backup volume cannot currently be used. Backup operations are unavailable until the volume is restored or the effective setting is changed.' => 'The configured backup volume cannot currently be used. Backup operations are unavailable until the volume is restored or the effective setting is changed.',
     'Are you sure you want to restore this backup? This will replace all current translations. A backup of the current state will be created before restoring.' => 'Are you sure you want to restore this backup? This will replace all current translations. A backup of the current state will be created before restoring.',
     'Starting restore operation...' => 'Starting restore operation...',
     'Backup restored successfully' => 'Backup restored successfully',

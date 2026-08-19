@@ -494,6 +494,7 @@ return [
     'Creating Backup...' => 'Opretter sikkerhedskopi...',
     'Backup created successfully' => 'Sikkerhedskopi oprettet',
     'Failed to create backup' => 'Oprettelse af sikkerhedskopi mislykkedes',
+    'The configured backup volume cannot currently be used. Backup operations are unavailable until the volume is restored or the effective setting is changed.' => 'Den konfigurerede diskenhed til sikkerhedskopier kan ikke bruges i øjeblikket. Sikkerhedskopiering er ikke tilgængelig, før diskenheden er gendannet, eller den gældende konfiguration er ændret.',
     'Are you sure you want to restore this backup? This will replace all current translations. A backup of the current state will be created before restoring.' => 'Er du sikker på, at du vil gendanne denne sikkerhedskopi? Dette erstatter alle aktuelle oversættelser. En sikkerhedskopi af den aktuelle tilstand oprettes inden gendannelse.',
     'Starting restore operation...' => 'Starter gendannelsesoperation...',
     'Backup restored successfully' => 'Sikkerhedskopi gendannet',

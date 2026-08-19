@@ -494,6 +494,7 @@ return [
     'Creating Backup...' => 'Back-up maken...',
     'Backup created successfully' => 'Back-up succesvol gemaakt',
     'Failed to create backup' => 'Back-up maken mislukt',
+    'The configured backup volume cannot currently be used. Backup operations are unavailable until the volume is restored or the effective setting is changed.' => 'Het geconfigureerde back-upvolume kan momenteel niet worden gebruikt. Back-upbewerkingen zijn niet beschikbaar totdat het volume is hersteld of de effectieve configuratie is gewijzigd.',
     'Are you sure you want to restore this backup? This will replace all current translations. A backup of the current state will be created before restoring.' => 'Weet u zeker dat u deze back-up wilt herstellen? Hiermee worden alle huidige vertalingen vervangen. Vóór het herstellen wordt een back-up van de huidige staat gemaakt.',
     'Starting restore operation...' => 'Herstelbewerking starten...',
     'Backup restored successfully' => 'Back-up succesvol hersteld',

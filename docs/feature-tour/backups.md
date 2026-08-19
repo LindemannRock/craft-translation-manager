@@ -18,7 +18,7 @@ Translation Manager protects your translations before anything destructive happe
 
 ![Backups list in the Translation Manager Control Panel](../images/backups-list.webp)
 
-The list shows each backup's **date**, **type** (which folder it lives in), **reason**, **translation count**, and **size**.
+The list shows each backup's **date**, **type** (which folder it lives in), **reason**, **translation count**, **size**, and actual storage location.
 
 ## Backup types
 
@@ -107,6 +107,8 @@ Click the gear icon → **Download** to get a ZIP containing the translation dat
 
 ## Storage structure
 
+Without a configured volume, backups remain under the effective `backupPath`:
+
 ```text
 storage/translation-manager/backups/
 ├── scheduled/      # Automated backups
@@ -116,6 +118,16 @@ storage/translation-manager/backups/
 └── other/          # Miscellaneous backups
 ```
 
+With a Craft volume selected, Translation Manager uses that volume for the complete backup lifecycle. Craft applies the volume's configured subpath to creation, listing, metadata, size, downloads, restores, deletion, and retention. New backups therefore live at:
+
+```text
+{configured volume subpath}/translation-manager/backups/
+```
+
+The selected volume is authoritative. If its UID is missing, invalid, or temporarily unavailable, backup operations stop with an error instead of switching to `backupPath` or `@storage`. Translation Manager leaves the UID and effective settings unchanged, so the same configuration starts working again when the volume becomes available.
+
+Older versions could write volume backups at the underlying filesystem-root prefix `translation-manager/backups`, outside a configured volume subpath. When the selected volume has a distinct, non-empty subpath, Translation Manager checks that exact historical prefix as a separate compatibility location. It does not scan other paths or move objects automatically. If the same backup name exists in both places, the canonical subpath-backed copy is listed, downloaded, restored, deleted, and considered for retention first; deleting it leaves the historical copy untouched. Each row reports which location it actually represents.
+
 ## Cloud storage
 
 Store backups in any Craft asset volume — Amazon S3, Servd, Wasabi, or any provider with Craft volume support. Configure it under **Settings → Backup → Backup Storage Volume**.
@@ -124,7 +136,7 @@ Local volumes that resolve inside `@webroot` are rejected, because backup JSON f
 
 Craft Cloud's application filesystem is ephemeral. A custom/local path and a Craft volume backed by a local filesystem are therefore unsafe for persistent backups on Craft Cloud, even when the local path is outside `@webroot`. Select a volume that uses Craft Cloud's **Cloud** filesystem type and review Craft's [local filesystem migration guidance](https://craftcms.com/docs/cloud/assets.html#local).
 
-On an ephemeral host, Backup settings evaluates the effective values after `config/translation-manager.php` overrides and shows a colored warning for effective local storage. A valid resolved non-local filesystem suppresses only this local-storage warning; it is not certification that a third-party filesystem is fully compatible with Craft Cloud. The warning does not change settings or backup, restore, ZIP, retention, or queue behavior. Missing or validation-invalid volumes retain the existing local fallback and warn, while an unavailable filesystem remains a separate failure condition.
+On an ephemeral host, Backup settings evaluates the effective values after `config/translation-manager.php` overrides and shows a colored warning for effective local storage. A valid resolved non-local filesystem suppresses only this local-storage warning; it is not certification that a third-party filesystem is fully compatible with Craft Cloud. The warning does not change or persist settings. Missing and validation-invalid volumes still produce the local-storage warning classification, while an unresolved filesystem remains a separate unavailable state; in every configured-unavailable case, operational backup actions fail closed and do not use local storage.
 
 ## Retention policy
 

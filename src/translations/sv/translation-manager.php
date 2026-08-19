@@ -494,6 +494,7 @@ return [
     'Creating Backup...' => 'Skapar säkerhetskopia...',
     'Backup created successfully' => 'Säkerhetskopia skapad',
     'Failed to create backup' => 'Det gick inte att skapa säkerhetskopia',
+    'The configured backup volume cannot currently be used. Backup operations are unavailable until the volume is restored or the effective setting is changed.' => 'Den konfigurerade volymen för säkerhetskopior kan inte användas för närvarande. Säkerhetskopieringsåtgärder är inte tillgängliga förrän volymen har återställts eller den gällande konfigurationen har ändrats.',
     'Are you sure you want to restore this backup? This will replace all current translations. A backup of the current state will be created before restoring.' => 'Är du säker på att du vill återställa den här säkerhetskopian? Det ersätter alla aktuella översättningar. En säkerhetskopia av det aktuella tillståndet skapas innan återställning.',
     'Starting restore operation...' => 'Startar återställningsåtgärd...',
     'Backup restored successfully' => 'Säkerhetskopia återställd',

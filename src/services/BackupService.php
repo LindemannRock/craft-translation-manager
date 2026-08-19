@@ -11,16 +11,22 @@
 namespace lindemannrock\translationmanager\services;
 
 use Craft;
+use craft\base\BaseFsInterface;
 use craft\base\Component;
-use craft\helpers\App;
+use craft\base\FsInterface;
+use craft\base\MissingComponentInterface;
 use craft\helpers\DateTimeHelper;
 use craft\helpers\Db;
 use craft\helpers\FileHelper;
 use craft\helpers\Json;
+use craft\models\FsListing;
+use craft\models\Volume;
 use lindemannrock\base\helpers\StorageVolumeHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\helpers\SiteLanguageHelper;
 use lindemannrock\translationmanager\TranslationManager;
+use Throwable;
+use yii\base\UserException;
 
 /**
  * Backup Service
@@ -38,20 +44,9 @@ class BackupService extends Component
      */
     private const BACKUP_FOLDERS = ['scheduled', 'imports', 'maintenance', 'manual', 'other'];
 
-    /**
-     * @var \craft\base\FsInterface|null The filesystem instance for the selected volume
-     */
-    private $_volumeFs = null;
+    private const VOLUME_BACKUP_ROOT = 'translation-manager/backups';
 
-    /**
-     * @var bool Whether we're using a volume for backups
-     */
-    private $_useVolume = false;
-
-    /**
-     * @var string The base path for backups within the volume
-     */
-    private $_volumeBackupPath = 'translation-manager/backups';
+    private const STORAGE_UNAVAILABLE_MESSAGE = 'The configured backup volume cannot currently be used. Backup operations are unavailable until the volume is restored or the effective setting is changed.';
 
     /**
      * Initialize the service
@@ -60,48 +55,6 @@ class BackupService extends Component
     {
         parent::init();
         $this->setLoggingHandle(TranslationManager::$plugin->id);
-
-        $settings = TranslationManager::getInstance()->getSettings();
-
-        // Check if a backup volume is configured
-        if ($settings->backupVolumeUid) {
-            $volumeErrors = StorageVolumeHelper::validateVolume($settings->backupVolumeUid);
-            if ($volumeErrors !== []) {
-                $this->logWarning('Backup volume failed validation. Falling back to local storage.', [
-                    'backupVolumeUid' => $settings->backupVolumeUid,
-                    'errors' => $volumeErrors,
-                ]);
-                return;
-            }
-
-            $volume = Craft::$app->getVolumes()->getVolumeByUid($settings->backupVolumeUid);
-            if ($volume) {
-                $this->_volumeFs = $volume->getFs();
-                $this->_useVolume = true;
-
-                $fsType = basename(str_replace('\\', '/', get_class($this->_volumeFs)));
-                $this->logInfo("Using volume for backups", [
-                    'volumeName' => $volume->name,
-                    'fsType' => $fsType,
-                ]);
-
-                // Ensure base directory exists in the volume
-                try {
-                    if (!$this->_volumeFs->directoryExists($this->_volumeBackupPath)) {
-                        $this->_volumeFs->createDirectory($this->_volumeBackupPath);
-                        $this->logInfo('Created backup directory in volume', ['path' => $this->_volumeBackupPath]);
-                    }
-                } catch (\Exception $e) {
-                    $this->logWarning('Could not create volume directory, will create on demand', [
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-            }
-        } else {
-            // Using local storage path
-            $localPath = $settings->getBackupPath();
-            $this->logInfo("Using local storage for backups", ['path' => $localPath]);
-        }
     }
 
     /**
@@ -109,13 +62,10 @@ class BackupService extends Component
      */
     public function getBackupPath(): string
     {
-        if ($this->_useVolume) {
-            $settings = TranslationManager::getInstance()->getSettings();
-            return StorageVolumeHelper::displayPath($settings->backupVolumeUid, $this->_volumeBackupPath)
-                ?? Craft::t('translation-manager', 'Backup Volume');
+        if ($this->isUsingVolumeStorage()) {
+            return $this->volumeLocationLabel($this->getVolume(), false);
         }
 
-        // Fall back to local storage
         $settings = TranslationManager::getInstance()->getSettings();
         return $settings->getBackupPath();
     }
@@ -129,7 +79,8 @@ class BackupService extends Component
     public function createBackup(?string $reason = null): ?string
     {
         $reasonText = $this->getDisplayReason($reason ?? 'manual');
-        $storageType = $this->_useVolume ? 'volume' : 'local';
+        $useVolume = $this->isUsingVolumeStorage();
+        $storageType = $useVolume ? 'volume' : 'local';
         $this->logInfo("Creating backup", [
             'reason' => $reasonText,
             'storageType' => $storageType,
@@ -181,12 +132,14 @@ class BackupService extends Component
             }
 
             // Use volume storage if configured
-            if ($this->_useVolume) {
-                return $this->_createVolumeBackup($subfolder . '/' . $date, $metadata, $formieTranslations, $siteTranslations);
+            if ($useVolume) {
+                return $this->_createVolumeBackup($subfolder . '/' . $date, $metadata, $formieTranslations, $siteTranslations, $this->getVolume());
             } else {
                 return $this->_createLocalBackup($subfolder . '/' . $date, $metadata, $formieTranslations, $siteTranslations);
             }
-        } catch (\Exception $e) {
+        } catch (UserException $e) {
+            throw $e;
+        } catch (Throwable $e) {
             $this->logError('Failed to create backup', ['error' => $e->getMessage()]);
             return null;
         }
@@ -195,9 +148,14 @@ class BackupService extends Component
     /**
      * Create backup using volume storage
      */
-    private function _createVolumeBackup(string $backupDir, array $metadata, array $formieTranslations, array $siteTranslations): string
-    {
-        $fullPath = $this->_volumeBackupPath . '/' . $backupDir;
+    private function _createVolumeBackup(
+        string $backupDir,
+        array $metadata,
+        array $formieTranslations,
+        array $siteTranslations,
+        Volume $volume,
+    ): string {
+        $fullPath = self::VOLUME_BACKUP_ROOT . '/' . $backupDir;
 
         try {
             // Ensure directory hierarchy exists using Craft FS API
@@ -206,8 +164,8 @@ class BackupService extends Component
             foreach ($parts as $part) {
                 if ($part) {
                     $currentPath = $currentPath ? $currentPath . '/' . $part : $part;
-                    if (!$this->_volumeFs->directoryExists($currentPath)) {
-                        $this->_volumeFs->createDirectory($currentPath);
+                    if (!$volume->directoryExists($currentPath)) {
+                        $volume->createDirectory($currentPath);
                     }
                 }
             }
@@ -232,20 +190,20 @@ class BackupService extends Component
             ]);
 
             // Write metadata file
-            $this->_volumeFs->write($fullPath . '/metadata.json', Json::encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            $volume->write($fullPath . '/metadata.json', Json::encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
             // Save Formie translations
             if (!empty($formieTranslations)) {
-                $this->_volumeFs->write($fullPath . '/formie-translations.json', $formieContent);
+                $volume->write($fullPath . '/formie-translations.json', $formieContent);
             }
 
             // Save site translations
             if (!empty($siteTranslations)) {
-                $this->_volumeFs->write($fullPath . '/site-translations.json', $siteContent);
+                $volume->write($fullPath . '/site-translations.json', $siteContent);
             }
 
             // Also backup the generated PHP files if they exist
-            $this->backupGeneratedFilesToVolume($fullPath);
+            $this->backupGeneratedFilesToVolume($fullPath, $volume);
 
             $formieCount = count($formieTranslations);
             $siteCount = count($siteTranslations);
@@ -256,9 +214,9 @@ class BackupService extends Component
             ]);
 
             return $fullPath;
-        } catch (\Exception $e) {
+        } catch (Throwable $e) {
             $this->logError('Failed to create volume backup', ['error' => $e->getMessage()]);
-            throw new \Exception('Failed to create backup in volume. ' . $e->getMessage());
+            $this->throwStorageUnavailable('create', $e);
         }
     }
 
@@ -358,7 +316,7 @@ class BackupService extends Component
     /**
      * Backup generated PHP files to volume storage
      */
-    private function backupGeneratedFilesToVolume(string $backupPath): void
+    private function backupGeneratedFilesToVolume(string $backupPath, BaseFsInterface $storage): void
     {
         $settings = TranslationManager::getInstance()->getSettings();
         $generationPath = $settings->getGenerationPath();
@@ -375,8 +333,8 @@ class BackupService extends Component
 
         // Create php-files directory in volume
         $phpDir = $backupPath . '/php-files';
-        if (!$this->_volumeFs->directoryExists($phpDir)) {
-            $this->_volumeFs->createDirectory($phpDir);
+        if (!$storage->directoryExists($phpDir)) {
+            $storage->createDirectory($phpDir);
         }
 
         foreach ($filesToBackup as $file) {
@@ -384,10 +342,197 @@ class BackupService extends Component
             if (file_exists($sourcePath)) {
                 $destPath = $phpDir . '/' . str_replace('/', '_', $file);
                 $content = file_get_contents($sourcePath);
-                $this->_volumeFs->write($destPath, $content);
+                $storage->write($destPath, $content);
                 $this->logInfo("Backed up PHP file", ['file' => $file]);
             }
         }
+    }
+
+    /**
+     * Return whether the effective settings select a Craft volume.
+     *
+     * @since 5.35.0
+     */
+    public function isUsingVolumeStorage(): bool
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        if (trim((string)$settings->backupVolumeUid) === '') {
+            return false;
+        }
+
+        $this->getVolume();
+        return true;
+    }
+
+    /**
+     * Return the files that belong in a backup download.
+     *
+     * @return array<string, string> ZIP member path => file contents
+     * @since 5.35.0
+     */
+    public function getDownloadFiles(string $backupName): array
+    {
+        if (!$this->isValidBackupName($backupName)) {
+            return [];
+        }
+
+        if ($this->isUsingVolumeStorage()) {
+            try {
+                $storage = $this->resolveVolumeBackupStorage($backupName);
+                if ($storage === null) {
+                    return [];
+                }
+
+                $files = [];
+                foreach (['metadata.json', 'formie-translations.json', 'site-translations.json'] as $filename) {
+                    $path = self::VOLUME_BACKUP_ROOT . '/' . $backupName . '/' . $filename;
+                    if ($storage->fileExists($path)) {
+                        $files[$filename] = $storage->read($path);
+                    }
+                }
+
+                return $files;
+            } catch (Throwable $e) {
+                $this->throwStorageUnavailable('download', $e);
+            }
+        }
+
+        $backupDir = rtrim(TranslationManager::getInstance()->getSettings()->getBackupPath(), '/') . '/' . $backupName;
+        if (!is_dir($backupDir)) {
+            return [];
+        }
+
+        $files = [];
+        foreach (FileHelper::findFiles($backupDir) as $file) {
+            $content = file_get_contents($file);
+            if (is_string($content)) {
+                $files[str_replace($backupDir . '/', '', $file)] = $content;
+            }
+        }
+
+        return $files;
+    }
+
+    private function getVolume(): Volume
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $volumeUid = trim((string)$settings->backupVolumeUid);
+        if ($volumeUid === '') {
+            throw new \LogicException('Volume storage was requested without an effective volume UID.');
+        }
+
+        try {
+            $volumeErrors = StorageVolumeHelper::validateVolume($volumeUid);
+            if ($volumeErrors !== []) {
+                throw new \RuntimeException('Backup volume failed validation: ' . implode('; ', $volumeErrors));
+            }
+
+            $volume = Craft::$app->getVolumes()->getVolumeByUid($volumeUid);
+            if (!$volume instanceof Volume) {
+                throw new \RuntimeException('Configured backup volume could not be resolved.');
+            }
+
+            // Resolution classification only: no filesystem operation is performed.
+            $fs = $volume->getFs();
+            if (!$fs instanceof FsInterface || $fs instanceof MissingComponentInterface) {
+                throw new \RuntimeException('Configured backup volume filesystem is unavailable.');
+            }
+
+            return $volume;
+        } catch (Throwable $e) {
+            $this->throwStorageUnavailable('resolve', $e, $volumeUid);
+        }
+    }
+
+    /**
+     * Resolve the underlying filesystem used by historical backups written at
+     * the exact filesystem-root prefix before Craft volume wrapper support.
+     */
+    private function getHistoricalVolumeFs(Volume $volume): FsInterface
+    {
+        try {
+            $fs = $volume->getFs();
+            if (!$fs instanceof FsInterface || $fs instanceof MissingComponentInterface) {
+                throw new \RuntimeException('Configured backup volume filesystem is unavailable.');
+            }
+
+            return $fs;
+        } catch (Throwable $e) {
+            $this->throwStorageUnavailable('historical-resolve', $e);
+        }
+    }
+
+    /**
+     * Resolve one volume backup, preferring the canonical Craft volume wrapper
+     * over the exact historical filesystem-root prefix.
+     */
+    private function resolveVolumeBackupStorage(string $backupName): ?BaseFsInterface
+    {
+        if (!$this->isValidBackupName($backupName)) {
+            return null;
+        }
+
+        $volume = $this->getVolume();
+        $path = self::VOLUME_BACKUP_ROOT . '/' . $backupName;
+        if ($volume->directoryExists($path)) {
+            return $volume;
+        }
+
+        if (!$this->hasSeparateHistoricalLocation($volume)) {
+            return null;
+        }
+
+        $historicalFs = $this->getHistoricalVolumeFs($volume);
+        return $historicalFs->directoryExists($path) ? $historicalFs : null;
+    }
+
+    private function hasSeparateHistoricalLocation(Volume $volume): bool
+    {
+        return trim($volume->getSubpath(), '/') !== '';
+    }
+
+    private function volumeLocationLabel(Volume $volume, bool $historical): string
+    {
+        $path = self::VOLUME_BACKUP_ROOT;
+        if (!$historical) {
+            $subpath = trim($volume->getSubpath(), '/');
+            if ($subpath !== '') {
+                $path = $subpath . '/' . $path;
+            }
+        }
+
+        return 'Volume: ' . (string)$volume->name . '/' . $path;
+    }
+
+    private function isValidBackupName(string $backupName): bool
+    {
+        $folder = null;
+        $timestamp = $backupName;
+        if (str_contains($backupName, '/')) {
+            [$folder, $timestamp] = explode('/', $backupName, 2);
+            if (!in_array($folder, self::BACKUP_FOLDERS, true)) {
+                return false;
+            }
+        }
+
+        return preg_match('/^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$/', $timestamp) === 1;
+    }
+
+    private function throwStorageUnavailable(string $operation, Throwable $e, ?string $volumeUid = null): never
+    {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $this->logError('Backup volume operation failed', [
+            'operation' => $operation,
+            'backupVolumeUid' => $volumeUid ?? $settings->backupVolumeUid,
+            'error' => $e->getMessage(),
+        ]);
+
+        $message = Craft::t('translation-manager', self::STORAGE_UNAVAILABLE_MESSAGE);
+        if ($e instanceof UserException && $e->getMessage() === $message) {
+            throw $e;
+        }
+
+        throw new UserException($message, previous: $e);
     }
 
     /**
@@ -397,7 +542,7 @@ class BackupService extends Component
      */
     public function getBackups(): array
     {
-        if ($this->_useVolume) {
+        if ($this->isUsingVolumeStorage()) {
             return $this->_getVolumeBackups();
         } else {
             return $this->_getLocalBackups();
@@ -409,195 +554,113 @@ class BackupService extends Component
      */
     private function _getVolumeBackups(): array
     {
-        $backups = [];
-
-        $fsClass = $this->_volumeFs ? get_class($this->_volumeFs) : 'null';
-        $this->logInfo("Starting volume backup listing", [
-            'path' => $this->_volumeBackupPath,
-            'fsClass' => $fsClass,
-        ]);
-
+        $volume = $this->getVolume();
+        /** @var array<string, array<string, mixed>> $backupsByName */
+        $backupsByName = [];
         try {
-            // First check if the base backup directory exists
-            if (!$this->_volumeFs->directoryExists($this->_volumeBackupPath)) {
-                $this->logInfo('Volume backup base directory does not exist', ['path' => $this->_volumeBackupPath]);
-                return $backups;
+            $this->collectVolumeBackups(
+                $backupsByName,
+                $volume,
+                $this->volumeLocationLabel($volume, false),
+                'canonical-volume',
+            );
+
+            if ($this->hasSeparateHistoricalLocation($volume)) {
+                $this->collectVolumeBackups(
+                    $backupsByName,
+                    $this->getHistoricalVolumeFs($volume),
+                    $this->volumeLocationLabel($volume, true),
+                    'historical-volume',
+                );
             }
-
-            foreach (self::BACKUP_FOLDERS as $subfolder) {
-                $folderPath = $this->_volumeBackupPath . '/' . $subfolder;
-
-                $this->logDebug('Checking subfolder', ['subfolder' => $subfolder, 'path' => $folderPath]);
-
-                if (!$this->_volumeFs->directoryExists($folderPath)) {
-                    $this->logInfo("Subfolder does not exist", ['subfolder' => $subfolder]);
-                    continue;
-                }
-
-                // List contents of subfolder using Craft FS API
-                $files = $this->_volumeFs->getFileList($folderPath, false);
-                $fileArray = iterator_to_array($files); // Convert Generator to array
-                $this->logDebug('Subfolder contents', ['subfolder' => $subfolder, 'fileCount' => count($fileArray)]);
-
-                // getFileList returns directories, so we need to identify which are backup directories
-                foreach ($fileArray as $file) {
-                    $this->logDebug('Processing file/directory', ['file' => $file]);
-
-                    // FsListing objects have properties - try common ones
-                    $fileName = isset($file->basename) ? $file->basename : (isset($file->filename) ? $file->filename : $file->path);
-
-                    // Check if this is a directory (backup directories have names like "2025-09-19_20-22-50")
-                    $fullFilePath = $folderPath . '/' . $fileName;
-                    if ($this->_volumeFs->directoryExists($fullFilePath)) {
-                        $backupPath = $subfolder . '/' . $fileName;
-                        $metadataPath = $this->_volumeBackupPath . '/' . $backupPath . '/metadata.json';
-
-                        $this->logDebug('Found backup directory', [
-                            'backupPath' => $backupPath,
-                            'metadataPath' => $metadataPath,
-                        ]);
-
-                        try {
-                            if ($this->_volumeFs->fileExists($metadataPath)) {
-                                $metadataContent = $this->_volumeFs->read($metadataPath);
-                                $metadata = Json::decode($metadataContent);
-
-                                $backup = [
-                                    'path' => $backupPath,
-                                    'name' => $backupPath,
-                                    'timestamp' => $metadata['timestamp'] ?? 0,
-                                    'reason' => $metadata['reason'] ?? 'unknown',
-                                    'user' => $metadata['user'] ?? 'Unknown',
-                                    'translationCount' => $metadata['translationCount'] ?? 0,
-                                    'size' => $this->_calculateVolumeBackupSize($this->_volumeBackupPath . '/' . $backupPath),
-                                    'folder' => $subfolder,
-                                    'date' => $metadata['date'] ?? '',
-                                    'userId' => $metadata['userId'] ?? null,
-                                    'formieEnabled' => $metadata['formieEnabled'] ?? false,
-                                    'siteEnabled' => $metadata['siteEnabled'] ?? false,
-                                    'craftVersion' => $metadata['craftVersion'] ?? '',
-                                    'pluginVersion' => $metadata['pluginVersion'] ?? '',
-                                ];
-
-                                $backups[] = $backup;
-                                $this->logDebug('Added backup to list', ['backup' => $backup]);
-                            } else {
-                                $this->logInfo('Metadata file does not exist', ['metadataPath' => $metadataPath]);
-                            }
-                        } catch (\Exception $e) {
-                            $this->logError('Error processing backup', [
-                                'backupPath' => $backupPath,
-                                'error' => $e->getMessage(),
-                            ]);
-                            continue;
-                        }
-                    }
-                }
-            }
-        } catch (\Exception $e) {
+        } catch (Throwable $e) {
             $this->logError('Failed to list volume backups', ['error' => $e->getMessage()]);
-
-            // Fallback: try to read directly from filesystem if it's a local volume
-            $backups = $this->_tryDirectVolumeBackupListing();
+            $this->throwStorageUnavailable('list', $e);
         }
 
-        $backupCount = count($backups);
-        $this->logInfo("Volume backup listing complete", ['backupCount' => $backupCount]);
-
-        // Sort by timestamp (newest first)
+        $backups = array_values($backupsByName);
         usort($backups, function($a, $b) {
-            return ($b['timestamp'] ?? 0) - ($a['timestamp'] ?? 0);
+            return ($b['timestamp'] ?? 0) <=> ($a['timestamp'] ?? 0);
         });
 
         return $backups;
     }
 
     /**
-     * Fallback method to list volume backups directly from filesystem
+     * Collect backups beneath one bounded storage root. Canonical entries are
+     * collected first, so they retain precedence over historical duplicates.
+     *
+     * @param array<string, array<string, mixed>> $backupsByName
      */
-    private function _tryDirectVolumeBackupListing(): array
-    {
-        $backups = [];
+    private function collectVolumeBackups(
+        array &$backupsByName,
+        BaseFsInterface $storage,
+        string $location,
+        string $storageType,
+    ): void {
+        if (!$storage->directoryExists(self::VOLUME_BACKUP_ROOT)) {
+            return;
+        }
 
-        try {
-            $settings = TranslationManager::getInstance()->getSettings();
-            $volume = Craft::$app->getVolumes()->getVolumeByUid($settings->backupVolumeUid);
-
-            if (!$volume) {
-                return $backups;
+        foreach ($storage->getFileList(self::VOLUME_BACKUP_ROOT, false) as $listing) {
+            if (!$listing instanceof FsListing || !$listing->getIsDir()) {
+                continue;
             }
 
-            $fs = $volume->getFs();
+            $backupName = $listing->getBasename();
+            if (in_array($backupName, self::BACKUP_FOLDERS, true)
+                || !$this->isValidBackupName($backupName)
+                || isset($backupsByName[$backupName])) {
+                continue;
+            }
+            $this->addVolumeBackup($backupsByName, $backupName, $storage, $location, $storageType);
+        }
 
-            // Try to get the local path if it's a local volume
-            $basePath = null;
-            if (property_exists($fs, 'path')) {
-                $basePath = App::env($fs->path);
-            } elseif (method_exists($fs, 'getRootPath')) {
-                $basePath = $fs->getRootPath();
+        foreach (self::BACKUP_FOLDERS as $folder) {
+            $folderPath = self::VOLUME_BACKUP_ROOT . '/' . $folder;
+            if (!$storage->directoryExists($folderPath)) {
+                continue;
             }
 
-            if (!$basePath || !is_dir($basePath)) {
-                $this->logInfo('Cannot determine local path for volume fallback', ['basePath' => $basePath]);
-                return $backups;
-            }
-
-            $fullBackupPath = rtrim($basePath, '/') . '/' . $this->_volumeBackupPath;
-
-            $this->logInfo('Trying direct volume backup listing', ['fullBackupPath' => $fullBackupPath]);
-
-            if (!is_dir($fullBackupPath)) {
-                return $backups;
-            }
-
-            // Use the same logic as local backups but with the volume path
-            foreach (self::BACKUP_FOLDERS as $subfolder) {
-                $subfolderPath = $fullBackupPath . '/' . $subfolder;
-                if (!is_dir($subfolderPath)) {
+            foreach ($storage->getFileList($folderPath, false) as $listing) {
+                if (!$listing instanceof FsListing || !$listing->getIsDir()) {
                     continue;
                 }
 
-                $dirs = glob($subfolderPath . '/*', GLOB_ONLYDIR);
-
-                foreach ($dirs as $dir) {
-                    $metadataFile = $dir . '/metadata.json';
-                    if (file_exists($metadataFile)) {
-                        try {
-                            $metadata = Json::decode(file_get_contents($metadataFile));
-                            $backupName = $subfolder . '/' . basename($dir);
-
-                            $backups[] = [
-                                'path' => $backupName,
-                                'name' => $backupName,
-                                'timestamp' => $metadata['timestamp'] ?? 0,
-                                'reason' => $metadata['reason'] ?? 'unknown',
-                                'user' => $metadata['user'] ?? 'Unknown',
-                                'translationCount' => $metadata['translationCount'] ?? 0,
-                                'size' => $this->getDirectorySize($dir),
-                                'folder' => $subfolder,
-                                'date' => $metadata['date'] ?? '',
-                                'userId' => $metadata['userId'] ?? null,
-                                'formieEnabled' => $metadata['formieEnabled'] ?? false,
-                                'siteEnabled' => $metadata['siteEnabled'] ?? false,
-                                'craftVersion' => $metadata['craftVersion'] ?? '',
-                                'pluginVersion' => $metadata['pluginVersion'] ?? '',
-                            ];
-
-                            $this->logInfo('Added backup via fallback method', ['backup' => $backupName]);
-                        } catch (\Exception $e) {
-                            $this->logError('Error processing backup in fallback', [
-                                'dir' => $dir,
-                                'error' => $e->getMessage(),
-                            ]);
-                        }
-                    }
+                $backupName = $folder . '/' . $listing->getBasename();
+                if (!$this->isValidBackupName($backupName) || isset($backupsByName[$backupName])) {
+                    continue;
                 }
+                $this->addVolumeBackup($backupsByName, $backupName, $storage, $location, $storageType);
             }
-        } catch (\Exception $e) {
-            $this->logError('Direct volume backup listing failed', ['error' => $e->getMessage()]);
+        }
+    }
+
+    /** @param array<string, array<string, mixed>> $backupsByName */
+    private function addVolumeBackup(
+        array &$backupsByName,
+        string $backupName,
+        BaseFsInterface $storage,
+        string $location,
+        string $storageType,
+    ): void {
+        $metadataPath = self::VOLUME_BACKUP_ROOT . '/' . $backupName . '/metadata.json';
+        if (!$storage->fileExists($metadataPath)) {
+            return;
         }
 
-        return $backups;
+        $metadata = Json::decode($storage->read($metadataPath));
+        if (!is_array($metadata)) {
+            return;
+        }
+
+        $metadata['path'] = self::VOLUME_BACKUP_ROOT . '/' . $backupName;
+        $metadata['name'] = $backupName;
+        $metadata['size'] = $this->_calculateVolumeBackupSize(self::VOLUME_BACKUP_ROOT . '/' . $backupName, $storage);
+        $metadata['folder'] = str_contains($backupName, '/') ? explode('/', $backupName, 2)[0] : 'legacy';
+        $metadata['storageLocation'] = $location;
+        $metadata['storageType'] = $storageType;
+        $backupsByName[$backupName] = $metadata;
     }
 
     /**
@@ -633,6 +696,8 @@ class BackupService extends Component
                     $metadata['name'] = basename($dir);
                     $metadata['size'] = $this->getDirectorySize($dir);
                     $metadata['folder'] = 'legacy';
+                    $metadata['storageLocation'] = $backupPath;
+                    $metadata['storageType'] = 'local';
                     $backups[] = $metadata;
                 } catch (\Exception $e) {
                     $this->logError('Failed to read backup metadata', [
@@ -663,6 +728,8 @@ class BackupService extends Component
                         $metadata['name'] = $subfolder . '/' . basename($dir);
                         $metadata['size'] = $this->getDirectorySize($dir);
                         $metadata['folder'] = $subfolder;
+                        $metadata['storageLocation'] = $backupPath;
+                        $metadata['storageType'] = 'local';
                         $backups[] = $metadata;
                     } catch (\Exception $e) {
                         $this->logError('Failed to read backup metadata', [
@@ -693,13 +760,14 @@ class BackupService extends Component
      */
     public function restoreBackup(string $backupName): array
     {
-        $storageType = $this->_useVolume ? 'volume' : 'local';
+        $useVolume = $this->isUsingVolumeStorage();
+        $storageType = $useVolume ? 'volume' : 'local';
         $this->logInfo("Starting backup restore", [
             'backup' => $backupName,
             'storageType' => $storageType,
         ]);
 
-        if ($this->_useVolume) {
+        if ($useVolume) {
             return $this->_restoreVolumeBackup($backupName);
         } else {
             return $this->_restoreLocalBackup($backupName);
@@ -711,11 +779,13 @@ class BackupService extends Component
      */
     private function _restoreVolumeBackup(string $backupName): array
     {
-        $backupPath = $this->_volumeBackupPath . '/' . $backupName;
+        $backupPath = self::VOLUME_BACKUP_ROOT . '/' . $backupName;
 
         try {
+            $storage = $this->resolveVolumeBackupStorage($backupName);
+
             // Check if backup exists
-            if (!$this->_volumeFs->directoryExists($backupPath)) {
+            if ($storage === null) {
                 return [
                     'success' => false,
                     'message' => 'Backup not found in volume',
@@ -724,27 +794,27 @@ class BackupService extends Component
 
             // Read and validate metadata with checksum
             $metadataPath = $backupPath . '/metadata.json';
-            if (!$this->_volumeFs->fileExists($metadataPath)) {
+            if (!$storage->fileExists($metadataPath)) {
                 return [
                     'success' => false,
                     'message' => 'Backup metadata not found',
                 ];
             }
 
-            $metadataContent = $this->_volumeFs->read($metadataPath);
+            $metadataContent = $storage->read($metadataPath);
             $metadata = Json::decode($metadataContent);
 
             // Read JSON files
             $formieContent = '';
             $formiePath = $backupPath . '/formie-translations.json';
-            if ($this->_volumeFs->fileExists($formiePath)) {
-                $formieContent = $this->_volumeFs->read($formiePath);
+            if ($storage->fileExists($formiePath)) {
+                $formieContent = $storage->read($formiePath);
             }
 
             $siteContent = '';
             $sitePath = $backupPath . '/site-translations.json';
-            if ($this->_volumeFs->fileExists($sitePath)) {
-                $siteContent = $this->_volumeFs->read($sitePath);
+            if ($storage->fileExists($sitePath)) {
+                $siteContent = $storage->read($sitePath);
             }
 
             // Validate checksum if present
@@ -835,7 +905,7 @@ class BackupService extends Component
                 'errors' => $errors,
                 'preRestoreBackup' => $preRestoreBackup,
             ];
-        } catch (\Exception $e) {
+        } catch (Throwable $e) {
             $this->logError('Failed to restore volume backup', [
                 'backup' => $backupName,
                 'error' => $e->getMessage(),
@@ -843,7 +913,7 @@ class BackupService extends Component
 
             return [
                 'success' => false,
-                'message' => 'Failed to restore backup: ' . $e->getMessage(),
+                'message' => Craft::t('translation-manager', self::STORAGE_UNAVAILABLE_MESSAGE),
             ];
         }
     }
@@ -1064,7 +1134,7 @@ class BackupService extends Component
      */
     public function deleteBackup(string $backupName): bool
     {
-        if ($this->_useVolume) {
+        if ($this->isUsingVolumeStorage()) {
             return $this->_deleteVolumeBackup($backupName);
         } else {
             return $this->_deleteLocalBackup($backupName);
@@ -1076,7 +1146,7 @@ class BackupService extends Component
      */
     private function _deleteVolumeBackup(string $backupName): bool
     {
-        $backupPath = $this->_volumeBackupPath . '/' . $backupName;
+        $backupPath = self::VOLUME_BACKUP_ROOT . '/' . $backupName;
 
         $this->logInfo("Attempting to delete volume backup", [
             'backup' => $backupName,
@@ -1084,15 +1154,16 @@ class BackupService extends Component
         ]);
 
         try {
-            if (!$this->_volumeFs->directoryExists($backupPath)) {
+            $storage = $this->resolveVolumeBackupStorage($backupName);
+            if ($storage === null) {
                 $this->logError('Volume backup directory not found', ['backup' => $backupName, 'path' => $backupPath]);
                 return false;
             }
 
-            $this->_volumeFs->deleteDirectory($backupPath);
+            $storage->deleteDirectory($backupPath);
             $this->logInfo("Deleted volume backup successfully", ['backup' => $backupName]);
             return true;
-        } catch (\Exception $e) {
+        } catch (Throwable $e) {
             $this->logError('Failed to delete volume backup', [
                 'backup' => $backupName,
                 'error' => $e->getMessage(),
@@ -1187,7 +1258,7 @@ class BackupService extends Component
     /**
      * Calculate backup size for volume storage
      */
-    private function _calculateVolumeBackupSize(string $backupPath): int
+    private function _calculateVolumeBackupSize(string $backupPath, BaseFsInterface $storage): int
     {
         $size = 0;
 
@@ -1197,26 +1268,26 @@ class BackupService extends Component
 
             foreach ($files as $file) {
                 $filePath = $backupPath . '/' . $file;
-                if ($this->_volumeFs->fileExists($filePath)) {
+                if ($storage->fileExists($filePath)) {
                     try {
-                        $size += $this->_volumeFs->getFileSize($filePath);
-                    } catch (\Exception $e) {
+                        $size += $storage->getFileSize($filePath);
+                    } catch (Throwable $e) {
                         // If getFileSize fails, estimate based on content
                         try {
-                            $content = $this->_volumeFs->read($filePath);
+                            $content = $storage->read($filePath);
                             $size += strlen($content);
-                        } catch (\Exception $e2) {
+                        } catch (Throwable $e2) {
                             // Skip if we can't read the file
                         }
                     }
                 }
             }
-        } catch (\Exception $e) {
-            // Return 0 if we can't calculate size
+        } catch (Throwable $e) {
             $this->logWarning('Could not calculate volume backup size', [
                 'backupPath' => $backupPath,
                 'error' => $e->getMessage(),
             ]);
+            throw $e;
         }
 
         return $size;

@@ -11,7 +11,6 @@
 namespace lindemannrock\translationmanager\controllers;
 
 use Craft;
-use craft\helpers\FileHelper;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
 use lindemannrock\base\helpers\DateFormatHelper;
@@ -311,34 +310,8 @@ class BackupController extends Controller
         $this->logInfo("User requested backup download", ['backup' => $backupName]);
 
         $backupService = TranslationManager::getInstance()->backup;
-        $settings = TranslationManager::getInstance()->getSettings();
-
-        // Check if using volume storage
-        $useVolume = !empty($settings->backupVolumeUid);
-
-        if ($useVolume) {
-            return $this->_downloadVolumeBackup($backupName);
-        } else {
-            return $this->_downloadLocalBackup($backupName);
-        }
-    }
-
-    /**
-     * Download backup from volume storage
-     */
-    private function _downloadVolumeBackup(string $backupName): Response
-    {
-        $settings = TranslationManager::getInstance()->getSettings();
-        $volume = Craft::$app->getVolumes()->getVolumeByUid($settings->backupVolumeUid);
-
-        if (!$volume) {
-            throw new NotFoundHttpException(Craft::t('translation-manager', 'Volume not found'));
-        }
-
-        $fs = $volume->getFs();
-        $backupPath = 'translation-manager/backups/' . $backupName;
-
-        if (!$fs->directoryExists($backupPath)) {
+        $files = $backupService->getDownloadFiles($backupName);
+        if ($files === []) {
             throw new NotFoundHttpException(Craft::t('translation-manager', 'Backup not found'));
         }
 
@@ -351,59 +324,8 @@ class BackupController extends Controller
             throw new \Exception('Cannot create zip file');
         }
 
-        // Add backup files to zip
-        $files = ['metadata.json', 'formie-translations.json', 'site-translations.json'];
-        foreach ($files as $file) {
-            $filePath = $backupPath . '/' . $file;
-            if ($fs->fileExists($filePath)) {
-                $content = $fs->read($filePath);
-                $zip->addFromString($file, $content);
-            }
-        }
-
-        $zip->close();
-
-        // Send the file
-        $response = Craft::$app->getResponse();
-        $response->sendFile($zipPath, $downloadFilename, [
-            'mimeType' => 'application/zip',
-            'inline' => false,
-        ]);
-
-        // Clean up temp file after sending
-        register_shutdown_function(function() use ($zipPath) {
-            @unlink($zipPath);
-        });
-
-        return $response;
-    }
-
-    /**
-     * Download backup from local storage
-     */
-    private function _downloadLocalBackup(string $backupName): Response
-    {
-        $backupService = TranslationManager::getInstance()->backup;
-        $backupDir = $backupService->getBackupPath() . '/' . $backupName;
-
-        if (!is_dir($backupDir)) {
-            throw new NotFoundHttpException(Craft::t('translation-manager', 'Backup not found'));
-        }
-
-        $downloadFilename = 'translation-backup-' . SafeSegmentHelper::filenamePart($backupName, 'backup') . '.zip';
-        $zipPath = Craft::$app->getPath()->getTempPath() . '/' . $downloadFilename;
-
-        // Create zip archive
-        $zip = new \ZipArchive();
-        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
-            throw new \Exception('Cannot create zip file');
-        }
-
-        // Add all files from backup directory
-        $files = FileHelper::findFiles($backupDir);
-        foreach ($files as $file) {
-            $relativePath = str_replace($backupDir . '/', '', $file);
-            $zip->addFile($file, $relativePath);
+        foreach ($files as $filename => $content) {
+            $zip->addFromString($filename, $content);
         }
 
         $zip->close();

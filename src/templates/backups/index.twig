@@ -126,6 +126,7 @@
             const user = escapeHtml(backup.user || '');
             const count = new Intl.NumberFormat().format(backup.translationCount ?? 0);
             const size = escapeHtml(backup.formattedSize || '-');
+            const storageLocation = escapeHtml(backup.storageLocation || '');
             const typeBadge = renderReasonBadge(backup.typeBadgeHtml);
             const rowActions = showBackupRowActions ? renderRowActions(backup.rowActionsHtml) : '';
 
@@ -135,6 +136,7 @@
                 <td>${user}</td>
                 <td><strong>${count}</strong></td>
                 <td><code style="font-size: 11px;">${size}</code></td>
+                <td><code style="font-size: 11px;">${storageLocation}</code></td>
                 ${rowActions}
             </tr>`;
         });
@@ -147,6 +149,7 @@
                     <th>{{ "Created By"|t('translation-manager')|e('js') }}</th>
                     <th>{{ "Translations"|t('translation-manager')|e('js') }}</th>
                     <th>{{ "Size"|t('translation-manager')|e('js') }}</th>
+                    <th>{{ "Backup Location:"|t('translation-manager')|e('js') }}</th>
                     ${showBackupRowActions ? '<th class="thin">{{ "Actions"|t('translation-manager')|e('js') }}</th>' : ''}
                 </tr>
             </thead>

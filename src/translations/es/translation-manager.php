@@ -494,6 +494,7 @@ return [
     'Creating Backup...' => 'Creando copia de seguridad...',
     'Backup created successfully' => 'Copia de seguridad creada correctamente',
     'Failed to create backup' => 'Error al crear la copia de seguridad',
+    'The configured backup volume cannot currently be used. Backup operations are unavailable until the volume is restored or the effective setting is changed.' => 'El volumen de copias de seguridad configurado no se puede utilizar actualmente. Las operaciones de copia de seguridad no están disponibles hasta que se restablezca el volumen o se cambie la configuración efectiva.',
     'Are you sure you want to restore this backup? This will replace all current translations. A backup of the current state will be created before restoring.' => '¿Está seguro de que desea restaurar esta copia de seguridad? Esto reemplazará todas las traducciones actuales. Se creará una copia de seguridad del estado actual antes de restaurar.',
     'Starting restore operation...' => 'Iniciando operación de restauración...',
     'Backup restored successfully' => 'Copia de seguridad restaurada correctamente',

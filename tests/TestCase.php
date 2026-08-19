@@ -173,7 +173,7 @@ abstract class TestCase extends IntegrationTestCase
 
     private function snapshotAppComponents(): void
     {
-        foreach (['config', 'mutex'] as $id) {
+        foreach (['config', 'mutex', 'request', 'response', 'volumes'] as $id) {
             if (Craft::$app->has($id)) {
                 $component = Craft::$app->get($id);
                 if (is_object($component)) {

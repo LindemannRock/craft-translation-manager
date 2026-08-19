@@ -494,6 +494,7 @@ return [
     'Creating Backup...' => 'バックアップを作成中...',
     'Backup created successfully' => 'バックアップを正常に作成しました',
     'Failed to create backup' => 'バックアップの作成に失敗しました',
+    'The configured backup volume cannot currently be used. Backup operations are unavailable until the volume is restored or the effective setting is changed.' => '設定されたバックアップボリュームは現在使用できません。ボリュームを復旧するか、有効な設定を変更するまで、バックアップ操作は利用できません。',
     'Are you sure you want to restore this backup? This will replace all current translations. A backup of the current state will be created before restoring.' => 'このバックアップを復元しますか？現在のすべての翻訳が置き換えられます。復元前に現在の状態のバックアップが作成されます。',
     'Starting restore operation...' => '復元操作を開始しています...',
     'Backup restored successfully' => 'バックアップを正常に復元しました',

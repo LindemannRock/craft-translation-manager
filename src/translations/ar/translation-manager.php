@@ -494,6 +494,7 @@ return [
     'Creating Backup...' => 'جارٍ إنشاء النسخة الاحتياطية...',
     'Backup created successfully' => 'تم إنشاء النسخة الاحتياطية بنجاح',
     'Failed to create backup' => 'فشل إنشاء النسخة الاحتياطية',
+    'The configured backup volume cannot currently be used. Backup operations are unavailable until the volume is restored or the effective setting is changed.' => 'يتعذر حاليًا استخدام وحدة تخزين النسخ الاحتياطي المكوّنة. لن تتوفر عمليات النسخ الاحتياطي حتى تتم استعادة وحدة التخزين أو تغيير الإعداد الفعلي.',
     'Are you sure you want to restore this backup? This will replace all current translations. A backup of the current state will be created before restoring.' => 'هل أنت متأكد من رغبتك في استعادة هذه النسخة الاحتياطية؟ سيؤدي ذلك إلى استبدال جميع الترجمات الحالية. سيتم إنشاء نسخة احتياطية من الحالة الراهنة قبل الاستعادة.',
     'Starting restore operation...' => 'جارٍ بدء عملية الاستعادة...',
     'Backup restored successfully' => 'تمت استعادة النسخة الاحتياطية بنجاح',
