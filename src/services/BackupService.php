@@ -46,6 +46,8 @@ class BackupService extends Component
 
     private const VOLUME_BACKUP_ROOT = 'translation-manager/backups';
 
+    private const SIZE_STREAM_CHUNK_BYTES = 8192;
+
     private const STORAGE_UNAVAILABLE_MESSAGE = 'The configured backup volume cannot currently be used. Backup operations are unavailable until the volume is restored or the effective setting is changed.';
 
     /**
@@ -383,15 +385,11 @@ class BackupService extends Component
                     return [];
                 }
 
-                $files = [];
-                foreach (['metadata.json', 'formie-translations.json', 'site-translations.json'] as $filename) {
-                    $path = self::VOLUME_BACKUP_ROOT . '/' . $backupName . '/' . $filename;
-                    if ($storage->fileExists($path)) {
-                        $files[$filename] = $storage->read($path);
-                    }
-                }
-
-                return $files;
+                $backupRoot = self::VOLUME_BACKUP_ROOT . '/' . $backupName;
+                return $this->readBackupManifest(
+                    $this->buildBackupManifest($backupRoot, $storage),
+                    $storage,
+                );
             } catch (Throwable $e) {
                 $this->throwStorageUnavailable('download', $e);
             }
@@ -402,15 +400,9 @@ class BackupService extends Component
             return [];
         }
 
-        $files = [];
-        foreach (FileHelper::findFiles($backupDir) as $file) {
-            $content = file_get_contents($file);
-            if (is_string($content)) {
-                $files[str_replace($backupDir . '/', '', $file)] = $content;
-            }
-        }
-
-        return $files;
+        return $this->readBackupManifest(
+            $this->buildBackupManifest($backupDir),
+        );
     }
 
     private function getVolume(): Volume
@@ -656,7 +648,8 @@ class BackupService extends Component
 
         $metadata['path'] = self::VOLUME_BACKUP_ROOT . '/' . $backupName;
         $metadata['name'] = $backupName;
-        $metadata['size'] = $this->_calculateVolumeBackupSize(self::VOLUME_BACKUP_ROOT . '/' . $backupName, $storage);
+        $manifest = $this->buildBackupManifest(self::VOLUME_BACKUP_ROOT . '/' . $backupName, $storage);
+        $metadata['size'] = $this->calculateBackupManifestSize($manifest, $storage);
         $metadata['folder'] = str_contains($backupName, '/') ? explode('/', $backupName, 2)[0] : 'legacy';
         $metadata['storageLocation'] = $location;
         $metadata['storageType'] = $storageType;
@@ -694,7 +687,7 @@ class BackupService extends Component
                     $metadata = Json::decode(file_get_contents($metadataFile));
                     $metadata['path'] = $dir;
                     $metadata['name'] = basename($dir);
-                    $metadata['size'] = $this->getDirectorySize($dir);
+                    $metadata['size'] = $this->calculateBackupManifestSize($this->buildBackupManifest($dir));
                     $metadata['folder'] = 'legacy';
                     $metadata['storageLocation'] = $backupPath;
                     $metadata['storageType'] = 'local';
@@ -726,7 +719,7 @@ class BackupService extends Component
                         $metadata = Json::decode(file_get_contents($metadataFile));
                         $metadata['path'] = $dir;
                         $metadata['name'] = $subfolder . '/' . basename($dir);
-                        $metadata['size'] = $this->getDirectorySize($dir);
+                        $metadata['size'] = $this->calculateBackupManifestSize($this->buildBackupManifest($dir));
                         $metadata['folder'] = $subfolder;
                         $metadata['storageLocation'] = $backupPath;
                         $metadata['storageType'] = 'local';
@@ -1256,53 +1249,205 @@ class BackupService extends Component
     }
 
     /**
-     * Calculate backup size for volume storage
+     * Build the complete, path-confined file manifest for one backup root.
+     *
+     * Manifest keys are safe forward-slash ZIP member paths. Values are the
+     * corresponding local paths or storage-relative paths used for reads and
+     * size queries.
+     *
+     * @return array<string, string>
      */
-    private function _calculateVolumeBackupSize(string $backupPath, BaseFsInterface $storage): int
+    private function buildBackupManifest(string $backupRoot, ?BaseFsInterface $storage = null): array
+    {
+        if ($storage !== null) {
+            return $this->buildStorageBackupManifest($backupRoot, $storage);
+        }
+
+        $resolvedRoot = realpath($backupRoot);
+        if (!is_string($resolvedRoot) || !is_dir($resolvedRoot)) {
+            return [];
+        }
+
+        $normalizedRoot = rtrim(str_replace('\\', '/', $resolvedRoot), '/');
+        $manifest = [];
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator(
+                $resolvedRoot,
+                \FilesystemIterator::CURRENT_AS_FILEINFO | \FilesystemIterator::SKIP_DOTS,
+            ),
+            \RecursiveIteratorIterator::LEAVES_ONLY,
+        );
+
+        /** @var \SplFileInfo $file */
+        foreach ($iterator as $file) {
+            if ($file->isLink() || !$file->isFile()) {
+                continue;
+            }
+
+            $path = str_replace('\\', '/', $file->getPathname());
+            if (!str_starts_with($path, $normalizedRoot . '/')) {
+                continue;
+            }
+
+            $memberPath = $this->safeManifestPath(substr($path, strlen($normalizedRoot) + 1));
+            if ($memberPath !== null) {
+                $manifest[$memberPath] = $file->getPathname();
+            }
+        }
+
+        ksort($manifest, SORT_STRING);
+        return $manifest;
+    }
+
+    /** @return array<string, string> */
+    private function buildStorageBackupManifest(string $backupRoot, BaseFsInterface $storage): array
+    {
+        $logicalRoot = trim(str_replace('\\', '/', $backupRoot), '/');
+        $listingRoot = $logicalRoot;
+        if ($storage instanceof Volume) {
+            $subpath = trim(str_replace('\\', '/', $storage->getSubpath()), '/');
+            if ($subpath !== '') {
+                $listingRoot = $subpath . '/' . $logicalRoot;
+            }
+        }
+
+        $safeListingRoot = $this->safeManifestPath($listingRoot);
+        if ($safeListingRoot === null) {
+            throw new \RuntimeException('Backup storage root is not a safe relative path.');
+        }
+
+        $rootSegments = explode('/', $safeListingRoot);
+        $manifest = [];
+        foreach ($storage->getFileList($logicalRoot, true) as $listing) {
+            if (!$listing instanceof FsListing || $listing->getIsDir()) {
+                continue;
+            }
+
+            $listedPath = $this->safeManifestPath($listing->getUri());
+            if ($listedPath === null) {
+                continue;
+            }
+
+            $listedSegments = explode('/', $listedPath);
+            if (count($listedSegments) <= count($rootSegments)
+                || array_slice($listedSegments, 0, count($rootSegments)) !== $rootSegments) {
+                continue;
+            }
+
+            $memberPath = $this->safeManifestPath(implode('/', array_slice($listedSegments, count($rootSegments))));
+            if ($memberPath !== null) {
+                $manifest[$memberPath] = $logicalRoot . '/' . $memberPath;
+            }
+        }
+
+        ksort($manifest, SORT_STRING);
+        return $manifest;
+    }
+
+    private function safeManifestPath(string $path): ?string
+    {
+        if ($path === ''
+            || str_contains($path, '\\')
+            || str_starts_with($path, '/')
+            || preg_match('/^[A-Za-z]:/', $path) === 1
+            || preg_match('/[\x00-\x1F\x7F]/', $path) === 1) {
+            return null;
+        }
+
+        $segments = explode('/', $path);
+        foreach ($segments as $segment) {
+            if ($segment === '' || $segment === '.' || $segment === '..') {
+                return null;
+            }
+
+            $decoded = rawurldecode($segment);
+            if ($decoded === '.'
+                || $decoded === '..'
+                || str_contains($decoded, '/')
+                || str_contains($decoded, '\\')
+                || str_contains($decoded, "\0")) {
+                return null;
+            }
+        }
+
+        return implode('/', $segments);
+    }
+
+    /**
+     * @param array<string, string> $manifest
+     * @return array<string, string>
+     */
+    private function readBackupManifest(array $manifest, ?BaseFsInterface $storage = null): array
+    {
+        $files = [];
+        foreach ($manifest as $memberPath => $sourcePath) {
+            if ($storage !== null) {
+                $files[$memberPath] = $storage->read($sourcePath);
+                continue;
+            }
+
+            $content = file_get_contents($sourcePath);
+            if (!is_string($content)) {
+                throw new \RuntimeException("Unable to read backup file: {$memberPath}");
+            }
+            $files[$memberPath] = $content;
+        }
+
+        return $files;
+    }
+
+    /** @param array<string, string> $manifest */
+    private function calculateBackupManifestSize(array $manifest, ?BaseFsInterface $storage = null): int
     {
         $size = 0;
-
-        try {
-            // Try to get file sizes for common backup files
-            $files = ['metadata.json', 'formie-translations.json', 'site-translations.json'];
-
-            foreach ($files as $file) {
-                $filePath = $backupPath . '/' . $file;
-                if ($storage->fileExists($filePath)) {
+        foreach ($manifest as $memberPath => $sourcePath) {
+            if ($storage !== null) {
+                try {
+                    $size += $storage->getFileSize($sourcePath);
+                } catch (Throwable $sizeError) {
                     try {
-                        $size += $storage->getFileSize($filePath);
-                    } catch (Throwable $e) {
-                        // If getFileSize fails, estimate based on content
-                        try {
-                            $content = $storage->read($filePath);
-                            $size += strlen($content);
-                        } catch (Throwable $e2) {
-                            // Skip if we can't read the file
-                        }
+                        $size += $this->getStreamSize($storage, $sourcePath);
+                    } catch (Throwable $streamError) {
+                        throw new \RuntimeException(
+                            "Unable to calculate the size of backup file: {$memberPath}",
+                            previous: $streamError,
+                        );
                     }
                 }
+                continue;
             }
-        } catch (Throwable $e) {
-            $this->logWarning('Could not calculate volume backup size', [
-                'backupPath' => $backupPath,
-                'error' => $e->getMessage(),
-            ]);
-            throw $e;
+
+            $fileSize = filesize($sourcePath);
+            if (!is_int($fileSize)) {
+                throw new \RuntimeException("Unable to calculate the size of backup file: {$memberPath}");
+            }
+            $size += $fileSize;
         }
 
         return $size;
     }
 
-    /**
-     * Get the size of a directory in bytes
-     */
-    private function getDirectorySize(string $dir): int
+    private function getStreamSize(BaseFsInterface $storage, string $sourcePath): int
     {
-        $size = 0;
-        $files = FileHelper::findFiles($dir);
+        $stream = $storage->getFileStream($sourcePath);
+        if (!is_resource($stream)) {
+            throw new \RuntimeException('Backup provider did not return a readable stream.');
+        }
 
-        foreach ($files as $file) {
-            $size += filesize($file);
+        $size = 0;
+        try {
+            while (!feof($stream)) {
+                $chunk = fread($stream, self::SIZE_STREAM_CHUNK_BYTES);
+                if (!is_string($chunk)) {
+                    throw new \RuntimeException('Backup provider stream could not be read.');
+                }
+                if ($chunk === '' && !feof($stream)) {
+                    throw new \RuntimeException('Backup provider stream stopped before EOF.');
+                }
+                $size += strlen($chunk);
+            }
+        } finally {
+            fclose($stream);
         }
 
         return $size;

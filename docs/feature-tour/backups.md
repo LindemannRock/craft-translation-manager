@@ -18,7 +18,7 @@ Translation Manager protects your translations before anything destructive happe
 
 ![Backups list in the Translation Manager Control Panel](../images/backups-list.webp)
 
-The list shows each backup's **date**, **type** (which folder it lives in), **reason**, **translation count**, **size**, and actual storage location.
+The list shows each backup's **date**, **type** (which folder it lives in), **reason**, **translation count**, **size**, and actual storage location. The size is the total of every stored file in that backup, including generated files under `php-files/` and any other nested backup content.
 
 ## Backup types
 
@@ -103,7 +103,9 @@ ddev craft translation-manager/backup/list
 
 Restore replaces all current translations with the backup's version. It requires an intact backup folder with `metadata.json` and a valid SHA-256 checksum — backups with missing metadata, missing checksum data, or modified translation JSON are rejected *before* anything is replaced.
 
-Click the gear icon → **Download** to get a ZIP containing the translation data (JSON), the generated PHP files, and the backup metadata. Downloaded ZIPs are portable: to use one on another install without an upload flow, extract it and place its files into the expected backup folder structure under that install's configured backup storage.
+Click the gear icon → **Download** to get a ZIP containing the complete stored backup content: metadata, the translation JSON files that are present, generated PHP files under `php-files/`, and any other files stored beneath that backup. Local and volume-backed downloads use the same relative paths and contain the same logical files when their stored content is identical; storage prefixes and configured volume subpaths never appear inside the ZIP.
+
+Downloaded ZIPs are portable: to use one on another install without an upload flow, extract it and place its files into the expected backup folder structure under that install's configured backup storage. Restore continues to read the JSON/checksum data and regenerate PHP files; it does not install the saved PHP files directly.
 
 ## Storage structure
 
@@ -123,6 +125,8 @@ With a Craft volume selected, Translation Manager uses that volume for the compl
 ```text
 {configured volume subpath}/translation-manager/backups/
 ```
+
+For both local paths and volumes, Translation Manager recursively builds one confined file list beneath the selected backup directory. Downloads and displayed size use that same complete file set, so nested `php-files/` content is neither omitted from the ZIP nor left out of the total.
 
 The selected volume is authoritative. If its UID is missing, invalid, or temporarily unavailable, backup operations stop with an error instead of switching to `backupPath` or `@storage`. Translation Manager leaves the UID and effective settings unchanged, so the same configuration starts working again when the volume becomes available.
 

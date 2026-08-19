@@ -254,6 +254,18 @@ Do not clear the UID to make an operation use local storage unless you are inten
 
 For a volume with a configured subpath, current backups are under `{configured volume subpath}/translation-manager/backups`. Translation Manager can also manage older backups at the exact underlying filesystem-root prefix `translation-manager/backups`. It does not scan arbitrary paths or move historical objects automatically. If the same backup name exists in both places, the canonical subpath-backed object wins; deleting it leaves the historical duplicate in place.
 
+## A Downloaded Backup Is Missing Files or Its Size Looks Too Small
+
+If a downloaded volume backup is missing generated PHP files, or the size in the Backups list covers only the JSON files, refresh the list and download the backup again with the current Translation Manager version. Existing backup folders do not need conversion.
+
+Quick checks:
+
+1. Open the ZIP and look for `metadata.json`, the translation JSON files that exist in the stored backup, and generated files under `php-files/`.
+2. Compare the displayed size with the total size of every file beneath that one backup directory, including nested files.
+3. For a configured volume, resolve any provider or credential error first. Translation Manager fails the listing/download operation instead of presenting a knowingly partial size when the provider cannot enumerate or size the complete backup.
+
+Downloads and displayed size now come from the same recursive, path-confined file list for local, canonical-volume, and exact-prefix historical backups. The ZIP uses safe relative member paths, so neither `translation-manager/backups`, a provider prefix, nor the configured volume subpath appears in its filenames.
+
 ## Log Files
 
 Logs are stored in `storage/logs/translation-manager-YYYY-MM-DD.log`

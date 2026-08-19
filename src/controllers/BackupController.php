@@ -325,10 +325,14 @@ class BackupController extends Controller
         }
 
         foreach ($files as $filename => $content) {
-            $zip->addFromString($filename, $content);
+            if (!$zip->addFromString($filename, $content)) {
+                throw new \Exception('Cannot add backup file to zip archive');
+            }
         }
 
-        $zip->close();
+        if (!$zip->close()) {
+            throw new \Exception('Cannot finalize zip file');
+        }
 
         // Send the file
         $response = Craft::$app->getResponse();
