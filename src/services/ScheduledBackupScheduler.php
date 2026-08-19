@@ -34,6 +34,7 @@ final class ScheduledBackupScheduler extends Component
     public const LIFECYCLE_MUTEX = 'translation-manager:backup:schedule';
     public const PORTABLE_MUTEX = 'translation-manager:backup:portable';
 
+    private const BOOTSTRAP_MUTEX_TIMEOUT = 0;
     private const MUTEX_TIMEOUT = 5;
 
     /** Synchronize the recurring family during plugin bootstrap. */
@@ -42,7 +43,7 @@ final class ScheduledBackupScheduler extends Component
         $settings ??= TranslationManager::$plugin->getSettings();
         $nextRun = $this->getNextRun($settings);
 
-        $this->withQueueMutationLocks(
+        $this->withBootstrapQueueMutationLocks(
             fn() => $nextRun === null
                 ? $this->cancelLocked()
                 : $this->queueAtLocked($settings, $nextRun, true),
@@ -402,5 +403,36 @@ final class ScheduledBackupScheduler extends Component
     private function withQueueMutationLocks(callable $callback): mixed
     {
         return $this->withLifecycleLock(fn() => $this->withPortableLock($callback));
+    }
+
+    /** @param callable(): void $callback */
+    private function withBootstrapQueueMutationLocks(callable $callback): void
+    {
+        $mutex = Craft::$app->getMutex();
+        if (!$mutex->acquire(self::LIFECYCLE_MUTEX, self::BOOTSTRAP_MUTEX_TIMEOUT)) {
+            Craft::warning(
+                'Scheduled-backup bootstrap reconciliation deferred because the lifecycle lock is busy.',
+                'translation-manager',
+            );
+            return;
+        }
+
+        try {
+            if (!$mutex->acquire(self::PORTABLE_MUTEX, self::BOOTSTRAP_MUTEX_TIMEOUT)) {
+                Craft::warning(
+                    'Scheduled-backup bootstrap reconciliation deferred because the portable queue lock is busy.',
+                    'translation-manager',
+                );
+                return;
+            }
+
+            try {
+                $callback();
+            } finally {
+                $mutex->release(self::PORTABLE_MUTEX);
+            }
+        } finally {
+            $mutex->release(self::LIFECYCLE_MUTEX);
+        }
     }
 }

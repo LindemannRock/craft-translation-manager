@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\tests\Integration;
 
 use Composer\InstalledVersions;
 use Craft;
+use craft\db\Command;
 use craft\db\Query;
 use craft\helpers\DateTimeHelper;
 use craft\queue\Queue;
@@ -29,6 +30,7 @@ use lindemannrock\translationmanager\tests\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionClass;
 use ReflectionProperty;
+use yii\log\Logger;
 use yii\mutex\Mutex;
 use yii\queue\sqs\Queue as SqsQueue;
 
@@ -333,7 +335,45 @@ final class ScheduledBackupQueueTest extends TestCase
         self::assertSame((string)$firstId, (string)$this->onlyOwnerRow()['id']);
     }
 
-    public function testPortableLockBlocksBootstrapBeforeInspectionOrPush(): void
+    public function testBusyLifecycleLockDefersBootstrapWithoutChangingQueueRows(): void
+    {
+        $ownerId = $this->pushOwnedJob($this->recurringJob('owner'), 300);
+        $legacyId = $this->insertPayload($this->serializeJob(new CreateBackupJob([
+            'reason' => 'scheduled',
+            'reschedule' => true,
+        ])), delay: 100);
+        $before = $this->queueMetadata();
+        $mutex = new SelectiveFailureMutex([ScheduledBackupScheduler::LIFECYCLE_MUTEX]);
+        $originalMutex = Craft::$app->getMutex();
+        Craft::$app->set('mutex', $mutex);
+        $this->settings()->backupEnabled = true;
+        $this->settings()->backupSchedule = 'daily';
+        $logOffset = count(Craft::getLogger()->messages);
+
+        try {
+            $this->scheduledBackups->synchronize($this->settings());
+        } finally {
+            Craft::$app->set('mutex', $originalMutex);
+        }
+
+        self::assertSame($before, $this->queueMetadata());
+        self::assertSame([$legacyId], $this->legacyRowIds());
+        self::assertSame((string)$ownerId, (string)$this->onlyOwnerRow()['id']);
+        self::assertSame([ScheduledBackupScheduler::LIFECYCLE_MUTEX], $mutex->acquisitions);
+        self::assertSame([0], $mutex->timeouts);
+        self::assertSame([], $mutex->releases);
+        $this->assertWarningLoggedSince(
+            $logOffset,
+            'Scheduled-backup bootstrap reconciliation deferred because the lifecycle lock is busy.',
+        );
+
+        $this->scheduledBackups->synchronize($this->settings());
+
+        self::assertSame([$legacyId], $this->legacyRowIds());
+        self::assertSame(0, $this->countOwnerRows());
+    }
+
+    public function testBusyPortableLockDefersBootstrapWithoutInspectingOrChangingQueueRows(): void
     {
         $legacyPayload = $this->serializeJob(new CreateBackupJob([
             'reason' => 'scheduled',
@@ -348,23 +388,29 @@ final class ScheduledBackupQueueTest extends TestCase
         Craft::$app->set('mutex', $mutex);
         $this->settings()->backupEnabled = true;
         $this->settings()->backupSchedule = 'daily';
+        $before = $this->queueMetadata();
+        $logOffset = count(Craft::getLogger()->messages);
 
         try {
             $this->scheduledBackups->synchronize($this->settings());
-            self::fail('Expected portable mutex failure.');
-        } catch (\RuntimeException $exception) {
-            self::assertSame('Unable to acquire the portable scheduled-backup queue lock.', $exception->getMessage());
         } finally {
             Craft::$app->set('mutex', $originalMutex);
         }
 
+        self::assertSame($before, $this->queueMetadata());
         self::assertSame($legacyIds, $this->legacyRowIds());
         self::assertSame(0, $this->countOwnerRows());
         self::assertSame([
             ScheduledBackupScheduler::LIFECYCLE_MUTEX,
             ScheduledBackupScheduler::PORTABLE_MUTEX,
         ], $mutex->acquisitions);
+        self::assertSame([0, 0], $mutex->timeouts);
         self::assertSame([ScheduledBackupScheduler::LIFECYCLE_MUTEX], $mutex->releases);
+        self::assertFalse($mutex->isHeld(ScheduledBackupScheduler::LIFECYCLE_MUTEX));
+        $this->assertWarningLoggedSince(
+            $logOffset,
+            'Scheduled-backup bootstrap reconciliation deferred because the portable queue lock is busy.',
+        );
     }
 
     public function testReplacementCancellationWaitsForThePortableLockBeforeDeletingRows(): void
@@ -426,6 +472,34 @@ final class ScheduledBackupQueueTest extends TestCase
             ScheduledBackupScheduler::PORTABLE_MUTEX,
             ScheduledBackupScheduler::LIFECYCLE_MUTEX,
         ], $mutex->releases);
+    }
+
+    public function testDisabledBootstrapRetriesCancellationAfterLockContention(): void
+    {
+        $this->pushOwnedJob($this->recurringJob('owner'), 300);
+        $this->insertPayload($this->serializeJob(new CreateBackupJob([
+            'reason' => 'scheduled',
+            'reschedule' => true,
+        ])));
+        $before = $this->queueMetadata();
+        $mutex = new SelectiveFailureMutex([ScheduledBackupScheduler::PORTABLE_MUTEX]);
+        $originalMutex = Craft::$app->getMutex();
+        Craft::$app->set('mutex', $mutex);
+        $this->settings()->backupEnabled = false;
+        $this->settings()->backupSchedule = 'disabled';
+
+        try {
+            $this->scheduledBackups->synchronize($this->settings());
+        } finally {
+            Craft::$app->set('mutex', $originalMutex);
+        }
+
+        self::assertSame($before, $this->queueMetadata());
+
+        $this->scheduledBackups->synchronize($this->settings());
+
+        self::assertSame(0, $this->countOwnerRows());
+        self::assertSame([], $this->legacyRowIds());
     }
 
     public function testSchedulerDeferredHandoffCarriesThePortableMutex(): void
@@ -742,17 +816,37 @@ final class ScheduledBackupQueueTest extends TestCase
     {
         $backup = new RecordingBackupService();
         $this->replacePluginComponent('backup', $backup);
+        $mutex = new SelectiveFailureMutex([]);
+        $originalMutex = Craft::$app->getMutex();
+        Craft::$app->set('mutex', $mutex);
         $this->settings()->backupEnabled = true;
         $this->settings()->backupSchedule = 'daily';
         $this->settings()->backupRetentionDays = 30;
+        $backup->onCreate = static function() use ($mutex): void {
+            self::assertTrue($mutex->isHeld(ScheduledBackupScheduler::LIFECYCLE_MUTEX));
+            self::assertFalse($mutex->isHeld(ScheduledBackupScheduler::PORTABLE_MUTEX));
+        };
 
-        $this->recurringJob('success')->execute(Craft::$app->getQueue());
+        try {
+            $this->recurringJob('success')->execute(Craft::$app->getQueue());
+        } finally {
+            Craft::$app->set('mutex', $originalMutex);
+        }
 
         self::assertSame(1, $backup->createCalls);
         self::assertSame(['scheduled'], $backup->reasons);
         self::assertSame(1, $backup->cleanupCalls);
         self::assertSame(['create', 'cleanup'], $backup->events);
         self::assertSame(1, $this->countOwnerRows());
+        self::assertSame([
+            ScheduledBackupScheduler::LIFECYCLE_MUTEX,
+            ScheduledBackupScheduler::PORTABLE_MUTEX,
+        ], $mutex->acquisitions);
+        self::assertSame([5, 5], $mutex->timeouts);
+        self::assertSame([
+            ScheduledBackupScheduler::PORTABLE_MUTEX,
+            ScheduledBackupScheduler::LIFECYCLE_MUTEX,
+        ], $mutex->releases);
     }
 
     public function testBackupFailurePropagatesWithoutQueuingASuccessor(): void
@@ -775,29 +869,32 @@ final class ScheduledBackupQueueTest extends TestCase
         self::assertSame(0, $this->countOwnerRows());
     }
 
-    public function testLifecycleAndPortableMutexFailuresRemainObservable(): void
+    public function testSettingsReplacementPropagatesLifecycleAndPortableLockContention(): void
     {
         $originalMutex = Craft::$app->getMutex();
-        Craft::$app->set('mutex', new SelectiveFailureMutex([
+        $lifecycleMutex = new SelectiveFailureMutex([
             ScheduledBackupScheduler::LIFECYCLE_MUTEX,
-        ]));
+        ]);
+        Craft::$app->set('mutex', $lifecycleMutex);
         $this->settings()->backupEnabled = true;
         $this->settings()->backupSchedule = 'daily';
 
         try {
-            $this->scheduledBackups->synchronize($this->settings());
+            $this->scheduledBackups->replace($this->settings());
             self::fail('Expected lifecycle mutex failure.');
         } catch (\RuntimeException $exception) {
             self::assertSame('Unable to acquire the scheduled-backup lifecycle lock.', $exception->getMessage());
         } finally {
             Craft::$app->set('mutex', $originalMutex);
         }
+        self::assertSame([5], $lifecycleMutex->timeouts);
 
-        $this->scheduledBackups->synchronize($this->settings());
+        $this->scheduledBackups->replace($this->settings());
         self::assertSame(1, $this->countOwnerRows());
-        Craft::$app->set('mutex', new SelectiveFailureMutex([
+        $portableMutex = new SelectiveFailureMutex([
             ScheduledBackupScheduler::PORTABLE_MUTEX,
-        ]));
+        ]);
+        Craft::$app->set('mutex', $portableMutex);
 
         try {
             $this->settings()->backupEnabled = false;
@@ -809,6 +906,41 @@ final class ScheduledBackupQueueTest extends TestCase
         } finally {
             Craft::$app->set('mutex', $originalMutex);
         }
+        self::assertSame([5, 5], $portableMutex->timeouts);
+        self::assertSame([ScheduledBackupScheduler::LIFECYCLE_MUTEX], $portableMutex->releases);
+    }
+
+    public function testCancellationFailureAfterLockAcquisitionPropagatesAndPreservesRows(): void
+    {
+        $ownerId = $this->pushOwnedJob($this->recurringJob('owner'), 300);
+        $this->settings()->backupEnabled = false;
+        $this->settings()->backupSchedule = 'disabled';
+        $mutex = new SelectiveFailureMutex([]);
+        $originalMutex = Craft::$app->getMutex();
+        $db = Craft::$app->getDb();
+        $originalCommandClass = $db->commandClass;
+        Craft::$app->set('mutex', $mutex);
+        $db->commandClass = FailingQueueDeleteCommand::class;
+
+        try {
+            $this->scheduledBackups->replace($this->settings());
+            self::fail('Expected cancellation failure to propagate.');
+        } catch (\RuntimeException $exception) {
+            self::assertSame('Scheduled-backup cancellation failure.', $exception->getMessage());
+        } finally {
+            $db->commandClass = $originalCommandClass;
+            Craft::$app->set('mutex', $originalMutex);
+        }
+
+        self::assertSame((string)$ownerId, (string)$this->onlyOwnerRow()['id']);
+        self::assertSame([
+            ScheduledBackupScheduler::LIFECYCLE_MUTEX,
+            ScheduledBackupScheduler::PORTABLE_MUTEX,
+        ], $mutex->acquisitions);
+        self::assertSame([
+            ScheduledBackupScheduler::PORTABLE_MUTEX,
+            ScheduledBackupScheduler::LIFECYCLE_MUTEX,
+        ], $mutex->releases);
     }
 
     public function testQueuePushFailurePropagatesAndLeavesInspectableOwnedRow(): void
@@ -818,18 +950,31 @@ final class ScheduledBackupQueueTest extends TestCase
         $this->proxyQueue->failPushes = true;
         $this->settings()->backupEnabled = true;
         $this->settings()->backupSchedule = 'daily';
-
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Scheduled backup proxy failure.');
+        $mutex = new SelectiveFailureMutex([]);
+        $originalMutex = Craft::$app->getMutex();
+        Craft::$app->set('mutex', $mutex);
 
         try {
             $this->scheduledBackups->replace($this->settings());
+            self::fail('Expected queue push failure to propagate.');
+        } catch (\RuntimeException $exception) {
+            self::assertSame('Scheduled backup proxy failure.', $exception->getMessage());
         } finally {
+            Craft::$app->set('mutex', $originalMutex);
             self::assertSame(1, $this->countOwnerRows());
         }
+
+        self::assertSame([
+            ScheduledBackupScheduler::LIFECYCLE_MUTEX,
+            ScheduledBackupScheduler::PORTABLE_MUTEX,
+        ], $mutex->acquisitions);
+        self::assertSame([
+            ScheduledBackupScheduler::PORTABLE_MUTEX,
+            ScheduledBackupScheduler::LIFECYCLE_MUTEX,
+        ], $mutex->releases);
     }
 
-    public function testRuntimeHasNoCloudDependencyOrPrivateInfrastructureInspection(): void
+    public function testRuntimeDependsOnlyOnPublishedQueueContracts(): void
     {
         $root = dirname(__DIR__, 2);
         $runtime = file_get_contents($root . '/src/services/ScheduledBackupScheduler.php')
@@ -916,6 +1061,31 @@ final class ScheduledBackupQueueTest extends TestCase
             ->where(['like', 'job', ScheduledBackupScheduler::PLUGIN_TOKEN])
             ->andWhere(['like', 'job', 'CreateBackupJob'])
             ->andWhere(['like', 'job', ScheduledBackupScheduler::RECURRING_OWNER]);
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function queueMetadata(): array
+    {
+        return (new Query())
+            ->from('{{%queue}}')
+            ->select(['id', 'channel', 'timePushed', 'ttr', 'delay', 'priority', 'timeUpdated', 'fail'])
+            ->orderBy(['id' => SORT_ASC])
+            ->all();
+    }
+
+    private function assertWarningLoggedSince(int $offset, string $expectedMessage): void
+    {
+        foreach (array_slice(Craft::getLogger()->messages, $offset) as $message) {
+            if ($message[0] === $expectedMessage
+                && $message[1] === Logger::LEVEL_WARNING
+                && $message[2] === 'translation-manager'
+            ) {
+                self::addToAssertionCount(1);
+                return;
+            }
+        }
+
+        self::fail("Expected translation-manager warning was not logged: $expectedMessage");
     }
 
     /** @return list<int> */
@@ -1037,9 +1207,11 @@ final class RecordingBackupService extends BackupService
     public array $reasons = [];
     /** @var list<string> */
     public array $events = [];
+    public ?\Closure $onCreate = null;
 
     public function createBackup(?string $reason = null): ?string
     {
+        ($this->onCreate ?? static fn() => null)();
         $this->createCalls++;
         $this->reasons[] = $reason ?? 'import';
         $this->events[] = 'create';
@@ -1063,6 +1235,10 @@ final class SelectiveFailureMutex extends Mutex
     public array $acquisitions = [];
     /** @var list<string> */
     public array $releases = [];
+    /** @var list<int> */
+    public array $timeouts = [];
+    /** @var list<string> */
+    private array $heldNames = [];
 
     /** @param list<string> $failedNames */
     public function __construct(
@@ -1076,18 +1252,48 @@ final class SelectiveFailureMutex extends Mutex
     protected function acquireLock($name, $timeout = 0): bool
     {
         $this->acquisitions[] = (string)$name;
+        $this->timeouts[] = (int)$timeout;
         if ($name === ScheduledBackupScheduler::PORTABLE_MUTEX && $this->portableTimestamp !== null) {
             DateTimeHelper::resume();
             DateTimeHelper::pause(new \DateTime('@' . $this->portableTimestamp));
         }
 
-        return !in_array($name, $this->failedNames, true);
+        if (in_array($name, $this->failedNames, true)) {
+            return false;
+        }
+
+        $this->heldNames[] = (string)$name;
+
+        return true;
     }
 
     protected function releaseLock($name): bool
     {
         $this->releases[] = (string)$name;
+        $this->heldNames = array_values(array_filter(
+            $this->heldNames,
+            static fn(string $heldName): bool => $heldName !== (string)$name,
+        ));
 
         return true;
+    }
+
+    public function isHeld(string $name): bool
+    {
+        return in_array($name, $this->heldNames, true);
+    }
+}
+
+/** Simulates a database failure only when the scheduler cancels queue rows. */
+final class FailingQueueDeleteCommand extends Command
+{
+    public function execute()
+    {
+        $sql = ltrim($this->getSql());
+        if (str_starts_with(strtoupper($sql), 'DELETE FROM') && str_contains($sql, 'queue')) {
+            throw new \RuntimeException('Scheduled-backup cancellation failure.');
+        }
+
+        return parent::execute();
     }
 }
