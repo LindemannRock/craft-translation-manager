@@ -238,6 +238,14 @@ translations/{language}/valid.php
 
 and database rows with category `valid`.
 
+## Craft Cloud warns about local backup storage
+
+Craft Cloud's application filesystem is ephemeral, so a custom/local backup path may be lost during deployments, restarts, or environment replacement. A Craft volume is also unsafe for persistent Cloud backups when it uses a local filesystem. Select a volume using Craft Cloud's **Cloud** filesystem type and review Craft's [local filesystem migration guidance](https://craftcms.com/docs/cloud/assets.html#local).
+
+The warning follows the effective `backupPath` and `backupVolumeUid` after `config/translation-manager.php` overrides. Check the config file when those CP fields are disabled or their stored values appear different. A valid resolved non-local filesystem suppresses this specific warning only; suppression does not certify third-party Craft Cloud compatibility.
+
+The notice does not rewrite settings or alter backup behavior. Missing and validation-invalid volumes retain their existing local fallback and show the warning. A filesystem that cannot be resolved is a separate unavailable-volume failure and is not classified as durable; check Translation Manager's logs for the underlying error.
+
 ## Log Files
 
 Logs are stored in `storage/logs/translation-manager-YYYY-MM-DD.log`

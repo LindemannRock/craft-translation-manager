@@ -392,6 +392,7 @@ return [
     'The custom path where backups should be stored (only used when no volume is selected)' => 'Het aangepaste pad waar back-ups moeten worden opgeslagen (alleen gebruikt wanneer geen volume is geselecteerd)',
     'Use Craft path aliases: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security. Environment variables like <code>$ENV_VAR</code> are supported.' => 'Gebruik Craft-padaliassen: <code>@storage/translation-manager/backups</code> (aanbevolen) of <code>@root/backups/translation-manager</code>. Paden moeten buiten de webroot liggen voor de beveiliging. Omgevingsvariabelen zoals <code>$ENV_VAR</code> worden ondersteund.',
     'Backup Location:' => 'Back-uplocatie:',
+    'This host has an ephemeral filesystem. Files in the effective local storage path may be lost during deployments, restarts, or environment replacement. Select a Craft volume backed by durable remote storage. On Craft Cloud, use a Cloud filesystem.' => 'Deze host heeft een vluchtig bestandssysteem. Bestanden in het effectieve lokale opslagpad kunnen verloren gaan tijdens implementaties, herstarts of vervanging van de omgeving. Selecteer een Craft-volume met duurzame externe opslag. Gebruik op Craft Cloud een Cloud-bestandssysteem.',
 
     // Settings: Integrations
     'Integrations' => 'Integraties',

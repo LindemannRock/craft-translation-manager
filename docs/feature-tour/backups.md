@@ -122,6 +122,10 @@ Store backups in any Craft asset volume — Amazon S3, Servd, Wasabi, or any pro
 
 Local volumes that resolve inside `@webroot` are rejected, because backup JSON files should not be web-accessible. Remote volumes such as S3 are allowed; set the bucket/object access policy in the storage provider so backups stay private.
 
+Craft Cloud's application filesystem is ephemeral. A custom/local path and a Craft volume backed by a local filesystem are therefore unsafe for persistent backups on Craft Cloud, even when the local path is outside `@webroot`. Select a volume that uses Craft Cloud's **Cloud** filesystem type and review Craft's [local filesystem migration guidance](https://craftcms.com/docs/cloud/assets.html#local).
+
+On an ephemeral host, Backup settings evaluates the effective values after `config/translation-manager.php` overrides and shows a colored warning for effective local storage. A valid resolved non-local filesystem suppresses only this local-storage warning; it is not certification that a third-party filesystem is fully compatible with Craft Cloud. The warning does not change settings or backup, restore, ZIP, retention, or queue behavior. Missing or validation-invalid volumes retain the existing local fallback and warn, while an unavailable filesystem remains a separate failure condition.
+
 ## Retention policy
 
 - Automatic cleanup is based on the `backupRetentionDays` setting.

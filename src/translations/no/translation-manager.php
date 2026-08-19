@@ -392,6 +392,7 @@ return [
     'The custom path where backups should be stored (only used when no volume is selected)' => 'Den egendefinerte stien der sikkerhetskopier skal lagres (brukes bare når intet volum er valgt)',
     'Use Craft path aliases: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security. Environment variables like <code>$ENV_VAR</code> are supported.' => 'Bruk Craft-stialias: <code>@storage/translation-manager/backups</code> (anbefalt) eller <code>@root/backups/translation-manager</code>. Stier må være utenfor webroot av sikkerhetshensyn. Miljøvariabler som <code>$ENV_VAR</code> støttes.',
     'Backup Location:' => 'Sikkerhetskopieringsplassering:',
+    'This host has an ephemeral filesystem. Files in the effective local storage path may be lost during deployments, restarts, or environment replacement. Select a Craft volume backed by durable remote storage. On Craft Cloud, use a Cloud filesystem.' => 'Denne verten har et flyktig filsystem. Filer i den effektive lokale lagringsbanen kan gå tapt under distribusjoner, omstarter eller utskifting av miljøet. Velg et Craft-volum med varig ekstern lagring. Bruk et Cloud-filsystem på Craft Cloud.',
 
     // Settings: Integrations
     'Integrations' => 'Integrasjoner',

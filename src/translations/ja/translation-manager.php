@@ -392,6 +392,7 @@ return [
     'The custom path where backups should be stored (only used when no volume is selected)' => 'バックアップを保存するカスタムパス（ボリュームが選択されていない場合のみ使用）',
     'Use Craft path aliases: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security. Environment variables like <code>$ENV_VAR</code> are supported.' => 'Craft パスエイリアスを使用してください: <code>@storage/translation-manager/backups</code>（推奨）または <code>@root/backups/translation-manager</code>。セキュリティ上、パスは webroot の外に設定する必要があります。<code>$ENV_VAR</code> のような環境変数がサポートされます。',
     'Backup Location:' => 'バックアップ場所 :',
+    'This host has an ephemeral filesystem. Files in the effective local storage path may be lost during deployments, restarts, or environment replacement. Select a Craft volume backed by durable remote storage. On Craft Cloud, use a Cloud filesystem.' => 'このホストにはエフェメラルなファイルシステムがあります。有効なローカルストレージパス内のファイルは、デプロイ、再起動、または環境の置き換え時に失われる可能性があります。永続的なリモートストレージを使用する Craft ボリュームを選択してください。Craft Cloud では Cloud ファイルシステムを使用してください。',
 
     // Settings: Integrations
     'Integrations' => 'インテグレーション',

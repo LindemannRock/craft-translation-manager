@@ -392,6 +392,7 @@ return [
     'The custom path where backups should be stored (only used when no volume is selected)' => 'Il percorso personalizzato in cui i backup devono essere archiviati (usato solo quando nessun volume è selezionato)',
     'Use Craft path aliases: <code>@storage/translation-manager/backups</code> (recommended) or <code>@root/backups/translation-manager</code>. Paths must be outside webroot for security. Environment variables like <code>$ENV_VAR</code> are supported.' => 'Usare alias di percorso Craft: <code>@storage/translation-manager/backups</code> (consigliato) o <code>@root/backups/translation-manager</code>. I percorsi devono essere fuori dalla webroot per sicurezza. Le variabili di ambiente come <code>$ENV_VAR</code> sono supportate.',
     'Backup Location:' => 'Posizione backup:',
+    'This host has an ephemeral filesystem. Files in the effective local storage path may be lost during deployments, restarts, or environment replacement. Select a Craft volume backed by durable remote storage. On Craft Cloud, use a Cloud filesystem.' => 'Questo host ha un file system effimero. I file nel percorso di archiviazione locale effettivo potrebbero andare persi durante distribuzioni, riavvii o sostituzioni dell\'ambiente. Selezioni un volume Craft supportato da archiviazione remota persistente. Su Craft Cloud, utilizzi un file system Cloud.',
 
     // Settings: Integrations
     'Integrations' => 'Integrazioni',

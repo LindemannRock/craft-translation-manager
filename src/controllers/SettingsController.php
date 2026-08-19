@@ -17,6 +17,7 @@ use lindemannrock\base\helpers\SettingsPostHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\helpers\FeatureGate;
 use lindemannrock\translationmanager\models\Settings;
+use lindemannrock\translationmanager\presenters\StorageWarningPresentation;
 use lindemannrock\translationmanager\records\GenerationStatusRecord;
 use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\services\SourceService;
@@ -154,6 +155,7 @@ class SettingsController extends Controller
 
         return $this->renderTemplate('translation-manager/settings/backup', [
             'settings' => $settings,
+            'storageWarning' => StorageWarningPresentation::forSettings($settings),
         ]);
     }
 
@@ -346,9 +348,16 @@ class SettingsController extends Controller
 
             $template = "translation-manager/settings/{$section}";
 
-            return $this->renderTemplate($template, [
+            $templateVariables = [
                 'settings' => $settings,
-            ]);
+            ];
+            if ($section === 'backup') {
+                $effectiveSettings = clone $settings;
+                PluginHelper::applyConfigOverridesToSettings($effectiveSettings, 'translation-manager');
+                $templateVariables['storageWarning'] = StorageWarningPresentation::forSettings($effectiveSettings);
+            }
+
+            return $this->renderTemplate($template, $templateVariables);
         }
 
         // Save settings to database (same scoped attributes)

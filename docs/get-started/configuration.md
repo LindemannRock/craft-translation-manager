@@ -156,6 +156,10 @@ Translation Manager at a subfolder.
 | `backupPath` | `string` | `'@storage/translation-manager/backups'` | Backup directory. Supports `$VARIABLE` env vars. Must be under `@root` or `@storage` |
 | `backupVolumeUid` | `string\|null` | `null` | Asset volume UID for backup storage (overrides `backupPath`). Local volumes inside `@webroot` are rejected; remote volume access must be restricted in the storage provider. |
 
+Craft Cloud's application filesystem is ephemeral. For persistent backups there, do not use `backupPath` or a volume backed by a local filesystem; select a volume using Craft Cloud's **Cloud** filesystem type. See Craft's [local filesystem guidance](https://craftcms.com/docs/cloud/assets.html#local).
+
+The Backup settings warning classifies the effective configuration after `config/translation-manager.php` overrides. It warns on an ephemeral host for a custom path, a local volume, or a missing/validation-invalid volume that the current backup flow falls back from to local storage. A valid, successfully resolved non-local filesystem suppresses only this warning and is not certification of third-party Craft Cloud compatibility. Unavailable-volume failures stay separate. The notice is non-blocking and never changes or persists settings or changes runtime backup behavior.
+
 ### Logging
 
 | Option | Type | Default | Description |
