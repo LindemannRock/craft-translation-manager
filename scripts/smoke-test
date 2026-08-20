@@ -1,11 +1,58 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+PROJECT_ROOT=""
+
+resolve_project_root() {
+  local layout
+  local candidate
+  local canonical
+  local -a attempted=()
+  local -a layouts=(
+    "development workspace|$SCRIPT_DIR/../../.."
+    "copied compatibility runner|$SCRIPT_DIR/.."
+    "Composer vendor package|$SCRIPT_DIR/../../../.."
+  )
+
+  for layout in "${layouts[@]}"; do
+    candidate="${layout#*|}"
+    if canonical="$(cd "$candidate" 2>/dev/null && pwd -P)"; then
+      attempted+=("${layout%%|*}: $canonical")
+      if [[ -f "$canonical/bootstrap.php" &&
+            -f "$canonical/vendor/autoload.php" &&
+            -f "$canonical/vendor/craftcms/cms/bootstrap/console.php" ]]; then
+        PROJECT_ROOT="$canonical"
+        return 0
+      fi
+    else
+      attempted+=("${layout%%|*}: $candidate (not a directory)")
+    fi
+  done
+
+  echo "Unable to resolve the Craft project root for Translation Manager's smoke runner." >&2
+  echo "Script directory: $SCRIPT_DIR" >&2
+  echo "Attempted bounded layouts:" >&2
+  printf '  - %s\n' "${attempted[@]}" >&2
+  echo "A valid project root must contain bootstrap.php, vendor/autoload.php, and vendor/craftcms/cms/bootstrap/console.php." >&2
+  return 1
+}
+
+resolve_project_root
+cd "$PROJECT_ROOT"
+export TRANSLATION_MANAGER_SMOKE_PROJECT_ROOT="$PROJECT_ROOT"
+
 php <<'PHP'
 <?php
 
-require getcwd() . '/bootstrap.php';
-require CRAFT_VENDOR_PATH . '/craftcms/cms/bootstrap/console.php';
+$projectRoot = $_SERVER['TRANSLATION_MANAGER_SMOKE_PROJECT_ROOT'] ?? null;
+if (!is_string($projectRoot) || $projectRoot === '') {
+    fwrite(STDERR, "Validated smoke project root was not provided to embedded PHP.\n");
+    exit(1);
+}
+
+require $projectRoot . '/bootstrap.php';
+require $projectRoot . '/vendor/craftcms/cms/bootstrap/console.php';
 
 use lindemannrock\base\Base;
 use lindemannrock\logginglibrary\LoggingLibrary;

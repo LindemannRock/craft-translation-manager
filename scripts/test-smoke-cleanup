@@ -1,11 +1,52 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 SMOKE_SCRIPT="$SCRIPT_DIR/smoke-test"
+PACKAGE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd -P)"
+PROJECT_ROOT=""
 ASSERTIONS=0
 RUNS=0
 MARKERS=()
+
+resolve_project_root() {
+  local layout
+  local candidate
+  local canonical
+  local -a attempted=()
+  local -a layouts=(
+    "development workspace|$SCRIPT_DIR/../../.."
+    "copied compatibility runner|$SCRIPT_DIR/.."
+    "Composer vendor package|$SCRIPT_DIR/../../../.."
+  )
+
+  for layout in "${layouts[@]}"; do
+    candidate="${layout#*|}"
+    if canonical="$(cd "$candidate" 2>/dev/null && pwd -P)"; then
+      attempted+=("${layout%%|*}: $canonical")
+      if [[ -f "$canonical/bootstrap.php" &&
+            -f "$canonical/vendor/autoload.php" &&
+            -f "$canonical/vendor/craftcms/cms/bootstrap/console.php" ]]; then
+        PROJECT_ROOT="$canonical"
+        return 0
+      fi
+    else
+      attempted+=("${layout%%|*}: $candidate (not a directory)")
+    fi
+  done
+
+  echo "Unable to resolve the Craft project root for Translation Manager's smoke cleanup regression." >&2
+  echo "Script directory: $SCRIPT_DIR" >&2
+  echo "Attempted bounded layouts:" >&2
+  printf '  - %s\n' "${attempted[@]}" >&2
+  echo "A valid project root must contain bootstrap.php, vendor/autoload.php, and vendor/craftcms/cms/bootstrap/console.php." >&2
+  return 1
+}
+
+resolve_project_root
+cd "$PROJECT_ROOT"
+export TRANSLATION_MANAGER_SMOKE_PROJECT_ROOT="$PROJECT_ROOT"
+export TRANSLATION_MANAGER_SMOKE_PACKAGE_ROOT="$PACKAGE_ROOT"
 
 fail() {
   echo "Smoke cleanup regression failed: $1" >&2
@@ -34,8 +75,15 @@ state_fingerprint() {
   php <<'PHP'
 <?php
 
-require getcwd() . '/bootstrap.php';
-require CRAFT_VENDOR_PATH . '/craftcms/cms/bootstrap/console.php';
+$projectRoot = $_SERVER['TRANSLATION_MANAGER_SMOKE_PROJECT_ROOT'] ?? null;
+$packageRoot = $_SERVER['TRANSLATION_MANAGER_SMOKE_PACKAGE_ROOT'] ?? null;
+if (!is_string($projectRoot) || $projectRoot === '' || !is_string($packageRoot) || $packageRoot === '') {
+    fwrite(STDERR, "Validated smoke project/package roots were not provided to embedded PHP.\n");
+    exit(1);
+}
+
+require $projectRoot . '/bootstrap.php';
+require $projectRoot . '/vendor/craftcms/cms/bootstrap/console.php';
 
 use craft\db\Query;
 
@@ -70,7 +118,7 @@ foreach (['config', 'mutex', 'queue', 'request', 'response', 'volumes'] as $comp
 
 $paths = array_filter([
     Craft::getAlias('@translations', false),
-    getcwd() . '/plugins/translation-manager/src/translations',
+    $packageRoot . '/src/translations',
 ]);
 
 foreach ($paths as $root) {
@@ -109,8 +157,14 @@ historical_fingerprint() {
   php <<'PHP'
 <?php
 
-require getcwd() . '/bootstrap.php';
-require CRAFT_VENDOR_PATH . '/craftcms/cms/bootstrap/console.php';
+$projectRoot = $_SERVER['TRANSLATION_MANAGER_SMOKE_PROJECT_ROOT'] ?? null;
+if (!is_string($projectRoot) || $projectRoot === '') {
+    fwrite(STDERR, "Validated smoke project root was not provided to embedded PHP.\n");
+    exit(1);
+}
+
+require $projectRoot . '/bootstrap.php';
+require $projectRoot . '/vendor/craftcms/cms/bootstrap/console.php';
 
 use craft\db\Query;
 
