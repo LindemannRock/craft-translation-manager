@@ -166,7 +166,9 @@ New volume backups live beneath `{configured volume subpath}/translation-manager
 
 Craft Cloud's application filesystem is ephemeral. For persistent backups there, do not use `backupPath` or a volume backed by a local filesystem; select a volume using Craft Cloud's **Cloud** filesystem type. See Craft's [local filesystem guidance](https://craftcms.com/docs/cloud/assets.html#local).
 
-The Backup settings warning classifies the effective configuration after `config/translation-manager.php` overrides. It warns on an ephemeral host for a custom path, a local volume, or a missing/validation-invalid volume. A valid, successfully resolved non-local filesystem suppresses only this warning and is not certification of third-party Craft Cloud compatibility. Unavailable-volume failures stay separate. The notice is non-blocking and never changes or persists settings; operational backup actions still fail closed whenever a configured volume cannot be used.
+Backup settings classifies the effective configuration after `config/translation-manager.php` overrides. On an ephemeral host, it shows the local-storage warning for a custom path or a valid local-filesystem volume. Durable hosts do not show that warning, and a valid resolved non-local filesystem suppresses it on either host type without certifying third-party Craft Cloud compatibility.
+
+A configured volume that is missing, validation-invalid, or cannot resolve its filesystem is unavailable on both ephemeral and durable hosts. The settings page shows the actionable unavailable-volume error instead of a fabricated local or volume location, never combines that error with the local-storage warning, and leaves the effective settings unchanged. Operational backup actions continue to fail closed. Restoring the same volume or filesystem makes the unchanged effective UID usable again without rewriting the setting.
 
 ### Logging
 

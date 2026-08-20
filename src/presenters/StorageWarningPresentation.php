@@ -31,19 +31,17 @@ final class StorageWarningPresentation
     public const STATE_NON_LOCAL = 'non-local';
     public const STATE_UNAVAILABLE = 'unavailable';
 
-    private function __construct(public readonly string $state)
-    {
+    private function __construct(
+        public readonly string $state,
+        public readonly ?string $location = null,
+    ) {
     }
 
     public static function forSettings(Settings $settings): self
     {
-        if (!App::isEphemeral()) {
-            return new self(self::STATE_DURABLE_HOST);
-        }
-
         $volumeUid = trim((string)$settings->backupVolumeUid);
         if ($volumeUid === '') {
-            return new self(self::STATE_LOCAL);
+            return new self(App::isEphemeral() ? self::STATE_LOCAL : self::STATE_DURABLE_HOST);
         }
 
         try {
@@ -53,7 +51,7 @@ final class StorageWarningPresentation
         }
 
         if ($volumeErrors !== []) {
-            return new self(self::STATE_LOCAL);
+            return new self(self::STATE_UNAVAILABLE);
         }
 
         try {
@@ -63,11 +61,15 @@ final class StorageWarningPresentation
         }
 
         if (!$volume instanceof Volume) {
-            return new self(self::STATE_LOCAL);
+            return new self(self::STATE_UNAVAILABLE);
         }
 
         try {
             $fs = $volume->getFs();
+            $subpath = trim((string)$volume->getSubpath(), '/');
+            $location = 'Volume: ' . (string)$volume->name . '/'
+                . ($subpath !== '' ? $subpath . '/' : '')
+                . 'translation-manager/backups';
         } catch (Throwable) {
             return new self(self::STATE_UNAVAILABLE);
         }
@@ -76,10 +78,13 @@ final class StorageWarningPresentation
             return new self(self::STATE_UNAVAILABLE);
         }
 
+        if (!$fs instanceof LocalFsInterface) {
+            return new self(self::STATE_NON_LOCAL, $location);
+        }
+
         return new self(
-            $fs instanceof LocalFsInterface
-                ? self::STATE_LOCAL
-                : self::STATE_NON_LOCAL,
+            App::isEphemeral() ? self::STATE_LOCAL : self::STATE_DURABLE_HOST,
+            $location,
         );
     }
 

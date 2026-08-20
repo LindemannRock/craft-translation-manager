@@ -244,11 +244,11 @@ Craft Cloud's application filesystem is ephemeral, so a custom/local backup path
 
 The warning follows the effective `backupPath` and `backupVolumeUid` after `config/translation-manager.php` overrides. Check the config file when those CP fields are disabled or their stored values appear different. A valid resolved non-local filesystem suppresses this specific warning only; suppression does not certify third-party Craft Cloud compatibility.
 
-The notice does not rewrite settings. Missing and validation-invalid volumes still show the local-storage warning classification, while a filesystem that cannot be resolved is a separate unavailable state. Backup operations fail closed in all of these configured-unavailable cases; they do not fall back to `backupPath` or `@storage`.
+The notice does not rewrite settings. Missing, validation-invalid, and otherwise unresolved configured volumes are unavailable on both ephemeral and durable hosts; they do not show the local-storage warning or a fabricated backup location. Instead, Backup settings shows a separate unavailable-volume error. Backup operations fail closed in all of these cases and do not fall back to `backupPath` or `@storage`.
 
 ## Configured backup volume is unavailable
 
-If Translation Manager reports that the configured backup volume cannot currently be used, check the effective `backupVolumeUid` in `config/translation-manager.php` and the Control Panel, then confirm that the volume and its filesystem plugin are installed and available. Also verify the provider credentials and write permissions used by the volume.
+If Translation Manager reports that the configured backup volume cannot currently be used, the settings page intentionally replaces the effective location with that error and suppresses the Craft Cloud local-storage warning. Check the effective `backupVolumeUid` in `config/translation-manager.php` and the Control Panel, then confirm that the volume and its filesystem plugin are installed and available. Also verify the provider credentials and write permissions used by the volume.
 
 Do not clear the UID to make an operation use local storage unless you are intentionally changing the storage policy. Translation Manager leaves the UID and effective settings unchanged, so the same configuration recovers automatically after the volume or filesystem becomes available again.
 

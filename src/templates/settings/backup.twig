@@ -122,20 +122,27 @@
             </div>
         </div>
 
-    {% if not settings.getErrors('backupPath') %}
-        {% set backupPath = craft.translationManager.backup.getBackupPath() %}
+    {% if storageWarning.isUnavailable %}
         {% include 'lindemannrock-base/_components/info-box' with {
-	        message: '<strong>' ~ "Backup Location:"|t('translation-manager') ~ '</strong> <code>' ~ backupPath|e ~ '</code>'
-        } %}
-    {% endif %}
-
-    {% if storageWarning.shouldShowWarning %}
-        {% include 'lindemannrock-base/_components/info-box' with {
-            message: 'This host has an ephemeral filesystem. Files in the effective local storage path may be lost during deployments, restarts, or environment replacement. Select a Craft volume backed by durable remote storage. On Craft Cloud, use a Cloud filesystem.'|t('translation-manager'),
-            type: 'warning',
+            message: 'The configured backup volume cannot currently be used. Backup operations are unavailable until the volume is restored or the effective setting is changed.'|t('translation-manager'),
+            type: 'error',
             variant: 'colored',
             allowHtml: false,
         } only %}
+    {% elseif not settings.getErrors('backupPath') %}
+        {% set backupPath = storageWarning.location ?? settings.getBackupPath() %}
+        {% include 'lindemannrock-base/_components/info-box' with {
+            message: '<strong>' ~ "Backup Location:"|t('translation-manager') ~ '</strong> <code>' ~ backupPath|e ~ '</code>'
+        } %}
+
+        {% if storageWarning.shouldShowWarning %}
+            {% include 'lindemannrock-base/_components/info-box' with {
+                message: 'This host has an ephemeral filesystem. Files in the effective local storage path may be lost during deployments, restarts, or environment replacement. Select a Craft volume backed by durable remote storage. On Craft Cloud, use a Cloud filesystem.'|t('translation-manager'),
+                type: 'warning',
+                variant: 'colored',
+                allowHtml: false,
+            } only %}
+        {% endif %}
     {% endif %}
 
     {% include 'lindemannrock-base/_components/plugin-credit' %}
