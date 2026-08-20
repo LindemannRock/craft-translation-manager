@@ -7,7 +7,6 @@ php <<'PHP'
 require getcwd() . '/bootstrap.php';
 require CRAFT_VENDOR_PATH . '/craftcms/cms/bootstrap/console.php';
 
-use craft\base\Plugin;
 use lindemannrock\base\Base;
 use lindemannrock\logginglibrary\LoggingLibrary;
 use lindemannrock\translationmanager\models\Settings;
@@ -16,110 +15,312 @@ use lindemannrock\translationmanager\services\SourceService;
 use lindemannrock\translationmanager\services\TranslationsService;
 use lindemannrock\translationmanager\TranslationManager;
 
-$plugins = Craft::$app->getPlugins();
-$plugin = $plugins->getPlugin('translation-manager');
+$marker = 'Compatibility smoke text ' . bin2hex(random_bytes(16));
+$context = 'site.compat-smoke';
+$category = 'messages';
+$hash = md5($marker);
+$identity = [
+    'source' => $marker,
+    'sourceHash' => $hash,
+    'translationKey' => $marker,
+    'category' => $category,
+    'context' => $context,
+];
 
-if (!$plugin instanceof TranslationManager) {
-    fwrite(STDERR, "translation-manager plugin instance was not loaded.\n");
-    exit(1);
+$failPoints = array_values(array_filter(array_map(
+    'trim',
+    explode(',', (string)($_SERVER['TRANSLATION_MANAGER_SMOKE_FAIL_AT'] ?? '')),
+)));
+$failIfRequested = static function(string $point) use ($failPoints): void {
+    if (in_array($point, $failPoints, true)) {
+        throw new RuntimeException("Injected smoke failure at {$point}.");
+    }
+};
+
+$findExactIds = static function() use ($identity): array {
+    $ids = array_map(
+        'intval',
+        TranslationRecord::find()
+            ->select('id')
+            ->where($identity)
+            ->orderBy('id')
+            ->column(),
+    );
+    sort($ids);
+
+    return $ids;
+};
+
+$translationsService = null;
+$expectedLanguages = [];
+$preExistingIds = [];
+$ownedIds = [];
+$deletedIds = [];
+$ownershipEstablished = false;
+$cleanupFallbackUsed = false;
+$finalExactMarkerCount = null;
+$primaryFailure = null;
+$cleanupFailure = null;
+
+try {
+    $plugins = Craft::$app->getPlugins();
+    $plugin = $plugins->getPlugin('translation-manager');
+
+    if (!$plugin instanceof TranslationManager) {
+        throw new RuntimeException('translation-manager plugin instance was not loaded.');
+    }
+
+    $info = $plugins->getPluginInfo('translation-manager');
+    if (($info['isInstalled'] ?? false) !== true || ($info['isEnabled'] ?? false) !== true) {
+        throw new RuntimeException('translation-manager is not installed and enabled.');
+    }
+
+    $logging = $plugins->getPlugin('logging-library');
+    if (!$logging instanceof LoggingLibrary) {
+        throw new RuntimeException('logging-library dependency was not loaded.');
+    }
+
+    $loggingInfo = $plugins->getPluginInfo('logging-library');
+    if (($loggingInfo['isInstalled'] ?? false) !== true || ($loggingInfo['isEnabled'] ?? false) !== true) {
+        throw new RuntimeException('logging-library dependency is not installed and enabled.');
+    }
+
+    $base = Craft::$app->getModule('lindemannrock-base', false);
+    if (!$base instanceof Base) {
+        throw new RuntimeException('Base module dependency was not registered.');
+    }
+
+    $settings = $plugin->getSettings();
+    if (!$settings instanceof Settings) {
+        throw new RuntimeException('translation-manager settings did not load.');
+    }
+
+    if ($settings->getPrimaryCategory() !== $category) {
+        throw new RuntimeException('Default primary translation category is not messages.');
+    }
+
+    /** @var SourceService $sourceService */
+    $sourceService = $plugin->get('sources');
+    $sources = $sourceService->getAllSources();
+
+    if ($sources === [] || $sources[0]->id !== 'category:messages') {
+        throw new RuntimeException('Default messages source was not registered.');
+    }
+
+    if ($sourceService->getSourcePermission(SourceService::ACTION_EDIT, 'category:messages') !== 'translationManager:editSource:category:messages') {
+        throw new RuntimeException('Source permission helper returned an unexpected permission name.');
+    }
+
+    /** @var TranslationsService $translationsService */
+    $translationsService = $plugin->get('translations');
+    $expectedLanguages = $plugin->getUniqueLanguages();
+    if ($expectedLanguages === []) {
+        throw new RuntimeException('No unique site languages were available for translation capture.');
+    }
+
+    // Establish exact ownership before fixture creation. A cryptographic marker
+    // collision is never permission to update or delete a pre-existing row.
+    $preExistingIds = $findExactIds();
+    $ownershipEstablished = true;
+    if ($preExistingIds !== []) {
+        throw new RuntimeException(
+            'The generated marker unexpectedly matched pre-existing translation IDs: ' . implode(', ', $preExistingIds) . '.',
+        );
+    }
+
+    $record = $translationsService->createOrUpdateTranslation($marker, $context, $category);
+
+    // Capture every exact row created by this invocation before any validation
+    // can fail. The finally block refreshes this difference again in case the
+    // service throws after a partial write.
+    $ownedIds = array_values(array_diff($findExactIds(), $preExistingIds));
+    sort($ownedIds);
+    $failIfRequested('after-create');
+
+    $failIfRequested('validation');
+    if (!$record instanceof TranslationRecord) {
+        throw new RuntimeException('Translation capture did not return a record.');
+    }
+
+    if ($record->translationKey !== $marker || $record->sourceHash !== $hash || $record->category !== $category || $record->context !== $context) {
+        throw new RuntimeException('Captured translation record has unexpected identity values.');
+    }
+
+    if (!in_array((int)$record->id, $ownedIds, true)) {
+        throw new RuntimeException('Returned translation record is not owned by this smoke invocation.');
+    }
+
+    /** @var TranslationRecord[] $ownedRows */
+    $ownedRows = TranslationRecord::find()
+        ->where(['id' => $ownedIds])
+        ->orderBy('id')
+        ->all();
+    if (count($ownedRows) !== count($expectedLanguages)) {
+        throw new RuntimeException(sprintf(
+            'Translation capture created %d owned rows; expected %d unique-language rows.',
+            count($ownedRows),
+            count($expectedLanguages),
+        ));
+    }
+
+    $actualLanguages = array_map(
+        static fn(TranslationRecord $ownedRow): string => (string)$ownedRow->language,
+        $ownedRows,
+    );
+    sort($actualLanguages);
+    $sortedExpectedLanguages = $expectedLanguages;
+    sort($sortedExpectedLanguages);
+    if ($actualLanguages !== $sortedExpectedLanguages) {
+        throw new RuntimeException('Captured translation languages did not match the expected unique-language fan-out.');
+    }
+
+    $failIfRequested('save');
+    $record->translation = $marker . ' translated';
+    if (!$translationsService->saveTranslation($record)) {
+        throw new RuntimeException('Saving captured translation failed.');
+    }
+
+    $failIfRequested('reload');
+    $saved = $translationsService->getTranslationById((int)$record->id);
+    if (!$saved instanceof TranslationRecord || $saved->status !== 'translated') {
+        throw new RuntimeException('Saved translation could not be reloaded as translated.');
+    }
+
+    $failIfRequested('filter');
+    $filtered = $translationsService->getTranslations([
+        'allSites' => true,
+        'search' => $marker,
+        'category' => $category,
+    ]);
+
+    $filteredIds = array_map(
+        static fn(array $filteredRecord): int => (int)$filteredRecord['id'],
+        $filtered,
+    );
+    if (!in_array((int)$record->id, $filteredIds, true)) {
+        throw new RuntimeException('Filtered translation lookup did not find the captured row.');
+    }
+
+    $failIfRequested('source');
+    $source = $sourceService->getSourceForRecord($saved);
+    if ($source === null || $source->id !== 'category:messages') {
+        throw new RuntimeException('Captured record did not resolve back to the messages source.');
+    }
+} catch (Throwable $exception) {
+    $primaryFailure = $exception;
+} finally {
+    if ($ownershipEstablished) {
+        try {
+            $ownedIds = array_values(array_unique(array_merge(
+                $ownedIds,
+                array_values(array_diff($findExactIds(), $preExistingIds)),
+            )));
+            sort($ownedIds);
+        } catch (Throwable $exception) {
+            $cleanupFailure = new RuntimeException(
+                'Unable to refresh exact smoke fixture ownership: ' . $exception->getMessage(),
+                0,
+                $exception,
+            );
+        }
+    }
+
+    if ($translationsService instanceof TranslationsService && $ownedIds !== []) {
+        try {
+            // Intersect with the exact live identity so repeating cleanup is a
+            // no-op rather than an error after the first successful deletion.
+            $remainingIds = array_values(array_intersect($ownedIds, $findExactIds()));
+            if ($remainingIds === []) {
+                $deletedIds = $ownedIds;
+            } else {
+                $failIfRequested('cleanup');
+                $deletedCount = $translationsService->deleteTranslations($remainingIds);
+                $afterServiceIds = array_values(array_intersect($remainingIds, $findExactIds()));
+                $deletedIds = array_values(array_diff($remainingIds, $afterServiceIds));
+                sort($deletedIds);
+
+                if ($deletedCount !== count($remainingIds) || $afterServiceIds !== []) {
+                    throw new RuntimeException(sprintf(
+                        'Public cleanup deleted %d of %d owned rows; remaining IDs: %s.',
+                        $deletedCount,
+                        count($remainingIds),
+                        $afterServiceIds === [] ? 'none' : implode(', ', $afterServiceIds),
+                    ));
+                }
+            }
+        } catch (Throwable $exception) {
+            if ($cleanupFailure === null) {
+                $cleanupFailure = new RuntimeException(
+                    'Public smoke fixture cleanup failed: ' . $exception->getMessage(),
+                    0,
+                    $exception,
+                );
+            }
+
+            // The public deletion path failed. Restore the shared test
+            // environment with only the exact invocation-owned IDs, while
+            // retaining a non-zero smoke result for the functional failure.
+            $cleanupFallbackUsed = true;
+            try {
+                $remainingIds = array_values(array_intersect($ownedIds, $findExactIds()));
+                if ($remainingIds !== []) {
+                    TranslationRecord::deleteAll(['id' => $remainingIds]);
+                }
+                $afterFallbackIds = array_values(array_intersect($ownedIds, $findExactIds()));
+                $deletedIds = array_values(array_diff($ownedIds, $afterFallbackIds));
+                sort($deletedIds);
+
+                if ($afterFallbackIds !== []) {
+                    throw new RuntimeException(
+                        'Exact-ID fallback cleanup left owned IDs: ' . implode(', ', $afterFallbackIds) . '.',
+                    );
+                }
+            } catch (Throwable $fallbackException) {
+                $cleanupFailure = new RuntimeException(
+                    $cleanupFailure->getMessage() . ' Exact-ID fallback also failed: ' . $fallbackException->getMessage(),
+                    0,
+                    $cleanupFailure,
+                );
+            }
+        }
+    }
+
+    if ($ownershipEstablished) {
+        try {
+            $finalExactMarkerCount = count(array_diff($findExactIds(), $preExistingIds));
+            if ($finalExactMarkerCount !== 0 && $cleanupFailure === null) {
+                $cleanupFailure = new RuntimeException(
+                    'Final exact-marker verification found owned residue IDs: ' .
+                    implode(', ', array_values(array_diff($findExactIds(), $preExistingIds))) . '.',
+                );
+            }
+        } catch (Throwable $exception) {
+            if ($cleanupFailure === null) {
+                $cleanupFailure = new RuntimeException(
+                    'Final exact-marker residue verification failed: ' . $exception->getMessage(),
+                    0,
+                    $exception,
+                );
+            }
+        }
+    }
 }
 
-$info = $plugins->getPluginInfo('translation-manager');
-if (($info['isInstalled'] ?? false) !== true || ($info['isEnabled'] ?? false) !== true) {
-    fwrite(STDERR, "translation-manager is not installed and enabled.\n");
-    exit(1);
+echo 'Marker: ' . $marker . PHP_EOL;
+echo 'Expected unique-language count: ' . count($expectedLanguages) . PHP_EOL;
+echo 'Created owned IDs: ' . ($ownedIds === [] ? 'none' : implode(', ', $ownedIds)) . PHP_EOL;
+echo 'Deleted owned IDs: ' . ($deletedIds === [] ? 'none' : implode(', ', $deletedIds)) . PHP_EOL;
+echo 'Cleanup path: ' . ($cleanupFallbackUsed ? 'exact-ID fallback after public deletion failure' : 'public service deletion') . PHP_EOL;
+echo 'Final exact-marker count: ' . ($finalExactMarkerCount ?? 'not verified') . PHP_EOL;
+
+if ($primaryFailure !== null) {
+    fwrite(STDERR, 'Operational smoke failure: ' . $primaryFailure->getMessage() . PHP_EOL);
+}
+if ($cleanupFailure !== null) {
+    fwrite(STDERR, 'Cleanup smoke failure: ' . $cleanupFailure->getMessage() . PHP_EOL);
 }
 
-$logging = $plugins->getPlugin('logging-library');
-if (!$logging instanceof LoggingLibrary) {
-    fwrite(STDERR, "logging-library dependency was not loaded.\n");
-    exit(1);
-}
-
-$loggingInfo = $plugins->getPluginInfo('logging-library');
-if (($loggingInfo['isInstalled'] ?? false) !== true || ($loggingInfo['isEnabled'] ?? false) !== true) {
-    fwrite(STDERR, "logging-library dependency is not installed and enabled.\n");
-    exit(1);
-}
-
-$base = Craft::$app->getModule('lindemannrock-base', false);
-if (!$base instanceof Base) {
-    fwrite(STDERR, "Base module dependency was not registered.\n");
-    exit(1);
-}
-
-$settings = $plugin->getSettings();
-if (!$settings instanceof Settings) {
-    fwrite(STDERR, "translation-manager settings did not load.\n");
-    exit(1);
-}
-
-if ($settings->getPrimaryCategory() !== 'messages') {
-    fwrite(STDERR, "Default primary translation category is not messages.\n");
-    exit(1);
-}
-
-/** @var SourceService $sourceService */
-$sourceService = $plugin->get('sources');
-$sources = $sourceService->getAllSources();
-
-if ($sources === [] || $sources[0]->id !== 'category:messages') {
-    fwrite(STDERR, "Default messages source was not registered.\n");
-    exit(1);
-}
-
-if ($sourceService->getSourcePermission(SourceService::ACTION_EDIT, 'category:messages') !== 'translationManager:editSource:category:messages') {
-    fwrite(STDERR, "Source permission helper returned an unexpected permission name.\n");
-    exit(1);
-}
-
-/** @var TranslationsService $translationsService */
-$translationsService = $plugin->get('translations');
-$text = 'Compatibility smoke text ' . bin2hex(random_bytes(4));
-$record = $translationsService->createOrUpdateTranslation($text, 'site.compat-smoke', 'messages');
-
-if (!$record instanceof TranslationRecord) {
-    fwrite(STDERR, "Translation capture did not return a record.\n");
-    exit(1);
-}
-
-if ($record->translationKey !== $text || $record->category !== 'messages') {
-    fwrite(STDERR, "Captured translation record has unexpected values.\n");
-    exit(1);
-}
-
-$record->translation = $text . ' translated';
-if (!$translationsService->saveTranslation($record)) {
-    fwrite(STDERR, "Saving captured translation failed.\n");
-    exit(1);
-}
-
-$saved = $translationsService->getTranslationById((int)$record->id);
-if (!$saved instanceof TranslationRecord || $saved->status !== 'translated') {
-    fwrite(STDERR, "Saved translation could not be reloaded as translated.\n");
-    exit(1);
-}
-
-$filtered = $translationsService->getTranslations([
-    'allSites' => true,
-    'search' => $text,
-    'category' => 'messages',
-]);
-
-if ($filtered === []) {
-    fwrite(STDERR, "Filtered translation lookup did not find the captured row.\n");
-    exit(1);
-}
-
-$source = $sourceService->getSourceForRecord($saved);
-if ($source === null || $source->id !== 'category:messages') {
-    fwrite(STDERR, "Captured record did not resolve back to the messages source.\n");
-    exit(1);
-}
-
-$deleted = $translationsService->deleteTranslations([(int)$record->id]);
-if ($deleted < 1) {
-    fwrite(STDERR, "Cleanup delete did not remove the captured translation.\n");
+if ($primaryFailure !== null || $cleanupFailure !== null || $finalExactMarkerCount !== 0) {
     exit(1);
 }
 

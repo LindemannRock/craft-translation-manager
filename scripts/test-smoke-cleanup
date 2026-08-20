@@ -1,0 +1,277 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SMOKE_SCRIPT="$SCRIPT_DIR/smoke-test"
+ASSERTIONS=0
+RUNS=0
+MARKERS=()
+
+fail() {
+  echo "Smoke cleanup regression failed: $1" >&2
+  exit 1
+}
+
+assert_contains() {
+  local output="$1"
+  local expected="$2"
+
+  grep -Fq "$expected" <<<"$output" || fail "expected output to contain: $expected"
+  ASSERTIONS=$((ASSERTIONS + 1))
+}
+
+assert_not_contains() {
+  local output="$1"
+  local unexpected="$2"
+
+  if grep -Fq "$unexpected" <<<"$output"; then
+    fail "expected output not to contain: $unexpected"
+  fi
+  ASSERTIONS=$((ASSERTIONS + 1))
+}
+
+state_fingerprint() {
+  php <<'PHP'
+<?php
+
+require getcwd() . '/bootstrap.php';
+require CRAFT_VENDOR_PATH . '/craftcms/cms/bootstrap/console.php';
+
+use craft\db\Query;
+
+$hash = hash_init('sha256');
+$db = Craft::$app->getDb();
+$tables = [
+    '{{%translationmanager_translations}}',
+    '{{%translationmanager_settings}}',
+    '{{%translationmanager_generation_status}}',
+    '{{%translationmanager_import_history}}',
+    '{{%queue}}',
+];
+
+foreach ($tables as $table) {
+    $schema = $db->getSchema()->getTableSchema($table, true);
+    if ($schema === null) {
+        hash_update($hash, $table . ':missing;');
+        continue;
+    }
+
+    $query = (new Query())->from($table);
+    if ($schema->primaryKey !== []) {
+        $query->orderBy(array_fill_keys($schema->primaryKey, SORT_ASC));
+    }
+    hash_update($hash, $table . ':' . serialize($query->all()) . ';');
+}
+
+foreach (['config', 'mutex', 'queue', 'request', 'response', 'volumes'] as $componentId) {
+    $component = Craft::$app->get($componentId);
+    hash_update($hash, $componentId . ':' . get_debug_type($component) . ';');
+}
+
+$paths = array_filter([
+    Craft::getAlias('@translations', false),
+    getcwd() . '/plugins/translation-manager/src/translations',
+]);
+
+foreach ($paths as $root) {
+    $root = rtrim((string)$root, DIRECTORY_SEPARATOR);
+    hash_update($hash, 'root:' . $root . ';');
+    if (!is_dir($root)) {
+        hash_update($hash, 'missing;');
+        continue;
+    }
+
+    $entries = [];
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST,
+    );
+    foreach ($iterator as $entry) {
+        $path = $entry->getPathname();
+        $relativePath = substr($path, strlen($root) + 1);
+        if ($entry->isLink()) {
+            $entries[] = 'link:' . $relativePath . ':' . readlink($path);
+        } elseif ($entry->isDir()) {
+            $entries[] = 'dir:' . $relativePath;
+        } else {
+            $entries[] = 'file:' . $relativePath . ':' . hash_file('sha256', $path);
+        }
+    }
+    sort($entries);
+    hash_update($hash, serialize($entries));
+}
+
+echo hash_final($hash), PHP_EOL;
+PHP
+}
+
+historical_fingerprint() {
+  php <<'PHP'
+<?php
+
+require getcwd() . '/bootstrap.php';
+require CRAFT_VENDOR_PATH . '/craftcms/cms/bootstrap/console.php';
+
+use craft\db\Query;
+
+$rows = (new Query())
+    ->from('{{%translationmanager_translations}}')
+    ->where(['id' => [84140, 84141]])
+    ->orderBy('id')
+    ->all();
+
+echo hash('sha256', serialize($rows)), PHP_EOL;
+PHP
+}
+
+remember_marker() {
+  local output="$1"
+  local marker
+  marker="$(sed -n 's/^Marker: //p' <<<"$output")"
+  [[ -n "$marker" ]] || fail "smoke did not report its marker"
+
+  local existing
+  for existing in "${MARKERS[@]}"; do
+    [[ "$existing" != "$marker" ]] || fail "smoke marker was reused: $marker"
+  done
+  MARKERS+=("$marker")
+  ASSERTIONS=$((ASSERTIONS + 1))
+}
+
+assert_clean_state() {
+  local baseline="$1"
+  local current
+  current="$(state_fingerprint)"
+  [[ "$current" == "$baseline" ]] || fail "shared database, component, or translation filesystem state changed"
+  ASSERTIONS=$((ASSERTIONS + 1))
+}
+
+run_success() {
+  local baseline="$1"
+  local output
+  local status
+
+  set +e
+  output="$(bash "$SMOKE_SCRIPT" 2>&1)"
+  status=$?
+  set -e
+
+  echo "$output"
+  [[ $status -eq 0 ]] || fail "normal smoke exited $status"
+  ASSERTIONS=$((ASSERTIONS + 1))
+  assert_contains "$output" 'Cleanup path: public service deletion'
+  assert_contains "$output" 'Final exact-marker count: 0'
+  assert_contains "$output" 'Translation Manager smoke test passed.'
+  assert_not_contains "$output" 'Created owned IDs: none'
+  assert_not_contains "$output" 'Deleted owned IDs: none'
+
+  local created
+  local deleted
+  local expected_count
+  created="$(sed -n 's/^Created owned IDs: //p' <<<"$output")"
+  deleted="$(sed -n 's/^Deleted owned IDs: //p' <<<"$output")"
+  expected_count="$(sed -n 's/^Expected unique-language count: //p' <<<"$output")"
+  [[ "$expected_count" =~ ^[1-9][0-9]*$ ]] || fail "invalid expected unique-language count: $expected_count"
+  ASSERTIONS=$((ASSERTIONS + 1))
+  [[ "$created" == "$deleted" ]] || fail "created IDs ($created) did not match deleted IDs ($deleted)"
+  ASSERTIONS=$((ASSERTIONS + 1))
+
+  local -a created_ids
+  IFS=',' read -r -a created_ids <<<"$created"
+  [[ ${#created_ids[@]} -eq $expected_count ]] || fail "created ${#created_ids[@]} IDs; expected $expected_count"
+  ASSERTIONS=$((ASSERTIONS + 1))
+
+  remember_marker "$output"
+  assert_clean_state "$baseline"
+  RUNS=$((RUNS + 1))
+}
+
+run_operational_failure() {
+  local baseline="$1"
+  local point="$2"
+  local output
+  local status
+
+  set +e
+  output="$(TRANSLATION_MANAGER_SMOKE_FAIL_AT="$point" bash "$SMOKE_SCRIPT" 2>&1)"
+  status=$?
+  set -e
+
+  echo "$output"
+  [[ $status -ne 0 ]] || fail "injected $point failure exited zero"
+  ASSERTIONS=$((ASSERTIONS + 1))
+  assert_contains "$output" "Operational smoke failure: Injected smoke failure at $point."
+  assert_contains "$output" 'Cleanup path: public service deletion'
+  assert_contains "$output" 'Final exact-marker count: 0'
+  assert_not_contains "$output" 'Cleanup smoke failure:'
+  remember_marker "$output"
+  assert_clean_state "$baseline"
+  RUNS=$((RUNS + 1))
+}
+
+run_cleanup_failure() {
+  local baseline="$1"
+  local output
+  local status
+
+  set +e
+  output="$(TRANSLATION_MANAGER_SMOKE_FAIL_AT=cleanup bash "$SMOKE_SCRIPT" 2>&1)"
+  status=$?
+  set -e
+
+  echo "$output"
+  [[ $status -ne 0 ]] || fail "injected cleanup failure exited zero"
+  ASSERTIONS=$((ASSERTIONS + 1))
+  assert_contains "$output" 'Cleanup path: exact-ID fallback after public deletion failure'
+  assert_contains "$output" 'Final exact-marker count: 0'
+  assert_contains "$output" 'Cleanup smoke failure: Public smoke fixture cleanup failed: Injected smoke failure at cleanup.'
+  assert_not_contains "$output" 'Operational smoke failure:'
+  remember_marker "$output"
+  assert_clean_state "$baseline"
+  RUNS=$((RUNS + 1))
+}
+
+run_combined_failure() {
+  local baseline="$1"
+  local output
+  local status
+
+  set +e
+  output="$(TRANSLATION_MANAGER_SMOKE_FAIL_AT=after-create,cleanup bash "$SMOKE_SCRIPT" 2>&1)"
+  status=$?
+  set -e
+
+  echo "$output"
+  [[ $status -ne 0 ]] || fail "combined operational/cleanup failure exited zero"
+  ASSERTIONS=$((ASSERTIONS + 1))
+  assert_contains "$output" 'Operational smoke failure: Injected smoke failure at after-create.'
+  assert_contains "$output" 'Cleanup smoke failure: Public smoke fixture cleanup failed: Injected smoke failure at cleanup.'
+  assert_contains "$output" 'Cleanup path: exact-ID fallback after public deletion failure'
+  assert_contains "$output" 'Final exact-marker count: 0'
+  remember_marker "$output"
+  assert_clean_state "$baseline"
+  RUNS=$((RUNS + 1))
+}
+
+[[ -x "$SMOKE_SCRIPT" ]] || fail "smoke script is not executable: $SMOKE_SCRIPT"
+
+BASELINE="$(state_fingerprint)"
+HISTORICAL_BASELINE="$(historical_fingerprint)"
+
+run_success "$BASELINE"
+run_success "$BASELINE"
+
+for point in after-create validation save reload filter source; do
+  run_operational_failure "$BASELINE" "$point"
+done
+
+run_cleanup_failure "$BASELINE"
+run_combined_failure "$BASELINE"
+
+HISTORICAL_FINAL="$(historical_fingerprint)"
+[[ "$HISTORICAL_FINAL" == "$HISTORICAL_BASELINE" ]] || fail 'historical rows 84140 and 84141 changed'
+ASSERTIONS=$((ASSERTIONS + 1))
+
+echo "Smoke cleanup regression passed: $RUNS runs, $ASSERTIONS assertions."
+echo "Shared-state fingerprint: $BASELINE"
+echo "Historical-row fingerprint: $HISTORICAL_BASELINE"
