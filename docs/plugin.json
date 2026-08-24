@@ -2,7 +2,7 @@
     "name": "Translation Manager",
     "handle": "translation-manager",
     "description": "Localize your Craft interface and Formie & Freeform forms across every language — from the Control Panel.",
-    "version": "5.12.0",
+    "version": "5.34.0",
     "developer": "LindemannRock",
     "developerUrl": "https://lindemannrock.com",
     "documentationUrl": "https://github.com/LindemannRock/craft-translation-manager/blob/main/README.md"

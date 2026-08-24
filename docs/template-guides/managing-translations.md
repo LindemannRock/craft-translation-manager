@@ -16,7 +16,7 @@ Do the day-to-day translation work in **Translation Manager → Translations**: 
 1. Go to **Translation Manager → Translations**.
 2. Narrow the list with the **filter** dropdown — by **Status** (All, Pending, Draft, Translated, Unused), **Type** (All, Forms, Site), or **Origin** (All Origins, Manual, Import, System) — or **search** by source text, translated text, or context. **Type** describes where the string belongs: **Forms** for Formie/Freeform provider strings, and **Site** for template/category strings such as `messages` or `shop`.
 3. Type the translation into the input field. Right-to-left languages display with the correct text direction automatically.
-4. Save with **Save All Changes**, the **Ctrl/Cmd + S** shortcut, or by turning on **Enable Auto-Save** in settings (with a configurable delay).
+4. Save with **Save All Changes**, the **Ctrl/Cmd + S** shortcut, or by turning on **Enable Auto-Save** in settings so a changed field saves when it loses focus.
 
 ## Statuses and origins
 

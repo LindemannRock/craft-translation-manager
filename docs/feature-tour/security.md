@@ -58,7 +58,7 @@ Translation Manager is built to keep your translation data and your server safe 
 
 ### For developers
 
-> The rest of this section is for developers integrating with the plugin in code.
+The rest of this section is for developers integrating with the plugin in code.
 
 1. **Template usage** — always use the proper translation filter syntax, never output translation data without escaping, and avoid inline JavaScript built from translation data.
 2. **Custom integrations** — validate all input when calling the plugin's services, use Craft's permission system for access control, and log security-relevant operations.

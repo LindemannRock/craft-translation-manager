@@ -11,7 +11,7 @@ Translation Manager gives you one place to translate every string your Craft sit
 - Localizing Formie and Freeform forms — field labels, options, buttons, and messages — automatically
 - Letting non-developers manage translations in the Control Panel while developers keep working in templates
 - Importing existing translations (CSV or PHP files) when onboarding a project, and exporting them for translators
-- Keeping a safety net — backups before every destructive operation — so cleanup and imports are never one-way
+- Keeping a safety net — required backups before guarded cleanup, import, restore, and bulk-delete operations when backups are enabled
 
 ![Translation Manager translations list in the Control Panel](../images/overview-translations-list.webp)
 
@@ -31,9 +31,9 @@ Translation Manager gives you one place to translate every string your Craft sit
 
 - **Usage detection** — flags translations as unused when the form or field behind them is deleted
 - **Capture missing translations** — when enabled, adds strings at runtime when a `|t()` call hits text that isn't stored yet
-- **Approval workflow** — require sign-off so translations publish as Draft until an approver marks them Translated ([Managing translations](managing-translations.md#approval-workflow))
-- **Maintenance tools** — capture, cleanup, and bulk deletes, each backed up first ([Maintenance](maintenance.md))
-- **Statistics utility** — a Control Panel **Utilities** panel showing coverage %, the pending/unused work queue, and the Forms/Site split ([Managing translations](managing-translations.md#monitor-coverage))
+- **Approval workflow** — require sign-off so translations publish as Draft until an approver marks them Translated ([Managing translations](../template-guides/managing-translations.md#approval-workflow))
+- **Maintenance tools** — capture, cleanup, and bulk deletes, with safety backups before guarded destructive actions when backups are enabled ([Maintenance](maintenance.md))
+- **Statistics utility** — a Control Panel **Utilities** panel showing coverage %, the pending/unused work queue, and the Forms/Site split ([Managing translations](../template-guides/managing-translations.md#monitor-coverage))
 - **Locale mapping** — consolidate regional variants (en-US, en-GB) onto a base locale to cut duplication ([Configuration](../get-started/configuration.md#locale-mapping))
 - **Import / export** — CSV export with your current filters, CSV import with preview and malicious-content detection ([Import / export](import-export.md))
 - **PHP translation files** — generate and import production-ready PHP files

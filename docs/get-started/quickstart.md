@@ -4,7 +4,7 @@ Capture your first translations and edit them in the Control Panel — no code b
 
 ## Before you start
 
-Install [Translation Manager](installation.md) first.
+Complete [Installation & Setup](installation.md#post-install-setup) first. Confirm that your source language and at least one site translation category are ready before capture.
 
 ## 1. Enable site translations and auto-capture
 

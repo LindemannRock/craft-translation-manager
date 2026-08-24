@@ -1,183 +1,187 @@
 # Configuration
 
-Configure Translation Manager by creating a config file at `config/translation-manager.php`.
+Most Translation Manager settings live in **Translation Manager → Settings** and are stored in the `translationmanager_settings` database table. Use `config/translation-manager.php` when a value must be consistent across environments or managed in deployment configuration.
 
-## Configuration Options
+A config-file value overrides the stored value and makes the matching Control Panel field read-only. The config file is multi-environment aware, using the same `'*'`, `dev`, `staging`, and `production` groups as Craft's other config files.
 
-### Translation Sources
+## Copy the config file
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `pluginName` | `string` | `'Translation Manager'` | Display name for the plugin (shown in CP menu and breadcrumbs) |
-| `translationCategory` | `string` | `'messages'` | **Deprecated** — use `translationCategories` instead. Single translation category for site translations |
-| `translationCategories` | `array` | `[]` | Multiple translation categories. Format: `[['key' => 'messages', 'enabled' => true]]`. Falls back to `translationCategory` if empty |
-| `sourceLanguage` | `string` | `'en'` | Source language of template strings — the language your `\|t()` keys are written in (see [Source Language](#source-language)) |
-| `enableFormieIntegration` | `bool` | `true` | Enable Formie form translation integration |
-| `enableFreeformIntegration` | `bool` | `true` | Enable Freeform form translation integration |
-| `enableSiteTranslations` | `bool` | `true` | Enable site translation capture from `\|t()` calls |
-| `captureMissingTranslations` | `bool` | `false` | Capture missing translations at runtime (auto-add when used) |
-| `captureMissingOnlyDevMode` | `bool` | `true` | Only capture missing translations when devMode is enabled (recommended) |
-| `excludeFormHandlePatterns` | `array` | `[]` | Form handle patterns to exclude from Formie capture (e.g., `['-ar', '_ar']`) @since(5.14.0) |
-| `skipPatterns` | `array` | `[]` | Text patterns to skip when capturing site translations (see [Skip Patterns](#skip-patterns)) |
-| `localeMapping` | `array` | `[]` | Maps regional locale variants to base locales (see [Locale Mapping](#locale-mapping)) @since(5.17.0) |
+For advanced configuration, copy the packaged template into your project:
 
-### Source Language
+```bash
+cp vendor/lindemannrock/craft-translation-manager/src/config.php config/translation-manager.php
+```
 
-**Source Language** (set under **Settings → Translation Sources**) is the language your `|t()` keys are written in — the literal text inside `{{ 'Copyright'|t('messages') }}`. It defaults to `en` and should match your *keys*, not necessarily your primary site language.
+You can also create the file yourself using the [complete example](#complete-example) at the end of this page.
 
-Why it matters: Translation Manager treats the source language as **already translated**. A string in that language is stored with the key as its own value and a **Translated** status, so it never lands in your Pending queue — you translate *into* your other site languages, never into the source. At runtime, a request in the source language returns the original key text as-is.
+## General
 
-The Control Panel offers your site languages; in `config/translation-manager.php` you can set any code matching `xx` or `xx-XX` (e.g. `en`, `en-US`). Region variants are matched by base language, so source `en` also covers `en-US`.
-
-> **Set this once, at setup, to match your `|t()` keys.** Changing it later only re-classifies which language is the "original" — it does **not** migrate, rewrite, or delete existing translations, and it does not regenerate files on its own (only a [generation path](#generation) change does that). Strings you already captured in the *old* source language stay in the database — still flagged Translated with the key as their value — but are now treated as an ordinary target language, while the *new* source language becomes the original going forward. If you must change it after translations exist, review those rows and regenerate afterwards.
-
-### Interface
+These values appear under **Settings → General**.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `itemsPerPage` | `int` | `100` | Items per page in the translation list (10–500) |
-| `autoSaveEnabled` | `bool` | `false` | Enable auto-save after typing stops |
-| `autoSaveDelay` | `int` | `2` | Auto-save delay in seconds (1–10) |
-| `requireApproval` | `bool` | `false` | Require an approver before edited translations become *Translated*. When enabled, editors can change text but only users with the *Approve Translations* permission can mark a translation as *Translated* (see [Approval Workflow](#approval-workflow)) |
+| `pluginName` | `string` | `'Translation Manager'` | Display name shown in the Control Panel navigation and breadcrumbs |
+| `requireApproval` | `bool` | `false` | Save non-approver edits as *Draft* until an approver publishes them |
+| `logLevel` | `string` | `'error'` | Logging threshold: `error`, `warning`, `info`, or `debug`; `debug` falls back to `info` outside devMode |
 
-### Base display and export overrides
+### Approval workflow
 
-The **Settings → Interface** screen also includes base-owned display and export controls after **Enable Auto-Save**. Leave these unset to inherit from `config/lindemannrock-base.php`; set them in `config/translation-manager.php` only when Translation Manager should override the global base value.
+Enable **Require Approval Before Publish** when translators and reviewers have separate responsibilities. Editors without the matching approve permission save changes as **Draft**; an all-source or source-specific approver can publish them as **Translated**.
 
-When the Control Panel value is **Use global default**, the setting cascades from `config/lindemannrock-base.php`. A value in `config/translation-manager.php` locks the plugin-specific value and disables the matching CP field.
+For the daily Draft → Translated flow and bulk **Mark Draft** / **Mark Translated** actions, see [Managing translations](../template-guides/managing-translations.md#approval-workflow).
+
+## Translation Sources
+
+These values appear under **Settings → Translation Sources**. They decide which site categories Translation Manager owns and which language is treated as the original.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `timeFormat` | `string\|null` | `null` | Time display override: `'12'` (AM/PM) or `'24'` |
-| `monthFormat` | `string\|null` | `null` | Month display override: `'numeric'`, `'short'`, or `'long'` |
-| `dateOrder` | `string\|null` | `null` | Date order override: `'dmy'`, `'mdy'`, or `'ymd'` |
-| `dateSeparator` | `string\|null` | `null` | Date separator override: `'/'`, `'-'`, or `'.'` |
-| `showSeconds` | `bool\|null` | `null` | Whether timestamps include seconds |
-| `exports` | `array\|null` | `null` | Export format overrides, e.g. `['csv' => true, 'json' => true, 'excel' => true]` |
+| `enableSiteTranslations` | `bool` | `true` | Enable managed site/template translation categories |
+| `translationCategories` | `array` | `[]` | Category rows in the form `[['key' => 'messages', 'enabled' => true]]`; when empty, the deprecated `translationCategory` fallback is used |
+| `translationCategory` | `string` | `'messages'` | Deprecated single-category fallback; use `translationCategories` for new configuration |
+| `sourceLanguage` | `string` | `'en'` | Language used by the literal text in your `|t()` keys |
+| `skipPatterns` | `array` | `[]` | Case-insensitive substrings excluded from new site-string capture |
 
-### Approval Workflow
+### Source language
 
-By default any user who can edit translations can also publish them as *Translated*. Turning on **Require Approval Before Publish** (the `requireApproval` setting, under **Settings → General**) splits those two responsibilities:
+Set **Source Language** to the language your `|t()` keys are written in—the literal text inside `{{ 'Copyright'|t('messages') }}`. It should match your keys, not necessarily your primary site's language.
 
-- **Editors** (users with *Edit Translations*) can change translation text, but their saves land as **Draft** rather than going live.
-- **Approvers** (users with the *Approve Translations* permission) save straight to **Translated**, which stamps their name and the time into the Reviewed By / Reviewed At columns.
+Translation Manager treats the source language as already translated. A source-language row uses the key as its value and starts as **Translated**, while your other languages become the translation targets. The Control Panel offers languages used by your sites; config accepts locale codes such as `en`, `en-US`, or `ar`.
 
-Use this when translations are drafted by one team and signed off by another. Leave it `false` for a single-editor workflow where review is not needed. For the day-to-day Draft → Translated flow and the bulk **Mark Draft** / **Mark Translated** actions, see [Managing translations → Approval workflow](../template-guides/managing-translations.md#approval-workflow).
+> [!WARNING]
+> Set the source language before capture. Changing it later does not migrate, rewrite, or delete existing translations, and it does not regenerate files by itself. Review rows from the old source language and regenerate after making a deliberate change.
 
-### Skip Patterns
+### Skip patterns
 
-`skipPatterns` keeps noise out of your translation list by excluding matching strings from [auto-capture](../template-guides/basic-usage.md#auto-capture-missing-strings). Enter one pattern per line in **Settings → Translation Sources → Skip Patterns** (or as an array in config). Matching is a **case-insensitive substring** test — a string is skipped if any pattern appears anywhere within it (not a glob or regex). Common entries are field-name fragments you never want as copy, such as `ID`, `Title`, or `Status`.
+`skipPatterns` keeps known noise out of [auto-capture](../template-guides/basic-usage.md#auto-capture-missing-strings). Each value is a case-insensitive substring, not a glob or regular expression:
 
 ```php
 'skipPatterns' => ['ID', 'Title', 'Status'],
 ```
 
-Skip patterns only affect **site** translation capture — they don't touch form-provider fields.
+Skip patterns affect site categories only; they do not exclude Formie or Freeform fields.
 
-> **Removing strings you've already captured.** Skip patterns only stop *new* captures. To purge existing rows that match, the Skip Patterns settings panel shows an **Apply Skip Patterns to Existing Translations** button once at least one pattern is set. This permanently deletes every matching site translation across all sites and **cannot be undone** — and unlike the [Maintenance](../feature-tour/maintenance.md) deletes, it does not take a backup first. Export first if you're unsure.
+> [!CAUTION]
+> Skip patterns only prevent new capture. **Apply Skip Patterns to Existing Translations** permanently deletes every matching site row and does not create a safety backup. Export first if you may need those rows again.
 
-### Generation
+## Locale Mapping @since(5.17.0)
+
+**Settings → Locale Mapping** consolidates regional variants onto a base locale. For example, mapping `en-US` and `en-GB` to `en` lets both variants share the `en` rows and generated files.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `autoGenerate` | `bool` | `true` | Automatically generate PHP translation files when translations are saved |
-| `runtimeTranslationSource` | `string` | `'php-files'` | Runtime source for managed Craft translation categories. Options: `php-files`, `database`, `hybrid` @since(5.29.0) |
-| `generationPath` | `string` | `'@translations'` | Generation directory. Supports `@translations` or `$VARIABLE` env vars that resolve exactly to `@translations` |
-
-Generated PHP files must live at Craft's translations root. Translation Manager
-validates `generationPath` against `@translations` exactly because Craft loads
-runtime translation files from that root. Values such as
-`@root/translations/test`, `@translations/test`, or any other subfolder are
-rejected and generation falls back to `@translations`.
-
-Use this:
+| `localeMapping` | `array` | `[]` | Rows containing `source`, `destination`, and `enabled` values |
 
 ```php
-'generationPath' => '@translations',
+'localeMapping' => [
+    ['source' => 'en-US', 'destination' => 'en', 'enabled' => true],
+    ['source' => 'en-GB', 'destination' => 'en', 'enabled' => true],
+    ['source' => 'fr-CA', 'destination' => 'fr', 'enabled' => true],
+],
 ```
 
-### Runtime Translation Source
+Mapping affects future loading and capture. Existing source-locale rows are not moved automatically; use **Maintenance → Cleanup → Migrate & Delete** when consolidating an existing locale. A source can appear only once, and it cannot map to itself.
 
-This setting controls what Craft uses when a managed category is requested with
-`Craft::t()` or Twig's `|t` filter.
+## Auto-Capture
 
-Start with this rule of thumb:
-
-- Use `php-files` for standard hosting where the same filesystem is used
-  by deploy commands and frontend requests.
-- Use `hybrid` for edge, split-runtime, containerized, or
-  serverless-style hosting where a post-deploy command can generate and verify
-  PHP files, but live frontend requests may still not read those files
-  reliably.
-- Use `database` only when you intentionally want Translation Manager's database
-  rows to be the only runtime source, usually for diagnostics or a fully
-  database-owned category.
-
-| Mode | What it reads | Use when | Limitations |
-|------|---------------|----------|-------------|
-| `php-files` | Generated PHP files in `translations/{language}/{category}.php` | Default mode for traditional hosting where web and CLI runtimes share the same translation files | Frontend output depends on the live web runtime seeing the generated files |
-| `database` | Translated rows stored in Translation Manager's database tables | Diagnostics, testing, or installs where Translation Manager should fully own the runtime category | Does not fall back to committed PHP files or native provider files for missing keys |
-| `hybrid` | PHP files first, then Translation Manager database rows override matching keys | Split-runtime, edge, or containerized hosting where deploy hooks can write and verify PHP files but frontend requests may not reliably consume them | The category still must be enabled in Translation Manager, and PHP fallback files must match the category name |
-
-`hybrid` does not replace generation. Keep your post-deploy
-`generate-all --delay=10 --verify=1` step so PHP files stay current for
-standard Craft loading, exports, native plugin fallbacks, and any keys that do
-not have translated database rows yet. The difference is runtime priority:
-translated database rows win, and PHP files fill gaps.
-
-Hybrid fallback follows Craft's normal category/file naming:
-
-```twig
-{{ 'Welcome'|t('valid') }}
-```
-
-looks for:
-
-```text
-translations/{language}/valid.php
-```
-
-Then Translation Manager overlays translated database rows for category
-`valid`. If no translated database row exists for `Welcome`, the PHP file value
-is used. If a translated database row exists, the database value wins.
-
-If your project needs the physical translations directory somewhere else,
-change Craft's `@translations` alias for the project instead of pointing
-Translation Manager at a subfolder.
-
-### Backup
+These values appear under **Settings → Auto-Capture**.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `backupEnabled` | `bool` | `true` | Enable automatic backups |
-| `backupRetentionDays` | `int` | `30` | Days to keep backups (0 = keep forever, max 365) |
-| `backupOnImport` | `bool` | `true` | Create a backup before importing |
-| `backupSchedule` | `string` | `'disabled'` | Backup schedule: `disabled`, `daily`, `weekly`, `monthly` |
-| `backupPath` | `string` | `'@storage/translation-manager/backups'` | Backup directory. Supports `$VARIABLE` env vars. Must be under `@root` or `@storage` |
-| `backupVolumeUid` | `string\|null` | `null` | Asset volume UID for authoritative backup storage (overrides `backupPath`). Craft applies the volume's configured subpath before `translation-manager/backups`. Local volumes inside `@webroot` are rejected; remote volume access must be restricted in the storage provider. |
+| `captureMissingTranslations` | `bool` | `false` | Add missing strings from enabled categories to the database when they are requested |
+| `captureMissingOnlyDevMode` | `bool` | `true` | Restrict runtime capture to requests where Craft's devMode is enabled |
 
-When backups are enabled, an operation that promises a safety backup must complete that backup before it deletes, replaces, imports, cleans, or regenerates translations. The guarded deletion family is provider deletion, site-translation deletion, category deletion, and **Delete All** from Settings. Deleting selected unused rows from the Translations screen does not promise or create a safety backup. A storage or creation failure aborts the guarded destructive operation. An empty current translation state is a successful no-op, while disabling backups preserves the explicit no-backup policy. CSV and PHP imports continue to respect `backupOnImport` and their per-import backup choice.
+Keep **Only in devMode** enabled for the usual workflow: capture in development or staging, translate and generate, then deploy the finished files.
 
-Completed backup names retain a readable timestamp and include a unique suffix so same-second requests do not collide. Legacy timestamp-only backup names remain supported. New snapshots are written to request-owned staging paths, validated, and promoted; staging paths are never listed, retained, downloaded, restored, or deleted as completed backups.
+## File Generation
 
-When `backupVolumeUid` is set, Translation Manager resolves the effective UID after config overrides and uses the Craft volume itself for creation, listing, metadata, size, downloads, restores, deletion, and retention. It never falls back to `backupPath` or `@storage` if the configured volume is missing, invalid, or unavailable. The UID and settings are left untouched so the same configuration recovers automatically when the volume is restored.
-
-New volume backups live beneath `{configured volume subpath}/translation-manager/backups`. For compatibility, a volume with a distinct non-empty subpath also checks the exact older filesystem-root prefix `translation-manager/backups`. No other paths are scanned and no objects are moved automatically. If both locations contain the same backup name, the canonical subpath-backed object takes precedence for every action and deleting it does not delete the historical duplicate. The Backups table shows each entry's actual location.
-
-Craft Cloud's application filesystem is ephemeral. For persistent backups there, do not use `backupPath` or a volume backed by a local filesystem; select a volume using Craft Cloud's **Cloud** filesystem type. See Craft's [local filesystem guidance](https://craftcms.com/docs/cloud/assets.html#local).
-
-Backup settings classifies the effective configuration after `config/translation-manager.php` overrides. On an ephemeral host, it shows the local-storage warning for a custom path or a valid local-filesystem volume. Durable hosts do not show that warning, and a valid resolved non-local filesystem suppresses it on either host type without certifying third-party Craft Cloud compatibility.
-
-A configured volume that is missing, validation-invalid, or cannot resolve its filesystem is unavailable on both ephemeral and durable hosts. The settings page shows the actionable unavailable-volume error instead of a fabricated local or volume location, never combines that error with the local-storage warning, and leaves the effective settings unchanged. Operational backup actions continue to fail closed. Restoring the same volume or filesystem makes the unchanged effective UID usable again without rewriting the setting.
-
-### Logging
+These values appear under **Settings → File Generation**.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `logLevel` | `string` | `'error'` | Log level: `error`, `warning`, `info`, `debug`. Debug requires devMode — auto-corrected to `info` otherwise |
-| `integrationSettings` | `array` | `[]` | Dynamic integration settings (managed by the plugin, not typically set in config) |
+| `autoGenerate` | `bool` | `true` | Regenerate managed PHP translation files after supported translation changes |
+| `runtimeTranslationSource` | `string` | `'php-files'` | Runtime mode: `php-files`, `database`, or `hybrid` @since(5.29.0) |
+| `generationPath` | `string` | `'@translations'` | Generation root; it must resolve exactly to Craft's `@translations` alias |
 
-## Example Configuration
+Values such as `@root/translations/test` and `@translations/test` are rejected because Craft loads runtime translation files from the translations root. To move the physical directory, change the project's `@translations` alias instead.
+
+### Runtime translation source
+
+| Mode | What it reads | Best fit | Limitation |
+|------|---------------|----------|------------|
+| `php-files` | Generated PHP files under `translations/{language}/{category}.php` | Standard hosting where deploy and web runtimes share the filesystem | Frontend requests must see the generated files |
+| `database` | Translated Translation Manager database rows only | Diagnostics or intentionally database-owned categories | Missing rows do not fall back to PHP files |
+| `hybrid` | PHP files as fallback, with translated database rows overriding matching keys | Edge, containerized, serverless, or split-runtime hosting | Categories must remain enabled and fallback filenames must match them |
+
+Hybrid mode does not replace generation. Keep a post-deploy `generate-all --delay=10 --verify=1` step so fallback files, exports, and provider-native paths stay current.
+
+## Interface
+
+These values belong to **Settings → Interface** unless noted otherwise.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `itemsPerPage` | `int` | `100` | Rows per page in the translation list; accepted range 10–500 |
+| `autoSaveEnabled` | `bool` | `false` | Save a changed translation when its field loses focus |
+| `autoSaveDelay` | `int` | `2` | Compatibility config value retained by the settings model; the current blur-based auto-save flow does not use a timer |
+
+### Base display and export overrides
+
+The Interface page also exposes base-owned display and export controls. Leave them unset to inherit from `config/lindemannrock-base.php`; set them here only when Translation Manager needs a plugin-specific override.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `timeFormat` | `string\|null` | `null` | `'12'` or `'24'` time display override |
+| `monthFormat` | `string\|null` | `null` | `'numeric'`, `'short'`, or `'long'` month display override |
+| `dateOrder` | `string\|null` | `null` | `'dmy'`, `'mdy'`, or `'ymd'` date order override |
+| `dateSeparator` | `string\|null` | `null` | `'/'`, `'-'`, or `'.'` date separator override |
+| `showSeconds` | `bool\|null` | `null` | Whether displayed timestamps include seconds |
+| `exports` | `array\|null` | `null` | Public export-format hash with `csv`, `json`, and `excel` booleans |
+
+The public config key is `exports`; internal settings fields such as `exportsCsv` are not config-file keys.
+
+## Backup
+
+These values appear under **Settings → Backup**.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `backupEnabled` | `bool` | `true` | Enable manual, scheduled, and supported safety-backup behavior |
+| `backupOnImport` | `bool` | `true` | Select backup creation by default for imports |
+| `backupSchedule` | `string` | `'disabled'` | `disabled`, `daily`, `weekly`, or `monthly` |
+| `backupRetentionDays` | `int` | `30` | Days to retain automatic backups; `0` keeps them forever, maximum 365 |
+| `backupVolumeUid` | `string\|null` | `null` | Authoritative Craft asset volume UID; overrides `backupPath` |
+| `backupPath` | `string` | `'@storage/translation-manager/backups'` | Custom local path used only when no volume is selected; must stay under `@root` or `@storage` and outside webroot |
+
+When backups are enabled, operations that promise a safety backup must finish it before destructive work. The guarded family includes restore, maintenance cleanup, provider deletion, site-translation deletion, category deletion, **Delete All**, and imports whose backup option is enabled. Deleting selected unused rows from the Translations screen does not promise or create a backup.
+
+A configured volume is authoritative across creation, listing, size, download, restore, deletion, and retention, including its configured subpath. If that volume is missing or unavailable, operations fail closed instead of falling back to local storage, and the unchanged UID recovers when the same volume becomes available again.
+
+Craft Cloud's application filesystem is ephemeral. Use a volume backed by Craft Cloud's **Cloud** filesystem type for persistent backups; custom paths and local-filesystem volumes are not durable there. See Craft's [local filesystem guidance](https://craftcms.com/docs/cloud/assets.html#local).
+
+For the complete storage, integrity, and retention lifecycle, see [Backup system](../feature-tour/backups.md).
+
+## Integrations
+
+These values appear under **Settings → Integrations** when the corresponding provider is installed.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enableFormieIntegration` | `bool` | `true` | Enable the built-in Formie provider |
+| `enableFreeformIntegration` | `bool` | `true` | Enable the built-in Freeform provider |
+| `excludeFormHandlePatterns` | `array` | `[]` | Case-insensitive substrings matched against form handles or titles across enabled form providers @since(5.14.0) |
+
+For example, exclude language-specific duplicate forms with:
+
+```php
+'excludeFormHandlePatterns' => ['(Ar)', 'booking-ar', 'PricesAr'],
+```
+
+See [Integrations](../integrations/overview.md) for provider capture, generation, runtime behavior, and source-specific permissions.
+
+## Complete example
+
+This example includes every public scalar and nested config surface. Remove values you want to manage in the Control Panel, and keep only intentional overrides.
 
 ```php
 <?php
@@ -186,34 +190,43 @@ A configured volume that is missing, validation-invalid, or cannot resolve its f
 return [
     '*' => [
         'pluginName' => 'Translation Manager',
+        'logLevel' => 'error',
+        'requireApproval' => false,
+
+        'enableSiteTranslations' => true,
         'translationCategories' => [
             ['key' => 'messages', 'enabled' => true],
         ],
+        // Deprecated fallback used only when translationCategories is empty.
+        'translationCategory' => 'messages',
         'sourceLanguage' => 'en',
-        'enableFormieIntegration' => true,
-        'enableFreeformIntegration' => true,
-        'enableSiteTranslations' => true,
+        'skipPatterns' => [],
+        'localeMapping' => [],
+
         'captureMissingTranslations' => false,
         'captureMissingOnlyDevMode' => true,
+
         'autoGenerate' => true,
         'runtimeTranslationSource' => 'php-files',
-        // Must resolve to Craft's @translations root exactly.
         'generationPath' => '@translations',
+
         'itemsPerPage' => 100,
         'autoSaveEnabled' => false,
+        // Retained for compatibility; current auto-save runs on field blur.
         'autoSaveDelay' => 2,
-        'requireApproval' => false,
-        'logLevel' => 'error',
-        'skipPatterns' => [],
+
         'backupEnabled' => true,
-        'backupRetentionDays' => 30,
         'backupOnImport' => true,
         'backupSchedule' => 'disabled',
-        'backupPath' => '@storage/translation-manager/backups',
+        'backupRetentionDays' => 30,
         'backupVolumeUid' => null,
+        'backupPath' => '@storage/translation-manager/backups',
 
-        // Optional base-setting overrides for this plugin only
-        // Leave unset to inherit from config/lindemannrock-base.php.
+        'enableFormieIntegration' => true,
+        'enableFreeformIntegration' => true,
+        'excludeFormHandlePatterns' => [],
+
+        // Optional base-setting overrides for Translation Manager only.
         // 'timeFormat' => '24',
         // 'monthFormat' => 'short',
         // 'dateOrder' => 'dmy',
@@ -221,63 +234,32 @@ return [
         // 'showSeconds' => false,
         // 'exports' => [
         //     'csv' => true,
-        //     'json' => true,
+        //     'json' => false,
         //     'excel' => true,
         // ],
     ],
-];
-```
 
-## Locale Mapping @since(5.17.0)
+    'dev' => [
+        'logLevel' => 'debug',
+        'autoGenerate' => false,
+        'captureMissingTranslations' => true,
+    ],
 
-Locale mapping allows you to consolidate regional locale variants to base locales, reducing translation duplication. For example, if you have sites using `en-US`, `en-GB`, and `en-AU`, you can map all of them to `en` so they share the same translation files.
+    'staging' => [
+        'logLevel' => 'info',
+        'backupSchedule' => 'weekly',
+    ],
 
-### How It Works
-
-When locale mapping is configured:
-
-1. **Loading translations**: When a page with locale `en-US` loads, the plugin will look for translations in the `en` folder instead of `en-US`.
-
-2. **Capturing translations**: When missing translations are captured at runtime, they are saved under the mapped locale (`en`) instead of the original locale (`en-US`).
-
-This reduces the need to maintain separate translation files for each regional variant.
-
-### Configuration via Settings UI
-
-Navigate to **Translation Manager → Settings → Translation Sources** and scroll to the "Locale Mapping" section. Add mappings using the editable table:
-
-| Source Locale | Maps To | Enabled |
-|---------------|---------|---------|
-| en-US         | en      | ✓       |
-| en-GB         | en      | ✓       |
-| fr-CA         | fr      | ✓       |
-
-### Configuration via Config File
-
-You can also configure locale mapping in your `config/translation-manager.php` file:
-
-```php
-<?php
-
-return [
-    '*' => [
-        'localeMapping' => [
-            ['source' => 'en-US', 'destination' => 'en', 'enabled' => true],
-            ['source' => 'en-GB', 'destination' => 'en', 'enabled' => true],
-            ['source' => 'fr-CA', 'destination' => 'fr', 'enabled' => true],
-        ],
+    'production' => [
+        'logLevel' => 'warning',
+        'autoGenerate' => true,
+        'backupEnabled' => true,
+        'backupSchedule' => 'daily',
+        // 'backupVolumeUid' => 'your-volume-uid-here',
     ],
 ];
 ```
 
-### Important Notes
-
-- **Existing translations**: Locale mapping only affects how translations are loaded and captured going forward. Existing translations under the original locale will need to be migrated manually.
-
-- **Validation**: The source and destination must be valid locale codes (e.g., `en`, `en-US`, `fr-CA`). You cannot map a locale to itself.
-
-- **No duplicate sources**: Each source locale can only be mapped once. If you have duplicate source entries, validation will fail.
-
 ## Translations
 
-Translation Manager includes translations for 12 languages. See [Translations](../resources/translations.md) for the full list and override instructions.
+Translation Manager includes Control Panel translations for 12 languages. See [Translations](../resources/translations.md) for the complete list and override instructions.

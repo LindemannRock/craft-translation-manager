@@ -10,15 +10,15 @@
 
 Localize your Craft interface and Formie & Freeform forms across every language — from the Control Panel.
 
-> Translation Manager came out of real client work. Like all our plugins, it was
-> built to solve a problem we had to solve in production: translating Craft sites
-> meant juggling PHP language files, redeployments, form-builder settings, and
-> scattered provider-specific workflows. Even when a form plugin can translate
-> values, managing labels, options, messages, buttons, and review status across
-> many forms and languages is still tedious. Translation Manager gives that work
-> one Control Panel home, with capture, import/export, approval, cleanup,
-> backups, and generation in a single workflow for site strings, Formie forms,
-> and Freeform forms.
+Translation Manager came out of real client work. Like all our plugins, it was
+built to solve a problem we had to solve in production: translating Craft sites
+meant juggling PHP language files, redeployments, form-builder settings, and
+scattered provider-specific workflows. Even when a form plugin can translate
+values, managing labels, options, messages, buttons, and review status across
+many forms and languages is still tedious. Translation Manager gives that work
+one Control Panel home, with capture, import/export, approval, cleanup,
+backups, and generation in a single workflow for site strings, Formie forms,
+and Freeform forms.
 
 ## Features
 

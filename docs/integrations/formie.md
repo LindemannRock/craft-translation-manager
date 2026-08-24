@@ -82,7 +82,7 @@ Forms with more than one page namespace their buttons by page, so a multi-page f
 
 ## Capture and generate
 
-> This section is for re-capturing or generating files from the command line; the day-to-day flow above needs no commands.
+This section is for re-capturing or generating files from the command line; the day-to-day flow above needs no commands.
 
 If translations are missing, manually capture all Formie fields:
 

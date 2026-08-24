@@ -11,7 +11,7 @@ Solutions to common issues and debugging tips.
 
 ## Scheduled Backups Not Running
 
-- Ensure backups are enabled and schedule is not "Manual"
+- Ensure backups are enabled and **Backup Schedule** is not **Disabled**
 - Check queue status with `php craft queue/info` or `ddev craft queue/info`
 - For production, ensure queue runner is active
 - If a deployment or multiple web processes create duplicate pending backup rows, Translation Manager collapses the duplicate pending rows during bootstrap and keeps one row for the next scheduled run
@@ -63,8 +63,6 @@ If provider strings are captured but still render in the source language, regene
 ## Import Blocked by Security
 
 - Use UTF-8 encoding with proper headers
-- Avoid special characters that trigger WAF
-- The plugin uses client-side validation to avoid Cloudflare blocks
 - For large files, split into smaller batches
 
 ## CSV Import Fails With "An Unexpected Error Occurred"
@@ -93,7 +91,7 @@ Fix the underlying file (or pick the correct delimiter) and re-upload.
 
 ## Settings Cannot Be Saved
 
-This is normal in production - settings are stored in database, not project config.
+Settings are stored in the database, unless a value is overridden in `config/translation-manager.php`. A failed save is not expected production behavior; use the inline validation message to identify the field that was rejected.
 
 Numeric settings such as backup retention and items per page must be whole numbers within the allowed range. If a value is invalid, Translation Manager keeps you on the same settings page and shows the field error inline.
 
@@ -290,9 +288,8 @@ ddev exec "tail -f storage/logs/translation-manager-*.log | grep ERROR"
 ## Getting Help
 
 1. Check logs first - they contain detailed error messages
-2. Use debug tools, especially the debug search page
-3. Enable debug logging in `config/translation-manager.php`:
+2. Enable debug logging in `config/translation-manager.php` on an environment where Craft's `devMode` is enabled:
    ```php
    'logLevel' => 'debug',
    ```
-4. Report issues with: Craft version, plugin version, error messages, steps to reproduce
+3. Report issues with: Craft version, plugin version, error messages, steps to reproduce

@@ -72,7 +72,7 @@ Freeform's render helpers and Translation Manager's runtime fallback cover the c
 
 ## Capture and generate
 
-> This section is for re-capturing or generating files from the command line; saving a form already captures its strings.
+This section is for re-capturing or generating files from the command line; saving a form already captures its strings.
 
 If translations are missing after changing a form, save it again or capture all Freeform strings again:
 

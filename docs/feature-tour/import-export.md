@@ -101,6 +101,7 @@ translations/
     └── freeform.php
 ```
 
+> [!NOTE]
 > The site-category filename matches your configured translation category — `messages.php` for the default `messages` category, or your own name if you changed it.
 
 ### Auto generate

@@ -34,3 +34,15 @@ ddev craft plugin/install logging-library
 ```
 
 Or via the Control Panel: **Settings → Plugins → Logging Library → Install**
+
+## Post-Install Setup
+
+Open **Translation Manager → Settings → Translation Sources** and confirm that **Enable Site Translations**, **Translation Categories**, and **Source Language** match your project. Set the source language before capturing strings; changing it later does not migrate existing rows.
+
+### Review configuration
+
+Most settings can be managed in **Translation Manager → Settings**. See [Configuration](configuration.md) when you need config-file overrides or environment-specific values.
+
+## Quick Start
+
+See [Quickstart](quickstart.md) for the fastest path from installation to your first translated string.
