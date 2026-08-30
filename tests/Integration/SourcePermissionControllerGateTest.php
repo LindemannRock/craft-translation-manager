@@ -25,6 +25,7 @@ use lindemannrock\translationmanager\services\SourceService;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use yii\base\InlineAction;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
@@ -577,6 +578,53 @@ final class SourcePermissionControllerGateTest extends TestCase
             $settings->requireApproval = $originalRequireApproval;
             $settings->autoGenerate = $originalAutoGenerate;
         }
+    }
+
+    #[DataProvider('saveValueProvider')]
+    public function testSaveUsesExplicitValuePresenceForStatusAndReviewMetadata(
+        string $value,
+        bool $expectedPresent,
+    ): void {
+        $settings = TranslationManager::getInstance()->getSettings();
+        $settings->requireApproval = false;
+        $settings->autoGenerate = false;
+
+        $category = $this->primaryCategory();
+        $record = $this->seedTranslationRecord($category);
+        $sourceService = $this->sourceService();
+        $this->installRequest([
+            'id' => $record->id,
+            'translation' => $value,
+        ]);
+        $this->installUser([
+            $sourceService->getSourcePermission(SourceService::ACTION_EDIT, $sourceService->categorySourceId($category)),
+        ]);
+
+        $response = (new PermissionGateTranslationsController('translations', TranslationManager::getInstance()))->actionSave();
+        self::assertSame(200, $response->statusCode);
+
+        $saved = TranslationRecord::findOne($record->id);
+        self::assertNotNull($saved);
+        self::assertSame($value, $saved->translation);
+        self::assertSame($expectedPresent ? 'translated' : 'pending', $saved->status);
+        self::assertSame($expectedPresent, $saved->reviewedByUserId !== null);
+        self::assertSame($expectedPresent, $saved->reviewedAt !== null);
+    }
+
+    /**
+     * Control Panel form values are strings; nullable persistence is covered by
+     * TranslationValuePresenceTest at the service boundary.
+     *
+     * @return array<string,array{0:string,1:bool}>
+     */
+    public static function saveValueProvider(): array
+    {
+        return [
+            'zero' => ['0', true],
+            'normal text' => ['Translated text', true],
+            'empty string' => ['', false],
+            'whitespace' => [" \t\n", false],
+        ];
     }
 
     /**

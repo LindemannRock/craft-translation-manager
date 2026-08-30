@@ -77,6 +77,8 @@ English Text,Arabic Translation,Status,Context
 - Skips empty rows
 - Processes in batches (50 per batch) for large files
 
+A translation value of `0` is imported as real translated text, not as an empty value. Empty, whitespace-only, and `null` values remain untranslated. PHP file imports follow the same rule, including a string key or value of `"0"`.
+
 ### Security
 
 CSV import is guarded by file-type validation (CSV/TXT only), a 5 MB size limit, MIME-type verification, malicious-content detection (XSS, SQL injection, PHP code), input sanitization, CSRF protection, and an automatic pre-import backup.
@@ -103,6 +105,8 @@ translations/
 
 > [!NOTE]
 > The site-category filename matches your configured translation category — `messages.php` for the default `messages` category, or your own name if you changed it.
+
+Generation reconciles each category and mapped language independently. If one language no longer has any translated values in the requested scope, Translation Manager removes that language's stale category file while retaining files for other languages and unrelated categories or providers. A value of `"0"` remains in the generated file.
 
 ### Auto generate
 

@@ -377,7 +377,7 @@ class TranslationsService extends Component
         
         // Keep system states untouched unless explicitly changed elsewhere.
         if (!in_array($translation->status, ['unused', 'draft'], true)) {
-            if ($translation->translation) {
+            if (trim((string)$translation->translation) !== '') {
                 $translation->status = 'translated';
             } else {
                 $translation->status = 'pending';
@@ -500,6 +500,19 @@ class TranslationsService extends Component
             static fn(TranslationRecord $r): int => (int) $r->id,
             array_values($existing),
         );
+        $unusedTranslatedIds = [];
+        $unusedPendingIds = [];
+        foreach ($existing as $record) {
+            if ($record->status !== 'unused') {
+                continue;
+            }
+
+            if (trim((string)$record->translation) !== '') {
+                $unusedTranslatedIds[] = (int)$record->id;
+            } else {
+                $unusedPendingIds[] = (int)$record->id;
+            }
+        }
 
         // 2. Collect rows for any languages we don't have yet.
         // Pre-build language => siteId map so we don't iterate all
@@ -557,13 +570,20 @@ class TranslationsService extends Component
                 'dateUpdated' => $now,
             ], ['id' => $existingIds]);
 
-            // 4. Reactivation in one query — CASE picks the right destination
-            // status based on whether the row already has a translation.
-            $reactivatedCount = TranslationRecord::updateAll([
-                'status' => new \yii\db\Expression(
-                    "CASE WHEN [[translation]] IS NULL OR [[translation]] = '' THEN 'pending' ELSE 'translated' END"
-                ),
-            ], ['id' => $existingIds, 'status' => 'unused']);
+            // 4. Reactivate unused rows according to the same trim-based value
+            // presence rule used by saves, imports, runtime reads, and output.
+            if ($unusedTranslatedIds !== []) {
+                $reactivatedCount += TranslationRecord::updateAll(
+                    ['status' => 'translated'],
+                    ['id' => $unusedTranslatedIds, 'status' => 'unused'],
+                );
+            }
+            if ($unusedPendingIds !== []) {
+                $reactivatedCount += TranslationRecord::updateAll(
+                    ['status' => 'pending'],
+                    ['id' => $unusedPendingIds, 'status' => 'unused'],
+                );
+            }
         }
 
         $this->logInfo('Captured multi-site translation', [
@@ -756,7 +776,7 @@ class TranslationsService extends Component
 
                     // Reactivate if unused
                     if ($translation['status'] === 'unused') {
-                        if ($translation['translation']) {
+                        if (trim((string)($translation['translation'] ?? '')) !== '') {
                             $reactivateTranslatedIds[] = (int)$translation['id'];
                         } else {
                             $reactivatePendingIds[] = (int)$translation['id'];
@@ -923,7 +943,7 @@ class TranslationsService extends Component
      * the import language gets the value, the source language gets the key as
      * its own translation, other languages get an empty pending row.
      *
-     * @param array<int, array{key?: string, value?: string}> $entries
+     * @param array<int, array{key?: string, value?: string|null}> $entries
      * @param string $importLanguage The language the file's values belong to
      * @param string $category Translation category (e.g. 'formie', 'messages')
      * @param int|null $userId User to attribute the import to (null from console)
@@ -972,7 +992,7 @@ class TranslationsService extends Component
                 $key = $item['key'] ?? '';
                 $value = $item['value'] ?? '';
 
-                if (empty($key)) {
+                if (trim((string)$key) === '') {
                     continue;
                 }
 
@@ -989,13 +1009,14 @@ class TranslationsService extends Component
                         // Existing row: only the import language gets the value.
                         if ($isImportLanguage) {
                             $record->translation = $value;
-                            $record->status = !empty($value) ? 'translated' : 'pending';
+                            $hasTranslation = trim((string)$value) !== '';
+                            $record->status = $hasTranslation ? 'translated' : 'pending';
                             $record->translationOrigin = 'import';
                             // Preserve original creator when running without a user (console).
                             if ($userId !== null) {
                                 $record->createdByUserId = $userId;
                             }
-                            if (!empty($value)) {
+                            if ($hasTranslation) {
                                 $record->reviewedByUserId = $userId;
                                 $record->reviewedAt = Db::prepareDateForDb(new \DateTime());
                             } else {
@@ -1032,12 +1053,13 @@ class TranslationsService extends Component
                         if ($isImportLanguage) {
                             // This is the language being imported - use the value.
                             $record->translation = $value;
-                            $record->status = !empty($value) ? 'translated' : 'pending';
+                            $hasTranslation = trim((string)$value) !== '';
+                            $record->status = $hasTranslation ? 'translated' : 'pending';
                             $record->translationOrigin = 'import';
                             if ($userId !== null) {
                                 $record->createdByUserId = $userId;
                             }
-                            if (!empty($value)) {
+                            if ($hasTranslation) {
                                 $record->reviewedByUserId = $userId;
                                 $record->reviewedAt = Db::prepareDateForDb(new \DateTime());
                             }

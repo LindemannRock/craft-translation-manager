@@ -16,6 +16,7 @@ use craft\helpers\StringHelper;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Pins the contract of `TranslationsService::importPhpEntries()` — the shared
@@ -31,6 +32,38 @@ use lindemannrock\translationmanager\TranslationManager;
  */
 final class ImportPhpEntriesTest extends TestCase
 {
+    public function testImportPreservesZeroKeyAndValue(): void
+    {
+        $this->requireAtLeastOneSite();
+
+        $language = TranslationManager::getInstance()->getUniqueLanguages()[0];
+        $category = 'tm-test-zero-import-' . bin2hex(random_bytes(4));
+
+        $result = $this->translations->importPhpEntries(
+            [['key' => '0', 'value' => '0']],
+            $language,
+            $category,
+            123,
+        );
+
+        self::assertSame(1, $result['imported']);
+        self::assertSame([], $result['errors']);
+
+        $record = TranslationRecord::findOne([
+            'sourceHash' => md5('0'),
+            'category' => $category,
+            'language' => $language,
+        ]);
+        self::assertNotNull($record);
+        self::assertSame('0', $record->translationKey);
+        self::assertSame('0', $record->translation);
+        self::assertSame('translated', $record->status);
+        self::assertSame(123, (int)$record->reviewedByUserId);
+        self::assertNotNull($record->reviewedAt);
+
+        TranslationRecord::deleteAll(['category' => $category]);
+    }
+
     public function testImportPersistsValueAndFansOutAcrossLanguages(): void
     {
         $this->requireAtLeastOneSite();
@@ -124,6 +157,53 @@ final class ImportPhpEntriesTest extends TestCase
         self::assertSame(123, (int)$rows[$importLanguage]['createdByUserId']);
         self::assertSame('Keep ' . $otherLanguage, $rows[$otherLanguage]['translation']);
         self::assertSame('manual', $rows[$otherLanguage]['translationOrigin']);
+    }
+
+    #[DataProvider('translationValueProvider')]
+    public function testPhpImportUsesExplicitValuePresenceForStatusAndReviewMetadata(
+        ?string $value,
+        bool $expectedPresent,
+    ): void {
+        $language = TranslationManager::getInstance()->getUniqueLanguages()[0];
+        $category = 'tm-test-php-value-' . bin2hex(random_bytes(4));
+        $key = self::MARKER . 'php_value_' . bin2hex(random_bytes(4));
+
+        $result = $this->translations->importPhpEntries(
+            [['key' => $key, 'value' => $value]],
+            $language,
+            $category,
+            123,
+        );
+
+        self::assertSame(1, $result['imported']);
+        self::assertSame([], $result['errors']);
+
+        $record = TranslationRecord::findOne([
+            'sourceHash' => md5($key),
+            'category' => $category,
+            'language' => $language,
+        ]);
+        self::assertNotNull($record);
+        self::assertSame((string)$value, $record->translation);
+        self::assertSame($expectedPresent ? 'translated' : 'pending', $record->status);
+        self::assertSame($expectedPresent, $record->reviewedByUserId !== null);
+        self::assertSame($expectedPresent, $record->reviewedAt !== null);
+
+        TranslationRecord::deleteAll(['category' => $category]);
+    }
+
+    /**
+     * @return array<string,array{0:?string,1:bool}>
+     */
+    public static function translationValueProvider(): array
+    {
+        return [
+            'zero' => ['0', true],
+            'normal text' => ['Translated text', true],
+            'empty string' => ['', false],
+            'whitespace' => [" \t\n", false],
+            'null' => [null, false],
+        ];
     }
 
     private function createTranslationRecord(string $source, string $translation, string $language): TranslationRecord

@@ -842,9 +842,9 @@ class ImportController extends Controller
                 if ($importedStatus !== null) {
                     $translationRecord->status = $importedStatus;
                 } elseif ($isNew) {
-                    $translationRecord->status = $translationText ? 'translated' : 'pending';
+                    $translationRecord->status = trim($translationText) !== '' ? 'translated' : 'pending';
                 } elseif (!in_array($translationRecord->status, ['unused', 'draft'], true)) {
-                    $translationRecord->status = $translationText ? 'translated' : 'pending';
+                    $translationRecord->status = trim($translationText) !== '' ? 'translated' : 'pending';
                 }
                 $translationRecord->translationOrigin = $importedOrigin ?? 'import';
                 $translationRecord->createdByUserId = $userId;

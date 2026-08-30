@@ -19,6 +19,7 @@ use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Pins the CSV import normalization contract after the pre-release cleanup:
@@ -385,6 +386,53 @@ final class ImportControllerNormalizedRowsTest extends TestCase
         $rows = $this->fetchRowsForSource($source);
         self::assertCount(1, $rows);
         self::assertSame('Second import value', $rows[0]['translation']);
+    }
+
+    #[DataProvider('translationValueProvider')]
+    public function testCsvImportUsesExplicitValuePresenceForStatusAndReviewMetadata(
+        ?string $value,
+        bool $expectedPresent,
+    ): void {
+        $controller = $this->createImportController();
+        $source = self::MARKER . 'csv_value_' . bin2hex(random_bytes(4));
+        $language = Craft::$app->getSites()->getPrimarySite()->language;
+        $category = TranslationManager::getInstance()->getSettings()->getPrimaryCategory();
+
+        $result = $this->invokePrivate($controller, 'importTranslations', [
+            [[
+                'translationKey' => $source,
+                'translation' => $value,
+                'language' => $language,
+                'category' => $category,
+                'context' => 'site',
+                'rowNumber' => 2,
+            ]],
+            false,
+        ]);
+
+        self::assertSame(1, $result['imported']);
+        self::assertSame([], $result['errors']);
+
+        $rows = $this->fetchRowsForSource($source);
+        self::assertCount(1, $rows);
+        self::assertSame((string)$value, $rows[0]['translation']);
+        self::assertSame($expectedPresent ? 'translated' : 'pending', $rows[0]['status']);
+        self::assertNull($rows[0]['reviewedByUserId'], 'The internal CSV import fixture has no logged-in user.');
+        self::assertSame($expectedPresent, $rows[0]['reviewedAt'] !== null);
+    }
+
+    /**
+     * @return array<string,array{0:?string,1:bool}>
+     */
+    public static function translationValueProvider(): array
+    {
+        return [
+            'zero' => ['0', true],
+            'normal text' => ['Translated text', true],
+            'empty string' => ['', false],
+            'whitespace' => [" \t\n", false],
+            'null' => [null, false],
+        ];
     }
 
     private function createImportController(): ImportController

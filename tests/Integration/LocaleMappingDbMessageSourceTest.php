@@ -16,6 +16,7 @@ use lindemannrock\translationmanager\i18n\HybridLocaleMappingMessageSource;
 use lindemannrock\translationmanager\i18n\LocaleMappingDbMessageSource;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * @since 5.29.0
@@ -87,7 +88,50 @@ final class LocaleMappingDbMessageSourceTest extends TestCase
         self::assertSame('DB shared DE', $source->translate('example', 'Shared', 'de'));
     }
 
-    private function createTranslatedRow(string $category, string $key, string $translation, string $language): void
+    #[DataProvider('translationValueProvider')]
+    public function testDatabaseRuntimeUsesExplicitValuePresence(
+        ?string $value,
+        bool $expectedPresent,
+    ): void {
+        $key = 'DB presence ' . bin2hex(random_bytes(4));
+        $this->createTranslatedRow('example', $key, $value, 'de');
+
+        $source = new LocaleMappingDbMessageSource();
+        $source->sourceLanguage = 'en';
+        $source->forceTranslation = true;
+
+        self::assertSame($expectedPresent ? $value : false, $source->translate('example', $key, 'de'));
+
+        $fallback = 'PHP fallback ' . bin2hex(random_bytes(3));
+        self::assertNotFalse(file_put_contents(
+            $this->managedPath . '/de/presence.php',
+            "<?php\nreturn [" . var_export($key, true) . ' => ' . var_export($fallback, true) . "];\n",
+        ));
+
+        $hybrid = new HybridLocaleMappingMessageSource();
+        $hybrid->sourceLanguage = 'en';
+        $hybrid->basePath = $this->managedPath;
+        $hybrid->forceTranslation = true;
+        $hybrid->fileMap = ['example' => 'presence.php'];
+
+        self::assertSame($expectedPresent ? $value : $fallback, $hybrid->translate('example', $key, 'de'));
+    }
+
+    /**
+     * @return array<string,array{0:?string,1:bool}>
+     */
+    public static function translationValueProvider(): array
+    {
+        return [
+            'zero' => ['0', true],
+            'normal text' => ['Translated text', true],
+            'empty string' => ['', false],
+            'whitespace' => [" \t\n", false],
+            'null' => [null, false],
+        ];
+    }
+
+    private function createTranslatedRow(string $category, string $key, ?string $translation, string $language): void
     {
         $site = Craft::$app->getSites()->getAllSites()[0];
         $now = Db::prepareDateForDb(new \DateTimeImmutable());

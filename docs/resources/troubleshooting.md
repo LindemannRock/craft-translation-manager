@@ -65,6 +65,12 @@ If provider strings are captured but still render in the source language, regene
 - Use UTF-8 encoding with proper headers
 - For large files, split into smaller batches
 
+## A `0` Translation Is Missing
+
+Update Translation Manager and save or import the value again. The string `0` is valid translated text across manual saves, CSV/PHP imports, runtime lookup, and generated PHP files. Only `null`, an empty string, or whitespace-only text is considered missing.
+
+After correcting an older row, regenerate its category or provider files if you use `php-files` or `hybrid` runtime mode. Then clear Craft's data cache before checking the frontend again.
+
 ## CSV Import Fails With "An Unexpected Error Occurred"
 
 When a CSV upload can't be parsed, production sites show a single generic flash message — **Failed to parse CSV: An unexpected error occurred.** — without the specific reason. (With `devMode` on, the real parser message is shown instead.)
@@ -158,6 +164,8 @@ ddev craft translation-manager/translations/generate-provider freeform
 ```
 
 ## Generated Files Are Stale After Deploy
+
+When you regenerate a category, site source, provider, or all sources, Translation Manager checks every category/mapped-language pair in that scope. If a language has lost its final translated value, its stale category file is removed without deleting other languages' files or unrelated category/provider files. If that locale file remains after regeneration, confirm that the row is no longer **Translated** and that the locale maps to the language folder you are inspecting.
 
 Keep this post-deploy sequence for generated PHP files. It is the right path for
 standard hosting, and it is still useful in hybrid mode because those PHP files

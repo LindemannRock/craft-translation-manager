@@ -386,7 +386,7 @@ class TranslationsController extends Controller
         $translation->status = $this->resolveStatusForSave($translation, $translationText);
         $translation->translationOrigin = 'manual';
         $translation->createdByUserId = Craft::$app->getUser()->getId();
-        if ($translation->status === 'draft' || $translationText === '') {
+        if ($translation->status === 'draft' || trim($translationText) === '') {
             $translation->reviewedByUserId = null;
             $translation->reviewedAt = null;
         } else {
@@ -474,7 +474,7 @@ class TranslationsController extends Controller
             $translation->status = $this->resolveStatusForSave($translation, $translationText);
             $translation->translationOrigin = 'manual';
             $translation->createdByUserId = Craft::$app->getUser()->getId();
-            if ($translation->status === 'draft' || $translationText === '') {
+            if ($translation->status === 'draft' || trim($translationText) === '') {
                 $translation->reviewedByUserId = null;
                 $translation->reviewedAt = null;
             } else {

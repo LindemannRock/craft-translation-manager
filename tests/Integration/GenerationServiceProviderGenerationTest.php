@@ -124,6 +124,25 @@ final class GenerationServiceProviderGenerationTest extends TestCase
             self::assertIsArray($formieMessages);
             self::assertArrayNotHasKey($source, $formieMessages);
         }
+
+        $translation->translation = '';
+        self::assertTrue($this->translations->saveTranslation($translation));
+        self::assertSame('pending', $translation->status);
+
+        $providerResult = TranslationManager::getInstance()->generate->generateProviderTranslations(
+            ProviderGenerationTestIntegration::NAME,
+        );
+        self::assertTrue((bool)($providerResult['success'] ?? false));
+        self::assertFileDoesNotExist($providerFile);
+
+        $sourceLanguage = TranslationManager::getInstance()->getSettings()->sourceLanguage;
+        $sourceFile = $this->tempTranslationsPath . '/' . $sourceLanguage . '/' . ProviderGenerationTestIntegration::CATEGORY . '.php';
+        self::assertFileExists($sourceFile, 'Provider generation must retain output for the other language.');
+
+        $allAgain = TranslationManager::getInstance()->generate->generateAll();
+        self::assertTrue((bool)($allAgain['success'] ?? false));
+        self::assertFileDoesNotExist($providerFile);
+        self::assertFileExists($sourceFile);
     }
 
     private function findRowToTranslate(string $source, string $category): TranslationRecord

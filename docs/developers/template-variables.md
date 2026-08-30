@@ -6,7 +6,7 @@ Translation Manager provides Twig variables for use in your templates.
 
 ### `t(text, context)`
 
-Translate a text string. If the translation exists for the current site's language, returns the translated value. Otherwise returns the original text.
+Translate a text string. The helper captures the source string, resolves the current site's language through **Locale Mapping**, and looks up that exact language in the active site translation category. If no translated value exists—or the current site uses the source language—it returns the original text.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -17,6 +17,8 @@ Translate a text string. If the translation exists for the current site's langua
 {{ craft.translationManager.t('Text to translate') }}
 {{ craft.translationManager.t('Text to translate', 'my-context') }}
 ```
+
+The `context` value identifies where the string was captured; it does not select a different translation category. Both helpers below use the active site category and the current mapped language. A value of `"0"` is a valid translation. Empty, whitespace-only, and `null` values are treated as missing.
 
 **Returns:** `string`
 
@@ -40,7 +42,7 @@ Get allowed sites for current license
 
 ### `hasTranslation(text, context)`
 
-Check if a translation exists for the given text and context.
+Check whether the same exact current-language/category row used by `t()` has a translated value. This check does not capture a missing source string.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|

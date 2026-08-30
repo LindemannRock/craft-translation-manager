@@ -277,7 +277,7 @@ class GenerationService extends Component
 
     /**
      * Group translated rows by category and mapped language, write the matching
-     * PHP files, and delete stale files for categories with no generated output.
+     * PHP files, and reconcile every in-scope category/language pair.
      *
      * @param array<int,array<string,mixed>> $translations Rows from getTranslations()
      * @param string[] $categories Categories in scope for stale-file cleanup
@@ -288,6 +288,14 @@ class GenerationService extends Component
         $settings = TranslationManager::getInstance()->getSettings();
         $basePath = $settings->getGenerationPath();
         $sites = TranslationManager::getInstance()->getAllowedSites();
+        $categories = array_values(array_unique($categories));
+        $generationLanguages = [];
+        foreach ($sites as $site) {
+            $generationLanguage = $this->getGenerationLanguage($site);
+            if (!in_array($generationLanguage, $generationLanguages, true)) {
+                $generationLanguages[] = $generationLanguage;
+            }
+        }
         $writtenFileCount = 0;
         $deletedFileCount = 0;
 
@@ -301,13 +309,12 @@ class GenerationService extends Component
             $language = $translation['language'] ?? 'en';
             $mappedLanguage = $settings->mapLanguage($language);
 
-            if (!isset($translationsByCategoryAndLanguage[$category][$mappedLanguage])) {
-                $translationsByCategoryAndLanguage[$category][$mappedLanguage] = [];
+            if (!in_array($category, $categories, true) || !in_array($mappedLanguage, $generationLanguages, true)) {
+                continue;
             }
 
-            // Only include if there's a translation (not empty)
-            if (!empty($translation['translation'])) {
-                $translationsByCategoryAndLanguage[$category][$mappedLanguage][$translation['translationKey']] = $translation['translation'];
+            if (trim((string)($translation['translation'] ?? '')) !== '') {
+                $translationsByCategoryAndLanguage[$category][$mappedLanguage][$translation['translationKey']] = (string)$translation['translation'];
             }
         }
 
@@ -325,14 +332,15 @@ class GenerationService extends Component
             }
         }
 
-        // Delete stale files for in-scope categories that produced no output.
+        // Delete stale files only for in-scope pairs that produced no output.
+        // Cleanup runs after every write succeeds, preserving existing failure
+        // behavior and keeping unrelated categories/languages untouched.
         foreach ($categories as $category) {
-            if (isset($translationsByCategoryAndLanguage[$category])) {
-                continue;
-            }
+            foreach ($generationLanguages as $generationLanguage) {
+                if (isset($translationsByCategoryAndLanguage[$category][$generationLanguage])) {
+                    continue;
+                }
 
-            foreach ($sites as $site) {
-                $generationLanguage = $this->getGenerationLanguage($site);
                 $file = $this->resolveGeneratedFilePath($basePath, $generationLanguage, (string)$category, false);
                 if ($file !== null && file_exists($file)) {
                     @unlink($file);

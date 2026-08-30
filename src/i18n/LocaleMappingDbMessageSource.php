@@ -68,6 +68,10 @@ class LocaleMappingDbMessageSource extends MessageSource
 
         $messages = [];
         foreach ($rows as $row) {
+            if (trim((string)$row['translation']) === '') {
+                continue;
+            }
+
             $messages[(string)$row['translationKey']] = (string)$row['translation'];
         }
 

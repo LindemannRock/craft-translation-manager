@@ -16,6 +16,7 @@ use craft\helpers\StringHelper;
 use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Pins the second-pass maintenance scan contract: existing site/runtime rows
@@ -130,9 +131,60 @@ final class ScanTemplatesForUnusedTest extends TestCase
         }
     }
 
+    #[DataProvider('translationValueProvider')]
+    public function testScanReactivationUsesExplicitValuePresence(
+        ?string $value,
+        bool $expectedPresent,
+    ): void {
+        $templatesPath = Craft::getAlias('@templates');
+        if (!is_string($templatesPath) || !is_dir($templatesPath) || !is_writable($templatesPath)) {
+            self::markTestSkipped('Test requires a writable @templates path.');
+        }
+
+        $settings = TranslationManager::getInstance()->getSettings();
+        $category = 'tm-test-scan-value-' . bin2hex(random_bytes(4));
+        $templateFile = $templatesPath . DIRECTORY_SEPARATOR . $category . '.twig';
+        $source = self::MARKER . 'scan_value_' . bin2hex(random_bytes(4));
+        $language = Craft::$app->getSites()->getPrimarySite()->language;
+        $settings->translationCategories = [['key' => $category, 'enabled' => true]];
+        $settings->translationCategory = $category;
+
+        try {
+            $this->createTranslationRecord($source, $value, $language, $category, 'runtime', 'unused');
+            self::assertNotFalse(file_put_contents($templateFile, "{{ '{$source}'|t('{$category}') }}\n"));
+
+            $result = $this->translations->scanTemplatesForUnused([$category]);
+            self::assertSame(1, $result['reactivated']);
+            self::assertSame([], $result['errors']);
+
+            $rows = $this->fetchRowsForSource($source);
+            self::assertCount(1, $rows);
+            self::assertSame($expectedPresent ? 'translated' : 'pending', $rows[0]['status']);
+        } finally {
+            if (is_file($templateFile)) {
+                unlink($templateFile);
+            }
+            TranslationRecord::deleteAll(['category' => $category]);
+        }
+    }
+
+    /**
+     * @return array<string,array{0:?string,1:bool}>
+     */
+    public static function translationValueProvider(): array
+    {
+        return [
+            'zero' => ['0', true],
+            'normal text' => ['Translated text', true],
+            'empty string' => ['', false],
+            'whitespace' => [" \t\n", false],
+            'null' => [null, false],
+        ];
+    }
+
     private function createTranslationRecord(
         string $source,
-        string $translation,
+        ?string $translation,
         string $language,
         string $category,
         string $context,

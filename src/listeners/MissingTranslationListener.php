@@ -84,7 +84,7 @@ class MissingTranslationListener
         }
 
         // Skip empty messages
-        if (empty($message) || trim($message) === '') {
+        if (trim((string)$message) === '') {
             return;
         }
 

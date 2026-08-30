@@ -10,7 +10,9 @@
 
 namespace lindemannrock\translationmanager\variables;
 
+use Craft;
 use lindemannrock\translationmanager\helpers\GeneratedFileCleanupHelper;
+use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\services\SourceService;
 use lindemannrock\translationmanager\TranslationManager;
@@ -32,30 +34,24 @@ class TranslationManagerVariable
     public function t(string $text, string $context = ''): string
     {
         $settings = TranslationManager::getInstance()->getSettings();
-        $category = $settings->translationCategory;
+        [$category, $context] = $this->normalizeSiteScope($context);
         
-        // If no context provided, use the category
-        if (empty($context)) {
-            $context = "site.{$category}";
-        } elseif (!str_starts_with($context, 'site.')) {
-            $context = "site.{$context}";
-        }
-        
-        // Create or update the translation
-        $translation = TranslationManager::getInstance()->translations->createOrUpdateTranslation($text, $context);
+        // Preserve runtime capture before resolving the current site's exact row.
+        TranslationManager::getInstance()->translations->createOrUpdateTranslation($text, $context, $category);
 
-        // Get current site language
-        $currentSite = \Craft::$app->getSites()->getCurrentSite();
-        $sourceLanguage = $settings->sourceLanguage ?? 'en';
+        $currentLanguage = $settings->mapLanguage(Craft::$app->getSites()->getCurrentSite()->language);
+        $sourceLanguage = $settings->mapLanguage($settings->sourceLanguage ?? 'en');
 
-        // Return translated text if available and we're not on the source language
-        if ($currentSite->language !== $sourceLanguage &&
-            !str_starts_with($currentSite->language, $sourceLanguage . '-') &&
-            !empty($translation->translation)) {
-            return $translation->translation;
+        // Preserve source-language fallback, including unmapped regional variants.
+        if ($currentLanguage === $sourceLanguage || str_starts_with($currentLanguage, $sourceLanguage . '-')) {
+            return $text;
         }
 
-        return $text;
+        $translation = $this->findCurrentTranslation($text, $category, $currentLanguage);
+
+        return $translation !== null && trim((string)$translation->translation) !== ''
+            ? (string)$translation->translation
+            : $text;
     }
     
     /**
@@ -79,13 +75,37 @@ class TranslationManagerVariable
      */
     public function hasTranslation(string $text, string $context = ''): bool
     {
-        $hash = md5($text);
-        $record = \lindemannrock\translationmanager\records\TranslationRecord::findOne([
-            'sourceHash' => $hash,
-            'context' => $context ?: 'site',
-        ]);
+        [$category] = $this->normalizeSiteScope($context);
+        $settings = TranslationManager::getInstance()->getSettings();
+        $language = $settings->mapLanguage(Craft::$app->getSites()->getCurrentSite()->language);
+        $record = $this->findCurrentTranslation($text, $category, $language);
         
-        return $record !== null && !empty($record->translation);
+        return $record !== null && trim((string)$record->translation) !== '';
+    }
+
+    /**
+     * @return array{0:string,1:string}
+     */
+    private function normalizeSiteScope(string $context): array
+    {
+        $category = TranslationManager::getInstance()->getSettings()->getPrimaryCategory();
+
+        if ($context === '') {
+            $context = "site.{$category}";
+        } elseif (!str_starts_with($context, 'site.')) {
+            $context = "site.{$context}";
+        }
+
+        return [$category, $context];
+    }
+
+    private function findCurrentTranslation(string $text, string $category, string $language): ?TranslationRecord
+    {
+        return TranslationRecord::findOne([
+            'sourceHash' => md5($text),
+            'category' => $category,
+            'language' => $language,
+        ]);
     }
     
     /**
