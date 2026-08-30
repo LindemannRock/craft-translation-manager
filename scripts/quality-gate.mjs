@@ -53,6 +53,11 @@ const constituents = [
         standaloneEnvironment: {TRANSLATION_MANAGER_FIXTURE_SOURCE_VENDOR_ROOT: runtimeVendorRoot},
     },
     {
+        id: 'editor-save-regressions',
+        family: 'editor-save-ordering',
+        standalone: ['node', ['--test', 'tests/js/translation-editor-save-ordering.test.mjs']],
+    },
+    {
         id: 'pre-commit-hook-regressions',
         family: 'hook-routing',
         standalone: ['node', ['--test', 'tests/js/pre-commit-hook.test.mjs']],

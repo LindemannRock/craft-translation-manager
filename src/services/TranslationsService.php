@@ -114,10 +114,43 @@ class TranslationsService extends Component
      */
     public function getTranslations(array $criteria = []): array
     {
+        $query = $this->buildTranslationsQuery($criteria);
+
+        // Keep this method unbounded for operational/API consumers that need
+        // the complete filtered catalogue.
+        return $query?->all() ?? [];
+    }
+
+    /**
+     * Get one database-backed page of translations and its filtered total.
+     *
+     * @return array{translations: array<int, array<string, mixed>>, totalCount: int}
+     * @since 5.35.0
+     */
+    public function getTranslationsPage(array $criteria, int $limit, int $offset): array
+    {
+        $query = $this->buildTranslationsQuery($criteria);
+        if ($query === null) {
+            return ['translations' => [], 'totalCount' => 0];
+        }
+
+        $limit = max(1, $limit);
+        $offset = max(0, $offset);
+        $totalCount = (int)(clone $query)->count();
+
+        return [
+            'translations' => $query->limit($limit)->offset($offset)->all(),
+            'totalCount' => $totalCount,
+        ];
+    }
+
+    /** Build the shared filter/search/sort query for bounded and unbounded reads. */
+    private function buildTranslationsQuery(array $criteria): ?Query
+    {
         $query = (new Query())
             ->select('*')
             ->from(TranslationRecord::tableName());
-            
+
         $settings = TranslationManager::getInstance()->getSettings();
         
         // Log the request if filters are applied
@@ -175,7 +208,7 @@ class TranslationsService extends Component
             if ($criteria['type'] === 'forms') {
                 $condition = $this->buildSourceTypeContextCondition('forms');
                 if ($condition === null) {
-                    return [];
+                    return null;
                 }
                 $query->andWhere($condition);
                 $hasTypeFilter = true;
@@ -193,7 +226,7 @@ class TranslationsService extends Component
             if (!$settings->enableSiteTranslations) {
                 $condition = $this->buildEnabledIntegrationContextCondition();
                 if ($condition === null) {
-                    return [];
+                    return null;
                 }
                 $query->andWhere($condition);
             } else {
@@ -262,12 +295,15 @@ class TranslationsService extends Component
             } else {
                 $query->orderBy([$sortMap[$sort] => $dir === 'desc' ? SORT_DESC : SORT_ASC]);
             }
+            // SQL pagination requires a stable order within equal sort values
+            // so adjacent pages cannot overlap or skip rows.
+            $query->addOrderBy(['id' => SORT_ASC]);
         }
 
-        // Get all translations. Integration rows maintain their "unused"
-        // status through provider save hooks and maintenance rescans, so this
-        // read path does not traverse forms on every request.
-        return $query->all();
+        // Integration rows maintain their "unused" status through provider
+        // save hooks and maintenance rescans, so this query construction does
+        // not traverse forms on every request.
+        return $query;
     }
 
     /**

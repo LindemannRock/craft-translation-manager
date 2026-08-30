@@ -14,6 +14,7 @@ const expectedIds = [
     'test-conventions',
     'runner-lifecycle-regressions',
     'disposable-phpunit',
+    'editor-save-regressions',
     'pre-commit-hook-regressions',
     'customer-archive-regressions',
     'orchestration-regressions',

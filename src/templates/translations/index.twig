@@ -556,10 +556,9 @@
                 this.updateUI(id);
             }
 
-            markSaved(id, value) {
-                this.unsavedChanges.delete(id);
-                this.originalValues.set(id, value.trim());
-                this.updateUI(id);
+            markSaved(id, submittedValue, currentValue) {
+                this.originalValues.set(id, submittedValue.trim());
+                this.markChanged(id, currentValue);
             }
 
             updateUI(id) {
@@ -579,6 +578,55 @@
                     id,
                     translation: translationText
                 }));
+            }
+        }
+
+        class TranslationSaveCoordinator {
+            constructor(tracker, persist) {
+                this.tracker = tracker;
+                this.persist = persist;
+                this.activeSaves = new Map();
+            }
+
+            save(id, translationText) {
+                const active = this.activeSaves.get(id);
+                if (active) {
+                    active.queued = true;
+                    return active.promise;
+                }
+
+                const state = {queued: false, promise: null};
+                state.promise = this.run(id, translationText, state).finally(() => {
+                    this.activeSaves.delete(id);
+                    this.tracker.savingInProgress.delete(id);
+                });
+                this.activeSaves.set(id, state);
+                this.tracker.savingInProgress.add(id);
+
+                return state.promise;
+            }
+
+            async run(id, initialValue, state) {
+                let submittedValue = initialValue;
+
+                while (true) {
+                    const result = await this.persist(id, submittedValue);
+                    if (!result.success) {
+                        return false;
+                    }
+
+                    this.tracker.markSaved(id, submittedValue, result.currentValue);
+                    if (!state.queued) {
+                        return true;
+                    }
+
+                    state.queued = false;
+                    const queuedValue = this.tracker.unsavedChanges.get(id);
+                    if (queuedValue === undefined || queuedValue.trim() === submittedValue.trim()) {
+                        return true;
+                    }
+                    submittedValue = queuedValue;
+                }
             }
         }
 
@@ -611,17 +659,11 @@
             }
         }
 
-        async function saveTranslation(id, translationText) {
-            if (tracker.savingInProgress.has(id)) {
-                return false;
-            }
-
-            tracker.savingInProgress.add(id);
+        const saveCoordinator = new TranslationSaveCoordinator(tracker, async function(id, translationText) {
             const row = document.querySelector(`tr[data-id="${id}"]`);
             const textarea = row?.querySelector('.translation-text');
             if (!row || !textarea || textarea.readOnly || textarea.disabled) {
-                tracker.savingInProgress.delete(id);
-                return false;
+                return {success: false, currentValue: ''};
             }
 
             textarea.style.opacity = '0.6';
@@ -636,7 +678,6 @@
                     throw new Error(data.error || T.saveFailed);
                 }
 
-                tracker.markSaved(id, translationText);
                 if (data.status) {
                     updateStatusDisplay(row, data.status);
                 }
@@ -645,7 +686,7 @@
                 setTimeout(() => {
                     row.style.backgroundColor = '';
                 }, 700);
-                return true;
+                return {success: true, currentValue: textarea.value};
             } catch (error) {
                 console.error('Save error:', error);
                 row.style.backgroundColor = '#fee';
@@ -653,11 +694,14 @@
                     row.style.backgroundColor = '';
                 }, 1600);
                 Craft.cp.displayError(T.saveTranslationFailed);
-                return false;
+                return {success: false, currentValue: textarea.value};
             } finally {
-                tracker.savingInProgress.delete(id);
                 textarea.style.opacity = '';
             }
+        });
+
+        function saveTranslation(id, translationText) {
+            return saveCoordinator.save(id, translationText);
         }
 
         document.querySelectorAll('.translation-text').forEach(textarea => {

@@ -145,14 +145,11 @@ class TranslationsController extends Controller
             'category' => $category,
         ];
 
-        $allTranslations = TranslationManager::getInstance()->translations->getTranslations($criteria);
-
-        // totalCount is computed *after* filtering so the pager reflects what
-        // the user can actually see, not the underlying table size.
-        $totalCount = count($allTranslations);
+        $pageResult = TranslationManager::getInstance()->translations->getTranslationsPage($criteria, $limit, $offset);
+        $totalCount = $pageResult['totalCount'];
         $totalPages = (int) ceil($totalCount / $limit);
 
-        $translations = array_slice($allTranslations, $offset, $limit);
+        $translations = $pageResult['translations'];
         $translations = $this->hydrateAuditFields($translations);
         $translations = $this->hydrateSourcePermissions($translations);
 
