@@ -79,7 +79,7 @@ final class RequiredMessageFieldStub
     public function __construct(
         private string $handle,
         private bool $required,
-        private string $requiredMessage,
+        public string $requiredMessage,
     ) {
     }
 

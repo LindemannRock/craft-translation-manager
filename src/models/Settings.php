@@ -159,14 +159,9 @@ class Settings extends Model
     private ?string $_rawGenerationPath = null;
 
     /**
-     * @var bool Whether to enable auto-save after typing stops
+     * @var bool Whether to save a changed translation when its field loses focus
      */
     public bool $autoSaveEnabled = false;
-    
-    /**
-     * @var int Auto-save delay in seconds (how long to wait after typing stops)
-     */
-    public int $autoSaveDelay = 2;
 
 
     /**
@@ -315,7 +310,6 @@ class Settings extends Model
             // to a safe charset. (OpenAI fine-tuned names can contain ':', so this is Gemini-only.)
             [['geminiModel'], 'match', 'pattern' => '/^[a-zA-Z0-9._-]+$/',
              'message' => 'Gemini model must contain only letters, numbers, dots, hyphens, and underscores.', ],
-            [['autoSaveDelay'], 'integer', 'min' => 1, 'max' => 10],
             [['runtimeTranslationSource'], 'in', 'range' => [
                 self::RUNTIME_SOURCE_PHP_FILES,
                 self::RUNTIME_SOURCE_DATABASE,
@@ -410,7 +404,6 @@ class Settings extends Model
             'runtimeTranslationSource' => Craft::t('translation-manager', 'Runtime Translation Source'),
             'generationPath' => Craft::t('translation-manager', 'Generation Path'),
             'autoSaveEnabled' => Craft::t('translation-manager', 'Enable Auto-Save'),
-            'autoSaveDelay' => Craft::t('translation-manager', 'Auto-Save Delay'),
             'captureMissingTranslations' => Craft::t('translation-manager', 'Capture Missing Translations'),
             'captureMissingOnlyDevMode' => Craft::t('translation-manager', 'Only in devMode'),
             'requireApproval' => Craft::t('translation-manager', 'Require Approval'),
@@ -1114,7 +1107,6 @@ class Settings extends Model
     {
         return [
             'itemsPerPage',
-            'autoSaveDelay',
             'backupRetentionDays',
         ];
     }

@@ -24,8 +24,8 @@ use lindemannrock\translationmanager\models\Settings;
 use lindemannrock\translationmanager\presenters\StorageWarningPresentation;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\MockObject;
 use RuntimeException;
 use Throwable;
 use TypeError;
@@ -228,6 +228,7 @@ final class StorageWarningPresentationTest extends TestCase
 
     public function testMissingComponentInterfaceIsUnavailable(): void
     {
+        /** @var FsInterface&MockObject $fs */
         $fs = $this->createMockForIntersectionOfInterfaces([FsInterface::class, MissingComponentInterface::class]);
         $this->installVolumes($this->volume($fs));
 
@@ -460,7 +461,7 @@ final class StorageWarningPresentationTest extends TestCase
         return $this->createMock(FsInterface::class);
     }
 
-    private function volume(FsInterface $fs): Volume
+    private function volume(FsInterface $fs): Volume & MockObject
     {
         $volume = $this->createMock(Volume::class);
         $volume->method('getFs')->willReturn($fs);

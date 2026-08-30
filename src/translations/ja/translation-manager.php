@@ -452,7 +452,6 @@ return [
     'Interface Settings' => 'インターフェース設定',
     'Interface' => 'インターフェース',
     'Enable Auto-Save' => '自動保存を有効にする',
-    'Auto-Save Delay' => '自動保存の遅延時間',
     'Automatically save each translation when you click outside the field (blur)' => 'フィールドの外をクリックしたとき（フォーカスが外れたとき）に各翻訳を自動保存',
 
     // Translations: Index

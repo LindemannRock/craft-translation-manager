@@ -99,7 +99,6 @@ return [
 
         // Auto-save Settings
         'autoSaveEnabled' => false,    // Automatically save each translation when you click outside the field
-        'autoSaveDelay' => 2,          // Delay in seconds before auto-save triggers
 
 
         // ========================================

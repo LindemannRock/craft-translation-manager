@@ -29,7 +29,9 @@ final class IntegrationSourceTypeFilteringTest extends TestCase
         $this->requireLatinSourceLanguage();
         $this->requireAtLeastOneSite();
 
-        TranslationManager::getInstance()->integrations->register(
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $integrationService->register(
             TestFormsProviderIntegration::NAME,
             new TestFormsProviderIntegration(),
         );

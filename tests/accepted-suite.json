@@ -1,0 +1,16 @@
+{
+    "schemaVersion": 1,
+    "declared": {
+        "integrationClasses": 50,
+        "testMethods": 258,
+        "allowedIdentifierDebt": []
+    },
+    "executedMinimum": {
+        "tests": 269,
+        "assertions": 1778,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 1,
+        "incomplete": 0
+    }
+}

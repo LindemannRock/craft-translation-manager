@@ -11,7 +11,6 @@ declare(strict_types=1);
 namespace lindemannrock\translationmanager\tests\Integration;
 
 use Craft;
-use craft\fs\Local;
 use craft\helpers\FileHelper;
 use craft\helpers\Json;
 use craft\models\Volume;
@@ -19,7 +18,6 @@ use lindemannrock\translationmanager\services\BackupService;
 use lindemannrock\translationmanager\services\GenerationService;
 use lindemannrock\translationmanager\services\TranslationsService;
 use lindemannrock\translationmanager\tests\Support\BackupManifestTestCase;
-use lindemannrock\translationmanager\TranslationManager;
 use RuntimeException;
 use yii\base\UserException;
 

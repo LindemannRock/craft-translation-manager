@@ -452,7 +452,6 @@ return [
     'Interface Settings' => 'إعدادات الواجهة',
     'Interface' => 'الواجهة',
     'Enable Auto-Save' => 'تفعيل الحفظ التلقائي',
-    'Auto-Save Delay' => 'تأخير الحفظ التلقائي',
     'Automatically save each translation when you click outside the field (blur)' => 'حفظ كل ترجمة تلقائياً عند النقر خارج الحقل (فقدان التركيز)',
 
     // Translations: Index

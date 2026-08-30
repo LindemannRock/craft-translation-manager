@@ -452,7 +452,6 @@ return [
     'Interface Settings' => 'Grænsefladeindstillinger',
     'Interface' => 'Brugerflade',
     'Enable Auto-Save' => 'Aktiver automatisk gemning',
-    'Auto-Save Delay' => 'Forsinkelse ved automatisk gemning',
     'Automatically save each translation when you click outside the field (blur)' => 'Gem automatisk hver oversættelse, når du klikker uden for feltet (blur)',
 
     // Translations: Index

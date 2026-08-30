@@ -452,7 +452,6 @@ return [
     'Interface Settings' => 'Oberflächen-Einstellungen',
     'Interface' => 'Oberfläche',
     'Enable Auto-Save' => 'Auto-Speichern aktivieren',
-    'Auto-Save Delay' => 'Auto-Speichern-Verzögerung',
     'Automatically save each translation when you click outside the field (blur)' => 'Jede Übersetzung automatisch speichern, wenn Sie außerhalb des Felds klicken (Blur)',
 
     // Translations: Index

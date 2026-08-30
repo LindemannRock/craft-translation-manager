@@ -14,6 +14,7 @@
 declare(strict_types=1);
 
 use lindemannrock\translationmanager\tests\Support\IsolatedQueue;
+use lindemannrock\translationmanager\tests\Support\TestProjectBoundary;
 
 if (!function_exists('craft_modify_app_config')) {
     /** Install the shadow queue before Craft bootstraps enabled plugins. */
@@ -33,14 +34,25 @@ if (!function_exists('craft_modify_app_config')) {
     }
 }
 
-$baseBootstrap = dirname(__DIR__, 3) . '/vendor/lindemannrock/craft-plugin-base/src/testing/bootstrap.php';
+$boundary = TestProjectBoundary::resolve();
+$baseBootstrap = null;
+foreach ([
+    dirname(__DIR__) . '/vendor/lindemannrock/craft-plugin-base/src/testing/bootstrap.php',
+    $boundary->vendorRoot . '/lindemannrock/craft-plugin-base/src/testing/bootstrap.php',
+    dirname(__DIR__, 3) . '/vendor/lindemannrock/craft-plugin-base/src/testing/bootstrap.php',
+] as $candidate) {
+    if (file_exists($candidate)) {
+        $baseBootstrap = $candidate;
+        break;
+    }
+}
 
-if (!file_exists($baseBootstrap)) {
-    fwrite(STDERR, "Base plugin testing bootstrap not found at {$baseBootstrap}\n");
-    fwrite(STDERR, "Run `composer install` and ensure lindemannrock/craft-plugin-base ^5.25 is present.\n");
+if ($baseBootstrap === null) {
+    fwrite(STDERR, "Base plugin testing bootstrap not found in package or workspace vendor.\n");
+    fwrite(STDERR, "Run `composer install` and ensure the required LindemannRock Base version is present.\n");
     exit(1);
 }
 
 require_once $baseBootstrap;
 
-\lindemannrock\base\testing\bootstrap();
+\lindemannrock\base\testing\bootstrap($boundary->projectRoot);

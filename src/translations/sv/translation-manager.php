@@ -452,7 +452,6 @@ return [
     'Interface Settings' => 'Gränssnittsinställningar',
     'Interface' => 'Gränssnitt',
     'Enable Auto-Save' => 'Aktivera auto-spara',
-    'Auto-Save Delay' => 'Auto-spara-fördröjning',
     'Automatically save each translation when you click outside the field (blur)' => 'Spara automatiskt varje översättning när du klickar utanför fältet (blur)',
 
     // Translations: Index

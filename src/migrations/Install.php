@@ -143,7 +143,6 @@ class Install extends Migration
                 'generationPath' => $this->string()->notNull()->defaultValue('@translations'),
                 'itemsPerPage' => $this->integer()->notNull()->defaultValue(100),
                 'autoSaveEnabled' => $this->boolean()->notNull()->defaultValue(false),
-                'autoSaveDelay' => $this->integer()->notNull()->defaultValue(2),
                 'requireApproval' => $this->boolean()->notNull()->defaultValue(false),
                 'backupEnabled' => $this->boolean()->defaultValue(true),
                 'backupRetentionDays' => $this->integer()->defaultValue(30),

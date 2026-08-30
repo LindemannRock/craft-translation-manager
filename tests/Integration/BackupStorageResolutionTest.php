@@ -142,6 +142,7 @@ final class BackupStorageResolutionTest extends TestCase
 
     public function testMissingComponentInterfaceFailsClosedWithoutLocalFallback(): void
     {
+        /** @var FsInterface&MockObject $fs */
         $fs = $this->createMockForIntersectionOfInterfaces([FsInterface::class, MissingComponentInterface::class]);
         $this->assertUnavailableWithoutLocalFallback(
             'missing-component',

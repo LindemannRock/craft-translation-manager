@@ -53,6 +53,8 @@ abstract class TestCase extends IntegrationTestCase
 
     /** @var array<string, mixed>|null */
     private ?array $settingsSnapshot = null;
+    /** @var array<string, mixed>|null */
+    private ?array $settingsDatabaseSnapshot = null;
     /** @var array<string, object> */
     private array $appComponentSnapshots = [];
     private ?object $originalQueue = null;
@@ -68,6 +70,10 @@ abstract class TestCase extends IntegrationTestCase
             parent::setUp();
             $this->baseStateInitialised = true;
             $this->snapshotAppComponents();
+            $this->settingsDatabaseSnapshot = (new \craft\db\Query())
+                ->from('{{%translationmanager_settings}}')
+                ->where(['id' => 1])
+                ->one() ?: null;
             $this->settingsSnapshot = TranslationManager::getInstance()->getSettings()->getAttributes();
             $this->isolateQueue();
             $this->translations = TranslationManager::getInstance()->translations;
@@ -222,6 +228,25 @@ abstract class TestCase extends IntegrationTestCase
                 TranslationManager::getInstance()->getSettings()->setAttributes($this->settingsSnapshot, false);
                 $this->settingsSnapshot = null;
             }
+        });
+        $this->runCleanupStep($errors, function(): void {
+            if ($this->settingsDatabaseSnapshot === null) {
+                return;
+            }
+
+            $current = (new \craft\db\Query())
+                ->from('{{%translationmanager_settings}}')
+                ->where(['id' => 1])
+                ->one();
+            if ($current !== $this->settingsDatabaseSnapshot) {
+                $attributes = $this->settingsDatabaseSnapshot;
+                $id = $attributes['id'];
+                unset($attributes['id']);
+                Craft::$app->getDb()->createCommand()
+                    ->update('{{%translationmanager_settings}}', $attributes, ['id' => $id])
+                    ->execute();
+            }
+            $this->settingsDatabaseSnapshot = null;
         });
         $this->runCleanupStep($errors, function(): void {
             if ($this->originalQueue !== null) {

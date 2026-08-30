@@ -81,7 +81,7 @@ class TranslationManager extends Plugin
     /**
      * @var string Plugin schema version for migrations
      */
-    public string $schemaVersion = '1.0.0';
+    public string $schemaVersion = '1.0.1';
 
     /**
      * @var bool Whether the plugin provides a control panel settings page

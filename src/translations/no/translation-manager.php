@@ -452,7 +452,6 @@ return [
     'Interface Settings' => 'Grensesnittinnstillinger',
     'Interface' => 'Grensesnitt',
     'Enable Auto-Save' => 'Aktiver automatisk lagring',
-    'Auto-Save Delay' => 'Forsinkelse ved automatisk lagring',
     'Automatically save each translation when you click outside the field (blur)' => 'Lagre automatisk hver oversettelse når du klikker utenfor feltet (blur)',
 
     // Translations: Index

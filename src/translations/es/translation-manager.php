@@ -452,7 +452,6 @@ return [
     'Interface Settings' => 'Configuración de interfaz',
     'Interface' => 'Interfaz',
     'Enable Auto-Save' => 'Activar guardado automático',
-    'Auto-Save Delay' => 'Retraso de guardado automático',
     'Automatically save each translation when you click outside the field (blur)' => 'Guardar automáticamente cada traducción cuando hace clic fuera del campo (blur)',
 
     // Translations: Index

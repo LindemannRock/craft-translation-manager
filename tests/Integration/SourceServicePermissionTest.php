@@ -12,6 +12,7 @@ namespace lindemannrock\translationmanager\tests\Integration;
 
 use lindemannrock\translationmanager\integrations\BaseIntegration;
 use lindemannrock\translationmanager\records\TranslationRecord;
+use lindemannrock\translationmanager\services\IntegrationService;
 use lindemannrock\translationmanager\services\SourceService;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
@@ -98,7 +99,9 @@ final class SourceServicePermissionTest extends TestCase
 
     public function testRegistryIncludesConfiguredAndProviderSources(): void
     {
-        TranslationManager::getInstance()->integrations->register(
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $integrationService->register(
             PermissionTestProviderIntegration::NAME,
             new PermissionTestProviderIntegration(),
         );
@@ -119,7 +122,9 @@ final class SourceServicePermissionTest extends TestCase
 
     public function testRecordSourceResolutionPrefersProviderContext(): void
     {
-        TranslationManager::getInstance()->integrations->register(
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $integrationService->register(
             PermissionTestProviderIntegration::NAME,
             new PermissionTestProviderIntegration(),
         );
@@ -138,7 +143,9 @@ final class SourceServicePermissionTest extends TestCase
 
     public function testRecordSourceResolutionKeepsConfiguredCategoryWhenNameMatchesProvider(): void
     {
-        TranslationManager::getInstance()->integrations->register(
+        /** @var IntegrationService $integrationService */
+        $integrationService = TranslationManager::getInstance()->get('integrations');
+        $integrationService->register(
             CollisionProviderIntegration::NAME,
             new CollisionProviderIntegration(),
         );

@@ -449,7 +449,6 @@ return [
     'Interface Settings' => 'Interface Settings',
     'Interface' => 'Interface',
     'Enable Auto-Save' => 'Enable Auto-Save',
-    'Auto-Save Delay' => 'Auto-Save Delay',
     'Automatically save each translation when you click outside the field (blur)' => 'Automatically save each translation when you click outside the field (blur)',
 
     // Translations: Index

@@ -123,7 +123,9 @@ These values belong to **Settings → Interface** unless noted otherwise.
 |--------|------|---------|-------------|
 | `itemsPerPage` | `int` | `100` | Rows per page in the translation list; accepted range 10–500 |
 | `autoSaveEnabled` | `bool` | `false` | Save a changed translation when its field loses focus |
-| `autoSaveDelay` | `int` | `2` | Compatibility config value retained by the settings model; the current blur-based auto-save flow does not use a timer |
+
+> [!NOTE]
+> `autoSaveDelay` was removed in Translation Manager 5.35.0 because auto-save has always run when a changed field loses focus and never used the configured value. Upgrades remove the stored column, and legacy config files that still contain the key are safely ignored. Rolling the migration back recreates an integer column with a default of `2`; it cannot recover previously stored non-default values.
 
 ### Base display and export overrides
 
@@ -212,8 +214,6 @@ return [
 
         'itemsPerPage' => 100,
         'autoSaveEnabled' => false,
-        // Retained for compatibility; current auto-save runs on field blur.
-        'autoSaveDelay' => 2,
 
         'backupEnabled' => true,
         'backupOnImport' => true,

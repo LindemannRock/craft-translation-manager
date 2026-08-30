@@ -143,61 +143,81 @@ abstract class BackupManifestTestCase extends TestCase
         $filesystem = $this->createMock(FsInterface::class);
         $filesystem->method('directoryExists')->willReturnCallback(
             static function(string $path) use ($delegate, $recordOperation): bool {
-                $recordOperation?->__invoke('directoryExists', $path);
+                if ($recordOperation !== null) {
+                    $recordOperation('directoryExists', $path);
+                }
                 return $delegate->directoryExists($path);
             },
         );
         $filesystem->method('createDirectory')->willReturnCallback(
             static function(string $path, array $config = []) use ($delegate, $recordOperation): void {
-                $recordOperation?->__invoke('createDirectory', $path);
+                if ($recordOperation !== null) {
+                    $recordOperation('createDirectory', $path);
+                }
                 $delegate->createDirectory($path, $config);
             },
         );
         $filesystem->method('deleteDirectory')->willReturnCallback(
             static function(string $path) use ($delegate, $recordOperation): void {
-                $recordOperation?->__invoke('deleteDirectory', $path);
+                if ($recordOperation !== null) {
+                    $recordOperation('deleteDirectory', $path);
+                }
                 $delegate->deleteDirectory($path);
             },
         );
         $filesystem->method('renameDirectory')->willReturnCallback(
             static function(string $path, string $newName) use ($delegate, $recordOperation): void {
-                $recordOperation?->__invoke('renameDirectory', $path);
+                if ($recordOperation !== null) {
+                    $recordOperation('renameDirectory', $path);
+                }
                 $delegate->renameDirectory($path, $newName);
             },
         );
         $filesystem->method('write')->willReturnCallback(
             static function(string $path, string $contents, array $config = []) use ($delegate, $recordOperation): void {
-                $recordOperation?->__invoke('write', $path);
+                if ($recordOperation !== null) {
+                    $recordOperation('write', $path);
+                }
                 $delegate->write($path, $contents, $config);
             },
         );
         $filesystem->method('read')->willReturnCallback(
             static function(string $path) use ($delegate, $recordOperation): string {
-                $recordOperation?->__invoke('read', $path);
+                if ($recordOperation !== null) {
+                    $recordOperation('read', $path);
+                }
                 return $delegate->read($path);
             },
         );
         $filesystem->method('fileExists')->willReturnCallback(
             static function(string $path) use ($delegate, $recordOperation): bool {
-                $recordOperation?->__invoke('fileExists', $path);
+                if ($recordOperation !== null) {
+                    $recordOperation('fileExists', $path);
+                }
                 return $delegate->fileExists($path);
             },
         );
         $filesystem->method('getFileSize')->willReturnCallback(
             static function(string $path) use ($delegate, $recordOperation): int {
-                $recordOperation?->__invoke('getFileSize', $path);
+                if ($recordOperation !== null) {
+                    $recordOperation('getFileSize', $path);
+                }
                 return $delegate->getFileSize($path);
             },
         );
         $filesystem->method('getFileStream')->willReturnCallback(
             static function(string $path) use ($delegate, $recordOperation) {
-                $recordOperation?->__invoke('getFileStream', $path);
+                if ($recordOperation !== null) {
+                    $recordOperation('getFileStream', $path);
+                }
                 return $delegate->getFileStream($path);
             },
         );
         $filesystem->method('getFileList')->willReturnCallback(
             static function(string $path = '', bool $recursive = true) use ($delegate, $recordOperation): Generator {
-                $recordOperation?->__invoke('getFileList', $path);
+                if ($recordOperation !== null) {
+                    $recordOperation('getFileList', $path);
+                }
                 return $delegate->getFileList($path, $recursive);
             },
         );

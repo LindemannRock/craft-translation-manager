@@ -671,7 +671,6 @@ final class GuardUser extends ConsoleUser
     {
         return false;
     }
-
 }
 
 /** Available forms integration used to reach provider deletion safely. */

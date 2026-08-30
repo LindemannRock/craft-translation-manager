@@ -452,7 +452,6 @@ return [
     'Interface Settings' => 'Interface-instellingen',
     'Interface' => 'Interface',
     'Enable Auto-Save' => 'Automatisch opslaan inschakelen',
-    'Auto-Save Delay' => 'Vertraging automatisch opslaan',
     'Automatically save each translation when you click outside the field (blur)' => 'Elke vertaling automatisch opslaan wanneer u buiten het veld klikt (blur)',
 
     // Translations: Index

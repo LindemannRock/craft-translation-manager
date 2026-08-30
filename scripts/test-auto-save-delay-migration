@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+
+set -eu
+
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+plugin_dir="$(cd "$script_dir/.." && pwd)"
+workspace_dir="$(cd "$plugin_dir/../.." && pwd)"
+run_id="$$"
+mysql_container="tm-post21-mysql-${run_id}"
+postgres_container="tm-post21-postgres-${run_id}"
+
+cleanup() {
+    docker rm -f "$mysql_container" >/dev/null 2>&1 || true
+    docker rm -f "$postgres_container" >/dev/null 2>&1 || true
+}
+
+trap cleanup EXIT INT TERM HUP
+
+wait_for_mysql() {
+    attempt=0
+    until docker exec "$mysql_container" mysqladmin ping -h127.0.0.1 -uroot -ptm_post21_root --silent >/dev/null 2>&1; do
+        attempt=$((attempt + 1))
+        if [ "$attempt" -ge 60 ]; then
+            echo "MySQL did not become ready." >&2
+            return 1
+        fi
+        sleep 1
+    done
+}
+
+wait_for_postgres() {
+    attempt=0
+    until docker exec "$postgres_container" pg_isready -h127.0.0.1 -U tm_post21 -d tm_post21 >/dev/null 2>&1; do
+        attempt=$((attempt + 1))
+        if [ "$attempt" -ge 60 ]; then
+            echo "PostgreSQL did not become ready." >&2
+            return 1
+        fi
+        sleep 1
+    done
+}
+
+cleanup
+
+docker run --detach \
+    --name "$mysql_container" \
+    --env MYSQL_ROOT_PASSWORD=tm_post21_root \
+    --env MYSQL_DATABASE=tm_post21 \
+    --env MYSQL_USER=tm_post21 \
+    --env MYSQL_PASSWORD=tm_post21 \
+    --network ddev-craftcms_default \
+    mysql:8.4 >/dev/null
+wait_for_mysql
+ddev exec "TM_POST21_DSN='mysql:host=${mysql_container};port=3306;dbname=tm_post21' TM_POST21_USERNAME=tm_post21 TM_POST21_PASSWORD=tm_post21 php plugins/translation-manager/tests/Support/AutoSaveDelayMigrationHarness.php mysql"
+docker rm -f "$mysql_container" >/dev/null
+
+docker run --detach \
+    --name "$postgres_container" \
+    --env POSTGRES_DB=tm_post21 \
+    --env POSTGRES_USER=tm_post21 \
+    --env POSTGRES_PASSWORD=tm_post21 \
+    --network ddev-craftcms_default \
+    postgres:16 >/dev/null
+wait_for_postgres
+ddev exec "TM_POST21_DSN='pgsql:host=${postgres_container};port=5432;dbname=tm_post21' TM_POST21_USERNAME=tm_post21 TM_POST21_PASSWORD=tm_post21 php plugins/translation-manager/tests/Support/AutoSaveDelayMigrationHarness.php pgsql"
+docker rm -f "$postgres_container" >/dev/null
+
+if docker inspect "$mysql_container" >/dev/null 2>&1 || docker inspect "$postgres_container" >/dev/null 2>&1; then
+    echo "Disposable container cleanup failed." >&2
+    exit 1
+fi
+
+echo "Disposable MySQL and PostgreSQL containers removed."

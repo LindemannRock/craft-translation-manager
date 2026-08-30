@@ -83,27 +83,28 @@ final class GenerationServiceTriggerAutoGenerateTest extends TestCase
      * Subclass GenerationService so the inherited triggerAutoGenerate() calls
      * a counting stub instead of writing files to disk.
      */
-    private function makeSpy(): GenerationService
+    private function makeSpy(): AutoGenerationServiceSpy
     {
-        return new class extends GenerationService {
-            public int $generateAllCalls = 0;
+        return new AutoGenerationServiceSpy();
+    }
+}
 
-            /**
-             * @var list<array<int,string>>
-             */
-            public array $generateSourcesCalls = [];
+final class AutoGenerationServiceSpy extends GenerationService
+{
+    public int $generateAllCalls = 0;
 
-            public function generateAll(): array
-            {
-                $this->generateAllCalls++;
-                return ['success' => true, 'results' => []];
-            }
+    /** @var list<array<int,string>> */
+    public array $generateSourcesCalls = [];
 
-            public function generateSources(array $sourceIds): array
-            {
-                $this->generateSourcesCalls[] = $sourceIds;
-                return [];
-            }
-        };
+    public function generateAll(): array
+    {
+        $this->generateAllCalls++;
+        return ['success' => true, 'results' => []];
+    }
+
+    public function generateSources(array $sourceIds): array
+    {
+        $this->generateSourcesCalls[] = $sourceIds;
+        return [];
     }
 }
