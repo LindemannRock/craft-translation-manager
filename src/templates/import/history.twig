@@ -36,6 +36,7 @@
                     <th>{{ "Imported"|t('translation-manager') }}</th>
                     <th>{{ "Updated"|t('translation-manager') }}</th>
                     <th>{{ "Skipped"|t('translation-manager') }}</th>
+                    <th>{{ "Failed"|t('translation-manager') }}</th>
                     <th>{{ "Status"|t('translation-manager') }}</th>
                     {% if canAccessBackups %}
                         <th>{{ "Backup"|t('translation-manager') }}</th>
@@ -75,10 +76,17 @@
                             {% endif %}
                         </td>
                         <td>
+                            {% if import.failed > 0 %}
+                                <span class="status error">{{ import.failed }}</span>
+                            {% else %}
+                                <span class="light">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
                             {% if import.hasErrors %}
                                 <span class="status error with-icon">
                                     <span class="icon" aria-hidden="true">{{ svg('@appicons/alert.svg') }}</span>
-                                    {{ "Errors"|t('translation-manager') }}
+                                    {{ "Errors"|t('translation-manager') }} ({{ import.errorCount }})
                                 </span>
                             {% else %}
                                 <span class="status live">{{ "Success"|t('translation-manager') }}</span>
@@ -106,7 +114,7 @@
                             </ul>
                         {% endset %}
                         <tr>
-                            <td colspan="{{ canAccessBackups ? 8 : 7 }}">
+                            <td colspan="{{ canAccessBackups ? 9 : 8 }}">
                                 {% include 'lindemannrock-base/_components/info-box' with {
                                     type: 'error',
                                     variant: 'colored',

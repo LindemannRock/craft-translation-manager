@@ -95,6 +95,18 @@ Common causes:
 
 Fix the underlying file (or pick the correct delimiter) and re-upload.
 
+## CSV Import Reports Failed Rows
+
+The preview blocks rows that cannot satisfy the final translation record rules. For example, **Context** accepts at most 255 characters and **Category** accepts at most 50. Correct those rows in the CSV and upload it again if you want them included.
+
+If you confirm a file containing both valid and blocked rows, Translation Manager keeps the valid writes and shows the result as a partial failure. A file where every row is blocked is reported as a complete failure. No generated translation files are refreshed unless at least one row was created or updated.
+
+Open **Translation Manager → Import/Export → Import History** to compare the new, updated, skipped, and failed totals. The history keeps the accurate total error count and shows up to the first 10 row-level details, so a larger failed count than the visible detail list is expected.
+
+A row can also fail during the final save after a valid preview, for example because of a database or runtime error. Fix the reported cause and retry the CSV. Rows already written by the earlier attempt are matched on retry and are skipped when unchanged or updated when their value differs; they are not inserted as duplicates.
+
+If **Create Backup Before Import** is selected and the required backup fails, no rows are written, no import-history entry is created, and the uploaded preview remains available for retry. Resolve the backup-storage problem before confirming again.
+
 ## Settings Cannot Be Saved
 
 Settings are stored in the database, unless a value is overridden in `config/translation-manager.php`. A failed save is not expected production behavior; use the inline validation message to identify the field that was rejected.

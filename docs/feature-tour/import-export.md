@@ -18,18 +18,18 @@ Importing is a guided four-step flow — upload, map columns, preview, confirm �
 1. Go to **Translation Manager → Import/Export**.
 2. **Upload.** Choose your CSV file (max 5 MB). Pick a **CSV Delimiter** if needed — the default **Auto (detect)** handles most files, with **Comma (,)**, **Semicolon (;)**, **Tab**, and **Pipe (|)** available. When backups are enabled, leave **Create Backup Before Import** on. Click **Upload & Map Columns**.
 3. **Map CSV Columns.** Translation Manager matches your headers to its fields automatically, but you can adjust each one on the **Map CSV Columns** screen — every CSV column maps to a field via the **Maps to Field** dropdown, with a **Sample Data** preview alongside. **Translation Key (required)** is the only mapping you must set; **Translation**, **Language**, **Category**, **Context**, **Type**, **Site ID**, **Status**, and **Origin** are optional, and **-- Do not import --** skips a column. Click **Preview Import**.
-4. **Preview.** Review the **new**, **updated**, and **skipped** counts — and any rows flagged by malicious-content detection — before anything is written.
+4. **Preview.** Review the **new**, **updated**, **unchanged**, and **blocked** counts before anything is written. Blocked rows include malicious content and values that cannot satisfy the same record rules used for the final save, such as a context longer than 255 characters or a category longer than 50 characters.
 5. **Confirm** the import, then check the results and [history](#import-history).
 
 On the **Map CSV Columns** step, each column is matched to a field — adjust any that didn't auto-detect:
 
 ![Mapping CSV columns to translation fields](../images/import-export-map.webp)
 
-The **preview** then shows exactly what will change — new, updated, and skipped rows — before you confirm:
+The **preview** then shows exactly what will change — new, updated, unchanged, and blocked rows — before you confirm:
 
-![Import preview showing new, updated, and skipped rows](../images/import-export-preview.webp)
+![Import preview showing new, updated, unchanged, and blocked rows](../images/import-export-preview.webp)
 
-A backup is taken automatically before the import (when backups are enabled), so you can roll back if the result isn't what you expected.
+When backups are enabled and **Create Backup Before Import** is selected, the backup must succeed before Translation Manager writes any row. A backup failure stops the import and leaves the preview available so you can retry safely.
 
 ## Export
 
@@ -72,16 +72,21 @@ English Text,Arabic Translation,Status,Context
 
 ### Import behavior
 
-- Updates existing translations with a matching key + context
+- Updates an existing translation with the same key, mapped language, and category
 - Creates new translations for unmatched entries
-- Skips empty rows
-- Processes in batches (50 per batch) for large files
+- Skips unchanged entries and reports invalid or rejected rows as failed
+- Keeps valid row writes when another row fails; the final message reports partial success rather than hiding the failure
+- Reports a complete failure when no row could be written
+
+The final result separates new, updated, skipped, and failed totals. Import History preserves the full failed-row count even when only the first 10 error details are retained for review. If you correct and retry the same file, rows already written successfully are matched as existing translations rather than inserted again.
+
+Automatic file generation runs only when the import actually creates or updates at least one translation and auto-generation is otherwise enabled. A completely rejected import does not regenerate files.
 
 A translation value of `0` is imported as real translated text, not as an empty value. Empty, whitespace-only, and `null` values remain untranslated. PHP file imports follow the same rule, including a string key or value of `"0"`.
 
 ### Security
 
-CSV import is guarded by file-type validation (CSV/TXT only), a 5 MB size limit, MIME-type verification, malicious-content detection (XSS, SQL injection, PHP code), input sanitization, CSRF protection, and an automatic pre-import backup.
+CSV import is guarded by file-type validation (CSV/TXT only), a 5 MB size limit, MIME-type verification, malicious-content detection (XSS, SQL injection, PHP code), input sanitization, CSRF protection, and a required pre-import backup when backups are enabled and selected for the import.
 
 ## PHP file export (generation)
 
@@ -232,6 +237,6 @@ cp plugins/my-plugin/src/translations/ar/my-plugin.php translations/ar/
 
 ## Import history
 
-Every import is tracked with its date and time, the user who ran it, the number of translations (new / updated / skipped), and a link to the pre-import backup.
+Every confirmed import is tracked with its date and time, the user who ran it, the number of translations (new / updated / skipped / failed), the total error count, retained row-level error details, and a link to the pre-import backup. A mixed result stays visible as a partial failure, while an import that writes nothing and rejects every row is recorded as a complete failure.
 
 To wipe the log — for example after testing imports — use the **Clear history** button on the Import History tab. It removes every history record (the backups themselves are untouched) and requires the **Clear Import History** permission. See [Permissions](../developers/permissions.md).

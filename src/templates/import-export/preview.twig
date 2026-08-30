@@ -234,6 +234,10 @@
                     <button type="submit" class="btn submit">
                         {{ "Import {count} Translations"|t('translation-manager', {count: summary.toImport + summary.toUpdate}) }}
                     </button>
+                {% elseif summary.errors + summary.malicious > 0 %}
+                    <button type="submit" class="btn submit">
+                        {{ "Confirm and Import"|t('translation-manager') }}
+                    </button>
                 {% else %}
                     <button type="button" class="btn disabled" disabled>
                         {{ "No Valid Translations to Import"|t('translation-manager') }}
@@ -251,7 +255,10 @@
     if (importForm) {
         importForm.addEventListener('submit', function(e) {
             const count = {{ summary.toImport + summary.toUpdate }};
-            if (!confirm('Import ' + count + ' translation(s)? {% if createBackup %}A backup will be created first.{% endif %}')) {
+            const confirmation = count > 0
+                ? 'Import ' + count + ' translation(s)? {% if createBackup %}A backup will be created first.{% endif %}'
+                : {{ "Confirm and Import"|t('translation-manager')|json_encode|raw }};
+            if (!confirm(confirmation)) {
                 e.preventDefault();
                 return false;
             }

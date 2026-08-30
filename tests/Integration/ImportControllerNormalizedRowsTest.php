@@ -107,6 +107,45 @@ final class ImportControllerNormalizedRowsTest extends TestCase
         self::assertArrayNotHasKey('arabic', $analysis['toImport'][0]);
     }
 
+    public function testPreviewRejectsRecordsThatFinalPersistenceWouldReject(): void
+    {
+        $this->requireLatinSourceLanguage();
+        $this->requireAtLeastOneSite();
+
+        $controller = $this->createImportController();
+        $source = self::MARKER . 'preview_validation_' . bin2hex(random_bytes(4));
+
+        $analysis = $this->invokePrivate($controller, 'analyzeTranslations', [[[
+            'translationKey' => $source,
+            'translation' => 'Preview validation translation',
+            'language' => Craft::$app->getSites()->getPrimarySite()->language,
+            'category' => TranslationManager::getInstance()->getSettings()->getPrimaryCategory(),
+            'context' => str_repeat('x', 256),
+            '_rowNumber' => 2,
+        ]]]);
+
+        self::assertSame([], $analysis['toImport']);
+        self::assertCount(1, $analysis['errors']);
+        self::assertSame(2, $analysis['errors'][0]['rowNumber']);
+        self::assertStringContainsString('255', $analysis['errors'][0]['error']);
+
+        $final = $this->invokePrivate($controller, 'importTranslations', [[[
+            'translationKey' => $source,
+            'translation' => 'Preview validation translation',
+            'language' => Craft::$app->getSites()->getPrimarySite()->language,
+            'category' => TranslationManager::getInstance()->getSettings()->getPrimaryCategory(),
+            'context' => str_repeat('x', 256),
+            'rowNumber' => 2,
+        ]], false]);
+
+        self::assertSame(0, $final['imported']);
+        self::assertSame(0, $final['skipped']);
+        self::assertSame(1, $final['failed']);
+        self::assertSame(1, $final['errorCount']);
+        self::assertCount(1, $final['errors']);
+        self::assertStringContainsString('255', $final['errors'][0]);
+    }
+
     public function testAnalyzeTranslationsClassifiesExistingRows(): void
     {
         $this->requireLatinSourceLanguage();

@@ -37,6 +37,8 @@ class ImportController extends Controller
 {
     use LoggingTrait;
 
+    private const MAX_IMPORT_ERROR_DETAILS = 10;
+
     private const DANGEROUS_IMPORT_PATTERNS = [
         '/<script[^>]*>.*?<\/script>/si',
         '/javascript:/i',
@@ -312,24 +314,24 @@ class ImportController extends Controller
 
         $translations = array_merge($previewData['toImport'] ?? [], $previewData['toUpdate'] ?? []);
         $pluginName = TranslationManager::$plugin->getSettings()->getPluralLowerDisplayName();
-        if (empty($translations)) {
-            $session->setNotice(Craft::t('translation-manager', 'No valid {pluginName} found to import.', [
-                'pluginName' => $pluginName,
-            ]));
-            return $this->redirect('translation-manager/import-export');
-        }
 
         try {
             $settings = TranslationManager::getInstance()->getSettings();
             $backupPath = null;
             $createBackup = (bool)($importData['createBackup'] ?? false);
-            if ($settings->backupEnabled && $settings->backupOnImport && $createBackup) {
+            if ($translations !== [] && $settings->backupEnabled && $settings->backupOnImport && $createBackup) {
                 $backupPath = TranslationManager::getInstance()->backup->createBackup('before_import');
             }
 
-            $results = $this->importTranslations($translations, false);
+            $results = $translations !== []
+                ? $this->importTranslations($translations, false)
+                : $this->emptyImportResults();
+            $results = $this->mergePreviewResults($results, $previewData);
+            $written = $results['imported'] + $results['updated'];
 
-            TranslationManager::getInstance()->generate->triggerAutoGenerate();
+            if ($written > 0) {
+                TranslationManager::getInstance()->generate->triggerAutoGenerate();
+            }
 
             // Save import history
             $history = new ImportHistoryRecord();
@@ -341,6 +343,12 @@ class ImportController extends Controller
             $history->skipped = $results['skipped'];
             $history->errors = !empty($results['errors']) ? json_encode($results['errors']) : null;
             $history->backupPath = $backupPath ? basename($backupPath) : null;
+            $history->details = json_encode([
+                'failed' => $results['failed'],
+                'errorCount' => $results['errorCount'],
+                'retainedErrorCount' => count($results['errors']),
+                'written' => $written,
+            ]);
             $history->save();
             
             // Log the import results
@@ -349,16 +357,29 @@ class ImportController extends Controller
                 'imported' => $results['imported'],
                 'updated' => $results['updated'],
                 'skipped' => $results['skipped'],
+                'failed' => $results['failed'],
+                'errorCount' => $results['errorCount'],
                 'filename' => $importData['filename'] ?? null,
             ]);
 
             $session->remove('translation-import');
             $session->remove('translation-preview');
 
-            $message = Craft::t('translation-manager', 'Successfully imported {imported} {pluginName}.', [
-                'imported' => $results['imported'],
-                'pluginName' => $pluginName,
-            ]);
+            if ($results['failed'] > 0) {
+                $message = Craft::t('translation-manager', 'Saved {saved} translation(s), {failed} failed.', [
+                    'saved' => $written,
+                    'failed' => $results['failed'],
+                ]);
+            } elseif ($written === 0) {
+                $message = Craft::t('translation-manager', 'No valid {pluginName} found to import.', [
+                    'pluginName' => $pluginName,
+                ]);
+            } else {
+                $message = Craft::t('translation-manager', 'Successfully imported {imported} {pluginName}.', [
+                    'imported' => $results['imported'],
+                    'pluginName' => $pluginName,
+                ]);
+            }
             if ($results['updated'] > 0) {
                 $message .= ' ' . Craft::t('translation-manager', '{updated} updated.', [
                     'updated' => $results['updated'],
@@ -370,7 +391,11 @@ class ImportController extends Controller
                 ]);
             }
 
-            $session->setNotice($message);
+            if ($results['failed'] > 0) {
+                $session->setError($message);
+            } else {
+                $session->setNotice($message);
+            }
             return $this->redirect('translation-manager/import-export');
         } catch (\Exception $e) {
             $this->logError('CSV import failed', [
@@ -391,6 +416,72 @@ class ImportController extends Controller
     protected function getImportSession(): Session
     {
         return Craft::$app->getSession();
+    }
+
+    /** @return array{imported:int,updated:int,skipped:int,failed:int,errorCount:int,errors:list<string>} */
+    private function emptyImportResults(): array
+    {
+        return [
+            'imported' => 0,
+            'updated' => 0,
+            'skipped' => 0,
+            'failed' => 0,
+            'errorCount' => 0,
+            'errors' => [],
+        ];
+    }
+
+    /**
+     * Merge preview-only unchanged and rejected rows into the final outcome.
+     *
+     * @param array{imported:int,updated:int,skipped:int,failed:int,errorCount:int,errors:list<string>} $results
+     * @param array<string,mixed> $previewData
+     * @return array{imported:int,updated:int,skipped:int,failed:int,errorCount:int,errors:list<string>}
+     */
+    private function mergePreviewResults(array $results, array $previewData): array
+    {
+        $unchanged = is_array($previewData['unchanged'] ?? null) ? $previewData['unchanged'] : [];
+        $previewErrors = is_array($previewData['errors'] ?? null) ? $previewData['errors'] : [];
+        $maliciousRows = is_array($previewData['malicious'] ?? null) ? $previewData['malicious'] : [];
+
+        $results['skipped'] += count($unchanged);
+        $results['failed'] += count($previewErrors) + count($maliciousRows);
+        $results['errorCount'] += count($previewErrors) + count($maliciousRows);
+
+        $details = $results['errors'];
+        foreach ($previewErrors as $previewError) {
+            if (!is_array($previewError)) {
+                continue;
+            }
+
+            $rowNumber = $previewError['rowNumber'] ?? '?';
+            $error = (string)($previewError['error'] ?? '');
+            if ($error !== '') {
+                $details[] = "Row {$rowNumber}: {$error}";
+            }
+        }
+
+        foreach ($maliciousRows as $maliciousRow) {
+            if (!is_array($maliciousRow)) {
+                continue;
+            }
+
+            $threats = [];
+            foreach (($maliciousRow['threats'] ?? []) as $fieldThreats) {
+                if (is_array($fieldThreats)) {
+                    $threats = array_merge($threats, array_map('strval', $fieldThreats));
+                }
+            }
+
+            $details[] = Craft::t('translation-manager', 'Row {row}: Malicious content blocked ({threats})', [
+                'row' => $maliciousRow['rowNumber'] ?? '?',
+                'threats' => implode(', ', array_unique($threats)),
+            ]);
+        }
+
+        $results['errors'] = array_slice($details, 0, self::MAX_IMPORT_ERROR_DETAILS);
+
+        return $results;
     }
 
     /**
@@ -601,10 +692,10 @@ class ImportController extends Controller
                 'context' => $context,
                 'category' => $category,
                 'language' => $targetLanguage,
+                'siteId' => SiteLanguageHelper::getSiteIdForLanguage($targetLanguage),
                 'type' => $type,
                 'status' => $translation['status'] ?? '',
                 'origin' => $translation['origin'] ?? '',
-                'siteId' => $translation['siteId'] ?? '',
                 'sourceHash' => $sourceHash,
             ];
         }
@@ -617,6 +708,30 @@ class ImportController extends Controller
                 (string)$candidate['language'],
                 (string)$candidate['category'],
             )] ?? null;
+
+            $validationRecord = new TranslationRecord();
+            if ($existing !== null) {
+                $validationRecord->setAttributes($existing->getAttributes(), false);
+            }
+            $this->applyImportCandidateToRecord(
+                $validationRecord,
+                $candidate,
+                $existing === null,
+                Craft::$app->getUser()->getId(),
+            );
+
+            if (!$validationRecord->validate()) {
+                $validationErrors = $validationRecord->getFirstErrors();
+                $errors[] = [
+                    'rowNumber' => $candidate['rowNumber'],
+                    'translationKey' => $candidate['translationKey'],
+                    'translation' => $candidate['translation'],
+                    'context' => $candidate['context'],
+                    'language' => $candidate['language'],
+                    'error' => implode(', ', $validationErrors),
+                ];
+                continue;
+            }
 
             if ($existing) {
                 $dbValue = $existing->translation;
@@ -692,6 +807,8 @@ class ImportController extends Controller
         $imported = 0;
         $updated = 0;
         $skipped = 0;
+        $failed = 0;
+        $errorCount = 0;
         $errors = [];
         $details = $includeDetails ? [
             'imported' => [],
@@ -725,12 +842,15 @@ class ImportController extends Controller
                         'row' => $rowNumber ?: '?',
                         'threats' => implode(', ', $threats),
                     ]);
-                    $skipped++;
+                    $failed++;
+                    $errorCount++;
                     continue;
                 }
 
                 if ($keyText === '') {
-                    $skipped++;
+                    $errors[] = Craft::t('translation-manager', 'Missing Translation Key');
+                    $failed++;
+                    $errorCount++;
                     continue;
                 }
 
@@ -744,7 +864,8 @@ class ImportController extends Controller
                 $language = TranslationManager::getInstance()->getSettings()->mapLanguage($language);
                 if (!$this->isAllowedImportLanguage($language)) {
                     $errors[] = "Row {$rowNumber}: Language '{$language}' is not allowed for import";
-                    $skipped++;
+                    $failed++;
+                    $errorCount++;
                     continue;
                 }
 
@@ -769,12 +890,10 @@ class ImportController extends Controller
                         'keyLength' => strlen($keyText),
                         'translationLength' => strlen($translationText),
                     ]);
-                    $skipped++;
+                    $failed++;
+                    $errorCount++;
                     continue;
                 }
-
-                $importedStatus = $this->normalizeImportedStatus(isset($translation['status']) ? (string)$translation['status'] : null);
-                $importedOrigin = $this->normalizeImportedOrigin(isset($translation['origin']) ? (string)$translation['origin'] : null);
 
                 $candidates[] = [
                     'rowNumber' => $rowNumber,
@@ -785,11 +904,13 @@ class ImportController extends Controller
                     'language' => $language,
                     'siteId' => $siteId,
                     'sourceHash' => md5($keyText),
-                    'importedStatus' => $importedStatus,
-                    'importedOrigin' => $importedOrigin,
+                    'status' => $translation['status'] ?? '',
+                    'origin' => $translation['origin'] ?? '',
                 ];
             } catch (\Exception $e) {
                 $errors[] = "Row {$rowNumber}: " . $e->getMessage();
+                $failed++;
+                $errorCount++;
             }
         }
 
@@ -804,10 +925,9 @@ class ImportController extends Controller
             $language = (string)$candidate['language'];
             $siteId = (int)$candidate['siteId'];
             $sourceHash = (string)$candidate['sourceHash'];
-            $importedStatus = $candidate['importedStatus'];
-            $importedOrigin = $candidate['importedOrigin'];
             $lookupKey = $this->translationLookupKey($sourceHash, $language, $category);
             $translationRecord = null;
+            $saved = false;
 
             try {
                 $translationRecord = $existingTranslations[$lookupKey] ?? null;
@@ -822,48 +942,10 @@ class ImportController extends Controller
                     }
                 } else {
                     $translationRecord = new TranslationRecord();
-                    $translationRecord->source = $keyText;
-                    $translationRecord->sourceHash = $sourceHash;
-                    $translationRecord->siteId = $siteId;
-                    $translationRecord->language = $language;
-                    $translationRecord->context = $context;
-                    $translationRecord->category = $category;
-                    $translationRecord->translationKey = $keyText;
-                    $translationRecord->usageCount = 1;
-                    $translationRecord->lastUsed = Db::prepareDateForDb(new \DateTime());
-                    $translationRecord->dateCreated = Db::prepareDateForDb(new \DateTime());
                     $isNew = true;
                 }
 
-                if (!$translationRecord->source) {
-                    $translationRecord->source = $keyText;
-                }
-                $translationRecord->translation = $translationText;
-                if ($importedStatus !== null) {
-                    $translationRecord->status = $importedStatus;
-                } elseif ($isNew) {
-                    $translationRecord->status = trim($translationText) !== '' ? 'translated' : 'pending';
-                } elseif (!in_array($translationRecord->status, ['unused', 'draft'], true)) {
-                    $translationRecord->status = trim($translationText) !== '' ? 'translated' : 'pending';
-                }
-                $translationRecord->translationOrigin = $importedOrigin ?? 'import';
-                $translationRecord->createdByUserId = $userId;
-
-                if ($translationRecord->status === 'translated') {
-                    $translationRecord->reviewedByUserId = $userId;
-                    $translationRecord->reviewedAt = Db::prepareDateForDb(new \DateTime());
-                } else {
-                    $translationRecord->reviewedByUserId = null;
-                    $translationRecord->reviewedAt = null;
-                }
-
-                if ($this->getIntegrationService()->getIntegrationForContext($context) !== null && $translationRecord->context !== $context) {
-                    if (substr_count($context, '.') > substr_count($translationRecord->context, '.')) {
-                        $translationRecord->context = $context;
-                    }
-                }
-
-                $translationRecord->dateUpdated = Db::prepareDateForDb(new \DateTime());
+                $this->applyImportCandidateToRecord($translationRecord, $candidate, $isNew, $userId);
 
                 $saved = $isNew ? $translationRecord->save() : $translationService->saveTranslation($translationRecord);
                 if ($saved) {
@@ -894,6 +976,8 @@ class ImportController extends Controller
                     $validationErrors = $translationRecord->getFirstErrors();
                     $errorMsg = !empty($validationErrors) ? implode(', ', $validationErrors) : 'Failed to save translation';
                     $errors[] = "Row {$rowNumber}: {$errorMsg} (Key: " . substr($keyText, 0, 50) . '...)';
+                    $failed++;
+                    $errorCount++;
                     $this->logWarning('Import: Failed to save translation', [
                         'key' => $keyText,
                         'siteId' => $siteId,
@@ -902,9 +986,11 @@ class ImportController extends Controller
                 }
             } catch (\Exception $e) {
                 $errors[] = "Row {$rowNumber}: " . $e->getMessage();
+                $failed++;
+                $errorCount++;
             }
 
-            if (!$translationRecord->getIsNewRecord()) {
+            if ($saved && $translationRecord !== null && !$translationRecord->getIsNewRecord()) {
                 $existingTranslations[$lookupKey] = $translationRecord;
             }
         }
@@ -913,7 +999,9 @@ class ImportController extends Controller
             'imported' => $imported,
             'updated' => $updated,
             'skipped' => $skipped,
-            'errors' => array_slice($errors, 0, 10),
+            'failed' => $failed,
+            'errorCount' => $errorCount,
+            'errors' => array_slice($errors, 0, self::MAX_IMPORT_ERROR_DETAILS),
         ];
 
         if ($includeDetails) {
@@ -921,6 +1009,65 @@ class ImportController extends Controller
         }
 
         return $result;
+    }
+
+    /** @param array<string,mixed> $candidate */
+    private function applyImportCandidateToRecord(
+        TranslationRecord $translationRecord,
+        array $candidate,
+        bool $isNew,
+        ?int $userId,
+    ): void {
+        $keyText = (string)$candidate['translationKey'];
+        $translationText = (string)$candidate['translation'];
+        $context = (string)$candidate['context'];
+
+        if ($isNew) {
+            $translationRecord->source = $keyText;
+            $translationRecord->sourceHash = (string)$candidate['sourceHash'];
+            $translationRecord->siteId = (int)$candidate['siteId'];
+            $translationRecord->language = (string)$candidate['language'];
+            $translationRecord->context = $context;
+            $translationRecord->category = (string)$candidate['category'];
+            $translationRecord->translationKey = $keyText;
+            $translationRecord->usageCount = 1;
+            $translationRecord->lastUsed = Db::prepareDateForDb(new \DateTime());
+            $translationRecord->dateCreated = Db::prepareDateForDb(new \DateTime());
+        }
+
+        if (!$translationRecord->source) {
+            $translationRecord->source = $keyText;
+        }
+        $translationRecord->translation = $translationText;
+
+        $importedStatus = $this->normalizeImportedStatus(isset($candidate['status']) ? (string)$candidate['status'] : null);
+        if ($importedStatus !== null) {
+            $translationRecord->status = $importedStatus;
+        } elseif ($isNew) {
+            $translationRecord->status = trim($translationText) !== '' ? 'translated' : 'pending';
+        } elseif (!in_array($translationRecord->status, ['unused', 'draft'], true)) {
+            $translationRecord->status = trim($translationText) !== '' ? 'translated' : 'pending';
+        }
+
+        $importedOrigin = $this->normalizeImportedOrigin(isset($candidate['origin']) ? (string)$candidate['origin'] : null);
+        $translationRecord->translationOrigin = $importedOrigin ?? 'import';
+        $translationRecord->createdByUserId = $userId;
+
+        if ($translationRecord->status === 'translated') {
+            $translationRecord->reviewedByUserId = $userId;
+            $translationRecord->reviewedAt = Db::prepareDateForDb(new \DateTime());
+        } else {
+            $translationRecord->reviewedByUserId = null;
+            $translationRecord->reviewedAt = null;
+        }
+
+        if ($this->getIntegrationService()->getIntegrationForContext($context) !== null && $translationRecord->context !== $context) {
+            if (substr_count($context, '.') > substr_count($translationRecord->context, '.')) {
+                $translationRecord->context = $context;
+            }
+        }
+
+        $translationRecord->dateUpdated = Db::prepareDateForDb(new \DateTime());
     }
 
     private function stripDangerousImportContent(string $value): string
@@ -1087,6 +1234,10 @@ class ImportController extends Controller
         // Format the data for display
         $formattedHistory = [];
         foreach ($history as $record) {
+            $errors = $record->errors ? json_decode($record->errors, true) : [];
+            $details = $record->details ? json_decode($record->details, true) : [];
+            $errors = is_array($errors) ? $errors : [];
+            $details = is_array($details) ? $details : [];
             $formattedHistory[] = [
                 'id' => $record->id,
                 'filename' => $record->filename,
@@ -1094,7 +1245,9 @@ class ImportController extends Controller
                 'imported' => $record->imported,
                 'updated' => $record->updated,
                 'skipped' => $record->skipped,
-                'errors' => $record->errors ? json_decode($record->errors, true) : [],
+                'failed' => (int)($details['failed'] ?? count($errors)),
+                'errorCount' => (int)($details['errorCount'] ?? count($errors)),
+                'errors' => $errors,
                 'hasErrors' => !empty($record->errors),
                 'backupPath' => $record->backupPath,
                 'user' => $record->user->username ?? 'Unknown',
