@@ -277,12 +277,18 @@ final class BackupCreationSafetyTest extends BackupManifestTestCase
         $this->replacePluginComponent('generate', $generation);
         $this->settings()->backupEnabled = false;
 
+        $transaction = Craft::$app->getDb()->beginTransaction();
+        try {
+            $restore = $this->backup()->restoreBackup($name);
+            self::assertTrue($restore['success']);
+            self::assertSame(1, $generation->generateCalls);
+        } finally {
+            $transaction->rollBack();
+        }
+
         self::assertTrue($this->backup()->isValidBackupName($name));
         self::assertSame([$name], array_column($this->backup()->getBackups(), 'name'));
         self::assertSame(['formie-translations.json', 'metadata.json', 'site-translations.json'], array_keys($this->backup()->getDownloadFiles($name)));
-        self::assertTrue($this->backup()->restoreBackup($name)['success']);
-        self::assertSame(1, $this->snapshotTranslations->deleteCalls);
-        self::assertSame(1, $generation->generateCalls);
         self::assertTrue($this->backup()->deleteBackup($name));
         self::assertDirectoryDoesNotExist($root);
     }
@@ -465,17 +471,10 @@ final class SnapshotTranslationsService extends TranslationsService
 {
     /** @var list<array<string, mixed>> */
     public array $rows = [];
-    public int $deleteCalls = 0;
 
     public function getTranslations(array $criteria = []): array
     {
         return $this->rows;
-    }
-
-    public function deleteAllTranslations(): int
-    {
-        $this->deleteCalls++;
-        return 0;
     }
 }
 

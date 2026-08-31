@@ -24,6 +24,7 @@ use craft\models\Volume;
 use lindemannrock\base\helpers\StorageVolumeHelper;
 use lindemannrock\logginglibrary\traits\LoggingTrait;
 use lindemannrock\translationmanager\helpers\SiteLanguageHelper;
+use lindemannrock\translationmanager\records\TranslationRecord;
 use lindemannrock\translationmanager\TranslationManager;
 use Throwable;
 use yii\base\UserException;
@@ -1072,61 +1073,7 @@ class BackupService extends Component
                 ];
             }
 
-            // Create a backup of current state before restoring if backups are enabled
-            $settings = TranslationManager::getInstance()->getSettings();
-            $backupStatus = $settings->backupEnabled ? 'enabled' : 'disabled';
-            $this->logInfo("Restore: Checking backup settings", ['backupsEnabled' => $backupStatus]);
-
-            $preRestoreBackup = null;
-            if ($settings->backupEnabled) {
-                $this->logInfo('Restore: Creating pre-restore backup');
-                $preRestoreBackup = $this->createBackup('before_restore');
-                if ($preRestoreBackup === null) {
-                    $this->logInfo('Restore: Current translation state is empty; no safety backup was needed');
-                } else {
-                    $this->logInfo("Restore: Pre-restore backup created", ['path' => $preRestoreBackup]);
-                }
-            } else {
-                $this->logInfo('Restore: Skipping pre-restore backup (backups disabled)');
-            }
-
-            // Delete existing translations
-            TranslationManager::getInstance()->translations->deleteAllTranslations();
-
-            $imported = 0;
-            $errors = [];
-
-            // Restore Formie translations
-            if (!empty($formieContent)) {
-                $result = $this->restoreFromContent($formieContent);
-                $imported += $result['imported'];
-                $errors = array_merge($errors, $result['errors']);
-            }
-
-            // Restore site translations
-            if (!empty($siteContent)) {
-                $result = $this->restoreFromContent($siteContent);
-                $imported += $result['imported'];
-                $errors = array_merge($errors, $result['errors']);
-            }
-
-            // Regenerate translation files
-            TranslationManager::getInstance()->generate->generateAll();
-
-            $errorCount = count($errors);
-            $this->logInfo("Volume backup restored successfully", [
-                'backup' => $backupName,
-                'imported' => $imported,
-                'errorCount' => $errorCount,
-            ]);
-
-            return [
-                'success' => true,
-                'message' => "Restored {$imported} translations from volume backup",
-                'imported' => $imported,
-                'errors' => $errors,
-                'preRestoreBackup' => $preRestoreBackup,
-            ];
+            return $this->restoreBackupContent($backupName, $formieContent, $siteContent, 'volume backup');
         } catch (Throwable $e) {
             $this->logError('Failed to restore volume backup', [
                 'backup' => $backupName,
@@ -1218,61 +1165,7 @@ class BackupService extends Component
                 ];
             }
 
-            // Create a backup of current state before restoring if backups are enabled
-            $settings = TranslationManager::getInstance()->getSettings();
-            $backupStatus = $settings->backupEnabled ? 'enabled' : 'disabled';
-            $this->logInfo("Restore: Checking backup settings", ['backupsEnabled' => $backupStatus]);
-
-            $preRestoreBackup = null;
-            if ($settings->backupEnabled) {
-                $this->logInfo('Restore: Creating pre-restore backup');
-                $preRestoreBackup = $this->createBackup('before_restore');
-                if ($preRestoreBackup === null) {
-                    $this->logInfo('Restore: Current translation state is empty; no safety backup was needed');
-                } else {
-                    $this->logInfo("Restore: Pre-restore backup created", ['path' => $preRestoreBackup]);
-                }
-            } else {
-                $this->logInfo('Restore: Skipping pre-restore backup (backups disabled)');
-            }
-
-            // Delete existing translations
-            TranslationManager::getInstance()->translations->deleteAllTranslations();
-
-            $imported = 0;
-            $errors = [];
-
-            // Restore Formie translations
-            if (!empty($formieContent)) {
-                $result = $this->restoreFromContent($formieContent);
-                $imported += $result['imported'];
-                $errors = array_merge($errors, $result['errors']);
-            }
-
-            // Restore site translations
-            if (!empty($siteContent)) {
-                $result = $this->restoreFromContent($siteContent);
-                $imported += $result['imported'];
-                $errors = array_merge($errors, $result['errors']);
-            }
-
-            // Regenerate translation files
-            TranslationManager::getInstance()->generate->generateAll();
-
-            $errorCount = count($errors);
-            $this->logInfo("Local backup restored successfully", [
-                'backup' => $backupName,
-                'imported' => $imported,
-                'errorCount' => $errorCount,
-            ]);
-
-            return [
-                'success' => true,
-                'message' => "Restored {$imported} translations from backup",
-                'imported' => $imported,
-                'errors' => $errors,
-                'preRestoreBackup' => $preRestoreBackup,
-            ];
+            return $this->restoreBackupContent($backupName, $formieContent, $siteContent, 'backup');
         } catch (\Exception $e) {
             $this->logError('Failed to restore local backup', [
                 'backup' => $backupName,
@@ -1287,68 +1180,224 @@ class BackupService extends Component
     }
 
     /**
-     * Restore translations from JSON content string
+     * Validate and atomically replace the current catalogue from backup content.
      */
-    private function restoreFromContent(string $content): array
-    {
-        $imported = 0;
-        $errors = [];
+    private function restoreBackupContent(
+        string $backupName,
+        string $formieContent,
+        string $siteContent,
+        string $sourceLabel,
+    ): array {
+        $preRestoreBackup = null;
 
         try {
-            $translations = Json::decode($content);
+            $translations = [
+                ...$this->buildRestoreRecords($formieContent, 'formie-translations.json'),
+                ...$this->buildRestoreRecords($siteContent, 'site-translations.json'),
+            ];
 
-            foreach ($translations as $data) {
-                try {
-                    $translation = new \lindemannrock\translationmanager\records\TranslationRecord();
-                    $translation->source = $data['source'];
-                    $translation->sourceHash = $data['sourceHash'];
-                    $translation->context = $data['context'];
+            $settings = TranslationManager::getInstance()->getSettings();
+            $backupStatus = $settings->backupEnabled ? 'enabled' : 'disabled';
+            $this->logInfo('Restore: Checking backup settings', ['backupsEnabled' => $backupStatus]);
 
-                    $translation->translationKey = $data['translationKey'] ?? '';
-                    $translation->translation = $data['translation'] ?? '';
-
-                    // Restore language with fallbacks for backward compatibility
-                    $language = $data['language']
-                        ?? $data['siteLanguage']
-                        ?? Craft::$app->getSites()->getPrimarySite()->language;
-                    $translation->language = $language;
-
-                    // Derive siteId from language if missing, to maintain consistency
-                    if (isset($data['siteId'])) {
-                        $translation->siteId = $data['siteId'];
-                    } else {
-                        $translation->siteId = SiteLanguageHelper::getSiteIdForLanguage($language);
-                    }
-
-                    // Restore category with fallbacks for backward compatibility
-                    $context = $data['context'] ?? '';
-                    $translation->category = $data['category']
-                        ?? (str_starts_with($context, 'formie.') ? 'formie' : TranslationManager::getInstance()->getSettings()->getPrimaryCategory());
-
-                    $translation->status = $data['status'];
-                    $translation->usageCount = $data['usageCount'] ?? 1;
-                    $translation->lastUsed = Db::prepareDateForDb(DateTimeHelper::toDateTime($data['lastUsed'] ?? time()));
-                    $translation->dateCreated = Db::prepareDateForDb(DateTimeHelper::toDateTime($data['dateCreated'] ?? time()));
-                    $translation->dateUpdated = Db::prepareDateForDb(DateTimeHelper::toDateTime($data['dateUpdated'] ?? time()));
-                    $translation->uid = $data['uid'] ?? \craft\helpers\StringHelper::UUID();
-
-                    if ($translation->save()) {
-                        $imported++;
-                    } else {
-                        $errors[] = 'Failed to import: ' . ($data['translationKey'] ?? 'Unknown');
-                    }
-                } catch (\Exception $e) {
-                    $errors[] = 'Import error: ' . $e->getMessage();
+            if ($settings->backupEnabled) {
+                $this->logInfo('Restore: Creating pre-restore backup');
+                $preRestoreBackup = $this->createBackup('before_restore');
+                if ($preRestoreBackup === null) {
+                    $this->logInfo('Restore: Current translation state is empty; no safety backup was needed');
+                } else {
+                    $this->logInfo('Restore: Pre-restore backup created', ['path' => $preRestoreBackup]);
                 }
+            } else {
+                $this->logInfo('Restore: Skipping pre-restore backup (backups disabled)');
             }
-        } catch (\Exception $e) {
-            $errors[] = 'Failed to parse content: ' . $e->getMessage();
+
+            Craft::$app->getDb()->transaction(function() use ($translations): void {
+                $this->deleteTranslationsForRestore();
+
+                foreach ($translations as $translation) {
+                    if (!$this->persistRestoreRecord($translation)) {
+                        throw new \RuntimeException('A translation could not be persisted.');
+                    }
+                }
+            });
+
+            try {
+                $generation = TranslationManager::getInstance()->generate->generateAll();
+            } catch (Throwable $e) {
+                $this->logError('Translation file generation failed after backup restore', [
+                    'backup' => $backupName,
+                    'imported' => count($translations),
+                    'error' => $e->getMessage(),
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => Craft::t('translation-manager', 'Failed to generate translation files.'),
+                    'imported' => count($translations),
+                    'errors' => [$e->getMessage()],
+                    'preRestoreBackup' => $preRestoreBackup,
+                ];
+            }
+            if (($generation['success'] ?? false) !== true) {
+                $message = Craft::t('translation-manager', 'Failed to generate translation files.');
+                $this->logError('Translation file generation failed after backup restore', [
+                    'backup' => $backupName,
+                    'imported' => count($translations),
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => $message,
+                    'imported' => count($translations),
+                    'errors' => [$message],
+                    'preRestoreBackup' => $preRestoreBackup,
+                ];
+            }
+
+            $imported = count($translations);
+            $this->logInfo('Backup restored successfully', [
+                'backup' => $backupName,
+                'source' => $sourceLabel,
+                'imported' => $imported,
+            ]);
+
+            return [
+                'success' => true,
+                'message' => "Restored {$imported} translations from {$sourceLabel}",
+                'imported' => $imported,
+                'errors' => [],
+                'preRestoreBackup' => $preRestoreBackup,
+            ];
+        } catch (Throwable $e) {
+            $this->logError('Failed to restore backup content', [
+                'backup' => $backupName,
+                'source' => $sourceLabel,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => Craft::t('translation-manager', 'Failed to restore backup: {error}', [
+                    'error' => $e->getMessage(),
+                ]),
+                'imported' => 0,
+                'errors' => [$e->getMessage()],
+                'preRestoreBackup' => $preRestoreBackup,
+            ];
+        }
+    }
+
+    /**
+     * Decode and validate every prospective record before destructive work.
+     *
+     * @return list<TranslationRecord>
+     */
+    private function buildRestoreRecords(string $content, string $sourceFile): array
+    {
+        if ($content === '') {
+            return [];
         }
 
-        return [
-            'imported' => $imported,
-            'errors' => $errors,
-        ];
+        $rows = Json::decode($content);
+        if (!is_array($rows) || !array_is_list($rows)) {
+            throw new \RuntimeException("Backup content in {$sourceFile} is not a translation list.");
+        }
+
+        $translations = [];
+        foreach ($rows as $index => $data) {
+            if (!is_array($data)) {
+                throw new \RuntimeException("Backup row {$index} in {$sourceFile} is invalid.");
+            }
+
+            $translation = new TranslationRecord();
+            $translation->source = $data['source'] ?? null;
+            $translation->sourceHash = $data['sourceHash'] ?? null;
+            $translation->context = $data['context'] ?? null;
+            $translation->translationKey = $data['translationKey'] ?? '';
+            $translation->translation = $data['translation'] ?? '';
+
+            $language = $data['language']
+                ?? $data['siteLanguage']
+                ?? Craft::$app->getSites()->getPrimarySite()->language;
+            $translation->language = $language;
+            $translation->siteId = $data['siteId'] ?? SiteLanguageHelper::getSiteIdForLanguage($language);
+
+            $context = $data['context'] ?? '';
+            $translation->category = $data['category']
+                ?? (str_starts_with($context, 'formie.') ? 'formie' : TranslationManager::getInstance()->getSettings()->getPrimaryCategory());
+
+            $translation->status = $this->normalizeRestoreStatus($data['status'] ?? null);
+            $translation->translationOrigin = $data['translationOrigin'] ?? 'system';
+            $translation->createdByUserId = $data['createdByUserId'] ?? null;
+            $translation->reviewedByUserId = $data['reviewedByUserId'] ?? null;
+            $translation->reviewedAt = $this->prepareNullableRestoreDate($data['reviewedAt'] ?? null, 'reviewedAt');
+            $translation->usageCount = $data['usageCount'] ?? 1;
+            $translation->lastUsed = Db::prepareDateForDb(DateTimeHelper::toDateTime($data['lastUsed'] ?? time()));
+            $translation->dateCreated = Db::prepareDateForDb(DateTimeHelper::toDateTime($data['dateCreated'] ?? time()));
+            $translation->dateUpdated = Db::prepareDateForDb(DateTimeHelper::toDateTime($data['dateUpdated'] ?? time()));
+            $translation->uid = $data['uid'] ?? \craft\helpers\StringHelper::UUID();
+
+            if (!$translation->validate()) {
+                $errors = implode('; ', $translation->getErrorSummary(true));
+                throw new \RuntimeException("Backup row {$index} in {$sourceFile} failed validation: {$errors}");
+            }
+
+            $translations[] = $translation;
+        }
+
+        return $translations;
+    }
+
+    /**
+     * Prepare an optional backed-up date without silently discarding a present invalid value.
+     */
+    private function prepareNullableRestoreDate(mixed $value, string $field): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $date = DateTimeHelper::toDateTime($value);
+        if ($date === false) {
+            throw new \RuntimeException("Backup field {$field} is not a valid date.");
+        }
+
+        return Db::prepareDateForDb($date);
+    }
+
+    /**
+     * Normalize statuses emitted by earlier product versions.
+     */
+    private function normalizeRestoreStatus(mixed $status): mixed
+    {
+        if (!is_string($status)) {
+            return $status;
+        }
+
+        return match (strtolower(trim($status))) {
+            'approved' => 'translated',
+            'ai draft', 'ai_draft' => 'draft',
+            default => strtolower(trim($status)),
+        };
+    }
+
+    /**
+     * Persist one prevalidated restore record.
+     */
+    protected function persistRestoreRecord(TranslationRecord $translation): bool
+    {
+        return $translation->save(false);
+    }
+
+    /**
+     * Delete the current catalogue inside the restore transaction.
+     */
+    protected function deleteTranslationsForRestore(): int
+    {
+        return Craft::$app->getDb()->createCommand()
+            ->delete(TranslationRecord::tableName())
+            ->execute();
     }
 
     /**

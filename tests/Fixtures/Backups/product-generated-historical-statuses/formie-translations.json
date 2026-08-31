@@ -1,0 +1,19 @@
+[
+    {
+        "id": 41,
+        "source": "Historical form label",
+        "sourceHash": "ec9e30a700907359d48f084e2e39461c",
+        "context": "formie.form.fixture.label",
+        "category": "formie",
+        "siteId": 1,
+        "language": "en",
+        "translationKey": "Historical form label",
+        "translation": "Approved historical form label",
+        "status": "approved",
+        "usageCount": 7,
+        "lastUsed": "2026-02-26 18:52:11",
+        "dateCreated": "2026-02-26 18:52:11",
+        "dateUpdated": "2026-02-26 18:52:11",
+        "uid": "1cf46885-8d68-4629-a15f-ebf531fdcb7f"
+    }
+]

@@ -1,0 +1,19 @@
+[
+    {
+        "id": 42,
+        "source": "Historical site label",
+        "sourceHash": "539bec34c828fa0eca58a17abe0a3426",
+        "context": "site.fixture",
+        "category": "messages",
+        "siteId": 1,
+        "language": "en",
+        "translationKey": "Historical site label",
+        "translation": "AI draft historical site label",
+        "status": "ai_draft",
+        "usageCount": 3,
+        "lastUsed": "2026-02-26 18:52:11",
+        "dateCreated": "2026-02-26 18:52:11",
+        "dateUpdated": "2026-02-26 18:52:11",
+        "uid": "0683aeea-5ba5-48ac-a6da-d4b345de2177"
+    }
+]

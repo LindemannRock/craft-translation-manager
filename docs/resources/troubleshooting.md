@@ -280,6 +280,14 @@ Check the Translation Manager log for the creation error, then verify the effect
 
 If there are no current translations, backup creation reports a successful no-op and does not block the operation. If backups are deliberately disabled, the operation keeps its existing no-backup behavior. Imports also continue to respect **Create Backup Before Import**, `backupOnImport`, and the per-import checkbox.
 
+## A Backup Restore Fails Validation or File Generation
+
+Restore validates every translation row before deleting the current catalogue. Product-created historical backups that contain the old `approved` or `ai_draft` statuses are supported automatically and restore as `translated` or `draft`. Do not edit and re-sign a backup to work around a different validation error; choose an intact product-created backup or correct the source data through Translation Manager instead.
+
+If row validation, the required safety backup, or a database insert fails, the restore reports failure, rolls back the complete replacement when necessary, and leaves both the current catalogue and generated translation files unchanged. Check the Translation Manager log for the specific row, storage, or database error before retrying.
+
+If the message is **Failed to generate translation files.**, the database replacement already committed but the generated PHP files were not refreshed successfully. Fix the generation-path or filesystem problem, then use **Translation Manager → Generate → Generate All Translation Files**. Do not repeat the restore merely to retry file generation.
+
 ## A Downloaded Backup Is Missing Files or Its Size Looks Too Small
 
 If a downloaded volume backup is missing generated PHP files, or the size in the Backups list covers only the JSON files, refresh the list and download the backup again with the current Translation Manager version. Existing backup folders do not need conversion.

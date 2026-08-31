@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+set -eu
+
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+plugin_dir="$(cd "$script_dir/.." && pwd)"
+producer_commit="1cf468858d68862925115febf531fdcb7fa07844"
+fixture_dir="$plugin_dir/tests/Fixtures/Backups/product-generated-historical-statuses"
+mode="${1:---verify}"
+temporary_root="$(mktemp -d /private/tmp/translation-manager-historical-fixture.XXXXXX)"
+historical_root="$temporary_root/source"
+generated_root="$temporary_root/output"
+
+cleanup() {
+    if git -C "$plugin_dir" worktree list --porcelain | grep -Fq "worktree $historical_root"; then
+        git -C "$plugin_dir" worktree remove --force "$historical_root" >/dev/null
+    fi
+    case "$temporary_root" in
+        /private/tmp/translation-manager-historical-fixture.*)
+            rm -rf "$temporary_root"
+            ;;
+        *)
+            echo "Refusing to clean unexpected temporary path: $temporary_root" >&2
+            exit 1
+            ;;
+    esac
+}
+
+trap cleanup EXIT INT TERM HUP
+
+case "$mode" in
+    --verify|--write)
+        ;;
+    *)
+        echo "Usage: $0 [--verify|--write]" >&2
+        exit 2
+        ;;
+esac
+
+git -C "$plugin_dir" cat-file -e "${producer_commit}^{commit}"
+git -C "$plugin_dir" worktree add --detach "$historical_root" "$producer_commit" >/dev/null
+test "$(git -C "$historical_root" rev-parse HEAD)" = "$producer_commit"
+mkdir -p "$generated_root"
+php "$script_dir/generate-historical-backup-fixture.php" "$historical_root" "$generated_root"
+
+generated_fixture="$generated_root/product-generated-historical-statuses"
+for file in metadata.json formie-translations.json site-translations.json; do
+    test -f "$generated_fixture/$file"
+done
+
+if [ "$mode" = "--write" ]; then
+    mkdir -p "$fixture_dir"
+    cp "$generated_fixture/metadata.json" "$fixture_dir/metadata.json"
+    cp "$generated_fixture/formie-translations.json" "$fixture_dir/formie-translations.json"
+    cp "$generated_fixture/site-translations.json" "$fixture_dir/site-translations.json"
+else
+    for file in metadata.json formie-translations.json site-translations.json; do
+        cmp "$generated_fixture/$file" "$fixture_dir/$file"
+    done
+fi
+
+echo "Historical fixture $mode passed for $producer_commit; disposable worktree cleanup armed."

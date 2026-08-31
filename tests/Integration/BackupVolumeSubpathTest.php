@@ -20,7 +20,6 @@ use craft\services\Volumes;
 use Generator;
 use lindemannrock\translationmanager\services\BackupService;
 use lindemannrock\translationmanager\services\GenerationService;
-use lindemannrock\translationmanager\services\TranslationsService;
 use lindemannrock\translationmanager\tests\TestCase;
 use lindemannrock\translationmanager\TranslationManager;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -164,16 +163,18 @@ final class BackupVolumeSubpathTest extends TestCase
         self::assertSame('canonical-volume', $backups[0]['storageType']);
         self::assertStringContainsString('canonical copy', $this->backup()->getDownloadFiles($name)['metadata.json']);
 
-        $translations = new RestoreTranslationsSpy();
         $generation = new RestoreGenerationSpy();
-        $this->replacePluginComponent('translations', $translations);
         $this->replacePluginComponent('generate', $generation);
         $this->settings()->backupEnabled = false;
 
-        $restore = $this->backup()->restoreBackup($name);
-        self::assertTrue($restore['success']);
-        self::assertSame(1, $translations->deleteCalls);
-        self::assertSame(1, $generation->generateCalls);
+        $transaction = Craft::$app->getDb()->beginTransaction();
+        try {
+            $restore = $this->backup()->restoreBackup($name);
+            self::assertTrue($restore['success']);
+            self::assertSame(1, $generation->generateCalls);
+        } finally {
+            $transaction->rollBack();
+        }
 
         self::assertTrue($this->backup()->deleteBackup($name));
         self::assertDirectoryDoesNotExist($this->filesystemRoot . '/' . self::CANONICAL_ROOT . '/' . $name);
@@ -317,18 +318,6 @@ final class BackupVolumeSubpathTest extends TestCase
         );
 
         return $filesystem;
-    }
-}
-
-/** Prevents restore verification from deleting shared translation rows. */
-final class RestoreTranslationsSpy extends TranslationsService
-{
-    public int $deleteCalls = 0;
-
-    public function deleteAllTranslations(): int
-    {
-        $this->deleteCalls++;
-        return 0;
     }
 }
 

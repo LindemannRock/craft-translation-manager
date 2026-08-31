@@ -111,10 +111,10 @@ final class DestructiveBackupGuardTest extends BackupManifestTestCase
         $emptyResult = $this->backupSpy->restoreBackup($name);
         self::assertTrue($emptyResult['success']);
         self::assertNull($emptyResult['preRestoreBackup']);
-        self::assertSame(1, $this->translationsSpy->deleteAllCalls);
+        self::assertSame(1, $this->backupSpy->restoreDeleteCalls);
         self::assertSame(1, $this->generationSpy->generateAllCalls);
 
-        $this->translationsSpy->deleteAllCalls = 0;
+        $this->backupSpy->restoreDeleteCalls = 0;
         $this->generationSpy->generateAllCalls = 0;
         $this->backupSpy->reasons = [];
         $this->settings()->backupEnabled = false;
@@ -123,7 +123,7 @@ final class DestructiveBackupGuardTest extends BackupManifestTestCase
         $disabledResult = $this->backupSpy->restoreBackup($name);
         self::assertTrue($disabledResult['success']);
         self::assertSame([], $this->backupSpy->reasons);
-        self::assertSame(1, $this->translationsSpy->deleteAllCalls);
+        self::assertSame(1, $this->backupSpy->restoreDeleteCalls);
         self::assertSame(1, $this->generationSpy->generateAllCalls);
     }
 
@@ -419,6 +419,7 @@ final class DestructiveBackupGuardTest extends BackupManifestTestCase
 
     private function assertNoDestructiveEffects(): void
     {
+        self::assertSame(0, $this->backupSpy->restoreDeleteCalls);
         self::assertSame(0, $this->translationsSpy->deleteAllCalls);
         self::assertSame(0, $this->translationsSpy->importCalls);
         self::assertSame(0, $this->generationSpy->generateAllCalls);
@@ -518,6 +519,7 @@ final class GuardBackupService extends BackupService
     public string $outcome = self::SUCCESS;
     /** @var list<string> */
     public array $reasons = [];
+    public int $restoreDeleteCalls = 0;
 
     public function createBackup(?string $reason = null): ?string
     {
@@ -528,6 +530,12 @@ final class GuardBackupService extends BackupService
             self::THROW => throw new RuntimeException('Injected required backup failure.'),
             default => throw new RuntimeException('Unknown backup outcome.'),
         };
+    }
+
+    protected function deleteTranslationsForRestore(): int
+    {
+        $this->restoreDeleteCalls++;
+        return 0;
     }
 }
 

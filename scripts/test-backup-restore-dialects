@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+
+set -eu
+
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+plugin_dir="$(cd "$script_dir/.." && pwd)"
+run_id="$$"
+mysql_container="tm-restore-mysql-${run_id}"
+postgres_container="tm-restore-postgres-${run_id}"
+mysql_volume="tm-restore-mysql-data-${run_id}"
+postgres_volume="tm-restore-postgres-data-${run_id}"
+
+cleanup() {
+    docker rm -f "$mysql_container" >/dev/null 2>&1 || true
+    docker rm -f "$postgres_container" >/dev/null 2>&1 || true
+    docker volume rm -f "$mysql_volume" >/dev/null 2>&1 || true
+    docker volume rm -f "$postgres_volume" >/dev/null 2>&1 || true
+}
+
+trap cleanup EXIT INT TERM HUP
+cleanup
+
+docker volume create --label com.lindemannrock.test-owner=translation-manager-restore "$mysql_volume" >/dev/null
+docker run --detach \
+    --name "$mysql_container" \
+    --volume "$mysql_volume:/var/lib/mysql" \
+    --env MYSQL_ROOT_PASSWORD=tm_restore_root \
+    --env MYSQL_DATABASE=tm_restore \
+    --env MYSQL_USER=tm_restore \
+    --env MYSQL_PASSWORD=tm_restore \
+    --network ddev-craftcms_default \
+    mysql:8.4 >/dev/null
+attempt=0
+until docker exec "$mysql_container" mysqladmin ping -h127.0.0.1 -uroot -ptm_restore_root --silent >/dev/null 2>&1; do
+    attempt=$((attempt + 1))
+    if [ "$attempt" -ge 60 ]; then
+        echo "MySQL did not become ready." >&2
+        exit 1
+    fi
+    sleep 1
+done
+ddev exec "TM_RESTORE_DSN='mysql:host=${mysql_container};port=3306;dbname=tm_restore' TM_RESTORE_USERNAME=tm_restore TM_RESTORE_PASSWORD=tm_restore php plugins/translation-manager/tests/Support/BackupRestoreDialectHarness.php mysql"
+docker rm -f "$mysql_container" >/dev/null
+docker volume rm -f "$mysql_volume" >/dev/null
+
+docker volume create --label com.lindemannrock.test-owner=translation-manager-restore "$postgres_volume" >/dev/null
+docker run --detach \
+    --name "$postgres_container" \
+    --volume "$postgres_volume:/var/lib/postgresql/data" \
+    --env POSTGRES_DB=tm_restore \
+    --env POSTGRES_USER=tm_restore \
+    --env POSTGRES_PASSWORD=tm_restore \
+    --network ddev-craftcms_default \
+    postgres:16 >/dev/null
+attempt=0
+until docker exec "$postgres_container" pg_isready -h127.0.0.1 -U tm_restore -d tm_restore >/dev/null 2>&1; do
+    attempt=$((attempt + 1))
+    if [ "$attempt" -ge 60 ]; then
+        echo "PostgreSQL did not become ready." >&2
+        exit 1
+    fi
+    sleep 1
+done
+ddev exec "TM_RESTORE_DSN='pgsql:host=${postgres_container};port=5432;dbname=tm_restore' TM_RESTORE_USERNAME=tm_restore TM_RESTORE_PASSWORD=tm_restore php plugins/translation-manager/tests/Support/BackupRestoreDialectHarness.php pgsql"
+docker rm -f "$postgres_container" >/dev/null
+docker volume rm -f "$postgres_volume" >/dev/null
+
+if docker inspect "$mysql_container" >/dev/null 2>&1 \
+    || docker inspect "$postgres_container" >/dev/null 2>&1 \
+    || docker volume inspect "$mysql_volume" >/dev/null 2>&1 \
+    || docker volume inspect "$postgres_volume" >/dev/null 2>&1; then
+    echo "Disposable restore database container or volume cleanup failed." >&2
+    exit 1
+fi
+
+echo "Disposable MySQL and PostgreSQL restore containers and volumes removed."

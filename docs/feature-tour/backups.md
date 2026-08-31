@@ -14,7 +14,7 @@ Translation Manager protects your translations before destructive operations tha
 
 1. Go to **Translation Manager → Backups**.
 2. Click **Create Backup Now** — the backup is captured with a readable timestamp, a unique suffix, and a reason. The suffix prevents simultaneous requests from choosing the same completed-backup name.
-3. To roll back, find a backup in the list, click the gear icon → **Restore**, and confirm. The target and checksum are validated first. If current translations exist and backups are enabled, a fresh safety backup must then complete before the restore replaces anything.
+3. To roll back, find a backup in the list, click the gear icon → **Restore**, and confirm. The target, checksum, and every prospective translation row are validated first. If current translations exist and backups are enabled, a fresh safety backup must then complete before the restore replaces anything.
 
 ![Backups list in the Translation Manager Control Panel](../images/backups-list.webp)
 
@@ -103,7 +103,9 @@ ddev craft translation-manager/backup/list
 
 ## Restoring, downloading, and integrity
 
-Restore replaces all current translations with the backup's version. It requires an intact backup folder with `metadata.json` and a valid SHA-256 checksum — backups with missing metadata, missing checksum data, or modified translation JSON are rejected before a safety backup is attempted or anything is replaced. If a required safety backup then fails, restore stops before deleting current translations.
+Restore replaces all current translations with the backup's version. It requires an intact backup folder with `metadata.json` and a valid SHA-256 checksum — backups with missing metadata, missing checksum data, or modified translation JSON are rejected before a safety backup is attempted or anything is replaced. Translation Manager then decodes and validates the complete replacement catalogue before deleting a current row. Product-created backups from versions that used the historical `approved` and `ai_draft` statuses remain restorable; those statuses become `translated` and `draft` during preflight.
+
+If any prospective row is invalid, or if a required safety backup fails, restore stops with the current catalogue and generated files unchanged. The complete delete-and-insert replacement runs in one database transaction, so an insert error rolls the entire replacement back. Translation files regenerate only after that transaction commits. If file generation itself then fails, the restore reports an error even though the database catalogue has already been replaced; resolve the reported generation problem and generate the translation files again.
 
 Click the gear icon → **Download** to get a ZIP containing the complete stored backup content: metadata, the translation JSON files that are present, generated PHP files under `php-files/`, and any other files stored beneath that backup. Local and volume-backed downloads use the same relative paths and contain the same logical files when their stored content is identical; storage prefixes and configured volume subpaths never appear inside the ZIP. Each request owns a separate temporary ZIP, which is removed after the response and also on interruption, so simultaneous downloads cannot overwrite or clean up one another.
 

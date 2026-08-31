@@ -1,0 +1,14 @@
+{
+    "date": "2026-02-26_22-52-11",
+    "timestamp": 1772131931,
+    "reason": "manual",
+    "user": "synthetic-fixture",
+    "userId": null,
+    "translationCount": 2,
+    "formieEnabled": true,
+    "siteEnabled": true,
+    "craftVersion": "5.10.9",
+    "pluginVersion": "5.21.3",
+    "checksum": "929df936364e3ec4e4ac47a96ae8300a6bb0ee5444607957a7ef347dddc2d7cd",
+    "checksumAlgorithm": "sha256"
+}
