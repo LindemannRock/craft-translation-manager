@@ -5,7 +5,7 @@
 [![Latest Version](https://img.shields.io/packagist/v/lindemannrock/craft-translation-manager.svg)](https://packagist.org/packages/lindemannrock/craft-translation-manager)
 [![Craft CMS](https://img.shields.io/badge/Craft%20CMS-5.10+-orange.svg)](https://craftcms.com/)
 [![PHP](https://img.shields.io/badge/PHP-8.2+-blue.svg)](https://php.net/)
-[![Logging Library](https://img.shields.io/badge/Logging%20Library-5.17%2B-green.svg)](https://github.com/LindemannRock/craft-logging-library)
+[![Logging Library](https://img.shields.io/badge/Logging%20Library-5.18.2%2B-green.svg)](https://github.com/LindemannRock/craft-logging-library)
 [![License](https://img.shields.io/packagist/l/lindemannrock/craft-translation-manager.svg)](LICENSE.md)
 
 Localize your Craft interface and Formie & Freeform forms across every language — from the Control Panel.
@@ -41,7 +41,8 @@ and Freeform forms.
 
 - Craft CMS 5.10+
 - PHP 8.2+
-- [Logging Library](https://github.com/LindemannRock/craft-logging-library) 5.17+ (required by Composer; install in CP for log viewing)
+- [Base](https://github.com/LindemannRock/craft-plugin-base) 5.38.2+ (required)
+- [Logging Library](https://github.com/LindemannRock/craft-logging-library) 5.18.2+ (required by Composer; install in CP for log viewing)
 
 Optional form integrations are verified with Formie 3.1.14+ and Freeform 5.15.6.1+ for Craft 5.
 
