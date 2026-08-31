@@ -20,6 +20,8 @@ A scheduled backup may still hold its lifecycle lock when another web or Control
 
 This transient warning alone does not mean the backup failed, and you should not edit queue rows manually. If the warning repeats, check that your queue workers are finishing jobs normally.
 
+Scheduled backups are attributed to **System**, even when Craft processes the due queue job during an authenticated Control Panel request. Older scheduled backups may contain that request user's identity in their stored metadata; Translation Manager normalizes the Backups list to **System** without rewriting the historical metadata or backup checksum. Non-scheduled backups continue to show their recorded creator.
+
 ## Translations Not Being Captured
 
 **Form providers**: Save the form after adding fields, or run the matching provider command.

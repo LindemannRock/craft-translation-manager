@@ -82,10 +82,11 @@ class BackupService extends Component
      */
     public function createBackup(?string $reason = null): ?string
     {
-        $reasonText = $this->getDisplayReason($reason ?? 'manual');
+        $effectiveReason = $reason ?? 'manual';
+        $reasonText = $this->getDisplayReason($effectiveReason);
 
         try {
-            $subfolder = $this->getFolderForReason($reason);
+            $subfolder = $this->getFolderForReason($effectiveReason);
 
             $timestamp = $this->createBackupTimestamp();
             $date = date('Y-m-d_H-i-s', $timestamp);
@@ -113,12 +114,15 @@ class BackupService extends Component
             $backupName = $date . '_' . $backupId;
 
             // Create metadata
+            $identity = strtolower($effectiveReason) === 'scheduled'
+                ? null
+                : Craft::$app->getUser()->getIdentity();
             $metadata = [
                 'date' => $date,
                 'timestamp' => $timestamp,
-                'reason' => $reason ?? 'manual',
-                'user' => Craft::$app->getUser()->getIdentity()->username ?? 'system',
-                'userId' => Craft::$app->getUser()->getId(),
+                'reason' => $effectiveReason,
+                'user' => $identity?->username ?? 'system',
+                'userId' => $identity?->id ?? null,
                 'translationCount' => count($translations),
                 'formieEnabled' => TranslationManager::getInstance()->getSettings()->enableFormieIntegration,
                 'siteEnabled' => TranslationManager::getInstance()->getSettings()->enableSiteTranslations,

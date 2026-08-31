@@ -18,7 +18,7 @@ Translation Manager protects your translations before destructive operations tha
 
 ![Backups list in the Translation Manager Control Panel](../images/backups-list.webp)
 
-The list shows each backup's **date**, **type** (which folder it lives in), **reason**, **translation count**, **size**, and actual storage location. The size is the total of every stored file in that backup, including generated files under `php-files/` and any other nested backup content.
+The list shows each backup's **date**, **type** (which folder it lives in), **reason**, **creator**, **translation count**, **size**, and actual storage location. Scheduled backups are automated system work, so their creator is shown as **System** and they do not retain the Control Panel user whose request happened to process the queue. The same display rule applies to older scheduled backups that stored a request user; listing them does not rewrite their metadata. Manual and safety backups keep their existing creator attribution. The size is the total of every stored file in that backup, including generated files under `php-files/` and any other nested backup content.
 
 Backup creation writes and validates a request-owned staging snapshot before promoting it to the completed name. Staging and incomplete snapshots are not shown in the list, included in retention, or accepted by download, restore, and delete actions. Existing timestamp-only backup names remain supported.
 

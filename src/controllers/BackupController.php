@@ -123,7 +123,14 @@ class BackupController extends Controller
                 // Format date for display (base helper)
                 $backup['formattedDate'] = DateFormatHelper::formatDatetime($dateTime);
 
-                $typeInfo = $this->_formatBackupType($backup['reason'] ?? 'manual');
+                $reason = $backup['reason'] ?? 'manual';
+                $isScheduled = strtolower((string)$reason) === 'scheduled';
+                if ($isScheduled) {
+                    $backup['user'] = Craft::t('translation-manager', 'System');
+                    $backup['userId'] = null;
+                }
+
+                $typeInfo = $this->_formatBackupType($reason);
                 $backup['typeLabel'] = $typeInfo['label'];
 
                 $backup['typeBadgeHtml'] = $view->renderTemplate('lindemannrock-base/_components/badge', [
