@@ -1,6 +1,6 @@
 # Changelog
 
-## [5.35.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.34.0...v5.35.0) (2026-09-01)
+## [5.35.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.34.0...v5.35.0) - 2026-09-01
 
 
 ### Added
