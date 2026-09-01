@@ -1,5 +1,30 @@
 # Changelog
 
+## [5.35.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.34.0...v5.35.0) (2026-09-01)
+
+
+### Added
+
+* **settings:** warn about ephemeral local storage ([3176d42](https://github.com/LindemannRock/craft-translation-manager/commit/3176d42487e70b823c4c7007b8926a206787d829))
+
+
+### Fixed
+
+* **backups:** attribute scheduled runs to system ([f3538c1](https://github.com/LindemannRock/craft-translation-manager/commit/f3538c1a4e8f6a9680b8574d9458d0795166c981))
+* **backups:** complete promotion failure cleanup ([818e7a1](https://github.com/LindemannRock/craft-translation-manager/commit/818e7a16c9a7a44f3a6f2d739ac742edc519501b))
+* **backups:** honor configured volume storage ([91e9e2a](https://github.com/LindemannRock/craft-translation-manager/commit/91e9e2a835708e57d8aad9a8f0de5822d56db63c))
+* **backups:** include complete backup manifests ([4775cee](https://github.com/LindemannRock/craft-translation-manager/commit/4775cee852be0bcd439469bb8548aa030d872c35))
+* **backups:** make backup creation failure-safe ([3115dc7](https://github.com/LindemannRock/craft-translation-manager/commit/3115dc70498c5f48b4245f0d377b0fe6018a32ba))
+* **backups:** make restores atomic ([960f49f](https://github.com/LindemannRock/craft-translation-manager/commit/960f49fb288f920cb054a6acdad588ea074a6b6e))
+* **import-export:** report CSV import outcomes ([1ad9251](https://github.com/LindemannRock/craft-translation-manager/commit/1ad92510afb8f6f0ab8c8fb558b6f127408e0227))
+* preserve editor saves and bound pagination ([842842a](https://github.com/LindemannRock/craft-translation-manager/commit/842842aed227d8bc72dded360c135aaddae12f44))
+* preserve mapped translation output ([3cd49c8](https://github.com/LindemannRock/craft-translation-manager/commit/3cd49c8e541f6ab13eb5f0e2414b8d4c6885a75f))
+* **queue:** defer busy bootstrap reconciliation ([721a429](https://github.com/LindemannRock/craft-translation-manager/commit/721a4294d0e9cb65a0fb44cb2ab967a0ba842af5))
+* **queue:** support portable scheduled backups ([cea27ae](https://github.com/LindemannRock/craft-translation-manager/commit/cea27ae1799af98dff963f59e4720759741b52e0))
+* **settings:** remove unused auto-save delay ([95fe0b1](https://github.com/LindemannRock/craft-translation-manager/commit/95fe0b193639de83bea094d9eddcb1c12e3ae66a))
+* **settings:** remove unused linkMode parameter from error summary ([4b7ba68](https://github.com/LindemannRock/craft-translation-manager/commit/4b7ba680951f78a8418559c3acb6bd0e25e832e8))
+* **settings:** show unavailable backup volumes ([d4331dd](https://github.com/LindemannRock/craft-translation-manager/commit/d4331ddc9135294c9e3fd1a5b73cee1a33a578d2))
+
 ## [5.34.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.33.3...v5.34.0) - 2026-07-18
 
 
