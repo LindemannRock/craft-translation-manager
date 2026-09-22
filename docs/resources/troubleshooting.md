@@ -16,9 +16,9 @@ Solutions to common issues and debugging tips.
 - For production, ensure queue runner is active
 - If a deployment or multiple web processes create duplicate pending backup rows, Translation Manager collapses the duplicate pending rows during bootstrap and keeps one row for the next scheduled run
 
-A scheduled backup may still hold its lifecycle lock when another web or Control Panel request loads Translation Manager. Ordinary bootstrap does not wait for that lock: it logs a warning, leaves the scheduled-backup queue rows untouched, and lets the request continue. A later request retries reconciliation automatically.
+A scheduled backup may still hold its lifecycle lock when another web or Control Panel request loads Translation Manager. Ordinary bootstrap does not wait for that lock: it emits a debug diagnostic, leaves the scheduled-backup queue rows untouched, and lets the request continue. A later request retries reconciliation automatically.
 
-This transient warning alone does not mean the backup failed, and you should not edit queue rows manually. If the warning repeats, check that your queue workers are finishing jobs normally.
+This diagnostic requires Craft’s `devMode` and debug logging. A transient lock conflict does not mean the backup failed, and you should not edit queue rows manually. If the message repeats, check that your queue workers are finishing jobs normally.
 
 Scheduled backups are attributed to **System**, even when Craft processes the due queue job during an authenticated Control Panel request. Older scheduled backups may contain that request user's identity in their stored metadata; Translation Manager normalizes the Backups list to **System** without rewriting the historical metadata or backup checksum. Non-scheduled backups continue to show their recorded creator.
 

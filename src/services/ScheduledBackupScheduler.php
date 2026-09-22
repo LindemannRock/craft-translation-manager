@@ -410,7 +410,7 @@ final class ScheduledBackupScheduler extends Component
     {
         $mutex = Craft::$app->getMutex();
         if (!$mutex->acquire(self::LIFECYCLE_MUTEX, self::BOOTSTRAP_MUTEX_TIMEOUT)) {
-            Craft::warning(
+            Craft::debug(
                 'Scheduled-backup bootstrap reconciliation deferred because the lifecycle lock is busy.',
                 'translation-manager',
             );
@@ -419,7 +419,7 @@ final class ScheduledBackupScheduler extends Component
 
         try {
             if (!$mutex->acquire(self::PORTABLE_MUTEX, self::BOOTSTRAP_MUTEX_TIMEOUT)) {
-                Craft::warning(
+                Craft::debug(
                     'Scheduled-backup bootstrap reconciliation deferred because the portable queue lock is busy.',
                     'translation-manager',
                 );

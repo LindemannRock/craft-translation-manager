@@ -117,6 +117,7 @@ The level of detail depends on your configured `logLevel`.
 
 ### Debug (`debug`)
 
+- Scheduled-backup bootstrap reconciliation deferred because a lifecycle or portable queue lock is busy; a later request retries automatically
 - Performance timing
 - Detailed import/export steps
 - Template capture and scanning details

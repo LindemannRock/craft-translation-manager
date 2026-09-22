@@ -45,6 +45,14 @@ final class ScheduledBackupQueueTest extends TestCase
 
     private ?RecordingBackupSqsQueue $proxyQueue = null;
     private bool $timePaused = false;
+    private ?int $originalLogFlushInterval = null;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->originalLogFlushInterval = Craft::getLogger()->flushInterval;
+        Craft::getLogger()->flushInterval = PHP_INT_MAX;
+    }
 
     protected function tearDown(): void
     {
@@ -54,6 +62,9 @@ final class ScheduledBackupQueueTest extends TestCase
                 $this->timePaused = false;
             }
         } finally {
+            if ($this->originalLogFlushInterval !== null) {
+                Craft::getLogger()->flushInterval = $this->originalLogFlushInterval;
+            }
             parent::tearDown();
         }
     }
@@ -366,7 +377,7 @@ final class ScheduledBackupQueueTest extends TestCase
             self::assertSame([ScheduledBackupScheduler::LIFECYCLE_MUTEX], $mutex->acquisitions);
             self::assertSame([0], $mutex->timeouts);
             self::assertSame([], $mutex->releases);
-            $this->assertWarningLoggedSince(
+            $this->assertDebugLoggedSince(
                 $logOffset,
                 'Scheduled-backup bootstrap reconciliation deferred because the lifecycle lock is busy.',
             );
@@ -415,7 +426,7 @@ final class ScheduledBackupQueueTest extends TestCase
         self::assertSame([0, 0], $mutex->timeouts);
         self::assertSame([ScheduledBackupScheduler::LIFECYCLE_MUTEX], $mutex->releases);
         self::assertFalse($mutex->isHeld(ScheduledBackupScheduler::LIFECYCLE_MUTEX));
-        $this->assertWarningLoggedSince(
+        $this->assertDebugLoggedSince(
             $logOffset,
             'Scheduled-backup bootstrap reconciliation deferred because the portable queue lock is busy.',
         );
@@ -1098,19 +1109,16 @@ final class ScheduledBackupQueueTest extends TestCase
             ->all();
     }
 
-    private function assertWarningLoggedSince(int $offset, string $expectedMessage): void
+    private function assertDebugLoggedSince(int $offset, string $expectedMessage): void
     {
-        foreach (array_slice(Craft::getLogger()->messages, $offset) as $message) {
-            if ($message[0] === $expectedMessage
-                && $message[1] === Logger::LEVEL_WARNING
-                && $message[2] === 'translation-manager'
-            ) {
-                self::addToAssertionCount(1);
-                return;
-            }
-        }
+        $matching = array_filter(
+            array_slice(Craft::getLogger()->messages, $offset),
+            static fn(array $message): bool => $message[0] === $expectedMessage
+                && $message[2] === 'translation-manager',
+        );
 
-        self::fail("Expected translation-manager warning was not logged: $expectedMessage");
+        self::assertSame([Logger::LEVEL_TRACE], array_values(array_column($matching, 1)));
+        self::assertNotContains(Logger::LEVEL_WARNING, array_column($matching, 1));
     }
 
     /** @return list<int> */
