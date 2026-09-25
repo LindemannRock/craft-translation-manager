@@ -91,7 +91,7 @@ test('canonical Composer quality gate has one orchestrator and timeout owner', (
 test('Composer declares the release dependency and directly invoked PHPStan floors', () => {
     const composer = JSON.parse(readFileSync(path.join(pluginRoot, 'composer.json'), 'utf8'));
     assert.equal(composer.require['lindemannrock/craft-plugin-base'], '^5.38.2');
-    assert.equal(composer.require['lindemannrock/craft-logging-library'], '^5.18.2');
+    assert.equal(composer.require['lindemannrock/craft-logging-library'], '^5.19.0');
     assert.equal(composer['require-dev']['craftcms/phpstan'], 'dev-main');
     assert.equal(composer['require-dev']['phpstan/phpstan'], '^1.12.33');
 });
