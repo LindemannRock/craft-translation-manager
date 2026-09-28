@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.35.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.35.0...v5.35.1) - 2026-09-28
+
+
+### Fixed
+
+* **backups:** log routine scheduling contention at debug level ([6848ac3](https://github.com/LindemannRock/craft-translation-manager/commit/6848ac39af12931cca8ad8aa40b96874ead53eb1))
+
 ## [5.35.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.34.0...v5.35.0) - 2026-09-01
 
 
