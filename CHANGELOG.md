@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.36.0](https://github.com/LindemannRock/craft-translation-manager/compare/v5.35.1...v5.36.0) - 2026-11-27
+
+
+### Fixed
+
+* **deps:** require Base 5.40 and Logging Library 5.21 ([9128ce0](https://github.com/LindemannRock/craft-translation-manager/commit/9128ce0fb0bf629f0321c8b44630c7406e3616ec))
+
 ## [5.35.1](https://github.com/LindemannRock/craft-translation-manager/compare/v5.35.0...v5.35.1) - 2026-09-28
 
 
