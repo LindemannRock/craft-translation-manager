@@ -67,7 +67,7 @@ function actFixture(content = workflow([checkout, trust, gate])) {
     writeFileSync(path.join(binRoot, 'act'), `#!/bin/sh\nprintf '%s\\n' "$*" > "$TRANSLATION_MANAGER_ACT_LOG"\ntouch "$TRANSLATION_MANAGER_ACT_RESOURCES/container" "$TRANSLATION_MANAGER_ACT_RESOURCES/network"\ncase " $* " in *" --rm "*) rm -f "$TRANSLATION_MANAGER_ACT_RESOURCES"/* ;; esac\nexit 73\n`, {mode: 0o700});
     chmodSync(path.join(binRoot, 'act'), 0o700);
     return {
-        run: () => spawnSync('/bin/bash', ['scripts/act-quality-gates'], {cwd: root, encoding: 'utf8', env: {...process.env, PATH: `${binRoot}:/usr/bin:/bin`, TRANSLATION_MANAGER_ACT_LOG: logPath, TRANSLATION_MANAGER_ACT_RESOURCES: resources}}),
+        run: () => spawnSync('/bin/bash', ['scripts/act-quality-gates'], {cwd: root, encoding: 'utf8', env: {...process.env, BASH_ENV: '', PATH: `${binRoot}:/usr/bin:/bin`, TRANSLATION_MANAGER_ACT_LOG: logPath, TRANSLATION_MANAGER_ACT_RESOURCES: resources}}),
         log: () => readFileSync(logPath, 'utf8'),
         resources: () => readdirSync(resources),
         cleanup: () => rmSync(root, {recursive: true, force: true}),
@@ -90,8 +90,9 @@ test('canonical Composer quality gate has one orchestrator and timeout owner', (
 
 test('Composer declares the release dependency and directly invoked PHPStan floors', () => {
     const composer = JSON.parse(readFileSync(path.join(pluginRoot, 'composer.json'), 'utf8'));
-    assert.equal(composer.require['lindemannrock/craft-plugin-base'], '^5.38.2');
-    assert.equal(composer.require['lindemannrock/craft-logging-library'], '^5.19.0');
+    assert.equal(composer.require['craftcms/cms'], '^5.12.3');
+    assert.equal(composer.require['lindemannrock/craft-plugin-base'], '^5.40');
+    assert.equal(composer.require['lindemannrock/craft-logging-library'], '^5.21');
     assert.equal(composer['require-dev']['craftcms/phpstan'], 'dev-main');
     assert.equal(composer['require-dev']['phpstan/phpstan'], '^1.12.33');
 });
